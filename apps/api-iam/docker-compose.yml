@@ -1,0 +1,50 @@
+# Corehub IAM — local development stack
+#
+# Arrancar:  docker compose up -d
+# Detener:   docker compose down
+# Reset DB:  docker compose down -v && docker compose up -d
+#
+# Acceso a Adminer:  http://localhost:8081
+#   Sistema: PostgreSQL | Servidor: postgres | Usuario: corehub
+#   Contraseña: corehub_dev_password | Base de datos: corehub_iam
+#
+# Acceso a MailDev:  http://localhost:1080
+#   SMTP: localhost:1025 (captura todos los emails, no los envía realmente)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: corehub-iam-postgres
+    environment:
+      POSTGRES_USER: corehub
+      POSTGRES_PASSWORD: corehub_dev_password
+      POSTGRES_DB: corehub_iam
+    ports:
+      - "5432:5432"
+    volumes:
+      - corehub_iam_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U corehub -d corehub_iam" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:latest
+    container_name: corehub-iam-adminer
+    ports:
+      - "8081:8050"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  maildev:
+    image: maildev/maildev:latest
+    container_name: corehub-iam-maildev
+    ports:
+      - "1025:1025"  # SMTP
+      - "1080:1080"  # Web UI
+    restart: unless-stopped
+
+volumes:
+  corehub_iam_pg_data:

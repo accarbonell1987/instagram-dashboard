@@ -1,0 +1,244 @@
+name: Deploy to DEV Environment
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+env:
+  NEXUS_REGISTRY: 10.19.150.66:8082
+  IMAGE_NAME: corehub-hub
+  NODE_VERSION: '22'
+  PNPM_VERSION: '9'
+  # Ruta a credenciales en el servidor (self-hosted runner)
+  CREDENTIALS_PATH: /opt/corehub/credentials
+
+jobs:
+  # ============================================================================
+  # JOB 1: prepare
+  # ============================================================================
+  prepare:
+    name: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Version: $VERSION"
+
+      - name: Generate prepare summary
+        run: |
+          echo "## Prepare Stage" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`${{ steps.version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # JOB 2: lint & build
+  # ============================================================================
+  lint-and-build:
+    name: lint & build
+    runs-on: ubuntu-latest
+    needs: prepare
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: |
+            .next/standalone
+            .next/static
+            public
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Generate build summary
+        run: |
+          echo "## Lint & Build Stage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| ESLint | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ✅ Success |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # JOB 3: docker build & push
+  # ============================================================================
+  docker:
+    name: docker build & push
+    runs-on: [self-hosted, dev]
+    needs: [prepare, lint-and-build]
+
+    outputs:
+      image-tag: ${{ steps.tags.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+          path: .
+
+      - name: Prepare build structure
+        run: |
+          mkdir -p .next
+          # Los archivos ya están en su lugar correcto
+
+      - name: Login to Nexus Docker Registry
+        run: |
+          # Cargar credenciales desde el servidor
+          source ${{ env.CREDENTIALS_PATH }}/.nexus
+          echo "${NEXUS_PASSWORD}" | docker login ${{ env.NEXUS_REGISTRY }} -u "${NEXUS_USERNAME}" --password-stdin
+
+      - name: Generate image tags
+        id: tags
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "latest=${{ env.NEXUS_REGISTRY }}/${{ env.IMAGE_NAME }}:dev-latest" >> $GITHUB_OUTPUT
+          echo "sha=${{ env.NEXUS_REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "tags=${{ env.NEXUS_REGISTRY }}/${{ env.IMAGE_NAME }}:dev-latest,${{ env.NEXUS_REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          # Cargar variables desde .env del servidor
+          set -a
+          source /opt/corehub/hub/.env
+          set +a
+
+          docker build \
+            --build-arg NEXT_PUBLIC_KEYCLOAK_URL=${NEXT_PUBLIC_KEYCLOAK_URL} \
+            --build-arg NEXT_PUBLIC_KEYCLOAK_REALM=${NEXT_PUBLIC_KEYCLOAK_REALM} \
+            --build-arg NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID} \
+            --build-arg NEXT_PUBLIC_APP_VACACIONES_URL=${NEXT_PUBLIC_APP_VACACIONES_URL:-} \
+            -t ${{ steps.tags.outputs.latest }} \
+            -t ${{ steps.tags.outputs.sha }} \
+            .
+
+      - name: Push Docker image to Nexus
+        id: build
+        run: |
+          docker push ${{ steps.tags.outputs.latest }}
+          docker push ${{ steps.tags.outputs.sha }}
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ steps.tags.outputs.latest }} 2>/dev/null | cut -d'@' -f2 || echo "N/A")
+          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+
+      - name: Cleanup local images
+        if: always()
+        run: |
+          docker rmi ${{ steps.tags.outputs.latest }} ${{ steps.tags.outputs.sha }} 2>/dev/null || true
+
+      - name: Generate docker summary
+        run: |
+          echo "## Docker Stage (Nexus Registry)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry | \`${{ env.NEXUS_REGISTRY }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ env.IMAGE_NAME }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Digest | \`${{ steps.build.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Tags" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.tags.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # JOB 4: deploy
+  # ============================================================================
+  deploy:
+    name: deploy
+    runs-on: [self-hosted, dev]
+    needs: docker
+    timeout-minutes: 10
+    environment: development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Nexus Docker Registry
+        run: |
+          source ${{ env.CREDENTIALS_PATH }}/.nexus
+          echo "${NEXUS_PASSWORD}" | docker login ${{ env.NEXUS_REGISTRY }} -u "${NEXUS_USERNAME}" --password-stdin
+
+      - name: Deploy with Docker Compose
+        working-directory: /opt/corehub/hub
+        run: |
+          cp ${{ github.workspace }}/docker-compose.dev.yml ./docker-compose.yml
+          docker compose pull
+          docker compose up -d
+          docker image prune -f
+
+      - name: Verify deployment
+        run: |
+          echo "Esperando que la aplicación responda..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:3001 > /dev/null 2>&1; then
+              echo "✅ Hub respondiendo en puerto 3001"
+              exit 0
+            fi
+            echo "Intento $i/30 - Esperando..."
+            sleep 3
+          done
+          echo "❌ ERROR: La aplicación no responde"
+          docker logs corehub-hub-dev --tail 50
+          exit 1
+
+      - name: Generate deploy summary
+        if: success()
+        run: |
+          echo "## Deploy Stage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | \`development\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | \`http://hub.corehub.local:3001\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Cleanup
+        if: always()
+        run: docker logout ${{ env.NEXUS_REGISTRY }} || true

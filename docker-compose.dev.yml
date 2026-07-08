@@ -1,0 +1,136 @@
+# =============================================================================
+# Corehub Platform — Development Docker Stack
+# =============================================================================
+# Start everything:  docker compose -f docker-compose.dev.yml up -d
+# Stop:              docker compose -f docker-compose.dev.yml down
+# Reset (wipe DB):   docker compose -f docker-compose.dev.yml down -v
+# Rebuild:           docker compose -f docker-compose.dev.yml build --no-cache
+#
+# Access points:
+#   Hub (frontend):   http://localhost:3001
+#   API IAM (backend): http://localhost:8080
+#   Docs:             http://localhost:3002
+#   Adminer (DB UI):  http://localhost:8081
+#   MailDev (email):  http://localhost:1080
+#   Swagger UI:       http://localhost:8080/swagger
+#   PostgreSQL:       localhost:5432 (db: corehub_iam, user: corehub)
+# =============================================================================
+
+services:
+  # ─── Infrastructure ───────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: corehub-postgres
+    environment:
+      POSTGRES_USER: corehub
+      POSTGRES_PASSWORD: corehub_dev_password
+      POSTGRES_DB: corehub_iam
+    ports:
+      - "5432:5432"
+    volumes:
+      - corehub_pg_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corehub -d corehub_iam"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - corehub-dev
+
+  maildev:
+    image: maildev/maildev:latest
+    container_name: corehub-maildev
+    ports:
+      - "1025:1025"   # SMTP
+      - "1080:1080"   # Web UI
+    restart: unless-stopped
+    networks:
+      - corehub-dev
+
+  adminer:
+    image: adminer:latest
+    container_name: corehub-adminer
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - corehub-dev
+
+  # ─── Apps ─────────────────────────────────────────────────────────────────
+
+  api-iam:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: corehub-api-iam
+    command: ["sh", "/app/scripts/docker-entrypoint-api-iam.sh"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - apps/api-iam/.env
+      - apps/api-iam/.env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks:
+      - corehub-dev
+
+  hub:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: corehub-hub
+    command: pnpm --filter @corehub/hub dev
+    environment:
+      HOSTNAME: "0.0.0.0"
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - apps/hub/.env.local
+      - apps/hub/.env.docker
+    depends_on:
+      api-iam:
+        condition: service_healthy
+    networks:
+      - corehub-dev
+
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: corehub-docs
+    command: pnpm --filter @internal/docs dev
+    environment:
+      HOSTNAME: "0.0.0.0"
+    ports:
+      - "3002:3002"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - corehub-dev
+
+volumes:
+  corehub_pg_data:
+
+networks:
+  corehub-dev:
+    driver: bridge

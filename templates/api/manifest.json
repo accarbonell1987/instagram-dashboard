@@ -1,0 +1,43 @@
+{
+  "name": "api",
+  "description": "Hono API template with OpenAPI documentation",
+  "type": "api",
+  "files": [
+    {
+      "source": "package.json.template",
+      "destination": "package.json",
+      "process": true
+    },
+    {
+      "source": "tsconfig.json.template",
+      "destination": "tsconfig.json",
+      "process": true
+    },
+    {
+      "source": "README.md.template",
+      "destination": "README.md",
+      "process": true
+    },
+    {
+      "source": "src/index.ts.template",
+      "destination": "src/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/config.ts.template",
+      "destination": "src/config.ts",
+      "process": true
+    },
+    {
+      "source": "src/errors.ts.template",
+      "destination": "src/errors.ts",
+      "process": true
+    },
+    {
+      "source": "src/routes/health.ts.template",
+      "destination": "src/routes/health.ts",
+      "process": true
+    }
+  ],
+  "postInstructions": ["pnpm install", "pnpm dev"]
+}

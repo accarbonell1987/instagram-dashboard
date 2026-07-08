@@ -1,0 +1,9 @@
+{
+  "$description": "Border radius tokens - Only truly static values. Dynamic radius (sm, md, lg, xl) are calculated from --radius in tailwind-theme.css",
+  "radius": {
+    "$type": "dimension",
+    "none": { "$value": "0" },
+    "default": { "$value": "0.5rem" },
+    "full": { "$value": "9999px" }
+  }
+}

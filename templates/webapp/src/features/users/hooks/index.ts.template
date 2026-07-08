@@ -1,0 +1,2 @@
+export { useUsers } from './use-users';
+export type { UseUsersReturn } from './use-users';

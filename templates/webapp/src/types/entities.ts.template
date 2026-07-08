@@ -1,0 +1,25 @@
+/**
+ * Domain Entity Types
+ *
+ * TypeScript types that mirror the API schemas.
+ * These are used by domain services for type-safe CRUD operations.
+ */
+
+// ─── User Entity ───────────────────────────────────────
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string | undefined;
+  partyId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserCreate {
+  email: string;
+  name?: string | undefined;
+  partyId: string;
+}
+
+export type UserUpdate = Partial<UserCreate>;

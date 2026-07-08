@@ -1,0 +1,36 @@
+{
+  "name": "@core/cli",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "CLI generator for CORE Monorepo Platform - scaffolds new APIs and webapps from templates",
+  "bin": {
+    "core": "./dist/index.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "lint": "eslint . --max-warnings 0",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "fs-extra": "^11.3.0",
+    "ora": "^8.2.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@core/config": "workspace:*",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.10.7",
+    "@types/prompts": "^2.4.9",
+    "eslint": "^9.18.0",
+    "typescript": "^5.7.3"
+  }
+}

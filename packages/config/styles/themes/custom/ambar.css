@@ -1,0 +1,63 @@
+/**
+ * Ambar Theme - Warm amber/gold tones
+ * Custom organization theme
+ *
+ * Primary: Warm amber gold
+ * Aesthetic: Professional yet warm, trustworthy
+ */
+
+.theme-ambar {
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 40 6% 95%;
+  --muted-foreground: 30 6% 45%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 40 8% 88%;
+  --input: 40 8% 88%;
+  --primary: 38 92% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 40 6% 94%;
+  --secondary-foreground: 30 10% 15%;
+  --accent: 40 6% 94%;
+  --accent-foreground: 30 10% 15%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 38 92% 50%;
+  --chart-1: 38 92% 50%;
+  --chart-2: 25 85% 55%;
+  --chart-3: 45 90% 45%;
+  --chart-4: 15 80% 50%;
+  --chart-5: 50 75% 55%;
+  --radius: 0.5rem;
+}
+
+.theme-ambar.dark,
+.dark .theme-ambar {
+  --background: 24 10% 6%;
+  --foreground: 40 10% 95%;
+  --muted: 24 8% 14%;
+  --muted-foreground: 35 8% 60%;
+  --popover: 24 10% 8%;
+  --popover-foreground: 40 10% 95%;
+  --card: 24 10% 8%;
+  --card-foreground: 40 10% 95%;
+  --border: 24 8% 18%;
+  --input: 24 8% 18%;
+  --primary: 38 92% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 24 8% 16%;
+  --secondary-foreground: 40 10% 90%;
+  --accent: 24 8% 16%;
+  --accent-foreground: 40 10% 90%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 38 85% 55%;
+  --chart-1: 38 85% 55%;
+  --chart-2: 25 80% 50%;
+  --chart-3: 45 85% 50%;
+  --chart-4: 15 75% 55%;
+  --chart-5: 50 70% 50%;
+}

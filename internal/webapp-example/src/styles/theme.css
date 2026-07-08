@@ -1,0 +1,14 @@
+/**
+ * Creative App - App-specific CSS overrides
+ *
+ * This file loads LAST and can override theme values.
+ *
+ * IMPORTANT: Do NOT set --radius, --border, or semantic colors here
+ * if you want themes to control them. Instead:
+ * 1. Use the theme system (@core/config/styles/themes)
+ * 2. Create a custom theme if needed
+ * 3. Only override specific utilities or components here
+ */
+
+/* App-specific component overrides can go here */
+/* Example: custom focus styles, scrollbar styles, etc. */

@@ -1,0 +1,6 @@
+{
+  "framework": "nextjs",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && npx turbo build --filter=@corehub/landing-page",
+  "outputDirectory": ".next"
+}

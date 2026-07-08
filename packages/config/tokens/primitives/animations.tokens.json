@@ -1,0 +1,27 @@
+{
+  "$description": "Animation tokens - Durations and easing functions",
+  "duration": {
+    "$type": "duration",
+    "0": { "$value": "0ms" },
+    "75": { "$value": "75ms" },
+    "100": { "$value": "100ms" },
+    "150": { "$value": "150ms" },
+    "200": { "$value": "200ms" },
+    "300": { "$value": "300ms" },
+    "500": { "$value": "500ms" },
+    "700": { "$value": "700ms" },
+    "1000": { "$value": "1000ms" },
+    "fast": { "$value": "150ms" },
+    "normal": { "$value": "200ms" },
+    "slow": { "$value": "300ms" },
+    "slower": { "$value": "500ms" }
+  },
+  "easing": {
+    "$type": "cubicBezier",
+    "linear": { "$value": [0, 0, 1, 1] },
+    "ease": { "$value": [0.25, 0.1, 0.25, 1] },
+    "easeIn": { "$value": [0.42, 0, 1, 1] },
+    "easeOut": { "$value": [0, 0, 0.58, 1] },
+    "easeInOut": { "$value": [0.42, 0, 0.58, 1] }
+  }
+}

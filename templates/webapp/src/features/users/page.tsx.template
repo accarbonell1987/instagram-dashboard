@@ -1,0 +1,106 @@
+'use client';
+
+import { UsersIcon } from 'lucide-react';
+
+
+import { UserFormDialog } from './components/user-form-dialog';
+import { UsersTable } from './components/users-table';
+import { useUsers } from './hooks/use-users';
+
+import {
+  CrudPageLayout,
+  DeleteConfirmationDialog,
+  Pagination,
+  SearchInput,
+} from '@/shared/components';
+
+/**
+ * Users page component using Screaming Architecture.
+ * All user-specific code is co-located in this feature module.
+ */
+export function UsersPage() {
+  const { state, actions, handlers } = useUsers();
+
+  return (
+    <>
+      <CrudPageLayout
+        icon={<UsersIcon className="h-8 w-8" />}
+        title="Users"
+        description="CRUD demo powered by @repo/core with centralized domain services"
+        total={state.total}
+        countLabel="users"
+        createLabel="New User"
+        onCreateClick={actions.openCreate}
+        error={state.error}
+        onClearError={actions.clearError}
+        searchInput={
+          <SearchInput
+            value={state.search}
+            onChange={actions.setSearch}
+            placeholder="Search by name or email..."
+            label="Search users"
+          />
+        }
+        pagination={
+          <Pagination
+            page={state.page}
+            totalPages={state.totalPages}
+            onPrevious={actions.previousPage}
+            onNext={actions.nextPage}
+          />
+        }
+      >
+        <UsersTable
+          users={state.items}
+          loading={state.loading}
+          onEdit={handlers.openEdit}
+          onDelete={actions.openDelete}
+        />
+      </CrudPageLayout>
+
+      {/* Create Dialog */}
+      <UserFormDialog
+        open={state.createOpen}
+        onOpenChange={(open) => {
+          if (!open) actions.closeDialogs();
+        }}
+        title="Create User"
+        description="Add a new user to the system."
+        formData={state.formData}
+        onFormChange={actions.setFormData}
+        onSubmit={handlers.create}
+        submitLabel="Create"
+        loading={state.mutating}
+      />
+
+      {/* Edit Dialog */}
+      <UserFormDialog
+        open={state.editOpen}
+        onOpenChange={(open) => {
+          if (!open) actions.closeDialogs();
+        }}
+        title="Edit User"
+        description={`Editing ${state.selectedItem?.name ?? state.selectedItem?.email ?? 'user'}.`}
+        formData={state.formData}
+        onFormChange={actions.setFormData}
+        onSubmit={handlers.update}
+        submitLabel="Save Changes"
+        loading={state.mutating}
+      />
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={state.deleteOpen}
+        onOpenChange={(open) => {
+          if (!open) actions.closeDialogs();
+        }}
+        entityType="User"
+        itemName={state.selectedItem?.name ?? state.selectedItem?.email ?? ''}
+        onConfirm={handlers.delete}
+        loading={state.mutating}
+      />
+    </>
+  );
+}
+
+export default UsersPage;

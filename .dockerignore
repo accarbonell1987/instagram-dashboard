@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+**/.next/
+**/out/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Turborepo
+.turbo/
+
+# Testing
+coverage/
+**/playwright-report/
+**/test-results/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Environment (use docker-compose env instead)
+.env
+.env.local
+.env.*.local
+
+# Docs
+*.md
+LICENSE
+
+# Misc
+*.log
+logs/
+tmp/

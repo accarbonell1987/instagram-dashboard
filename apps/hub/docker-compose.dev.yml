@@ -1,0 +1,23 @@
+services:
+  corehub-hub:
+    image: 10.19.150.66:8082/corehub-hub:${IMAGE_TAG:-dev-latest}
+    container_name: corehub-hub-dev
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - TZ=America/Asuncion
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'

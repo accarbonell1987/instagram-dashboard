@@ -1,0 +1,88 @@
+'use client';
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/ui';
+import type { ReactNode } from 'react';
+
+export interface DataTableColumn<T> {
+  /** Unique key for the column */
+  key: string;
+  /** Column header label */
+  header: string;
+  /** Width class (e.g., "w-16", "w-32") */
+  width?: string;
+  /** Alignment */
+  align?: 'left' | 'center' | 'right';
+  /** Render function for the cell */
+  render: (item: T) => ReactNode;
+}
+
+export interface DataTableProps<T> {
+  /** Array of items to display */
+  items: T[];
+  /** Column definitions */
+  columns: DataTableColumn<T>[];
+  /** Key extractor for each item */
+  getRowKey: (item: T) => string;
+  /** Whether data is loading */
+  loading?: boolean;
+  /** Message to show when no items */
+  emptyMessage?: string;
+  /** Number of columns for loading/empty states */
+  columnCount?: number;
+}
+
+export function DataTable<T>({
+  items,
+  columns,
+  getRowKey,
+  loading = false,
+  emptyMessage = 'No items found.',
+  columnCount,
+}: DataTableProps<T>) {
+  const colSpan = columnCount ?? columns.length;
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {columns.map((column) => (
+            <TableHead
+              key={column.key}
+              className={`${column.width ?? ''} ${column.align === 'right' ? 'text-right' : ''}`}
+            >
+              {column.header}
+            </TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {loading ? (
+          <TableRow>
+            <TableCell colSpan={colSpan} className="text-muted-foreground h-32 text-center">
+              Loading...
+            </TableCell>
+          </TableRow>
+        ) : items.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={colSpan} className="text-muted-foreground h-32 text-center">
+              {emptyMessage}
+            </TableCell>
+          </TableRow>
+        ) : (
+          items.map((item) => (
+            <TableRow key={getRowKey(item)}>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.key}
+                  className={column.align === 'right' ? 'text-right' : ''}
+                >
+                  {column.render(item)}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))
+        )}
+      </TableBody>
+    </Table>
+  );
+}

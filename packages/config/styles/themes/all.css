@@ -1,0 +1,11 @@
+/**
+ * All themes bundled (shadcn + custom)
+ * Import this file to enable all available themes
+ *
+ * Usage:
+ *   @import '@core/config/styles/themes/all.css';
+ *   <html class="theme-ambar">
+ */
+
+@import './shadcn/index.css';
+@import './custom/index.css';

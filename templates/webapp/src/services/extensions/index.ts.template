@@ -1,0 +1,53 @@
+/**
+ * Service Extensions Barrel
+ *
+ * Export all extension types and factories from a single location.
+ * Add new extensions here as they are created.
+ *
+ * @example Creating an extension:
+ *
+ * 1. Create the extension file (e.g., user.extensions.ts):
+ *
+ * ```ts
+ * import type { BatchCreateResult, HttpHelpers } from '@repo/core/services';
+ * import type { BatchCreateUsersInput, User } from '@/types/entities';
+ *
+ * // Define the extension type
+ * export type UserExtensions = {
+ *   batchCreate: (data: BatchCreateUsersInput) => Promise<BatchCreateResult<User>>;
+ * };
+ *
+ * // Create the factory function
+ * export function createUserExtensions(http: HttpHelpers, basePath: string): UserExtensions {
+ *   return {
+ *     batchCreate: async (data) => {
+ *       const response = await http.post<{ success: true; data: BatchCreateResult<User> }>(
+ *         `${basePath}/batch`,
+ *         data
+ *       );
+ *       return response.data;
+ *     },
+ *   };
+ * }
+ * ```
+ *
+ * 2. Export from this barrel:
+ *
+ * ```ts
+ * export { createUserExtensions, type UserExtensions } from './user.extensions';
+ * ```
+ *
+ * 3. Use in domain-services.ts:
+ *
+ * ```ts
+ * import { createUserExtensions, type UserExtensions } from './extensions';
+ *
+ * users: createService<User, UserCreate, UserUpdate, UserExtensions>(
+ *   '/users',
+ *   createUserExtensions
+ * ),
+ * ```
+ */
+
+// Example extension exports (uncomment when created):
+// export { createUserExtensions, type UserExtensions } from './user.extensions';

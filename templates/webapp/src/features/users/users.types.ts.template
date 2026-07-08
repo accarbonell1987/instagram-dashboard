@@ -1,0 +1,51 @@
+import type { User, UserCreate, UserUpdate } from '@/types/entities';
+
+// Re-export entity types for convenience
+export type { User, UserCreate, UserUpdate };
+
+/**
+ * Form data for creating/editing a user.
+ * Separate from UserCreate to handle UI state (e.g., role not in entity).
+ */
+export type UserRole = 'admin' | 'editor' | 'viewer';
+
+export interface UserFormData {
+  name: string;
+  email: string;
+  role: UserRole;
+  partyId: string;
+}
+
+/**
+ * Convert form data to UserCreate payload.
+ */
+export function toUserCreate(form: UserFormData): UserCreate {
+  return {
+    email: form.email,
+    name: form.name || undefined,
+    partyId: form.partyId,
+  };
+}
+
+/**
+ * Convert form data to UserUpdate payload.
+ */
+export function toUserUpdate(form: UserFormData): UserUpdate {
+  return {
+    email: form.email,
+    name: form.name || undefined,
+    partyId: form.partyId,
+  };
+}
+
+/**
+ * Convert a User entity to form data for editing.
+ */
+export function toUserFormData(user: User): UserFormData {
+  return {
+    name: user.name ?? '',
+    email: user.email,
+    role: 'viewer', // Default role since User entity doesn't have role
+    partyId: user.partyId,
+  };
+}

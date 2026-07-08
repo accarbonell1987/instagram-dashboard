@@ -1,0 +1,88 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["packages/**"],
+  "tasks": {
+    "tokens:build": {
+      "inputs": ["tokens/**/*.tokens.json", "tokens/build.js"],
+      "outputs": ["styles/generated/**"],
+      "cache": true
+    },
+    "build": {
+      "dependsOn": ["^build", "tokens:build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "src/**"],
+      "outputs": [".next/**", "dist/**", "!.next/cache/**"],
+      "cache": true
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "src/**", "*.config.*"],
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "src/**",
+        "test/**",
+        "__tests__/**",
+        "**/*.test.*",
+        "**/*.spec.*"
+      ],
+      "outputs": ["coverage/**", "test-results/**"],
+      "cache": true
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "src/**",
+        "test/**",
+        "__tests__/**",
+        "**/*.test.*",
+        "**/*.spec.*"
+      ],
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "e2e/**",
+        "tests/**",
+        "playwright.config.*"
+      ],
+      "outputs": ["test-results/**", "playwright-report/**"],
+      "cache": false
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "src/**", "tsconfig.json"],
+      "cache": true
+    },
+    "db:generate": {
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": ["node_modules/.prisma/**"],
+      "cache": false
+    },
+    "db:push": {
+      "dependsOn": ["db:generate"],
+      "cache": false
+    },
+    "storybook": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "build-storybook": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".storybook/**", "src/**"],
+      "outputs": ["storybook-static/**"],
+      "cache": true
+    }
+  }
+}

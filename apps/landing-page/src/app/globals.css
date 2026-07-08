@@ -1,0 +1,471 @@
+@import 'tailwindcss';
+
+:root {
+  /* Animation durations */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 800ms;
+
+  /* Animation easings */
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* === Glow Colors === */
+  --glow-pink: rgba(225, 48, 108, 0.15);      /* #E1306C at 15% */
+  --glow-orange: rgba(247, 119, 55, 0.12);     /* #F77737 at 12% */
+  --glow-yellow: rgba(252, 175, 69, 0.08);     /* #FCAF45 at 8% */
+  --glow-purple: rgba(88, 28, 135, 0.12);      /* Deep purple */
+  --glow-cyan: rgba(6, 182, 212, 0.08);        /* Cyan accent */
+
+  /* === Gradient Stops (for gradient-text) === */
+  --gradient-text-start: #E1306C;
+  --gradient-text-mid: #F77737;
+  --gradient-text-end: #FCAF45;
+
+  /* === Glow Shadows === */
+  --shadow-glow-pink: 0 0 40px rgba(225, 48, 108, 0.3);
+  --shadow-glow-orange: 0 0 40px rgba(247, 119, 55, 0.25);
+  --shadow-glow-card: 0 0 30px rgba(225, 48, 108, 0.1), 0 0 60px rgba(136, 58, 234, 0.05);
+}
+
+@theme {
+  /* Colors — Midnight palette */
+  --color-bg: #060d1a;
+  --color-bg-elev: #0a1424;
+  --color-brand: #0f4c81;
+  --color-brand-dark: #0a3460;
+  --color-brand-light: #1a6ec4;
+  --color-accent: #E1306C;
+  --color-accent-light: #F77737;
+  --color-text-default: #f0f4ff;
+  --color-text-dim: rgba(240, 244, 255, 0.6);
+  --color-text-mute: rgba(240, 244, 255, 0.4);
+  --color-surface: rgba(255, 255, 255, 0.04);
+  --color-surface-hi: rgba(255, 255, 255, 0.06);
+  --color-border-default: rgba(255, 255, 255, 0.08);
+  --color-border-hi: rgba(255, 255, 255, 0.14);
+  --color-success: #22c55e;
+  --color-warn: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* Font families — differentiated for consistency */
+  --font-display: Poppins, ui-sans-serif, system-ui, sans-serif;
+  --font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: JetBrains Mono, ui-monospace, monospace;
+  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+
+  /* Spacing tokens */
+  --spacing-section-y: clamp(80px, 12vw, 140px);
+  --spacing-pad: clamp(20px, 4vw, 40px);
+
+  /* Width tokens */
+  --width-content: 1240px;
+
+  /* Border radius */
+  --radius-card: 1rem;
+  --radius-card-sm: 0.875rem;
+  --radius-btn: 0.75rem;
+  --radius-btn-sm: 0.625rem;
+  --radius-btn-lg: 0.875rem;
+  --radius-pill: 9999px;
+  --radius-price: 1.125rem;
+  --radius-icon: 0.625rem;
+
+  /* Shadows */
+  --shadow-card: 0 2px 8px -4px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 12px 32px -12px rgba(0, 0, 0, 0.5);
+  --shadow-guard-hover: 0 12px 32px -12px rgba(34, 197, 94, 0.3);
+  --shadow-price-popular:
+    0 30px 60px -30px rgba(225, 48, 108, 0.3), 0 0 0 1px rgba(225, 48, 108, 0.1) inset;
+  --shadow-dashboard: 0 30px 80px -20px rgba(0, 0, 0, 0.6), 0 0 60px -10px rgba(26, 110, 196, 0.25);
+
+  /* Brand gradient */
+  --color-brand-gradient: linear-gradient(135deg, #E1306C, #F77737, #FCAF45);
+
+  /* Breakpoints */
+  --breakpoint-sm: 560px;
+  --breakpoint-md: 860px;
+  --breakpoint-lg: 1100px;
+  --breakpoint-xl: 1240px;
+
+  /* Animations */
+  --animate-floaty: floaty 6s ease-in-out infinite;
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;
+  --animate-eb-pulse: eb-pulse 2.2s ease-in-out infinite;
+  --animate-eb-shine: eb-shine 3.2s ease-in-out infinite;
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(6px, -10px);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes eb-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    transform: scale(1.25);
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes eb-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Light mode overrides — triggered by ThemeProvider from @core/shared: <html class="light"> */
+.light {
+  --color-bg: #f4f2ee;
+  --color-bg-elev: #ffffff;
+  --color-brand: #0f4c81;
+  --color-brand-dark: #0a3460;
+  --color-brand-light: #1a6ec4;
+  --color-accent: #C13584;
+  --color-accent-light: #E1306C;
+  --color-text-default: #0a1424;
+  --color-text-dim: rgba(10, 20, 36, 0.7);
+  --color-text-mute: rgba(10, 20, 36, 0.5);
+  --color-surface: rgba(10, 20, 36, 0.04);
+  --color-surface-hi: rgba(10, 20, 36, 0.07);
+  --color-border-default: rgba(10, 20, 36, 0.1);
+  --color-border-hi: rgba(10, 20, 36, 0.18);
+}
+
+/* Base styles */
+html {
+  scroll-behavior: auto; /* JS handles smooth scroll with offset */
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-default);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Body background gradient */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(26, 110, 196, 0.12), transparent 60%),
+    linear-gradient(180deg, var(--color-bg) 0%, #081528 100%);
+  pointer-events: none;
+}
+
+.light body::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(15, 76, 129, 0.06), transparent 60%),
+    linear-gradient(180deg, var(--color-bg) 0%, #e8e5df 100%);
+}
+
+/* Typography */
+.display-grad {
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 55%, rgba(240, 244, 255, 0.55) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.light .display-grad {
+  background: linear-gradient(180deg, #0a1424 0%, #0a1424 55%, rgba(10, 20, 36, 0.6) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Section background tints */
+.sec-problema {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.035), rgba(239, 68, 68, 0.01));
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-solucion {
+  background: rgba(255, 255, 255, 0.015);
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-capacidades {
+  background: linear-gradient(180deg, rgba(15, 76, 129, 0.08), rgba(15, 76, 129, 0.02));
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-use-cases {
+  background: linear-gradient(180deg, rgba(131, 58, 180, 0.04), rgba(131, 58, 180, 0.01));
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-roi {
+  background: linear-gradient(180deg, rgba(225, 48, 108, 0.04), rgba(225, 48, 108, 0.01));
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-precios {
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-faq {
+  background: linear-gradient(180deg, rgba(15, 76, 129, 0.06), rgba(15, 76, 129, 0.01));
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-cta-final {
+  background: linear-gradient(180deg, rgba(15, 76, 129, 0.15), rgba(15, 76, 129, 0.04));
+}
+.sec-stats {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01));
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-social-proof {
+  background: rgba(255, 255, 255, 0.015);
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-reviews {
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-privacy-security {
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.035), rgba(34, 197, 94, 0.01));
+  border-block: 1px solid var(--color-border-default);
+}
+.sec-dashboard-showcase {
+  background: linear-gradient(180deg, rgba(15, 76, 129, 0.15), rgba(15, 76, 129, 0.02));
+  border-block: 1px solid var(--color-border-default);
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Dashboard 3D custom classes */
+.dash-perspective {
+  perspective: 1000px;
+}
+
+.dash-main-transform {
+  transform: rotateY(-6deg) rotateX(4deg);
+}
+
+.dash-float-transform {
+  transform: rotateY(-4deg) rotateX(3deg) translateZ(40px);
+}
+
+/* Card hover */
+@layer components {
+  .card-hover {
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+/* === Gradient Utilities === */
+
+/* Gradient page background — subtle radial glow */
+.gradient-page {
+  background: 
+    radial-gradient(ellipse at 20% 0%, var(--glow-pink) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, var(--glow-purple) 0%, transparent 50%);
+}
+
+/* Gradient section surface */
+.gradient-section {
+  background: linear-gradient(
+    180deg,
+    var(--glow-pink) 0%,
+    transparent 40%,
+    transparent 60%,
+    var(--glow-purple) 100%
+  );
+}
+
+/* Gradient card border — used with border-image or pseudo-elements */
+.gradient-card {
+  position: relative;
+}
+.gradient-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #E1306C, #F77737, #FCAF45);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.3;
+  transition: opacity var(--duration-normal) var(--ease-out-expo);
+}
+.gradient-card:hover::before {
+  opacity: 0.6;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--gradient-text-start), var(--gradient-text-mid), var(--gradient-text-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================================
+   Noise / Grain Texture Overlay
+   ============================================================ */
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ============================================================
+   SVG Chart Path Draw Animation
+   ============================================================ */
+.chart-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+}
+
+.chart-path.animate {
+  animation: chart-draw 1.5s var(--ease-out-expo) forwards;
+}
+
+@keyframes chart-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Capability card hover reveal */
+.capability-card:hover .capability-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px var(--glow-pink));
+}
+.capability-icon {
+  transition: transform var(--duration-normal) var(--ease-out-expo),
+    filter var(--duration-normal) var(--ease-out-expo);
+}
+
+/* ============================================================
+   Responsive Motion Disable
+   ============================================================ */
+
+/* Mobile: disable heavy animations for performance */
+@media (max-width: 767px) {
+  .chart-path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .gradient-text {
+    animation: none;
+  }
+}
+
+/* OS-level reduced motion preference — stop ALL CSS animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .chart-path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .gradient-text {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Light Mode Gradient Counterparts
+   ============================================================ */
+
+.light .gradient-text {
+  --gradient-text-start: #C0266A;
+  --gradient-text-mid: #E0573E;
+  --gradient-text-end: #D98A2E;
+}
+
+.light .gradient-card::before {
+  opacity: 0.15;
+}
+
+.light .gradient-card:hover::before {
+  opacity: 0.35;
+}
+
+.light .noise-overlay::before {
+  opacity: 0.02;
+}

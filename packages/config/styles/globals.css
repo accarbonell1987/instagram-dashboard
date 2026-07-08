@@ -1,0 +1,52 @@
+/**
+ * Design System - Base Styles
+ *
+ * This is the default theme when no shadcn theme is specified.
+ * It uses the generated tokens as the source of truth.
+ *
+ * Usage in app globals.css:
+ *
+ *   Option 1: Use DS tokens (default)
+ *   @import "tailwindcss";
+ *   @import "@core/config/styles/globals.css";
+ *
+ *   Option 2: Use a shadcn theme directly
+ *   @import "tailwindcss";
+ *   @import "@core/config/styles/globals.css";
+ *   @import "@core/config/styles/themes/blue.css";
+ *
+ *   Option 3: Use theme classes (multiple themes)
+ *   @import "tailwindcss";
+ *   @import "@core/config/styles/globals.css";
+ *   @import "@core/config/styles/themes/index.css";
+ *   <html class="theme-blue">
+ *
+ *   Option 4: Custom overrides
+ *   @import "tailwindcss";
+ *   @import "@core/config/styles/globals.css";
+ *   @import "./styles/theme.css";  // Your custom overrides
+ */
+
+/* Ensure @core/ui component files are scanned by Tailwind v4.
+   Without this, classes used in packages/ui/src are not included
+   in the compiled CSS of any app that imports this config. */
+@source '../../ui/src';
+
+/* Primitive tokens (colors, spacing, typography, etc.) */
+@import './generated/primitives.css';
+
+/* Semantic tokens - Default light/dark mode */
+@import './generated/semantic-light.css';
+@import './generated/semantic-dark.css';
+
+/* Base layer styles */
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}

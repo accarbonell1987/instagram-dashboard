@@ -1,0 +1,44 @@
+{
+  "name": "@corehub/landing-page",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean-absolute": "find . -name 'node_modules' -type d -prune -exec rm -rf {} + && find . -name 'dist' -type d -prune -exec rm -rf {} + && find . -name '.turbo' -type d -prune -exec rm -rf {} + && find . -name '.storybook-static' -type d -prune -exec rm -rf {} + && rm -rf 'package-lock.json' && rm -rf 'bun.lockb'"
+  },
+  "dependencies": {
+    "@core/shared": "workspace:*",
+    "@core/ui": "workspace:*",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.0",
+    "lucide-react": "^1.11.0",
+    "motion": "^12.38.0",
+    "next": "16.2.4",
+    "next-intl": "^4.9.1",
+    "next-themes": "^0.4.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.8.3",
+    "prettier-plugin-tailwindcss": "^0.0.0-insiders.f7d2598",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^3"
+  }
+}

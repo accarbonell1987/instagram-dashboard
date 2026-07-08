@@ -1,0 +1,6 @@
+/**
+ * @deprecated - Use @core/config/styles/themes.css instead (which now points to all.css)
+ * This file is kept for backward compatibility only.
+ */
+
+@import './all.css';

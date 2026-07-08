@@ -1,0 +1,203 @@
+{
+  "name": "webapp",
+  "description": "Next.js 15 webapp template with Screaming Architecture and @core/ui design system",
+  "type": "webapp",
+  "files": [
+    {
+      "source": "package.json.template",
+      "destination": "package.json",
+      "process": true
+    },
+    {
+      "source": "tsconfig.json.template",
+      "destination": "tsconfig.json",
+      "process": true
+    },
+    {
+      "source": "next.config.ts.template",
+      "destination": "next.config.ts",
+      "process": true
+    },
+    {
+      "source": "postcss.config.cjs.template",
+      "destination": "postcss.config.cjs",
+      "process": true
+    },
+    {
+      "source": "README.md.template",
+      "destination": "README.md",
+      "process": true
+    },
+    {
+      "source": "src/app/globals.css.template",
+      "destination": "src/app/globals.css",
+      "process": true
+    },
+    {
+      "source": "src/app/layout.tsx.template",
+      "destination": "src/app/layout.tsx",
+      "process": true
+    },
+    {
+      "source": "src/app/page.tsx.template",
+      "destination": "src/app/page.tsx",
+      "process": true
+    },
+    {
+      "source": "src/app/users/page.tsx.template",
+      "destination": "src/app/users/page.tsx",
+      "process": true
+    },
+    {
+      "source": "src/features/index.ts.template",
+      "destination": "src/features/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/features/users/index.ts.template",
+      "destination": "src/features/users/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/features/users/users.types.ts.template",
+      "destination": "src/features/users/users.types.ts",
+      "process": true
+    },
+    {
+      "source": "src/features/users/users.constants.ts.template",
+      "destination": "src/features/users/users.constants.ts",
+      "process": true
+    },
+    {
+      "source": "src/features/users/page.tsx.template",
+      "destination": "src/features/users/page.tsx",
+      "process": true
+    },
+    {
+      "source": "src/features/users/hooks/index.ts.template",
+      "destination": "src/features/users/hooks/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/features/users/hooks/use-users.ts.template",
+      "destination": "src/features/users/hooks/use-users.ts",
+      "process": true
+    },
+    {
+      "source": "src/features/users/components/index.ts.template",
+      "destination": "src/features/users/components/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/features/users/components/users-table.tsx.template",
+      "destination": "src/features/users/components/users-table.tsx",
+      "process": true
+    },
+    {
+      "source": "src/features/users/components/user-form.tsx.template",
+      "destination": "src/features/users/components/user-form.tsx",
+      "process": true
+    },
+    {
+      "source": "src/features/users/components/user-form-dialog.tsx.template",
+      "destination": "src/features/users/components/user-form-dialog.tsx",
+      "process": true
+    },
+    {
+      "source": "src/shared/index.ts.template",
+      "destination": "src/shared/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/shared/hooks/index.ts.template",
+      "destination": "src/shared/hooks/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/shared/hooks/use-crud-page.ts.template",
+      "destination": "src/shared/hooks/use-crud-page.ts",
+      "process": true
+    },
+    {
+      "source": "src/shared/hooks/use-debounced-value.ts.template",
+      "destination": "src/shared/hooks/use-debounced-value.ts",
+      "process": true
+    },
+    {
+      "source": "src/shared/components/index.ts.template",
+      "destination": "src/shared/components/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/shared/components/crud-page-layout.tsx.template",
+      "destination": "src/shared/components/crud-page-layout.tsx",
+      "process": true
+    },
+    {
+      "source": "src/shared/components/data-table.tsx.template",
+      "destination": "src/shared/components/data-table.tsx",
+      "process": true
+    },
+    {
+      "source": "src/shared/components/pagination.tsx.template",
+      "destination": "src/shared/components/pagination.tsx",
+      "process": true
+    },
+    {
+      "source": "src/shared/components/search-input.tsx.template",
+      "destination": "src/shared/components/search-input.tsx",
+      "process": true
+    },
+    {
+      "source": "src/shared/components/delete-confirmation-dialog.tsx.template",
+      "destination": "src/shared/components/delete-confirmation-dialog.tsx",
+      "process": true
+    },
+    {
+      "source": "src/types/entities.ts.template",
+      "destination": "src/types/entities.ts",
+      "process": true
+    },
+    {
+      "source": "src/lib/utils.ts.template",
+      "destination": "src/lib/utils.ts",
+      "process": true
+    },
+    {
+      "source": "src/lib/services.ts.template",
+      "destination": "src/lib/services.ts",
+      "process": true
+    },
+    {
+      "source": "src/services/index.ts.template",
+      "destination": "src/services/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/services/types.ts.template",
+      "destination": "src/services/types.ts",
+      "process": true
+    },
+    {
+      "source": "src/services/domain-services.ts.template",
+      "destination": "src/services/domain-services.ts",
+      "process": true
+    },
+    {
+      "source": "src/services/extensions/index.ts.template",
+      "destination": "src/services/extensions/index.ts",
+      "process": true
+    },
+    {
+      "source": "src/hooks/use-domain-services.ts.template",
+      "destination": "src/hooks/use-domain-services.ts",
+      "process": true
+    },
+    {
+      "source": "src/providers/services-provider.tsx.template",
+      "destination": "src/providers/services-provider.tsx",
+      "process": true
+    }
+  ],
+  "postInstructions": ["pnpm install", "pnpm dev"]
+}

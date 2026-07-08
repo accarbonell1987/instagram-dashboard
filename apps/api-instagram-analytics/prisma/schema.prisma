@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MessageRole {
+  user
+  assistant
+}
+
+enum SuggestionCategory {
+  caption
+  format
+  posting_time
+  hook
+  hashtags
+  content_idea
+}
+
+enum SuggestionStatus {
+  pending
+  used
+  dismissed
+}
+
+enum SuggestionOutcome {
+  exceeded
+  met
+  below
+}
+
+enum CarouselStatus {
+  pending
+  generating_script
+  generating_images
+  ready
+  failed
+}
+
+enum SlideStatus {
+  pending
+  generating
+  ready
+  failed
+}
+
+enum SlideRole {
+  hook
+  development
+  cta
+  default
+}
+
+enum AiOperation {
+  chat
+  script
+  suggestion
+  image_gen
+}
+
+model InstagramAccount {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid  // validated by JWT authGuard, no FK
+  userId          String    @map("user_id") @db.Uuid
+  igUserId            String    @map("ig_user_id") @db.VarChar(50)
+  username            String    @db.VarChar(30)
+  displayName         String?   @map("display_name") @db.VarChar(200)
+  profilePictureUrl   String?   @map("profile_picture_url") @db.Text
+  followersCount      Int?      @map("followers_count")
+  mediaCount          Int?      @map("media_count")
+  accountType         String    @map("account_type") @db.VarChar(20)
+  facebookPageId      String?   @map("facebook_page_id") @db.VarChar(50)
+  accessTokenHash String    @map("access_token_hash") @db.VarChar(64)
+  tokenEncrypted  String?   @map("token_encrypted") @db.Text // AES-256-GCM encrypted
+  tokenExpiresAt  DateTime  @map("token_expires_at") @db.Timestamptz
+  syncStatus      String    @map("sync_status") @default("idle") @db.VarChar(20)
+  lastSyncAt      DateTime? @map("last_sync_at") @db.Timestamptz
+  connectedAt     DateTime  @map("connected_at") @default(now()) @db.Timestamptz
+  agentConfig         Json?     @map("agent_config")
+  falApiKeyEncrypted  String?   @map("fal_api_key_encrypted") @db.Text
+  createdAt           DateTime  @default(now()) @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @db.Timestamptz
+
+  media     InstagramMedia[]
+  insights  InstagramAccountInsight[]
+  syncLogs  InstagramSyncLog[]
+  carousels Carousel[]
+
+  @@unique([tenantId])
+  @@map("instagram_accounts")
+}
+
+model InstagramMedia {
+  id               String    @id @default(uuid()) @db.Uuid
+  accountId        String    @map("account_id") @db.Uuid
+  account          InstagramAccount @relation(fields: [accountId], references: [id])
+  igMediaId        String    @map("ig_media_id") @db.VarChar(50)
+  mediaType        String    @map("media_type") @db.VarChar(20)
+  mediaProductType String?   @map("media_product_type") @db.VarChar(20)
+  permalink        String?   @db.VarChar(500)
+  caption          String?   @db.Text
+  thumbnailUrl     String?   @map("thumbnail_url") @db.Text
+  postedAt         DateTime  @map("posted_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @db.Timestamptz
+
+  metrics     InstagramMediaMetric[]
+  suggestions ContentSuggestion[]
+
+  @@unique([accountId, igMediaId])
+  @@index([accountId, postedAt])
+  @@map("instagram_media")
+}
+
+model InstagramMediaMetric {
+  id                String   @id @default(uuid()) @db.Uuid
+  mediaId           String   @map("media_id") @db.Uuid
+  media             InstagramMedia @relation(fields: [mediaId], references: [id])
+  syncedAt          DateTime @map("synced_at") @db.Timestamptz
+  likes             Int      @default(0)
+  comments          Int      @default(0)
+  saves             Int      @default(0)
+  shares            Int      @default(0)
+  reach             Int      @default(0)
+  impressions       Int      @default(0)
+  totalInteractions Int      @default(0) @map("total_interactions")
+  videoViews        Int?     @map("video_views")
+  avgWatchTime      Float?   @map("avg_watch_time")       // ig_reels_avg_watch_time (ms)
+  videoViewTotalTime Float?  @map("video_view_total_time") // ig_reels_video_view_total_time (ms)
+
+  @@index([mediaId, syncedAt])
+  @@map("instagram_media_metrics")
+}
+
+model InstagramAccountInsight {
+  id            String   @id @default(uuid()) @db.Uuid
+  accountId     String   @map("account_id") @db.Uuid
+  account       InstagramAccount @relation(fields: [accountId], references: [id])
+  period        String   @db.VarChar(20)
+  syncedAt      DateTime @map("synced_at") @db.Timestamptz
+  impressions   Int      @default(0)
+  reach         Int      @default(0)
+  profileViews  Int      @default(0) @map("profile_views")
+  followerCount Int?     @map("follower_count")
+  likes         Int      @default(0)
+  comments      Int      @default(0)
+  saves         Int      @default(0)
+  shares        Int      @default(0)
+
+  @@index([accountId, syncedAt])
+  @@map("instagram_account_insights")
+}
+
+model InstagramSyncLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  accountId   String    @map("account_id") @db.Uuid
+  account     InstagramAccount @relation(fields: [accountId], references: [id])
+  tenantId    String    @map("tenant_id") @db.Uuid
+  startedAt   DateTime  @map("started_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  status      String    @db.VarChar(20)
+  mediaSynced Int       @default(0) @map("media_synced")
+  errors      Json?     @db.JsonB
+
+  @@index([accountId, startedAt])
+  @@map("instagram_sync_logs")
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid()) @db.Uuid
+  tenantId  String      @map("tenant_id") @db.Uuid
+  sessionId String      @map("session_id") @db.Uuid
+  role      MessageRole
+  content   String      @db.Text
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, sessionId, createdAt])
+  @@map("chat_messages")
+}
+
+model SuggestionBatch {
+  id          String              @id @default(uuid()) @db.Uuid
+  tenantId    String              @map("tenant_id") @db.Uuid
+  userMessage String              @map("user_message") @db.Text
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  suggestions ContentSuggestion[]
+
+  @@index([tenantId, createdAt])
+  @@map("suggestion_batches")
+}
+
+model Carousel {
+  id            String            @id @default(uuid()) @db.Uuid
+  tenantId      String            @map("tenant_id") @db.Uuid
+  accountId     String?           @map("account_id") @db.Uuid
+  account       InstagramAccount? @relation(fields: [accountId], references: [id])
+  suggestionId  String?           @map("suggestion_id") @db.Uuid
+  topic         String            @db.Text
+  status        CarouselStatus    @default(pending)
+  errorMessage  String?           @map("error_message") @db.Text
+  caption       String?           @db.Text
+  carouselType  String            @default("ai_gen") @map("carousel_type") @db.VarChar(20)
+  publishStatus String            @default("unpublished") @map("publish_status") @db.VarChar(20)
+  publishedAt   DateTime?         @map("published_at") @db.Timestamptz
+  igMediaId     String?           @map("ig_media_id") @db.VarChar(100)
+  igPermalink   String?           @map("ig_permalink") @db.Text
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  slides CarouselSlide[]
+
+  @@index([tenantId, createdAt])
+  @@map("carousels")
+}
+
+model CarouselSlide {
+  id               String      @id @default(uuid()) @db.Uuid
+  carouselId       String      @map("carousel_id") @db.Uuid
+  carousel         Carousel    @relation(fields: [carouselId], references: [id], onDelete: Cascade)
+  order            Int
+  role             SlideRole   @default(default)
+  text             String      @db.Text
+  visualPrompt     String      @map("visual_prompt") @db.Text
+  imageUrl         String?     @map("image_url") @db.Text
+  uploadedImageUrl String?     @map("uploaded_image_url") @db.Text
+  imageMode        String      @default("ai_gen") @map("image_mode") @db.VarChar(20)
+  status           SlideStatus @default(pending)
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([carouselId, order])
+  @@index([carouselId])
+  @@map("carousel_slides")
+}
+
+model ContentSuggestion {
+  id            String             @id @default(uuid()) @db.Uuid
+  tenantId      String             @map("tenant_id") @db.Uuid
+  batchId       String?            @map("batch_id") @db.Uuid
+  batch         SuggestionBatch?   @relation(fields: [batchId], references: [id])
+  category      SuggestionCategory
+  content       String             @db.Text
+  status        SuggestionStatus   @default(pending)
+  linkedMediaId String?            @map("linked_media_id") @db.Uuid
+  linkedMedia   InstagramMedia?    @relation(fields: [linkedMediaId], references: [id])
+  linkedAt      DateTime?          @map("linked_at") @db.Timestamptz
+  outcome       SuggestionOutcome?
+  measuredAt    DateTime?          @map("measured_at") @db.Timestamptz
+  baselineJson  Json?              @map("baseline_json")
+  metricsJson   Json?              @map("metrics_json")
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, status, createdAt])
+  @@map("content_suggestions")
+}
+
+model AiUsageLog {
+  id               String     @id @default(cuid())
+  tenantId         String     @map("tenant_id") @db.Uuid
+  operation        AiOperation
+  model            String?    @db.VarChar(50)
+  promptTokens     Int        @default(0) @map("prompt_tokens")
+  completionTokens Int        @default(0) @map("completion_tokens")
+  imageCount       Int        @default(0) @map("image_count")
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, operation, createdAt])
+  @@map("ai_usage_logs")
+}

@@ -1,0 +1,28 @@
+/**
+ * Domain Services Types
+ *
+ * Shared type definitions for the domain services layer.
+ */
+import type { CrudService } from '@repo/core/services';
+
+import type {
+  User,
+  UserCreate,
+  UserUpdate,
+} from '@/types/entities';
+
+// ─── Domain Services Interface ─────────────────────────
+
+/**
+ * All domain services available in the application.
+ *
+ * Each service provides typed access to API endpoints for its entity.
+ * To add extensions (custom methods beyond CRUD), see ./extensions/
+ */
+export interface DomainServices {
+  /** User service with standard CRUD operations */
+  users: CrudService<User, UserCreate, UserUpdate>;
+  // Add more services as needed:
+  // parties: CrudService<Party, PartyCreate, PartyUpdate>;
+  // roles: CrudService<Role, RoleCreate, RoleUpdate>;
+}

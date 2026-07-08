@@ -1,0 +1,99 @@
+'use client';
+
+import { Button } from '@repo/ui';
+import { PencilIcon, TrashIcon } from 'lucide-react';
+
+import type { User } from '../users.types';
+
+import { DataTable } from '@/shared/components';
+import type { DataTableColumn } from '@/shared/components';
+
+export interface UsersTableProps {
+  /** Users to display */
+  users: User[];
+  /** Whether data is loading */
+  loading: boolean;
+  /** Callback when edit button is clicked */
+  onEdit: (user: User) => void;
+  /** Callback when delete button is clicked */
+  onDelete: (user: User) => void;
+}
+
+export function UsersTable({ users, loading, onEdit, onDelete }: UsersTableProps) {
+  const columns: DataTableColumn<User>[] = [
+    {
+      key: 'id',
+      header: 'ID',
+      width: 'w-16',
+      render: (user) => <span className="text-muted-foreground font-mono text-sm">{user.id}</span>,
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      render: (user) => <span className="font-medium">{user.name ?? '—'}</span>,
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      render: (user) => <span className="text-muted-foreground">{user.email}</span>,
+    },
+    {
+      key: 'partyId',
+      header: 'Party ID',
+      width: 'w-32',
+      render: (user) => (
+        <span className="text-muted-foreground font-mono text-xs">{user.partyId}</span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      width: 'w-40',
+      render: (user) => (
+        <span className="text-muted-foreground text-sm">
+          {new Date(user.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: 'w-24',
+      align: 'right',
+      render: (user) => (
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              onEdit(user);
+            }}
+            aria-label={`Edit ${user.name ?? user.email}`}
+          >
+            <PencilIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              onDelete(user);
+            }}
+            aria-label={`Delete ${user.name ?? user.email}`}
+          >
+            <TrashIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <DataTable
+      items={users}
+      columns={columns}
+      getRowKey={(user) => user.id}
+      loading={loading}
+      emptyMessage="No users found."
+    />
+  );
+}

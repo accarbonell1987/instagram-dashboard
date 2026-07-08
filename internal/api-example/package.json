@@ -1,0 +1,32 @@
+{
+  "name": "@internal/api-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint . --max-warnings 0",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.8",
+    "@hono/swagger-ui": "^0.5.0",
+    "@hono/zod-openapi": "^0.18.0",
+    "@core/database": "workspace:*",
+    "@core/shared": "workspace:*",
+    "hono": "^4.6.17",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@core/config": "workspace:*",
+    "@types/node": "^22.10.7",
+    "eslint": "^9.18.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

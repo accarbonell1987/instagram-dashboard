@@ -1,0 +1,89 @@
+'use client';
+
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/ui';
+
+import { USER_ROLES } from '../users.constants';
+import type { UserFormData, UserRole } from '../users.types';
+
+export interface UserFormProps {
+  /** Current form data */
+  formData: UserFormData;
+  /** Callback when form data changes */
+  onChange: (data: UserFormData) => void;
+}
+
+export function UserForm({ formData, onChange }: UserFormProps) {
+  return (
+    <div className="grid gap-4 py-4">
+      <div className="grid gap-2">
+        <Label htmlFor="user-name">Name</Label>
+        <Input
+          id="user-name"
+          value={formData.name}
+          onChange={(event) => {
+            onChange({ ...formData, name: event.target.value });
+          }}
+          placeholder="Full name (optional)"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="user-email">Email</Label>
+        <Input
+          id="user-email"
+          type="email"
+          value={formData.email}
+          onChange={(event) => {
+            onChange({ ...formData, email: event.target.value });
+          }}
+          placeholder="user@example.com"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="user-party">Party ID</Label>
+        <Input
+          id="user-party"
+          value={formData.partyId}
+          onChange={(event) => {
+            onChange({ ...formData, partyId: event.target.value });
+          }}
+          placeholder="party-123"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="user-role">Role</Label>
+        <Select
+          value={formData.role}
+          onValueChange={(value) => {
+            onChange({ ...formData, role: value as UserRole });
+          }}
+        >
+          <SelectTrigger id="user-role">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {USER_ROLES.map((role) => (
+              <SelectItem key={role.value} value={role.value}>
+                {role.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Validates user form data.
+ */
+export function isUserFormValid(formData: UserFormData): boolean {
+  return formData.email.trim() !== '' && formData.partyId.trim() !== '';
+}

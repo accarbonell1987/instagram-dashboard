@@ -1,0 +1,3738 @@
+openapi: 3.1.0
+info:
+  title: Corehub Hub API
+  version: 1.7.0
+  description: |
+    API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
+    el asistente de onboarding de tenants, invitaciones, recibos de facturación y
+    gestión de identidad. Este documento es el contrato entre el frontend Next.js
+    (`apps/hub`) y el servicio backend Spring Boot. Contract-first: cualquier
+    cambio aquí requiere un PR coordinado en ambos repositorios.
+
+    ## Changelog
+
+    ### 1.7.0 (2026-05-24)
+    - ADD: `GET /admin/plans` — list all plans with tenant counts (SuperAdmin)
+    - ADD: `POST /admin/plans` — create a new plan (SuperAdmin)
+    - ADD: `PATCH /admin/plans/{planId}` — update plan details (SuperAdmin)
+    - ADD: `DELETE /admin/plans/{planId}` — archive plan (SuperAdmin)
+    - ADD: `GET /admin/tenants` — paginated tenant list with filters (SuperAdmin)
+    - ADD: `GET /admin/tenants/{tenantId}` — tenant detail (SuperAdmin)
+    - ADD: `PATCH /admin/tenants/{tenantId}/status` — change tenant status (SuperAdmin)
+    - ADD: `GET /admin/plans/{planId}/modules` — get plan modules for Phase 1 integration
+    - ADD schemas: `AdminPlan`, `AdminPlanListResponse`, `AdminCreatePlanRequest`, `AdminUpdatePlanRequest`, `AdminTenantListItem`, `AdminTenantListResponse`, `AdminTenantDetail`, `AdminTenantStatusChangeRequest`
+    - ADD: Quiz module — 13 admin endpoints + 7 tenant endpoints for quiz CRUD, attempts, and grading
+    - ADD schemas: `Quiz`, `Question`, `QuestionOption`, `QuizAttempt`, `CreateQuizRequest`, `UpdateQuizRequest`, `SubmitAnswerRequest`, `QuestionType`, `AttemptStatus`, and more
+
+    ### 1.4.0 (2026-05-15)
+    - ADD: `PATCH /users/me` — update authenticated user profile (fullName + phone)
+    - ADD schemas: `UpdateProfileRequest`, `UpdateProfileResponse`
+    - JWT: `phone` claim added to access token after profile update
+
+    ### 1.3.0 (2026-05-14)
+    - ADD: `PATCH /tenants/current` — update tenant display name (TenantAdmin)
+    - ADD: `PATCH /tenants/current/members/{memberId}/status` — suspend or reactivate member
+    - ADD: `DELETE /tenants/current/members/{memberId}` — soft-delete member (session invalidated)
+    - ADD: `POST /tenants/current/plan-change` — request a plan change (contact-first, 202)
+    - ADD schemas: `UpdateTenantNameRequest`, `UpdateMemberStatusRequest`, `PlanChangeRequest`, `PlanChangeResponse`, `MemberStatus`
+    - MOD: `MemberListItem` — added required `status` field
+    - MOD: `POST /auth/refresh` — returns 401 for suspended or deleted accounts
+
+    ### 1.2.1 (2026-05-13)
+    - ADD: `GET /auth/first-login/validate` — validar token de activación (público, sin auth)
+    - ADD schemas: `ActivationTokenValidateResponse` (email, fullName, tenantName)
+
+    ### 1.2.0 (2026-05-11)
+    - ADD: `POST /invitations` — crear invitación (TenantAdmin only)
+    - ADD: `GET /invitations` — listar invitaciones del tenant (TenantAdmin only)
+    - ADD: `DELETE /invitations/{id}` — revocar invitación pendiente (TenantAdmin only)
+    - ADD: `GET /tenants/current/members` — listar miembros activos del tenant (TenantAdmin only)
+    - ADD schemas: `CreateInvitationRequest`, `CreateInvitationResponse`, `InvitationStatus`, `InvitationListItem`, `InvitationListResponse`, `MemberListItem`, `MemberListResponse`
+
+    ### 1.1.1 (2026-05-05)
+    - ADD: `POST /auth/otp/resend` — reenvío de un OTP activo (additive, no breaking)
+
+    ### 1.1.0 (2026-04-29)
+    - ADD: `GET /.well-known/jwks.json` — JSON Web Key Set para verificación de JWTs (RFC 7517)
+    - ADD: `POST /webhooks/bancard` — webhook server-to-server de Bancard (HMAC-SHA256)
+    - ADD schemas: `JsonWebKeySet`, `JsonWebKey`, `BancardWebhookPayload`
+    - DOC: `Session.accessToken` — claims completos enumerados (`tenant_uuid`, `iss`, `aud`, `kid`)
+    - REMOVE: `OtpVerifyRequest.trustDevice` — server-authoritative; pertenece solo a `/auth/login/complete`
+    - NOTE: `DraftUpdateRequest.otpVerified` no existía en v1.0.0 (campo nunca estuvo en el request body)
+    - Versión 1.0.0→1.1.0 sin breaking change real para consumidores: ningún consumidor dependía
+      de los campos removidos (auth.service.ts enviaba trustDevice: false hardcodeado; ignorado por backend)
+  contact:
+    name: Corehub Platform Team
+    email: platform@corehub.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8080
+    description: Desarrollo local (Spring Boot)
+  - url: https://api.staging.corehub.com
+    description: Staging
+  - url: https://api.corehub.com
+    description: Producción
+
+tags:
+  - name: Autenticación
+    description: Login, logout, OTP, refresh de sesión y recuperación de contraseña
+  - name: Primer Login
+    description: Flujo de activación de cuenta para usuarios con contraseña temporal
+  - name: Onboarding
+    description: Wizard de registro de nuevo tenant — 6 pasos desde plan hasta pago
+  - name: Planes
+    description: Catálogo de planes disponibles para contratación
+  - name: Invitaciones
+    description: Gestión de invitaciones de miembros al tenant
+  - name: Organización
+    description: Gestión del tenant actual — info, miembros, cambio de plan
+  - name: Perfil
+    description: Perfil del usuario autenticado
+  - name: Billing
+    description: Documentos de facturación y métodos de pago
+  - name: Webhooks
+    description: Endpoints server-to-server para integraciones externas
+  - name: Sistema
+    description: Endpoints de infraestructura — JWKS, health
+  # Legacy tag aliases kept for backward-compat with existing tooling
+  - name: auth
+    description: Autenticación — login, OTP, ciclo de vida de contraseña, refresh
+  - name: onboarding
+    description: Asistente de registro de tenant en 6 pasos con persistencia de borrador en el servidor
+  - name: plans
+    description: Catálogo de planes de suscripción
+  - name: payments
+    description: Integración con Bancard vPOS Tradicional
+  - name: invitations
+    description: Aceptación de invitaciones magic-link (el envío está fuera del alcance)
+  - name: identity
+    description: Sesión actual, tenant actual, acceso basado en roles
+  - name: billing
+    description: Acceso mediante URL firmada a PDFs de factura/contrato
+  - name: well-known
+    description: Endpoints estándar de descubrimiento (RFC 5785)
+  - name: webhooks
+    description: Endpoints de integración server-to-server (Bancard, etc.)
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT firmado con RS256. Se envía como `Authorization: Bearer <accessToken>`.
+        TTL del access token: 15 minutos. Almacenado únicamente en memoria del navegador.
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+      description: |
+        httpOnly; Secure; SameSite=Lax; Path=/auth/refresh; Max-Age=604800.
+        TTL 7 días. Rotado en cada uso (semántica de uso único).
+    deviceTrustCookie:
+      type: apiKey
+      in: cookie
+      name: device_trust
+      description: |
+        httpOnly; Secure; SameSite=Strict; Max-Age=5184000 (60 días).
+        Token opaco = SHA-256(userAgent + screen + tz). El servidor valida
+        en el login para omitir el paso de OTP.
+
+  parameters:
+    TenantHeader:
+      name: X-Tenant-Slug
+      in: header
+      required: false
+      schema: { type: string, pattern: '^[a-z0-9-]{3,40}$' }
+      description: Slug del tenant. El frontend lo extrae del JWT o la URL; el backend lo verifica contra el claim `sub`.
+      example: empresa-acme
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+      description: |
+        UUID v4. Requerido en todos los endpoints de mutación que no sean GET. El backend almacena
+        (key, request_hash, response_body, status_code, created_at) durante 24 h.
+        Misma key → respuesta cacheada. Cuerpo de request diferente con la misma key → 422.
+      example: 550e8400-e29b-41d4-a716-446655440000
+    IdempotencyResetHeader:
+      name: X-Idempotency-Reset
+      in: header
+      required: false
+      schema: { type: boolean }
+      description: |
+        Cuando es `true`, indica un reintento explícito iniciado por el usuario tras cancelar o fallar.
+        El frontend regenera el UUID y envía este flag para que el backend cree un nuevo
+        registro de pago en lugar de devolver el fallo cacheado.
+      example: true
+    RequestIdHeader:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema: { type: string, format: uuid }
+      description: ID opcional generado por el cliente para correlación de logs.
+
+  responses:
+    Unauthorized:
+      description: Access token ausente, inválido o expirado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+          example:
+            type: https://corehub.com/errors/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: Access token expired
+    Forbidden:
+      description: Autenticado pero no autorizado (rol o tenant no coinciden)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Conflict:
+      description: Conflicto de estado (ya utilizado, versión no coincide, duplicado)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Gone:
+      description: El recurso expiró y no está disponible permanentemente
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    UnprocessableEntity:
+      description: Error de validación de negocio (errores a nivel de campo)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ValidationProblemDetails' }
+          example:
+            type: https://corehub.com/errors/validation
+            title: Validation failed
+            status: 422
+            detail: Uno o más campos fallaron la validación
+            errors:
+              - field: password
+                code: min_length
+                message: La contraseña debe tener al menos 12 caracteres
+    TooManyRequests:
+      description: Rate limit / bloqueo de cuenta
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  retryAfter:
+                    { type: integer, description: Segundos hasta que se permita reintentar }
+                  lockedUntil: { type: ['string', 'null'], format: date-time }
+    InternalError:
+      description: Error de servidor no controlado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  schemas:
+    ProblemDetails:
+      type: object
+      description: RFC 7807 Problem Details
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string, format: uri }
+        code: { type: string, description: 'Código de error legible por máquina' }
+
+    ValidationProblemDetails:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: object
+                required: [field, code, message]
+                properties:
+                  field: { type: string }
+                  code: { type: string }
+                  message: { type: string }
+
+    Role:
+      type: string
+      enum: [SuperAdmin, TenantAdmin, User]
+      description: |
+        SuperAdmin — Personal de Corehub (cross-tenant).
+        TenantAdmin — Propietario de un tenant (creado mediante el asistente).
+        User — Miembro de un tenant (creado mediante invitación).
+
+    User:
+      type: object
+      required: [id, email, fullName, status]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        picture: { type: ['string', 'null'], format: uri }
+        status:
+          $ref: '#/components/schemas/MemberStatus'
+      example:
+        id: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        email: ana@empresa-acme.com
+        fullName: Ana Pereira
+        picture: null
+        status: active
+
+    Tenant:
+      type: object
+      required: [id, slug, name, planId, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string, pattern: '^[a-z0-9-]{3,40}$' }
+        name: { type: string }
+        planId: { type: string }
+        status:
+          type: string
+          enum: [pending, active, suspended]
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      example:
+        id: a5b8d4d2-9e1c-4d23-9f1f-62eea2c45f81
+        slug: empresa-acme
+        name: Empresa Acme S.A.
+        planId: professional
+        status: active
+        createdAt: '2025-04-30T00:00:00Z'
+        updatedAt: '2025-05-10T12:00:00Z'
+
+    Plan:
+      type: object
+      required: [id, name, price, currency, billingCycle, features]
+      properties:
+        id: { type: string, enum: [starter, professional, enterprise] }
+        name: { type: string }
+        price: { type: number }
+        currency: { type: string, enum: [PYG, USD] }
+        billingCycle: { type: string, enum: [monthly, yearly] }
+        features:
+          type: array
+          items: { type: string }
+        popular: { type: boolean, default: false }
+      example:
+        id: professional
+        name: Professional
+        price: 450000
+        currency: PYG
+        billingCycle: monthly
+        features: [Hasta 25 usuarios, IVR avanzado, Soporte 24/5]
+        popular: true
+
+    Session:
+      type: object
+      required: [accessToken, expiresIn, user, tenant, role]
+      properties:
+        accessToken:
+          type: string
+          description: |
+            JWT firmado con RS256. Opaco para el cliente (no decodificar — la verificación
+            de firma corre server-side). Claims incluidos:
+            - `sub`: User ID (UUID)
+            - `email`: Email del usuario — permite reconstruir la sesión tras un silent refresh sin llamar /auth/me
+            - `name`: Nombre completo del usuario
+            - `tenant_id`: Tenant slug (string corto, ej. "acme")
+            - `tenant_uuid`: Tenant UUID (universal, persistente)
+            - `role`: SuperAdmin | TenantAdmin | User
+            - `user_status`: pending_first_login | active | suspended — estado de activación del usuario
+            - `exp`: Expiry Unix epoch (seconds) — TTL 15 min
+            - `iat`: Issued at Unix epoch
+            - `jti`: JWT ID único — usado para revocación
+            - `iss`: Issuer (`https://iam.corehub.com`)
+            - `aud`: Audience (`corehub-hub`)
+            - `kid`: Key ID en el JWKS — para rotación de claves
+        expiresIn: { type: integer, description: TTL del access token en segundos, example: 900 }
+        user: { $ref: '#/components/schemas/User' }
+        tenant: { $ref: '#/components/schemas/Tenant' }
+        role: { $ref: '#/components/schemas/Role' }
+
+    OtpSendRequest:
+      type: object
+      required: [channel, purpose, identifier]
+      properties:
+        channel: { type: string, enum: [email, sms] }
+        purpose:
+          type: string
+          enum: [login, first-login, signup-rep, recover, invitation]
+        identifier:
+          type: string
+          description: Email o teléfono en formato E.164 (debe coincidir con el canal)
+
+    OtpId:
+      type: object
+      required: [otpId, channel, expiresAt, resendAvailableAt]
+      properties:
+        otpId: { type: string, format: uuid }
+        channel: { type: string, enum: [email, sms] }
+        maskedDestination: { type: string, example: 'a***@empresa-acme.com' }
+        expiresAt: { type: string, format: date-time }
+        resendAvailableAt: { type: string, format: date-time }
+
+    OtpVerifyRequest:
+      type: object
+      required: [otpId, code]
+      properties:
+        otpId: { type: string, format: uuid }
+        code: { type: string, pattern: '^[0-9]{6}$' }
+
+    OtpVerificationToken:
+      type: object
+      required: [otpVerificationToken, expiresAt]
+      description: Token de corta duración (5 min) que acredita que se verificó un OTP. Se usa para proteger los endpoints de configuración de contraseña.
+      properties:
+        otpVerificationToken: { type: string }
+        expiresAt: { type: string, format: date-time }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password, minLength: 1 }
+
+    LoginResponse:
+      type: object
+      required: [otpRequired]
+      properties:
+        otpRequired: { type: boolean }
+        otpId: { type: ['string', 'null'], format: uuid }
+        otpChannel: { type: ['string', 'null'], enum: [email, sms, null] }
+        session:
+          description: Se devuelve solo cuando el dispositivo es de confianza y se omite el OTP
+          oneOf:
+            - $ref: '#/components/schemas/Session'
+            - type: 'null'
+
+    LoginCompleteRequest:
+      type: object
+      required: [otpId, code]
+      properties:
+        otpId: { type: string, format: uuid }
+        code: { type: string, pattern: '^[0-9]{6}$' }
+        trustDevice: { type: boolean, default: false }
+
+    PasswordPolicy:
+      type: object
+      required: [minLength, requireUpper, requireLower, requireDigit, requireSymbol, disallowCommon]
+      properties:
+        minLength: { type: integer, example: 12 }
+        requireUpper: { type: boolean, example: true }
+        requireLower: { type: boolean, example: true }
+        requireDigit: { type: boolean, example: true }
+        requireSymbol: { type: boolean, example: true }
+        disallowCommon: { type: boolean, example: true }
+
+    SetPasswordRequest:
+      type: object
+      required: [otpVerificationToken, password]
+      properties:
+        otpVerificationToken: { type: string }
+        password: { type: string, format: password }
+
+    DraftStatus:
+      type: string
+      enum:
+        [
+          draft,
+          otp_pending,
+          otp_verified,
+          payment_pending,
+          payment_confirmed,
+          completed,
+          expired,
+          abandoned,
+        ]
+
+    DraftStep:
+      type: string
+      enum: [plan, representative, otp, company, payment, summary]
+
+    DraftRepresentative:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        fullName: { type: string }
+        phone: { type: string, description: Formato E.164 }
+
+    DraftCompany:
+      type: object
+      properties:
+        legalName: { type: string }
+        ruc: { type: string, description: 'Identificador tributario de Paraguay (RUC)' }
+        address: { type: string }
+        city: { type: string }
+        country: { type: string, default: PY }
+
+    DraftPayment:
+      type: object
+      properties:
+        paymentId: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [pending, approved, declined, cancelled, timeout]
+        bancardProcessId: { type: string }
+
+    DraftState:
+      type: object
+      required: [id, currentStep, status, version, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        currentStep: { $ref: '#/components/schemas/DraftStep' }
+        status: { $ref: '#/components/schemas/DraftStatus' }
+        plan: { $ref: '#/components/schemas/Plan', nullable: true }
+        representative: { $ref: '#/components/schemas/DraftRepresentative', nullable: true }
+        otpVerified: { type: boolean }
+        company: { $ref: '#/components/schemas/DraftCompany', nullable: true }
+        payment: { $ref: '#/components/schemas/DraftPayment', nullable: true }
+        version: { type: integer, description: Token de concurrencia optimista }
+        expiresAt: { type: string, format: date-time }
+      example:
+        id: 5b8e9d2c-1234-4abc-8def-123456789abc
+        currentStep: company
+        status: otp_verified
+        plan:
+          {
+            id: professional,
+            name: Professional,
+            price: 450000,
+            currency: PYG,
+            billingCycle: monthly,
+            features: [Hasta 25 usuarios],
+          }
+        representative:
+          { email: ana@empresa-acme.com, fullName: Ana Pereira, phone: '+595981000000' }
+        otpVerified: true
+        company: null
+        payment: null
+        version: 4
+        expiresAt: '2026-05-06T10:00:00Z'
+
+    DraftCreateRequest:
+      type: object
+      properties:
+        planId: { type: ['string', 'null'] }
+
+    DraftUpdateRequest:
+      type: object
+      required: [step, version]
+      properties:
+        step: { $ref: '#/components/schemas/DraftStep' }
+        version: { type: integer }
+        plan: { $ref: '#/components/schemas/Plan', nullable: true }
+        representative: { $ref: '#/components/schemas/DraftRepresentative', nullable: true }
+        company: { $ref: '#/components/schemas/DraftCompany', nullable: true }
+
+    PaymentInitiateResponse:
+      type: object
+      required: [paymentId, redirectUrl, expiresAt]
+      properties:
+        paymentId: { type: string, format: uuid }
+        redirectUrl: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+
+    PaymentStatus:
+      type: object
+      required: [paymentId, status]
+      properties:
+        paymentId: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [pending, approved, declined, cancelled, timeout]
+        reason: { type: ['string', 'null'] }
+        confirmedAt: { type: ['string', 'null'], format: date-time }
+
+    SubmitResponse:
+      type: object
+      required: [tenantId, accessToken, documents]
+      properties:
+        tenantId: { type: string, format: uuid }
+        tenant: { $ref: '#/components/schemas/Tenant' }
+        accessToken: { type: string, description: 'JWT, sesión establecida' }
+        expiresIn: { type: integer }
+        documents:
+          type: object
+          required: [invoiceId, contractId]
+          properties:
+            invoiceId: { type: string, format: uuid, description: 'ID del documento de factura — usar GET /billing/documents/{id}/signed-url para descargar' }
+            contractId: { type: string, format: uuid, description: 'ID del documento de contrato — usar GET /billing/documents/{id}/signed-url para descargar' }
+
+    ResumeLinkRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+
+    ResumeLinkResponse:
+      type: object
+      required: [sent]
+      properties:
+        sent: { type: boolean }
+
+    ResumeTokenResolution:
+      type: object
+      required: [draftId]
+      properties:
+        draftId: { type: string, format: uuid }
+
+    InvitationPreview:
+      type: object
+      required: [email, tenantName, role, expiresAt, status]
+      properties:
+        email: { type: string, format: email }
+        tenantName: { type: string }
+        inviterName: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+        expiresAt: { type: string, format: date-time }
+        status: { type: string, enum: [pending, accepted, expired, revoked] }
+
+    InvitationAcceptRequest:
+      type: object
+      required: [password]
+      properties:
+        password: { type: string, format: password }
+
+    SignedUrlResponse:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+
+    PaymentMethodBrand:
+      type: string
+      enum: [visa, mastercard, amex, unknown]
+
+    PaymentMethod:
+      type: object
+      required: [brand, lastFour, expiryMonth, expiryYear]
+      properties:
+        brand: { $ref: '#/components/schemas/PaymentMethodBrand' }
+        lastFour: { type: string, pattern: '^[0-9]{4}$' }
+        expiryMonth: { type: integer, minimum: 1, maximum: 12 }
+        expiryYear: { type: integer, minimum: 2024, maximum: 2099 }
+
+    PaymentMethodResponse:
+      type: object
+      required: [paymentMethod]
+      properties:
+        paymentMethod:
+          oneOf:
+            - $ref: '#/components/schemas/PaymentMethod'
+            - type: 'null'
+
+    PaymentMethodChangeRequestResponse:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string, format: uuid }
+
+    InvoiceStatus:
+      type: string
+      enum: [paid, pending, overdue, cancelled]
+
+    InvoiceListItem:
+      type: object
+      required: [id, issuedAt, total, currency, status]
+      properties:
+        id: { type: string, format: uuid }
+        issuedAt: { type: string, format: date-time }
+        total: { type: number }
+        currency: { type: string, enum: [PYG, USD] }
+        status: { $ref: '#/components/schemas/InvoiceStatus' }
+        documentId:
+          oneOf:
+            - { type: string, format: uuid }
+            - { type: 'null' }
+
+    InvoiceListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/InvoiceListItem' }
+        total: { type: integer, minimum: 0 }
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
+
+    PaginatedResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items: { type: array, items: {} }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    JsonWebKeySet:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items: { $ref: '#/components/schemas/JsonWebKey' }
+
+    JsonWebKey:
+      type: object
+      required: [kty, kid, alg, use]
+      properties:
+        kty: { type: string, enum: [RSA, EC] }
+        use: { type: string, enum: [sig] }
+        alg: { type: string, enum: [RS256, ES256] }
+        kid: { type: string, description: 'Key ID for rotation' }
+        n: { type: string, description: 'RSA modulus (base64url)' }
+        e: { type: string, description: 'RSA exponent (base64url)' }
+        x: { type: string, description: 'EC x coordinate (base64url)' }
+        y: { type: string, description: 'EC y coordinate (base64url)' }
+        crv: { type: string, description: 'EC curve' }
+
+    BancardWebhookPayload:
+      type: object
+      required: [process_id, status]
+      properties:
+        process_id:
+          type: string
+          description: Bancard process ID (matches paymentId returned by /payment/initiate)
+        status:
+          type: string
+          enum: [approved, rejected, reversed]
+        response_code:
+          type: string
+          description: "Bancard response code (e.g. '00' for success)"
+        response_description:
+          type: string
+        amount:
+          type: number
+          format: decimal
+        authorization_number:
+          type: string
+          description: Authorization code returned by the issuer
+        operation_date:
+          type: string
+          format: date-time
+
+    CreateInvitationRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string, format: email }
+        role: { type: string, enum: [TenantAdmin, User] }
+
+    CreateInvitationResponse:
+      type: object
+      required: [id, email, role, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { type: string, enum: [SuperAdmin, TenantAdmin, User] }
+        expiresAt: { type: string, format: date-time }
+
+    InvitationStatus:
+      type: string
+      enum: [pending, accepted, expired, revoked]
+
+    InvitationListItem:
+      type: object
+      required: [id, email, role, status, createdAt, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { type: string, enum: [SuperAdmin, TenantAdmin, User] }
+        status: { $ref: '#/components/schemas/InvitationStatus' }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        usedAt: { type: string, format: date-time }
+        revokedAt: { type: string, format: date-time }
+
+    InvitationListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvitationListItem'
+
+    MemberStatus:
+      type: string
+      enum: [pending_first_login, active, suspended]
+
+    MemberListItem:
+      type: object
+      required: [id, email, role, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        role: { type: string, enum: [SuperAdmin, TenantAdmin, User] }
+        status:
+          $ref: '#/components/schemas/MemberStatus'
+        createdAt: { type: string, format: date-time }
+
+    MemberListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberListItem'
+
+    UpdateTenantNameRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    UpdateMemberStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, suspended]
+
+    PlanChangeRequest:
+      type: object
+      required: [toPlanId]
+      properties:
+        toPlanId:
+          type: string
+
+    PlanChangeResponse:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+          format: uuid
+
+    Module:
+      type: object
+      required: [id, name, defaultUrl, active]
+      properties:
+        id:
+          type: string
+          description: Slug kebab-case único del módulo (ej. "lab", "appointments")
+        name:
+          type: string
+        description:
+          type: string
+        defaultUrl:
+          type: string
+          description: Ruta relativa del módulo en el Hub (ej. "/lab", "/billing")
+        active:
+          type: boolean
+
+    AccessibleModule:
+      type: object
+      required: [id, name, defaultUrl, source]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        defaultUrl:
+          type: string
+          description: Ruta relativa del módulo en el Hub (ej. "/lab", "/billing")
+        source:
+          type: string
+          enum: [plan, override, admin]
+          description: Origen del acceso — "plan" si viene del plan base, "override" si fue otorgado manualmente, "admin" si es SuperAdmin
+
+    AccessibleModuleList:
+      type: object
+      required: [modules]
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessibleModule'
+
+    ModuleList:
+      type: object
+      required: [modules]
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/Module'
+
+    CreateModuleRequest:
+      type: object
+      required: [id, name, defaultUrl]
+      properties:
+        id:
+          type: string
+          description: Slug kebab-case único (ej. "lab")
+        name:
+          type: string
+        description:
+          type: string
+        defaultUrl:
+          type: string
+          description: Ruta relativa del módulo en el Hub (ej. "/lab", "/billing")
+
+    UpdateModuleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        defaultUrl:
+          type: string
+          description: Ruta relativa del módulo en el Hub (ej. "/lab", "/billing")
+        active:
+          type: boolean
+
+    SetPlanModulesRequest:
+      type: object
+      required: [moduleIds]
+      properties:
+        moduleIds:
+          type: array
+          items:
+            type: string
+          description: Lista completa de módulos para el plan — reemplaza la asignación actual
+
+    UpsertModuleOverrideRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+          description: true = otorgar acceso, false = revocar acceso
+        reason:
+          type: string
+          description: Motivo del override (opcional, para auditoría)
+
+    QuestionType:
+      type: string
+      enum: [multiple_choice, true_false]
+
+    AttemptStatus:
+      type: string
+      enum: [in_progress, completed, abandoned]
+
+    Quiz:
+      type: object
+      required: [id, title, passingScore, active, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        moduleId: { type: ['string', 'null'] }
+        title: { type: string }
+        description: { type: ['string', 'null'] }
+        passingScore: { type: integer, minimum: 0, maximum: 100 }
+        timeLimitMinutes: { type: ['integer', 'null'] }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    Question:
+      type: object
+      required: [id, quizId, text, type, order, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        quizId: { type: string, format: uuid }
+        text: { type: string }
+        type: { $ref: '#/components/schemas/QuestionType' }
+        order: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    QuestionWithOptions:
+      allOf:
+        - $ref: '#/components/schemas/Question'
+        - type: object
+          required: [options]
+          properties:
+            options:
+              type: array
+              items: { $ref: '#/components/schemas/QuestionOption' }
+
+    QuestionOption:
+      type: object
+      required: [id, questionId, text, isCorrect, order, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        questionId: { type: string, format: uuid }
+        text: { type: string }
+        isCorrect: { type: boolean }
+        order: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    QuizAttempt:
+      type: object
+      required: [id, quizId, tenantId, userId, status, startedAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        quizId: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        score: { type: ['integer', 'null'] }
+        passed: { type: ['boolean', 'null'] }
+        status: { $ref: '#/components/schemas/AttemptStatus' }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: ['string', 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateQuizRequest:
+      type: object
+      required: [title, passingScore]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string }
+        passingScore: { type: integer, minimum: 0, maximum: 100, default: 60 }
+        timeLimitMinutes: { type: integer, minimum: 1 }
+        moduleId: { type: string }
+
+    UpdateQuizRequest:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string }
+        passingScore: { type: integer, minimum: 0, maximum: 100 }
+        timeLimitMinutes: { type: ['integer', 'null'] }
+        active: { type: boolean }
+        moduleId: { type: ['string', 'null'] }
+
+    CreateQuestionRequest:
+      type: object
+      required: [text, type]
+      properties:
+        text: { type: string, minLength: 1 }
+        type: { $ref: '#/components/schemas/QuestionType' }
+
+    ReorderQuestionsRequest:
+      type: object
+      required: [orderedIds]
+      properties:
+        orderedIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    SubmitAnswerRequest:
+      type: object
+      required: [questionId]
+      properties:
+        questionId: { type: string, format: uuid }
+        selectedOptionId: { type: ['string', 'null'], format: uuid }
+
+    QuizListResponse:
+      type: object
+      required: [quizzes]
+      properties:
+        quizzes: { type: array, items: { $ref: '#/components/schemas/Quiz' } }
+
+    PlanModulesResponse:
+      type: object
+      required: [modules, moduleIds]
+      properties:
+        modules:
+          type: array
+          items:
+            type: object
+            required: [moduleId, planId]
+            properties:
+              moduleId: { type: string }
+              planId: { type: string }
+        moduleIds:
+          type: array
+          items: { type: string }
+
+    AdminPlan:
+      type: object
+      required: [id, name, price, currency, billingInterval, active, tenantCount, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        billingInterval:
+          type: string
+          enum: [month, year]
+        active:
+          type: boolean
+        tenantCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdminPlanListResponse:
+      type: object
+      required: [plans]
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminPlan'
+
+    AdminCreatePlanRequest:
+      type: object
+      required: [name, price, currency, billingInterval]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        billingInterval:
+          type: string
+          enum: [month, year]
+
+    AdminUpdatePlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        billingInterval:
+          type: string
+          enum: [month, year]
+        active:
+          type: boolean
+
+    AdminTenantListItem:
+      type: object
+      required: [id, name, slug, status, planId, planName, userCount, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum: [pending, active, suspended]
+        planId:
+          type: string
+        planName:
+          type: string
+        userCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminTenantListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminTenantListItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    AdminTenantDetail:
+      type: object
+      required: [id, name, slug, status, plan, userCount, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum: [pending, active, suspended]
+        plan:
+          type: object
+          required: [id, name, price, currency, billingInterval]
+          properties:
+            id: { type: string }
+            name: { type: string }
+            price: { type: number }
+            currency: { type: string }
+            billingInterval: { type: string, enum: [month, year] }
+        userCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdminTenantStatusChangeRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, active, suspended]
+
+    UpdateProfileRequest:
+      type: object
+      required: [fullName, phone]
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Full display name of the user
+        phone:
+          type: string
+          pattern: '^\+[1-9]\d{1,14}$'
+          description: Phone number in E.164 format
+
+    UpdateProfileResponse:
+      type: object
+      required: [user, accessToken]
+      properties:
+        user:
+          type: object
+          required: [id, email, fullName, phone]
+          properties:
+            id: { type: string, format: uuid }
+            email: { type: string, format: email }
+            fullName: { type: string }
+            phone: { type: string }
+        accessToken:
+          type: string
+          description: New JWT access token with updated name and phone claims
+
+paths:
+  # ==================== AUTH ====================
+  /auth/otp/send:
+    post:
+      tags: [auth, Autenticación]
+      summary: Enviar código OTP por email o SMS
+      description: |
+        **Propósito**: Emite un código OTP de 6 dígitos al canal indicado (email o SMS) para
+        el `purpose` especificado.
+
+        **Proceso**: Se usa en múltiples flujos según `purpose`:
+        - `login` — verificación 2FA durante el login
+        - `signup-rep` — verificación de email del representante durante el onboarding
+        - `recover` — recuperación de contraseña
+        - `first-login` — activación de cuenta de usuario invitado
+        - `invitation` — usado internamente por el servicio de invitaciones
+
+        **Precondiciones**: Ninguna autenticación requerida. El `identifier` debe coincidir con
+        el canal seleccionado (email → dirección de correo; sms → teléfono E.164).
+
+        **Notas**: Sujeto a rate limiting por IP y por identificador. El OTP caduca en 5 minutos.
+        El campo `resendAvailableAt` indica cuándo puede solicitarse un reenvío (ventana de 30 s).
+      operationId: sendOtp
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OtpSendRequest' }
+            examples:
+              loginOtp:
+                value: { channel: email, purpose: login, identifier: ana@empresa-acme.com }
+              signupRep:
+                value: { channel: email, purpose: signup-rep, identifier: ana@empresa-acme.com }
+      responses:
+        '200':
+          description: OTP emitido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpId' }
+              example:
+                otpId: 550e8400-e29b-41d4-a716-446655440000
+                channel: email
+                maskedDestination: 'a***@empresa-acme.com'
+                expiresAt: '2026-04-29T18:35:00Z'
+                resendAvailableAt: '2026-04-29T18:30:30Z'
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /auth/otp/verify:
+    post:
+      tags: [auth, Autenticación]
+      summary: Verificar OTP y obtener token de verificación de corta duración
+      description: |
+        **Propósito**: Valida el código OTP ingresado por el usuario y devuelve un
+        `otpVerificationToken` de corta duración (5 min) que acredita la verificación.
+
+        **Proceso**: El token resultante se usa en endpoints de continuación según el `purpose`
+        con que se emitió el OTP:
+        - `first-login` → usar en `POST /auth/first-login/set-password`
+        - `recover` → usar en `POST /auth/password/recover/complete`
+        - `signup-rep` → el servidor marca el draft como `otp_verified` internamente; el token
+          devuelto es vacío (no se requiere en el wizard)
+
+        Para el flujo de login 2FA usar `POST /auth/login/complete` en su lugar.
+
+        **Precondiciones**: Debe existir un OTP activo con el `otpId` indicado.
+
+        **Notas**: Tras varios intentos fallidos se bloquea el OTP (`attemptsRemaining` en la
+        respuesta 422). TTL del `otpVerificationToken`: 5 minutos.
+      operationId: verifyOtp
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OtpVerifyRequest' }
+      responses:
+        '200':
+          description: OTP verificado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpVerificationToken' }
+        '422':
+          description: Código inválido o expirado
+          content:
+            application/problem+json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ProblemDetails'
+                  - type: object
+                    properties:
+                      attemptsRemaining: { type: integer }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/otp/resend:
+    post:
+      tags: [auth, Autenticación]
+      summary: Reenviar un código OTP activo
+      description: |
+        **Propósito**: Reenvía el OTP al mismo destinatario y propósito del OTP original,
+        generando un nuevo `otpId` y restableciendo el TTL.
+
+        **Proceso**: Usado cuando el usuario no recibió el código o lo dejó expirar.
+        El frontend muestra el botón "Reenviar" solo tras el tiempo indicado en `resendAvailableAt`.
+
+        **Precondiciones**: El `otpId` original debe existir. El rate limiter interno aplica
+        una ventana de 30 segundos entre reenvíos.
+
+        **Notas**: Siempre usa el canal email (independientemente del canal original), ya que
+        el backend resuelve el `purpose` e `identifier` desde el OTP existente.
+      operationId: otpResend
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otpId]
+              properties:
+                otpId: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OTP reenviado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpId' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/login:
+    post:
+      tags: [auth, Autenticación]
+      summary: Paso 1 del login — validar credenciales e iniciar 2FA
+      description: |
+        **Propósito**: Valida email + contraseña. Si las credenciales son correctas, dispara un
+        OTP 2FA o establece la sesión directamente si el dispositivo es de confianza.
+
+        **Proceso**: Primer paso del flujo de autenticación en `modules/authentication/`.
+        - Si `otpRequired: true` → mostrar pantalla de OTP, continuar con `POST /auth/login/complete`
+        - Si `otpRequired: false` + `session` → dispositivo de confianza, sesión establecida
+
+        **Precondiciones**: Ninguna autenticación previa. El tenant debe existir y estar activo.
+
+        **Notas**: En caso de credenciales inválidas siempre devuelve 401 con el mismo cuerpo,
+        independientemente de si el email existe (sin enumeración). La cookie `device_trust`
+        leída por el backend se establece en `POST /auth/login/complete` con `trustDevice: true`.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+            example: { email: ana@empresa-acme.com, password: 'Hunter2!Secret' }
+      responses:
+        '200':
+          description: Credenciales válidas; OTP requerido (o sesión si el dispositivo es de confianza)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+              examples:
+                otpChallenge:
+                  value:
+                    {
+                      otpRequired: true,
+                      otpId: 550e8400-e29b-41d4-a716-446655440000,
+                      otpChannel: email,
+                    }
+                trustedDevice:
+                  value:
+                    {
+                      otpRequired: false,
+                      session:
+                        {
+                          accessToken: 'eyJhbGc...',
+                          expiresIn: 900,
+                          user: {},
+                          tenant: {},
+                          role: TenantAdmin,
+                        },
+                    }
+        '401':
+          description: Credenciales inválidas (sin enumeración — mismo cuerpo para email desconocido)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '403':
+          description: Cuenta suspendida o pendiente de activación (first-login requerido)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/login/complete:
+    post:
+      tags: [auth, Autenticación]
+      summary: Paso 2 del login — verificar OTP y establecer sesión
+      description: |
+        **Propósito**: Completa el login 2FA verificando el OTP e iniciando la sesión completa.
+        Devuelve el access token JWT y establece las cookies `refresh_token` y `hub_session`.
+
+        **Proceso**: Segundo paso del flujo de autenticación. Solo se invoca cuando
+        `POST /auth/login` devolvió `otpRequired: true`.
+
+        **Precondiciones**: Debe existir un OTP activo con el `otpId` de la respuesta de login.
+
+        **Notas**:
+        - `trustDevice: true` → el backend emite la cookie `device_trust` (httpOnly, 60 días).
+          En futuros logins desde el mismo dispositivo se omite el paso OTP.
+        - El access token tiene TTL de 15 min. El `refresh_token` (cookie) dura 7 días y se
+          rota en cada uso.
+        - La cookie `hub_session` (no httpOnly) es leída por el middleware Next.js para
+          redirigir a `/login` cuando no hay sesión.
+      operationId: loginComplete
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginCompleteRequest' }
+      responses:
+        '200':
+          description: Sesión establecida. Establece la cookie `refresh_token`. Opcionalmente establece la cookie `device_trust`.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: 'refresh_token=...; HttpOnly; Secure; SameSite=Lax; Path=/auth/refresh; Max-Age=604800'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/refresh:
+    post:
+      tags: [auth, Autenticación]
+      summary: Rotar el refresh token y emitir un nuevo access token
+      description: |
+        **Propósito**: Usa el `refresh_token` cookie (httpOnly) para emitir un nuevo access token
+        JWT sin requerir que el usuario vuelva a introducir sus credenciales.
+
+        **Proceso**: Llamado automáticamente por `apiFetchWithInterceptors` del frontend cuando
+        detecta un 401 por access token expirado (silent refresh). El módulo `identity/session/refresh.ts`
+        gestiona la deduplicación de vuelos simultáneos.
+
+        **Precondiciones**: Cookie `refresh_token` válida, no expirada y no revocada.
+
+        **Notas**:
+        - El refresh token tiene semántica de uso único — cada llamada rota el token.
+        - Si la cuenta está suspendida o eliminada devuelve 401.
+        - Si el refresh token ya fue usado anteriormente (posible robo) devuelve 401.
+        - La cookie `refresh_token` se actualiza automáticamente en la respuesta.
+      operationId: refreshSession
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: Nuevo access token emitido, refresh token rotado
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: Nueva cookie refresh_token (rotada)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accessToken, expiresIn]
+                properties:
+                  accessToken: { type: string }
+                  expiresIn: { type: integer }
+        '401':
+          description: Refresh token expirado, inválido o ya utilizado
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /auth/logout:
+    post:
+      tags: [auth, Autenticación]
+      summary: Cerrar sesión e invalidar el refresh token
+      description: |
+        **Propósito**: Invalida el refresh token activo y limpia las cookies de sesión
+        (`refresh_token`, `hub_session`).
+
+        **Proceso**: Llamado al hacer clic en "Cerrar sesión" en el frontend. Tras el logout
+        el middleware Next.js detecta la ausencia de `hub_session` y redirige a `/login`.
+
+        **Precondiciones**: Sesión activa (aunque si no hay cookie, simplemente devuelve 204).
+
+        **Notas**: Si el refresh token no está presente en la cookie, el logout igualmente
+        devuelve 204 (idempotente). El access token en memoria del navegador se descarta
+        por el frontend localmente.
+      operationId: logout
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '204':
+          description: Sesión cerrada
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: 'refresh_token=; Max-Age=0'
+
+  /auth/first-login/start:
+    post:
+      tags: [auth, Primer Login]
+      summary: Iniciar el flujo de primer login — solicitar OTP para activación
+      description: |
+        **Propósito**: Inicia la activación de una cuenta de usuario invitado. El servidor
+        envía un OTP al email del usuario para verificar su identidad antes de que establezca
+        su contraseña definitiva.
+
+        **Proceso**: Primer paso del flujo de primer login en `modules/authentication/`.
+        El usuario llega a esta pantalla desde el magic-link de la invitación o desde la página
+        de primer login con su email pre-rellenado.
+
+        **Precondiciones**: El usuario debe existir con estado `pending_first_login` y no haber
+        activado su cuenta previamente.
+
+        **Notas**: Devuelve 409 si la cuenta ya fue activada. El OTP emitido tiene propósito
+        `first-login` — solo puede usarse en `POST /auth/otp/verify` y luego en
+        `POST /auth/first-login/set-password`.
+      operationId: firstLoginStart
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200':
+          description: OTP emitido para el primer login
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpId' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Cuenta ya activada
+
+  /auth/first-login/set-password:
+    post:
+      tags: [auth, Primer Login]
+      summary: Establecer contraseña definitiva y abrir sesión en primer login
+      description: |
+        **Propósito**: Completa la activación de la cuenta estableciendo la contraseña
+        definitiva del usuario y emitiendo una sesión completa (access token + refresh token).
+
+        **Proceso**: Tercer y último paso del flujo de primer login:
+        1. `POST /auth/first-login/start` → OTP emitido
+        2. `POST /auth/otp/verify` → `otpVerificationToken` obtenido
+        3. `POST /auth/first-login/set-password` → sesión establecida
+
+        **Precondiciones**: `otpVerificationToken` válido y no expirado (TTL 5 min) obtenido
+        de `POST /auth/otp/verify` con `purpose=first-login`.
+
+        **Notas**: Tras este endpoint el usuario queda en estado `active`. Devuelve 410 si el
+        token de verificación expiró. La contraseña debe cumplir la política de
+        `GET /auth/password/policy`.
+      operationId: firstLoginSetPassword
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetPasswordRequest' }
+      responses:
+        '200':
+          description: Contraseña establecida, sesión iniciada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '410': { $ref: '#/components/responses/Gone' }
+
+  /auth/first-login/validate:
+    get:
+      tags: [auth, Primer Login]
+      summary: Validar token de activación y obtener datos del usuario
+      description: |
+        **Propósito**: Valida el token del magic-link de activación y devuelve los datos
+        del usuario (email, nombre, tenant) para pre-rellenar la pantalla de bienvenida.
+
+        **Proceso**: Se invoca al aterrizar en la página de primer login desde el link del
+        email de invitación (`?token=...`). Si el token es válido, el frontend pre-rellena
+        el email y muestra el nombre del usuario y tenant.
+
+        **Precondiciones**: Token de activación presente como query param `token`. Este token
+        se genera cuando el TenantAdmin crea una invitación.
+
+        **Notas**: Endpoint público (sin autenticación). Devuelve 404 si el token no existe
+        y 410 si ya fue usado o expiró. No consume el token — solo lo valida.
+      operationId: validateActivationToken
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Token válido — datos del usuario para pre-rellenar la pantalla de bienvenida
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email, fullName, tenantName]
+                properties:
+                  email: { type: string, format: email }
+                  fullName: { type: string }
+                  tenantName: { type: string }
+        '404':
+          description: Token no encontrado o inválido
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '410':
+          description: Token expirado o ya utilizado
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /auth/password/policy:
+    get:
+      tags: [auth, Autenticación]
+      summary: Obtener política de complejidad de contraseñas
+      description: |
+        **Propósito**: Devuelve las reglas de complejidad de contraseña actuales para que el
+        frontend renderice dinámicamente los requisitos en los formularios de configuración
+        de contraseña.
+
+        **Proceso**: Consultado por el frontend al montar cualquier pantalla que requiera
+        introducir una nueva contraseña: primer login, recuperación de contraseña, y
+        aceptar invitación.
+
+        **Precondiciones**: Ninguna — endpoint público, sin autenticación.
+
+        **Notas**: Los valores son fijos en esta versión (minLength=12, todas las flags en true).
+        Futuramente podrán ser configurados por tenant.
+      operationId: getPasswordPolicy
+      security: []
+      responses:
+        '200':
+          description: Política de contraseñas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PasswordPolicy' }
+
+  /auth/password/recover/request:
+    post:
+      tags: [auth, Autenticación]
+      summary: Solicitar recuperación de contraseña por email
+      description: |
+        **Propósito**: Inicia el flujo de recuperación de contraseña enviando un OTP al email
+        del usuario si existe en el sistema.
+
+        **Proceso**: Primer paso del flujo de recuperación en `modules/authentication/`.
+        El usuario introduce su email en la pantalla de "¿Olvidaste tu contraseña?".
+
+        **Precondiciones**: Ninguna — endpoint público. El email y `tenantSlug` deben
+        enviarse en el body aunque el backend nunca confirme si el email existe.
+
+        **Notas**: Siempre devuelve 202 independientemente de si el email existe (anti-enumeración).
+        El OTP se envía solo si el usuario existe y está activo. Rate limiting por IP aplicado.
+        Si hay demasiados intentos devuelve 429 (esta sí es información observable).
+      operationId: passwordRecoverRequest
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, tenantSlug]
+              properties:
+                email: { type: string, format: email }
+                tenantSlug:
+                  { type: string, description: Slug del tenant al que pertenece el usuario }
+      responses:
+        '202':
+          description: Siempre 202 — sin enumeración
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/password/recover/complete:
+    post:
+      tags: [auth, Autenticación]
+      summary: Completar recuperación de contraseña e invalidar sesiones existentes
+      description: |
+        **Propósito**: Establece la nueva contraseña usando el `otpVerificationToken` obtenido
+        tras verificar el OTP de recuperación. Invalida todas las sesiones activas del usuario.
+
+        **Proceso**: Último paso del flujo de recuperación:
+        1. `POST /auth/password/recover/request` → OTP enviado
+        2. `POST /auth/otp/verify` (purpose=recover) → `otpVerificationToken` obtenido
+        3. `POST /auth/password/recover/complete` → contraseña actualizada, redirigir al login
+
+        **Precondiciones**: `otpVerificationToken` válido obtenido de `POST /auth/otp/verify`
+        con `purpose=recover`. TTL: 5 minutos.
+
+        **Notas**: Tras actualizar la contraseña TODAS las sesiones existentes son invalidadas
+        (refresh tokens revocados). El usuario debe hacer login nuevamente. Devuelve 410 si el
+        token de verificación expiró.
+      operationId: passwordRecoverComplete
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetPasswordRequest' }
+      responses:
+        '200':
+          description: Contraseña actualizada, redirigir al login
+        '410': { $ref: '#/components/responses/Gone' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /auth/me:
+    get:
+      tags: [auth, identity, Autenticación, Organización]
+      summary: Obtener datos completos de la sesión actual
+      description: |
+        **Propósito**: Devuelve los datos actualizados del usuario autenticado, su tenant y rol.
+        Usado cuando se necesita información que podría haber cambiado desde que se emitió
+        el JWT (ej. nombre del tenant después de un rename).
+
+        **Proceso**: Consumido por el módulo `identity/` en el hook `useSession()` para
+        inicializar el store de sesión tras un refresh silencioso o al recargar la aplicación.
+
+        **Precondiciones**: Access token JWT válido en el header `Authorization: Bearer`.
+
+        **Notas**: A diferencia de decodificar el JWT en el cliente, este endpoint obtiene
+        datos frescos de la base de datos. Usar con moderación — preferir los claims del JWT
+        para datos que no cambian con frecuencia.
+      operationId: getMe
+      responses:
+        '200':
+          description: Información de la sesión actual
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user, tenant, role]
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  tenant: { $ref: '#/components/schemas/Tenant' }
+                  role: { $ref: '#/components/schemas/Role' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ==================== PLANS ====================
+  /plans:
+    get:
+      tags: [plans, Planes]
+      summary: Listar todos los planes de suscripción disponibles
+      description: |
+        **Propósito**: Devuelve el catálogo completo de planes disponibles para contratación,
+        incluyendo precio, ciclo de facturación y características de cada plan.
+
+        **Proceso**: Usado en el paso 1 del wizard de onboarding (`PlanStep`) para presentar
+        las opciones de plan al usuario que está registrando un nuevo tenant. También consultado
+        por el módulo `admin/billing` para mostrar el plan actual y las opciones de cambio.
+
+        **Precondiciones**: Ninguna — endpoint público, sin autenticación.
+
+        **Notas**: Los planes disponibles son: `starter`, `professional`, `enterprise`.
+        El campo `popular` indica el plan destacado visualmente en el selector.
+      operationId: listPlans
+      security: []
+      responses:
+        '200':
+          description: Planes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [plans]
+                properties:
+                  plans:
+                    type: array
+                    items: { $ref: '#/components/schemas/Plan' }
+
+  /plans/{planId}:
+    get:
+      tags: [plans, Planes]
+      summary: Obtener detalle de un plan específico
+      description: |
+        **Propósito**: Devuelve la información completa de un plan por su identificador.
+
+        **Proceso**: Consultado cuando el frontend necesita mostrar los detalles de un plan
+        específico, por ejemplo en la pantalla de resumen del onboarding o en la sección
+        de billing del panel de administración.
+
+        **Precondiciones**: Ninguna — endpoint público, sin autenticación.
+
+        **Notas**: Los IDs de plan válidos son: `starter`, `professional`, `enterprise`.
+        Devuelve 404 si el planId no existe.
+      operationId: getPlan
+      security: []
+      parameters:
+        - { name: planId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Plan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Plan' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ==================== ONBOARDING ====================
+  /onboarding/draft:
+    post:
+      tags: [onboarding, Onboarding]
+      summary: Crear nuevo borrador de onboarding de tenant
+      description: |
+        **Propósito**: Inicia el proceso de registro de un nuevo tenant creando un borrador
+        persistente en el servidor que almacena el progreso del wizard de 6 pasos.
+
+        **Proceso**: Primer paso del wizard de onboarding en `modules/tenant-onboarding/`.
+        Se crea al comenzar el registro, opcionalmente con un `planId` pre-seleccionado
+        (cuando el usuario llegó desde una landing page con plan específico).
+
+        **Precondiciones**: Ninguna — endpoint público, sin autenticación.
+
+        **Notas**: El borrador tiene TTL de ~24 horas (campo `expiresAt`). Se puede reanudar
+        usando el token de reanudación via `POST /onboarding/draft/{draftId}/resume-link`.
+        La concurrencia optimista usa el campo `version` — siempre enviar el version actual
+        en los updates posteriores.
+      operationId: createDraft
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DraftCreateRequest' }
+            example: { planId: professional }
+      responses:
+        '201':
+          description: Borrador creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DraftState' }
+
+  /onboarding/draft/resume/{opaqueToken}:
+    get:
+      tags: [onboarding, Onboarding]
+      summary: Resolver token de reanudación a draftId (uso único)
+      description: |
+        **Propósito**: Convierte el token opaco del magic-link de reanudación en el `draftId`
+        real del borrador, permitiendo retomar el wizard desde donde se dejó.
+
+        **Proceso**: Invocado cuando el usuario hace clic en el enlace de reanudación enviado
+        por email. El frontend extrae el token de la URL, llama a este endpoint para obtener
+        el `draftId`, y luego carga el borrador con `GET /onboarding/draft/{draftId}`.
+
+        **Precondiciones**: Token opaco válido, no expirado y no usado previamente.
+
+        **Notas**: El token es de uso único — una vez consumido devuelve 410 en usos posteriores.
+        Los tokens expiran junto con el borrador (campo `expiresAt` del draft).
+      operationId: resolveResumeToken
+      security: []
+      parameters:
+        - { name: opaqueToken, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: draftId resuelto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ResumeTokenResolution' }
+        '410': { $ref: '#/components/responses/Gone' }
+
+  /onboarding/draft/{draftId}:
+    parameters:
+      - { name: draftId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [onboarding, Onboarding]
+      summary: Obtener el estado actual del borrador de onboarding
+      description: |
+        **Propósito**: Carga el estado completo del borrador incluyendo el paso actual,
+        los datos ya ingresados (plan, representante, empresa) y el estado del pago.
+
+        **Proceso**: Llamado al montar el wizard de onboarding (`useDraft` hook) para restaurar
+        el estado, y también al reanudar desde un link de reanudación. La respuesta determina
+        en qué paso debe posicionarse el wizard.
+
+        **Precondiciones**: Ninguna — endpoint público, sin autenticación.
+
+        **Notas**: Devuelve 404 si el draftId no existe y 410 si el borrador expiró o fue
+        abandonado. El campo `otpVerified` indica si el paso de verificación de email ya fue
+        completado.
+      operationId: getDraft
+      security: []
+      responses:
+        '200':
+          description: Estado del borrador
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DraftState' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410': { $ref: '#/components/responses/Gone' }
+    patch:
+      tags: [onboarding, Onboarding]
+      summary: Guardar datos de un paso del wizard (concurrencia optimista)
+      description: |
+        **Propósito**: Persiste los datos del paso actual del wizard en el borrador del servidor,
+        avanzando el estado del registro.
+
+        **Proceso**: Llamado al hacer "Siguiente" en cada paso del wizard. El frontend envía
+        el `step` actual, la `version` vigente y los datos del paso (plan, representative, company).
+        El servidor valida los datos, actualiza el borrador y devuelve el nuevo estado.
+
+        **Precondiciones**: El borrador debe existir y no estar expirado. La `version` enviada
+        debe coincidir con la versión actual (control de concurrencia optimista).
+
+        **Notas**: Si la `version` no coincide, devuelve 409 con el estado actual del borrador
+        para que el frontend reconcilie. El paso `otp` no tiene datos que persistir aquí —
+        se verifica mediante `POST /auth/otp/verify` que actualiza el estado internamente.
+      operationId: updateDraft
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DraftUpdateRequest' }
+      responses:
+        '200':
+          description: Borrador actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DraftState' }
+        '409':
+          description: Conflicto de versión — recargar el borrador
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DraftState' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /onboarding/draft/{draftId}/resume-link:
+    post:
+      tags: [onboarding, Onboarding]
+      summary: Enviar enlace de reanudación al email del representante
+      description: |
+        **Propósito**: Genera y envía por email un magic-link de reanudación al representante
+        registrado en el borrador, permitiéndole continuar el wizard más tarde.
+
+        **Proceso**: Disponible en el wizard cuando el usuario quiere guardar el progreso
+        y retomar después. También invocado si el usuario cierra accidentalmente la ventana
+        y necesita recuperar el acceso al borrador.
+
+        **Precondiciones**: El borrador debe existir y tener un `representativeEmail` registrado
+        (es decir, el paso de datos del representante debe haber sido completado).
+
+        **Notas**: Por seguridad, el email del body de la request es ignorado — el backend
+        siempre envía el link al `representativeEmail` almacenado en el borrador. El token
+        del link es de uso único con el mismo TTL que el borrador.
+      operationId: sendResumeLink
+      parameters:
+        - { name: draftId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResumeLinkRequest' }
+      responses:
+        '202':
+          description: Email en cola
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ResumeLinkResponse' }
+
+  /onboarding/draft/{draftId}/payment/initiate:
+    post:
+      tags: [onboarding, payments, Onboarding]
+      summary: Iniciar proceso de pago Bancard y obtener URL de redirección
+      description: |
+        **Propósito**: Registra un pago en Bancard vPOS Tradicional y devuelve la URL del
+        checkout de Bancard a la que redirigir al usuario para completar el pago.
+
+        **Proceso**: Paso 5 del wizard de onboarding (`PaymentStep`). El frontend hace
+        `window.location.href = redirectUrl` (navegación full-page, origen diferente).
+        Tras el pago, Bancard redirige de vuelta al hub y el frontend hace polling con
+        `GET /onboarding/draft/{draftId}/payment/status`.
+
+        **Precondiciones**: El borrador debe estar en estado `otp_verified` o posterior,
+        con plan y datos de empresa completados.
+
+        **Notas**: Si ya existe un pago pendiente o aprobado para este borrador devuelve 409.
+        El header `X-Idempotency-Reset: true` + nueva `Idempotency-Key` se usa cuando el
+        usuario reinicia explícitamente el pago tras un fallo, para crear un nuevo registro
+        en lugar de devolver el resultado cacheado.
+      operationId: initiatePayment
+      parameters:
+        - { name: draftId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+        - $ref: '#/components/parameters/IdempotencyResetHeader'
+      security: []
+      responses:
+        '200':
+          description: Pago iniciado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentInitiateResponse' }
+              example:
+                paymentId: 8d3c9b1f-1234-4abc-9def-deadbeef0001
+                redirectUrl: 'https://vpos.infonet.com.py/checkout/abc123'
+                expiresAt: '2026-04-29T19:00:00Z'
+        '409':
+          description: Pago ya pendiente o aprobado para este borrador
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /onboarding/draft/{draftId}/payment/status:
+    get:
+      tags: [onboarding, payments, Onboarding]
+      summary: Consultar estado del pago Bancard por polling
+      description: |
+        **Propósito**: Permite al frontend verificar si el pago fue aprobado, rechazado
+        o sigue pendiente, después de que el usuario retorna del checkout de Bancard.
+
+        **Proceso**: Usado en `PaymentPollingStep` del wizard. El frontend implementa
+        backoff exponencial: 1s → 2s → 4s → ... hasta un máximo de 60 segundos.
+        El estado `approved` desbloquea el botón "Finalizar registro".
+
+        **Precondiciones**: Debe existir un pago iniciado para el `draftId`.
+
+        **Notas**: El estado `timeout` mapea internamente desde `reversed` (terminología
+        de Bancard para reversiones). El webhook `POST /webhooks/bancard` actualiza el
+        estado en la base de datos cuando Bancard notifica el resultado.
+      operationId: getPaymentStatus
+      parameters:
+        - { name: draftId, in: path, required: true, schema: { type: string, format: uuid } }
+      security: []
+      responses:
+        '200':
+          description: Estado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentStatus' }
+
+  /onboarding/draft/{draftId}/submit:
+    post:
+      tags: [onboarding, Onboarding]
+      summary: Finalizar onboarding — provisionar tenant y establecer sesión
+      description: |
+        **Propósito**: Completa el registro creando el tenant, el usuario TenantAdmin, los
+        documentos de bienvenida (factura + contrato) y emitiendo la sesión inicial.
+
+        **Proceso**: Último paso del wizard. Se invoca desde `SummaryStep` cuando el pago está
+        aprobado. Tras la respuesta exitosa, el frontend almacena el access token y redirige
+        al dashboard del tenant.
+
+        **Precondiciones**: El pago debe estar en estado `approved` (verificado por el servidor).
+        El borrador debe estar en estado `payment_confirmed`. Todos los pasos anteriores
+        completados (plan, representante, OTP, empresa).
+
+        **Notas**:
+        - La respuesta incluye `documents.invoiceId` y `documents.contractId` para descargar
+          los PDFs via `GET /billing/documents/{id}/signed-url`.
+        - Establece las cookies `refresh_token` y `hub_session`.
+        - Devuelve 409 si el RUC o email ya están registrados (`onboarding.ruc_already_exists`,
+          `onboarding.email_already_exists`). En ese caso usar `PATCH /onboarding/draft/{draftId}/recover`.
+      operationId: submitDraft
+      parameters:
+        - { name: draftId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      responses:
+        '200':
+          description: Tenant provisionado
+          headers:
+            Set-Cookie: { schema: { type: string }, description: cookie refresh_token }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubmitResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  # ==================== INVITATIONS ====================
+  /invitations/{token}:
+    get:
+      tags: [invitations, Invitaciones]
+      summary: Obtener vista previa de la invitación por token magic-link
+      description: |
+        **Propósito**: Valida el token de invitación y devuelve los datos de la invitación
+        (email, tenant, rol, fecha de expiración) para mostrar la pantalla de bienvenida
+        al usuario invitado.
+
+        **Proceso**: Invocado al aterrizar en `/invite?token=...`. El frontend verifica el
+        token antes de mostrar el formulario de aceptación para dar feedback inmediato
+        si la invitación ya fue usada o expiró.
+
+        **Precondiciones**: Ninguna — endpoint público, sin autenticación.
+
+        **Notas**: Devuelve 409 si la invitación ya fue aceptada y 410 si expiró o fue
+        revocada. No consume la invitación — solo devuelve información.
+      operationId: getInvitation
+      security: []
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Vista previa de la invitación
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvitationPreview' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '410': { $ref: '#/components/responses/Gone' }
+
+  /invitations/{token}/accept:
+    post:
+      tags: [invitations, Invitaciones]
+      summary: Aceptar invitación, establecer contraseña e iniciar sesión
+      description: |
+        **Propósito**: Acepta la invitación creando la cuenta del usuario con la contraseña
+        indicada y emitiendo una sesión completa (access token + refresh token).
+
+        **Proceso**: Último paso del flujo de invitaciones en `modules/invitations/`. El usuario
+        introduce su contraseña en el formulario de aceptación y al enviar se crea su cuenta
+        y queda autenticado directamente.
+
+        **Precondiciones**: Token de invitación válido (no expirado, no revocado, no aceptado).
+        La contraseña debe cumplir la política de `GET /auth/password/policy`.
+
+        **Notas**: Establece las cookies `refresh_token` y `hub_session`. El usuario queda
+        con estado `active` en el tenant. Devuelve 410 si el token expiró o fue revocado.
+        Devuelve 409 si la invitación ya fue aceptada.
+      operationId: acceptInvitation
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InvitationAcceptRequest' }
+      responses:
+        '200':
+          description: Aceptada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  # ==================== ADMIN: INVITATION MANAGEMENT ====================
+  /invitations:
+    post:
+      operationId: createInvitation
+      summary: Enviar invitación a un nuevo miembro del tenant
+      description: |
+        **Propósito**: Crea y envía por email una invitación magic-link a la dirección indicada
+        para unirse al tenant con el rol especificado.
+
+        **Proceso**: Accionado desde `Settings > Team` en el módulo `admin/`. Solo los
+        TenantAdmin y SuperAdmin pueden invitar nuevos miembros. El invitado recibe un email
+        con un link que apunta a `/invite?token=...`.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. El email no
+        debe pertenecer a un miembro activo del mismo tenant.
+
+        **Notas**: Devuelve 409 si ya existe una invitación pendiente para ese email en el
+        mismo tenant. Requiere `Idempotency-Key` para evitar duplicados por reintento.
+        El rol `SuperAdmin` solo puede ser asignado por SuperAdmins.
+      tags: [invitations, Invitaciones]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvitationRequest'
+      responses:
+        '201':
+          description: Invitation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateInvitationResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    get:
+      operationId: listInvitations
+      summary: Listar invitaciones del tenant con filtro opcional por estado
+      description: |
+        **Propósito**: Devuelve la lista de invitaciones del tenant, opcionalmente filtradas
+        por estado, para gestionar el equipo desde el panel de administración.
+
+        **Proceso**: Consultado por `Settings > Team` en el módulo `admin/` para mostrar
+        las invitaciones pendientes, aceptadas, expiradas o revocadas.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
+
+        **Notas**: El parámetro `status` es opcional — sin él devuelve todas las invitaciones.
+        Los campos `usedAt` y `revokedAt` son nulos excepto para invitaciones en estado
+        `accepted` y `revoked` respectivamente.
+      tags: [invitations, Invitaciones]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, accepted, expired, revoked]
+      responses:
+        '200':
+          description: List of invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationListResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /invitations/{id}:
+    delete:
+      operationId: revokeInvitation
+      summary: Revocar una invitación pendiente
+      description: |
+        **Propósito**: Cancela una invitación pendiente, invalidando el magic-link antes de
+        que el invitado lo use.
+
+        **Proceso**: Accionado desde `Settings > Team` al hacer clic en "Revocar" junto a
+        una invitación pendiente. Después de revocar, la invitación aparece en estado `revoked`.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. La invitación
+        debe estar en estado `pending` (no se puede revocar una invitación ya aceptada).
+
+        **Notas**: Devuelve 422 si se intenta revocar una invitación en estado `accepted`
+        o `expired`. Una vez revocada, `GET /invitations/{token}` devolverá 410.
+      tags: [invitations, Invitaciones]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Invitation revoked
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  # ==================== IDENTITY / TENANTS ====================
+  /tenants/current:
+    get:
+      tags: [identity, Organización]
+      summary: Obtener datos actualizados del tenant actual
+      description: |
+        **Propósito**: Devuelve la información completa y actualizada del tenant del usuario
+        autenticado, incluyendo nombre, slug, plan activo y estado.
+
+        **Proceso**: Consumido por el módulo `admin/` para mostrar la información actual del
+        tenant en `Settings > Organization`. A diferencia de los claims del JWT, este endpoint
+        siempre retorna el nombre actualizado del tenant.
+
+        **Precondiciones**: Sesión activa (access token válido).
+
+        **Notas**: El `planId` devuelto puede diferir del claim del JWT si se realizó un cambio
+        de plan recientemente. Para operaciones que requieran datos de tenant actualizados,
+        preferir este endpoint sobre los claims del JWT.
+      operationId: getCurrentTenant
+      responses:
+        '200':
+          description: Tenant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tenant' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [identity, Organización]
+      operationId: updateCurrentTenant
+      summary: Actualizar el nombre de visualización del tenant actual
+      description: |
+        **Propósito**: Cambia el nombre de visualización del tenant (no el slug, que es inmutable).
+
+        **Proceso**: Accionado desde `Settings > Organization` al editar el nombre de la
+        organización. Solo afecta el campo `name` — el slug permanece sin cambios.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. El nombre no
+        puede estar vacío (mínimo 1 carácter, máximo 200).
+
+        **Notas**: El cambio de nombre se refleja inmediatamente en `GET /tenants/current`
+        y en `GET /auth/me`. El claim `tenant_id` del JWT (que contiene el slug) no se ve
+        afectado.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTenantNameRequest'
+      responses:
+        '204':
+          description: Tenant updated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /tenants/current/members:
+    get:
+      operationId: getTenantMembers
+      summary: Listar todos los miembros del tenant (incluyendo suspendidos)
+      description: |
+        **Propósito**: Devuelve la lista de todos los miembros del tenant que no han sido
+        eliminados, incluyendo miembros con estado `active`, `suspended` y `pending_first_login`.
+
+        **Proceso**: Consultado por `Settings > Team` en el módulo `admin/member.service.ts`
+        para mostrar la tabla de gestión del equipo con opciones de suspender y eliminar.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
+
+        **Notas**: Los miembros con `deleted_at` (soft delete) NO aparecen en esta lista.
+        El campo `status` indica: `active` (cuenta activa), `suspended` (acceso bloqueado),
+        `pending_first_login` (invitación aceptada pero primer login no completado).
+      tags: [identity, Organización]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberListResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tenants/current/members/{memberId}/status:
+    patch:
+      tags: [identity, Organización]
+      operationId: updateMemberStatus
+      summary: Suspender o reactivar un miembro del tenant
+      description: |
+        **Propósito**: Cambia el estado de un miembro entre `active` y `suspended`.
+        Un miembro suspendido no puede iniciar sesión (el refresh token es rechazado con 401).
+
+        **Proceso**: Accionado desde `Settings > Team` al hacer clic en "Suspender" o
+        "Reactivar" junto a un miembro. El estado `suspended` bloquea inmediatamente el acceso.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. El miembro
+        debe existir en el tenant del solicitante.
+
+        **Notas**: No se puede suspender al último TenantAdmin activo (409 `identity.last_admin`).
+        La suspensión no invalida las sesiones activas inmediatamente — la invalidación ocurre
+        en el próximo intento de refresh. Para invalidación inmediata, usar el endpoint de
+        eliminación de miembro.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberStatusRequest'
+      responses:
+        '204':
+          description: Member status updated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /tenants/current/members/{memberId}:
+    delete:
+      tags: [identity, Organización]
+      operationId: deleteMember
+      summary: Eliminar permanentemente un miembro del tenant (soft-delete + invalidación de sesiones)
+      description: |
+        **Propósito**: Elimina un miembro del tenant de forma permanente (soft-delete) e
+        invalida todas sus sesiones activas en una sola transacción atómica.
+
+        **Proceso**: Accionado desde `Settings > Team` al confirmar la eliminación de un miembro.
+        La eliminación es visible inmediatamente — el miembro ya no aparece en `GET /tenants/current/members`.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. El miembro
+        debe existir en el tenant del solicitante.
+
+        **Notas**:
+        - Implementado como soft-delete: el registro del usuario persiste con `deleted_at` timestamp.
+        - Todas las sesiones activas del usuario eliminado son invalidadas inmediatamente
+          (transacción Prisma atómica: `user.deletedAt = now()` + `refreshTokenRepo.invalidateAllForUser()`).
+        - No se puede eliminar al último TenantAdmin activo (409 `identity.last_admin`).
+        - La eliminación es irreversible desde el panel — requiere intervención manual en BD.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Member deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /tenants/current/plan-change:
+    post:
+      tags: [identity, Organización]
+      operationId: requestPlanChange
+      summary: Solicitar cambio de plan (contact-first, sin cambio inmediato)
+      description: |
+        **Propósito**: Registra una solicitud de cambio de plan y notifica al equipo de
+        Corehub por email. No modifica el plan del tenant inmediatamente.
+
+        **Proceso**: Accionado desde `Settings > Billing` al seleccionar un nuevo plan.
+        El modelo es "contact-first": un agente de Corehub procesa la solicitud y aplica
+        el cambio manualmente. El tenant sigue en su plan actual hasta entonces.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. Solo puede
+        existir una solicitud pendiente por tenant a la vez.
+
+        **Notas**: Devuelve 409 si ya existe una solicitud de cambio pendiente para el tenant
+        (`billing.plan_change_already_pending`). El `id` en la respuesta es el ID de la
+        solicitud, útil para seguimiento. La notificación por email al equipo es
+        fire-and-forget (errores de email no fallan el request).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanChangeRequest'
+      responses:
+        '201':
+          description: Plan change request received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanChangeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  # ==================== MODULES ====================
+  /tenants/current/modules:
+    get:
+      tags: [modules, Módulos]
+      operationId: getAccessibleModules
+      summary: Listar módulos accesibles para el tenant autenticado
+      description: |
+        **Propósito**: Retorna los módulos habilitados para el tenant del usuario autenticado,
+        resolviendo la combinación del plan base más overrides por tenant.
+
+        **Regla de resolución**:
+        1. Módulos incluidos en el plan actual del tenant
+        2. Más overrides con `enabled: true` (acceso extra por SuperAdmin)
+        3. Menos overrides con `enabled: false` (revocaciones por SuperAdmin)
+        4. Módulos con `active: false` a nivel global nunca aparecen
+
+        **Precondiciones**: Sesión activa (cualquier rol). El tenant debe tener un plan asignado.
+
+        **Notas**: El campo `effectiveUrl` no se expone aquí — la resolución de URL (env var
+        vs defaultUrl) ocurre en el cliente Hub. El campo `source` indica el origen del acceso
+        para trazabilidad.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de módulos accesibles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessibleModuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/modules:
+    get:
+      tags: [modules, Admin]
+      operationId: adminListModules
+      summary: Listar todos los módulos del sistema (SuperAdmin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista completa de módulos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [modules, Admin]
+      operationId: adminCreateModule
+      summary: Crear un nuevo módulo (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModuleRequest'
+      responses:
+        '201':
+          description: Módulo creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /admin/modules/{moduleId}:
+    get:
+      tags: [modules, Admin]
+      operationId: adminGetModule
+      summary: Obtener un módulo por ID (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Módulo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [modules, Admin]
+      operationId: adminUpdateModule
+      summary: Actualizar un módulo (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateModuleRequest'
+      responses:
+        '200':
+          description: Módulo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      tags: [modules, Admin]
+      operationId: adminDeleteModule
+      summary: Eliminar un módulo (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '204':
+          description: Módulo eliminado
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/plans:
+    get:
+      tags: [plans, Admin]
+      operationId: adminListPlans
+      summary: Listar todos los planes con conteo de tenants (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Filtrar por estado activo/inactivo
+      responses:
+        '200':
+          description: Lista de planes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPlanListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [plans, Admin]
+      operationId: adminCreatePlan
+      summary: Crear un nuevo plan (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCreatePlanRequest'
+      responses:
+        '201':
+          description: Plan creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPlan'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /admin/plans/{planId}:
+    patch:
+      tags: [plans, Admin]
+      operationId: adminUpdatePlan
+      summary: Actualizar un plan (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUpdatePlanRequest'
+      responses:
+        '200':
+          description: Plan actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPlan'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      tags: [plans, Admin]
+      operationId: adminArchivePlan
+      summary: Archivar un plan (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '204':
+          description: Plan archivado
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/tenants:
+    get:
+      tags: [tenants, Admin]
+      operationId: adminListTenants
+      summary: Listar tenants paginados con filtros (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Búsqueda por nombre
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, active, suspended]
+      responses:
+        '200':
+          description: Lista paginada de tenants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTenantListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/tenants/{tenantId}:
+    get:
+      tags: [tenants, Admin]
+      operationId: adminGetTenant
+      summary: Obtener detalle de un tenant (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detalle del tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTenantDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/tenants/{tenantId}/status:
+    patch:
+      tags: [tenants, Admin]
+      operationId: adminChangeTenantStatus
+      summary: Cambiar el estado de un tenant (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminTenantStatusChangeRequest'
+      responses:
+        '200':
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, status]
+                properties:
+                  id: { type: string, format: uuid }
+                  status: { type: string, enum: [pending, active, suspended] }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /admin/plans/{planId}/modules:
+    put:
+      tags: [modules, Admin]
+      operationId: adminSetPlanModules
+      summary: Asignar módulos a un plan (atómico, reemplaza la lista completa) (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPlanModulesRequest'
+      responses:
+        '200':
+          description: Módulos del plan actualizados
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [moduleIds]
+                properties:
+                  moduleIds:
+                    type: array
+                    items: { type: string }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /admin/tenants/{tenantId}/modules/{moduleId}/override:
+    put:
+      tags: [modules, Admin]
+      operationId: adminUpsertTenantModuleOverride
+      summary: Crear o actualizar override de módulo para un tenant (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: moduleId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertModuleOverrideRequest'
+      responses:
+        '200':
+          description: Override actualizado
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      tags: [modules, Admin]
+      operationId: adminDeleteTenantModuleOverride
+      summary: Eliminar override de módulo para un tenant (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: moduleId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '204':
+          description: Override eliminado
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== USERS ====================
+  /users/me:
+    patch:
+      tags: [identity, Perfil]
+      operationId: updateCurrentUser
+      summary: Actualizar nombre completo y teléfono del usuario autenticado
+      description: |
+        **Propósito**: Permite al usuario autenticado actualizar su nombre de visualización
+        y número de teléfono. Emite un nuevo access token con los claims actualizados.
+
+        **Proceso**: Accionado desde `Settings > Profile` (si existe) o desde cualquier
+        pantalla de edición de perfil. La respuesta incluye un nuevo access token para que
+        el frontend lo reemplace en memoria sin necesidad de un refresh adicional.
+
+        **Precondiciones**: Sesión activa (cualquier rol). `fullName` mínimo 2 caracteres,
+        máximo 100. `phone` en formato E.164 (ej. `+595981000000`).
+
+        **Notas**: El nuevo access token incluye el claim `phone` actualizado y el `name`
+        actualizado. El frontend debe reemplazar el access token en memoria inmediatamente
+        con el devuelto en la respuesta para mantener los claims sincronizados.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            example:
+              fullName: Ana Pereira
+              phone: '+595981000000'
+      responses:
+        '200':
+          description: Profile updated, new access token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateProfileResponse'
+              example:
+                user:
+                  id: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+                  email: ana@empresa-acme.com
+                  fullName: Ana Pereira
+                  phone: '+595981000000'
+                accessToken: 'eyJhbGc...'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  # ==================== QUIZZES (ADMIN) ====================
+  /admin/quizzes:
+    get:
+      tags: [admin, quizzes]
+      operationId: listQuizzes
+      summary: List all quizzes (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema: { type: string, enum: ['true', 'false'] }
+      responses:
+        '200':
+          description: List of quizzes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuizListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [admin, quizzes]
+      operationId: createQuiz
+      summary: Create a new quiz (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateQuizRequest' }
+      responses:
+        '201':
+          description: Quiz created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Quiz' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /admin/quizzes/{quizId}:
+    get:
+      tags: [admin, quizzes]
+      operationId: getQuiz
+      summary: Get quiz with questions (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Quiz with questions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Quiz' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [admin, quizzes]
+      operationId: updateQuiz
+      summary: Update quiz (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateQuizRequest' }
+      responses:
+        '200':
+          description: Quiz updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Quiz' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+    delete:
+      tags: [admin, quizzes]
+      operationId: archiveQuiz
+      summary: Archive quiz (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Quiz archived
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/quizzes/{quizId}/questions:
+    post:
+      tags: [admin, quizzes]
+      operationId: addQuestion
+      summary: Add question to quiz (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateQuestionRequest' }
+      responses:
+        '201':
+          description: Question created
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /admin/quizzes/{quizId}/questions/{questionId}:
+    patch:
+      tags: [admin, quizzes]
+      operationId: updateQuestion
+      summary: Update question (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateQuestionRequest' }
+      responses:
+        '200':
+          description: Question updated
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+    delete:
+      tags: [admin, quizzes]
+      operationId: deleteQuestion
+      summary: Delete question (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '204':
+          description: Question deleted
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/quizzes/{quizId}/questions/reorder:
+    put:
+      tags: [admin, quizzes]
+      operationId: reorderQuestions
+      summary: Reorder questions (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReorderQuestionsRequest' }
+      responses:
+        '204':
+          description: Questions reordered
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/quizzes/{quizId}/questions/{questionId}/options:
+    post:
+      tags: [admin, quizzes]
+      operationId: addOption
+      summary: Add option to question (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string }
+                isCorrect: { type: boolean, default: false }
+      responses:
+        '201':
+          description: Option created
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /admin/quizzes/{quizId}/questions/{questionId}/options/{optionId}:
+    patch:
+      tags: [admin, quizzes]
+      operationId: updateOption
+      summary: Update option (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: optionId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text: { type: string }
+                isCorrect: { type: boolean }
+      responses:
+        '200':
+          description: Option updated
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+    delete:
+      tags: [admin, quizzes]
+      operationId: deleteOption
+      summary: Delete option (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: optionId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '204':
+          description: Option deleted
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/quiz-results:
+    get:
+      tags: [admin, quizzes]
+      operationId: listQuizResults
+      summary: View quiz attempt results (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: tenantId, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Quiz attempt results
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/plans/{planId}/modules:
+    get:
+      tags: [admin, plans]
+      operationId: getPlanModules
+      summary: Get modules assigned to a plan (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: planId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Plan modules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlanModulesResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ==================== QUIZZES (TENANT) ====================
+  /tenants/current/quizzes:
+    get:
+      tags: [tenant, quizzes]
+      operationId: listAvailableQuizzes
+      summary: List available quizzes for the tenant
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Available quizzes
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /tenants/current/quizzes/{quizId}:
+    get:
+      tags: [tenant, quizzes]
+      operationId: getTenantQuiz
+      summary: Get quiz detail (no answers revealed)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Quiz detail
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /tenants/current/quizzes/{quizId}/attempts:
+    post:
+      tags: [tenant, quizzes]
+      operationId: startAttempt
+      summary: Start a quiz attempt
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '201':
+          description: Attempt started
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [tenant, quizzes]
+      operationId: listAttempts
+      summary: List user attempts for quiz
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: User attempts
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /tenants/current/quizzes/{quizId}/attempts/{attemptId}:
+    get:
+      tags: [tenant, quizzes]
+      operationId: getAttempt
+      summary: Get attempt with answers
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: attemptId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Attempt detail
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /tenants/current/quizzes/{quizId}/attempts/{attemptId}/answers:
+    post:
+      tags: [tenant, quizzes]
+      operationId: submitAnswer
+      summary: Submit answer for a question
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: attemptId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubmitAnswerRequest' }
+      responses:
+        '200':
+          description: Answer submitted
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /tenants/current/quizzes/{quizId}/attempts/{attemptId}/complete:
+    post:
+      tags: [tenant, quizzes]
+      operationId: completeAttempt
+      summary: Complete attempt and calculate score
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: attemptId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Attempt completed with score
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  # ==================== BILLING ====================
+  /billing/documents/{documentId}/signed-url:
+    get:
+      tags: [billing, Billing]
+      summary: Obtener URL firmada para descargar PDF de factura o contrato (TTL 5 min)
+      description: |
+        **Propósito**: Genera una URL pre-firmada de corta duración (5 minutos) para descargar
+        el PDF de un documento de billing almacenado en el storage del backend.
+
+        **Proceso**: Utilizado principalmente tras completar el onboarding. El `submitDraft`
+        devuelve `documents.invoiceId` y `documents.contractId` — ambos son IDs de documento
+        que se pasan a este endpoint para obtener la URL de descarga.
+        También usado desde el módulo `billing/` para descargar documentos existentes.
+
+        **Precondiciones**: Sesión activa (access token válido). El `documentId` debe
+        pertenecer al tenant del usuario autenticado.
+
+        **Notas**: La URL expira a los 5 minutos (`expiresAt` en la respuesta). Para descargar
+        después, llamar nuevamente al endpoint para obtener una nueva URL. Devuelve 404 si
+        el documento no existe o no pertenece al tenant.
+      operationId: getSignedDocumentUrl
+      parameters:
+        - { name: documentId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: URL firmada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SignedUrlResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /billing/payment-method:
+    get:
+      tags: [billing, Billing]
+      operationId: getPaymentMethod
+      summary: Obtener el método de pago vigente del tenant
+      description: |
+        **Propósito**: Devuelve el método de pago registrado actualmente para el tenant
+        (tarjeta tokenizada via Bancard), o `null` si no hay ninguno registrado.
+
+        **Proceso**: Consultado por `PaymentMethodSection` en `Settings > Billing` para
+        mostrar la tarjeta actual (marca, últimos 4 dígitos, fecha de expiración).
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
+
+        **Notas**: **Stub actual** — el backend retorna siempre `{ paymentMethod: null }`
+        en esta versión. La integración real con tokenización de tarjetas Bancard es trabajo
+        futuro. El campo `paymentMethod` puede ser `null` legítimamente cuando no hay tarjeta.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Método de pago (puede ser null)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentMethodResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [billing, Billing]
+      operationId: requestPaymentMethodChange
+      summary: Solicitar cambio de método de pago (contact-first)
+      description: |
+        **Propósito**: Registra una solicitud de actualización del método de pago y notifica
+        al equipo de Corehub. No modifica el método de pago actual inmediatamente.
+
+        **Proceso**: Accionado desde `Settings > Billing > PaymentMethodSection` al hacer
+        clic en "Actualizar método de pago". Modelo contact-first: el equipo de Corehub
+        contactará al tenant para procesar el cambio de tarjeta.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. No debe
+        existir ya una solicitud pendiente.
+
+        **Notas**: **Stub actual** — el backend acepta la solicitud pero no la procesa
+        automáticamente. Devuelve 409 si ya hay una solicitud pendiente. La respuesta incluye
+        un `id` de solicitud para seguimiento.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '202':
+          description: Solicitud aceptada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentMethodChangeRequestResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /billing/invoices:
+    get:
+      tags: [billing, Billing]
+      operationId: listInvoices
+      summary: Listar facturas del tenant paginadas en orden descendente
+      description: |
+        **Propósito**: Devuelve el historial de facturas del tenant paginado, ordenado
+        por fecha de emisión descendente (más recientes primero).
+
+        **Proceso**: Consultado por `InvoicesSection` en `Settings > Billing` para mostrar
+        el historial de facturación. Cada factura puede tener asociado un `documentId` para
+        descargar el PDF via `GET /billing/invoices/{id}/signed-url`.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
+
+        **Notas**: **Stub actual** — el backend retorna siempre una lista vacía (`items: []`,
+        `total: 0`) en esta versión. La paginación usa `page` (desde 1) y `pageSize` (máx 100,
+        default 10). Los estados de factura son: `paid`, `pending`, `overdue`, `cancelled`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
+      responses:
+        '200':
+          description: Lista de facturas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvoiceListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /billing/invoices/{invoiceId}/signed-url:
+    get:
+      tags: [billing, Billing]
+      operationId: getInvoiceSignedUrl
+      summary: Obtener URL firmada para descargar PDF de factura (TTL 5 min)
+      description: |
+        **Propósito**: Genera una URL pre-firmada de corta duración (5 min) para descargar
+        el PDF de una factura específica del tenant.
+
+        **Proceso**: Accionado desde `InvoicesSection` al hacer clic en el botón de descarga
+        junto a una factura. El `invoiceId` proviene del campo `id` en `GET /billing/invoices`.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. La factura
+        debe existir y tener un documento PDF asociado (`documentId` no nulo).
+
+        **Notas**: **Stub actual** — el backend retorna siempre 404 en esta versión.
+        La generación real de facturas PDF es trabajo futuro. Para documentos del onboarding
+        (factura de bienvenida, contrato), usar `GET /billing/documents/{documentId}/signed-url`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: invoiceId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: URL firmada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SignedUrlResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ==================== WELL-KNOWN ====================
+  /.well-known/jwks.json:
+    get:
+      operationId: getJwks
+      summary: Obtener claves públicas JWT (JWKS) para verificación de tokens
+      description: |
+        **Propósito**: Devuelve las claves públicas RSA activas para verificar la firma de
+        los JWTs emitidos por el servicio IAM, siguiendo el estándar RFC 7517 (JWKS).
+
+        **Proceso**: Endpoint de descubrimiento estándar. Consumido por proxies, API gateways
+        y otros servicios que necesiten verificar tokens independientemente del IAM service.
+        El frontend **no** llama a este endpoint directamente — la verificación de firma
+        ocurre server-side.
+
+        **Precondiciones**: Ninguna — endpoint público, sin autenticación.
+
+        **Notas**: Soporta rotación de claves: pueden coexistir hasta 2 claves con `kid` distinto.
+        Las respuestas son cacheables (`Cache-Control: public, max-age=300`). El campo `kid` en
+        los JWTs emitidos referencia la clave de firma usada en este JWKS.
+      tags: [well-known, Sistema]
+      security: []
+      responses:
+        '200':
+          description: JSON Web Key Set per RFC 7517
+          headers:
+            Cache-Control:
+              schema: { type: string }
+              description: 'public, max-age=300'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JsonWebKeySet'
+              example:
+                keys:
+                  - kty: RSA
+                    use: sig
+                    alg: RS256
+                    kid: '2026-04-01'
+                    n: '0vx7agoebGcQSuuPiLJXZptN9...'
+                    e: AQAB
+
+  # ==================== WEBHOOKS ====================
+  /webhooks/bancard:
+    post:
+      operationId: bancardWebhook
+      summary: Recibir notificación de pago de Bancard (server-to-server)
+      description: |
+        **Propósito**: Recibe las notificaciones asíncronas de Bancard cuando el estado de
+        un pago cambia (aprobado, rechazado, revertido). Actualiza el estado del pago en la
+        base de datos para que el polling del frontend lo detecte.
+
+        **Proceso**: NO consumido por el frontend — es la integración server-to-server entre
+        Bancard y el IAM service. Cuando un usuario completa o cancela el pago en el checkout
+        de Bancard, este webhook es el mecanismo por el que el backend se entera del resultado.
+
+        **Precondiciones**: Autenticado por firma HMAC-SHA256 del cuerpo del request en el
+        header `X-Bancard-Signature` usando el shared secret configurado. Sin `Authorization: Bearer`.
+
+        **Notas**:
+        - Idempotencia interna por `(process_id, status)` — múltiples webhooks idénticos se
+          procesan una sola vez (tabla `webhook_events`).
+        - El endpoint **SIEMPRE** responde 200 incluso si el procesamiento interno falla.
+          Bancard reintenta ante cualquier respuesta != 200.
+        - Solo devuelve 4xx ante firma HMAC inválida o body inparseable.
+        - El campo `process_id` mapea al `paymentId` devuelto por `POST /onboarding/draft/{draftId}/payment/initiate`.
+      tags: [webhooks, Webhooks]
+      security: []
+      parameters:
+        - name: X-Bancard-Signature
+          in: header
+          required: true
+          schema: { type: string }
+          description: HMAC-SHA256 del body request usando el shared secret de Bancard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BancardWebhookPayload'
+      responses:
+        '200':
+          description: Webhook recibido (incluso si el procesamiento interno falla)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [received]
+                properties:
+                  received: { type: boolean, enum: [true] }
+        '400':
+          description: Body inparseable
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '401':
+          description: Firma HMAC inválida
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }

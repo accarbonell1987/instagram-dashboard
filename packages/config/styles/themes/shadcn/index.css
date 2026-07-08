@@ -1,0 +1,17 @@
+/**
+ * All shadcn/ui themes bundled
+ * Import this to enable all official shadcn themes
+ */
+
+@import './zinc.css';
+@import './slate.css';
+@import './stone.css';
+@import './gray.css';
+@import './neutral.css';
+@import './red.css';
+@import './rose.css';
+@import './orange.css';
+@import './green.css';
+@import './blue.css';
+@import './yellow.css';
+@import './violet.css';

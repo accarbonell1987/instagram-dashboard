@@ -1,0 +1,137 @@
+{
+  "$description": "Semantic tokens for dark mode - shadcn/ui compatible HSL values",
+  "semantic": {
+    "background": {
+      "$type": "hsl",
+      "$value": "240 10% 3.9%"
+    },
+    "foreground": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "card": {
+      "$type": "hsl",
+      "$value": "240 10% 3.9%"
+    },
+    "cardForeground": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "popover": {
+      "$type": "hsl",
+      "$value": "240 10% 3.9%"
+    },
+    "popoverForeground": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "primary": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "primaryForeground": {
+      "$type": "hsl",
+      "$value": "240 5.9% 10%"
+    },
+    "secondary": {
+      "$type": "hsl",
+      "$value": "240 3.7% 15.9%"
+    },
+    "secondaryForeground": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "muted": {
+      "$type": "hsl",
+      "$value": "240 3.7% 15.9%"
+    },
+    "mutedForeground": {
+      "$type": "hsl",
+      "$value": "240 5% 64.9%"
+    },
+    "accent": {
+      "$type": "hsl",
+      "$value": "240 3.7% 15.9%"
+    },
+    "accentForeground": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "destructive": {
+      "$type": "hsl",
+      "$value": "0 62.8% 30.6%"
+    },
+    "destructiveForeground": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "border": {
+      "$type": "hsl",
+      "$value": "240 3.7% 15.9%"
+    },
+    "input": {
+      "$type": "hsl",
+      "$value": "240 3.7% 15.9%"
+    },
+    "ring": {
+      "$type": "hsl",
+      "$value": "240 4.9% 83.9%"
+    },
+    "radius": {
+      "$type": "dimension",
+      "$value": "0.5rem"
+    },
+    "chart1": {
+      "$type": "hsl",
+      "$value": "220 70% 50%"
+    },
+    "chart2": {
+      "$type": "hsl",
+      "$value": "160 60% 45%"
+    },
+    "chart3": {
+      "$type": "hsl",
+      "$value": "30 80% 55%"
+    },
+    "chart4": {
+      "$type": "hsl",
+      "$value": "280 65% 60%"
+    },
+    "chart5": {
+      "$type": "hsl",
+      "$value": "340 75% 55%"
+    },
+    "sidebarBackground": {
+      "$type": "hsl",
+      "$value": "240 5.9% 10%"
+    },
+    "sidebarForeground": {
+      "$type": "hsl",
+      "$value": "240 4.8% 95.9%"
+    },
+    "sidebarPrimary": {
+      "$type": "hsl",
+      "$value": "224.3 76.3% 48%"
+    },
+    "sidebarPrimaryForeground": {
+      "$type": "hsl",
+      "$value": "0 0% 100%"
+    },
+    "sidebarAccent": {
+      "$type": "hsl",
+      "$value": "240 3.7% 15.9%"
+    },
+    "sidebarAccentForeground": {
+      "$type": "hsl",
+      "$value": "240 4.8% 95.9%"
+    },
+    "sidebarBorder": {
+      "$type": "hsl",
+      "$value": "240 3.7% 15.9%"
+    },
+    "sidebarRing": {
+      "$type": "hsl",
+      "$value": "217.2 91.2% 59.8%"
+    }
+  }
+}

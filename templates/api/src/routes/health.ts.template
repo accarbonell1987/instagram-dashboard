@@ -1,0 +1,69 @@
+import { createRoute, z, OpenAPIHono } from '@hono/zod-openapi';
+
+const HealthResponseSchema = z
+  .object({
+    status: z.string().openapi({ example: 'ok' }),
+    timestamp: z
+      .string()
+      .datetime()
+      .openapi({ example: '2026-01-01T00:00:00.000Z' }),
+  })
+  .openapi('HealthResponse');
+
+const health = createRoute({
+  method: 'get',
+  path: '/',
+  tags: ['Health'],
+  summary: 'Health check',
+  description: 'Returns the current health status of the service.',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: HealthResponseSchema } },
+      description: 'Service is healthy',
+    },
+  },
+});
+
+const ready = createRoute({
+  method: 'get',
+  path: '/ready',
+  tags: ['Health'],
+  summary: 'Readiness check',
+  description: 'Returns whether the service is ready to accept requests.',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: HealthResponseSchema } },
+      description: 'Service is ready',
+    },
+  },
+});
+
+export function createHealthRoutes(): OpenAPIHono {
+  const routes = new OpenAPIHono({
+    defaultHook: (result, c) => {
+      if (!result.success) {
+        return c.json(
+          {
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Validation failed',
+              details: result.error.issues,
+            },
+          },
+          400
+        );
+      }
+    },
+  });
+
+  routes.openapi(health, (c) => {
+    return c.json({ status: 'ok', timestamp: new Date().toISOString() }, 200);
+  });
+
+  routes.openapi(ready, (c) => {
+    return c.json({ status: 'ready', timestamp: new Date().toISOString() }, 200);
+  });
+
+  return routes;
+}

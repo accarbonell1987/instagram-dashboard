@@ -1,0 +1,15 @@
+/**
+ * Services Barrel
+ *
+ * Public API for the services layer.
+ * Import from '@/services' for all service-related needs.
+ */
+
+// Domain services
+export { getDomainServices, resetDomainServices } from './domain-services';
+
+// Types
+export type { DomainServices } from './types';
+
+// Extensions (for direct access if needed)
+// export { createUserExtensions, type UserExtensions } from './extensions';

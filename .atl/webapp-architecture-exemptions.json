@@ -1,0 +1,21 @@
+{
+  "$schema": "./webapp-architecture-exemptions.schema.json",
+  "exemptions": [
+    {
+      "app": "apps/hub",
+      "rules": ["§1"],
+      "reason": "Auth flow uses fetch-layer (lib/api/) + httpOnly refresh cookie instead of AuthStrategy from @core/core. Bearer token bridged into Axios via request interceptor on coreServices.httpClient. Domain services (plans, onboardingDraft, invitation, document) follow canonical pattern.",
+      "since": "2026-05-04",
+      "owner": "feature/hub",
+      "reviewBy": "2026-08-01"
+    },
+    {
+      "app": "apps/landing-page",
+      "rules": ["§1", "§4", "§5"],
+      "reason": "Marketing site. No services, no CRUD, no providers. Keeps only ThemeProvider for visual consistency.",
+      "since": "2026-04-26",
+      "owner": "marketing",
+      "reviewBy": null
+    }
+  ]
+}

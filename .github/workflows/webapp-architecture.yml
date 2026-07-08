@@ -1,0 +1,72 @@
+name: Webapp Architecture Compliance
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'internal/webapp-example/**'
+      - '.atl/webapp-architecture.md'
+      - '.atl/webapp-architecture-exemptions.json'
+      - 'scripts/check-webapp-architecture.mjs'
+      - '.github/workflows/webapp-architecture.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/**'
+      - 'internal/webapp-example/**'
+      - '.atl/webapp-architecture.md'
+      - '.atl/webapp-architecture-exemptions.json'
+      - 'scripts/check-webapp-architecture.mjs'
+  workflow_dispatch:
+
+jobs:
+  compliance:
+    name: Check webapp architecture rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run compliance check
+        id: compliance
+        run: node scripts/check-webapp-architecture.mjs
+
+      - name: Generate JSON report
+        if: always()
+        run: node scripts/check-webapp-architecture.mjs --json > compliance-report.json || true
+
+      - name: Upload compliance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-architecture-report
+          path: compliance-report.json
+          retention-days: 14
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Webapp Architecture Compliance"
+            echo ""
+            if [ "${{ steps.compliance.outcome }}" = "success" ]; then
+              echo "✅ All webapps comply with the rules in \`.atl/webapp-architecture.md\`."
+            else
+              echo "❌ At least one webapp has CRITICAL violations."
+              echo ""
+              echo "Run locally: \`node scripts/check-webapp-architecture.mjs\`"
+              echo ""
+              echo "If the violation is intentional, add an entry to \`.atl/webapp-architecture-exemptions.json\` with:"
+              echo "- the affected rule IDs (e.g. \`§1.3\`, \`§4\`)"
+              echo "- a clear \`reason\`"
+              echo "- a \`reviewBy\` date"
+              echo ""
+              echo "See full output above and the JSON artifact \`webapp-architecture-report\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

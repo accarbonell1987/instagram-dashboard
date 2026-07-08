@@ -1,0 +1,75 @@
+# {{pascalName}}
+
+{{description}}
+
+## Getting Started
+
+```bash
+# Development
+pnpm dev
+
+# Build
+pnpm build
+
+# Production
+pnpm start
+```
+
+## API Documentation
+
+Once running, visit:
+- **Swagger UI**: http://localhost:{{port}}/docs
+- **OpenAPI Spec**: http://localhost:{{port}}/openapi.json
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | {{port}} | Server port |
+| `NODE_ENV` | `development` | Environment (`development`, `production`, `test`) |
+| `CORS_ORIGIN` | `*` | Allowed CORS origin |
+
+## Project Structure
+
+```
+src/
+  index.ts       # Entry point with server setup
+  config.ts      # Environment configuration with Zod validation
+  errors.ts      # Error classes for consistent error handling
+  routes/
+    health.ts    # Health check endpoints
+```
+
+## Adding New Routes
+
+1. Create a new file in `src/routes/`
+2. Define Zod schemas for request/response
+3. Use `createRoute()` from `@hono/zod-openapi`
+4. Register the route in `src/index.ts`
+
+Example:
+```typescript
+import { createRoute, z, OpenAPIHono } from '@hono/zod-openapi';
+
+const ResponseSchema = z.object({
+  data: z.string(),
+}).openapi('MyResponse');
+
+const myRoute = createRoute({
+  method: 'get',
+  path: '/',
+  tags: ['MyTag'],
+  responses: {
+    200: {
+      content: { 'application/json': { schema: ResponseSchema } },
+      description: 'Success',
+    },
+  },
+});
+
+export function createMyRoutes(): OpenAPIHono {
+  const routes = new OpenAPIHono();
+  routes.openapi(myRoute, (c) => c.json({ data: 'hello' }, 200));
+  return routes;
+}
+```

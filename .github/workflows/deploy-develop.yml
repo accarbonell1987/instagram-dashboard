@@ -1,0 +1,30 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [develop, main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy Preview (develop)
+        if: github.ref_name == 'develop'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_vYOTG3izfV7Yk2FDuAPsTYzQsldc
+          VERCEL_ORG_ID: team_vl5sQ7XXLEKRBNc56Jryyqtu
+        run: vercel deploy --yes --no-wait
+
+      - name: Deploy Production (main)
+        if: github.ref_name == 'main'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_vYOTG3izfV7Yk2FDuAPsTYzQsldc
+          VERCEL_ORG_ID: team_vl5sQ7XXLEKRBNc56Jryyqtu
+        run: vercel deploy --prod --yes --no-wait

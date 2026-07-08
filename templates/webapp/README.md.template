@@ -1,0 +1,165 @@
+# {{pascalName}}
+
+{{description}}
+
+## Getting Started
+
+```bash
+# Development (with Turbopack)
+pnpm dev
+
+# Build
+pnpm build
+
+# Production
+pnpm start
+```
+
+The app will be available at http://localhost:{{port}}
+
+## Architecture
+
+This app uses **Screaming Architecture** - the domain is visible at folder level:
+
+```
+src/
+├── app/                      # Next.js App Router (thin wrappers)
+│   ├── layout.tsx            # Root layout with providers
+│   ├── page.tsx              # Landing page
+│   └── users/
+│       └── page.tsx          # Re-exports from @/features/users
+├── features/                 # Domain features (self-contained)
+│   └── users/
+│       ├── index.ts          # Barrel exports
+│       ├── page.tsx          # Feature page component
+│       ├── users.types.ts    # Feature-specific types
+│       ├── users.constants.ts
+│       ├── hooks/
+│       │   └── use-users.ts  # Feature hook
+│       └── components/
+│           ├── users-table.tsx
+│           ├── user-form.tsx
+│           └── user-form-dialog.tsx
+├── shared/                   # Reusable hooks and components
+│   ├── hooks/
+│   │   ├── use-crud-page.ts  # Generic CRUD page hook
+│   │   └── use-debounced-value.ts
+│   └── components/
+│       ├── crud-page-layout.tsx
+│       ├── data-table.tsx
+│       ├── pagination.tsx
+│       ├── search-input.tsx
+│       └── delete-confirmation-dialog.tsx
+├── types/
+│   └── entities.ts           # Entity types (mirror API schemas)
+├── lib/
+│   ├── utils.ts              # Utility functions (cn helper)
+│   ├── services.ts           # Core services composition root
+│   └── domain-services.ts    # Domain service registry
+├── hooks/
+│   └── use-domain-services.ts
+└── providers/
+    └── services-provider.tsx # Initializes services on client
+```
+
+## Key Patterns
+
+### Thin App Router Pages
+Route pages are thin wrappers that re-export feature components:
+```tsx
+// src/app/users/page.tsx
+export { UsersPage as default } from '@/features/users';
+```
+
+### Feature Structure
+Each feature is self-contained with its own components, hooks, and types:
+```
+features/users/
+├── index.ts          # Public API
+├── page.tsx          # Main page component
+├── users.types.ts    # Types + conversion functions
+├── users.constants.ts
+├── hooks/use-users.ts
+└── components/...
+```
+
+### Domain Services
+Centralized service registry with `@repo/core`:
+```tsx
+// Access services in components
+const { users } = useDomainServices();
+const result = await users.filter({ page: 1, pageSize: 10 });
+```
+
+### Shared CRUD Components
+Generic components for building CRUD pages:
+- `useCrudPage` - Hook with pagination, search, dialogs, mutations
+- `CrudPageLayout` - Consistent layout with header, search, table, pagination
+- `DataTable` - Generic table component
+- `DeleteConfirmationDialog` - Reusable delete confirmation
+
+## Stack
+
+- **Framework**: Next.js 15 with App Router
+- **UI**: React 19, Tailwind CSS v4
+- **Design System**: @repo/ui (shadcn/ui components)
+- **Services**: @repo/core (business logic and API client)
+- **Theming**: next-themes (dark/light) + ColorThemeContext (color themes)
+- **Icons**: lucide-react
+
+## Monorepo Packages
+
+- `@repo/ui` - Design system components
+- `@repo/core` - Business logic and services
+- `@repo/shared` - Shared types and utilities
+- `@repo/config` - TypeScript and ESLint configs
+
+## Component Usage Rules
+
+When building UI, always check in this order:
+
+### Hierarchy
+1. **@repo/ui** → Primitives (Button, Input, Table, Dialog, Card, Badge, etc.)
+2. **shared/components/** → Compositions (DataTable, SearchInput, CrudPageLayout)
+3. **features/{feature}/components/** → Feature-specific only
+
+### Do's
+- Import primitives from `@repo/ui`
+- Create compositions that combine multiple primitives
+- Put feature-specific components in the feature folder
+
+### Don'ts
+- Never recreate a component that exists in @repo/ui
+- Don't put generic components in features/
+- Don't import from @repo/ui internal paths
+
+### Example
+```tsx
+// Correct - use primitives from @repo/ui
+import { Button, Input, Table, TableBody, TableCell } from '@repo/ui';
+
+// Correct - use shared compositions
+import { DataTable, SearchInput } from '@/shared/components';
+
+// Correct - feature-specific component in feature folder
+import { UsersTable } from './components/users-table';
+
+// Wrong - recreating Button locally
+const MyButton = ({ children }) => <button>{children}</button>;
+```
+
+## Adding a New Feature
+
+1. Create feature folder: `src/features/{name}/`
+2. Add structure: `index.ts`, `page.tsx`, `{name}.types.ts`, `{name}.constants.ts`, `hooks/`, `components/`
+3. Add entity types to `src/types/entities.ts`
+4. Register service in `src/lib/domain-services.ts`
+5. Create thin wrapper in `src/app/{name}/page.tsx`
+
+## Theming
+
+The app supports:
+- **Dark/Light mode**: Automatic system detection with manual toggle
+- **Color themes**: Multiple color palettes (zinc, ocean, forest, etc.)
+
+Both systems are orthogonal and can be combined.

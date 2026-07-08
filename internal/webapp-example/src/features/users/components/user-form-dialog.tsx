@@ -1,0 +1,74 @@
+'use client';
+
+import {
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@core/ui';
+
+import type { UserFormData } from '../users.types';
+
+import { isUserFormValid, UserForm } from './user-form';
+
+
+export interface UserFormDialogProps {
+  /** Whether the dialog is open */
+  open: boolean;
+  /** Callback when open state changes */
+  onOpenChange: (open: boolean) => void;
+  /** Dialog title */
+  title: string;
+  /** Dialog description */
+  description: string;
+  /** Current form data */
+  formData: UserFormData;
+  /** Callback when form data changes */
+  onFormChange: (data: UserFormData) => void;
+  /** Callback when form is submitted */
+  onSubmit: () => void;
+  /** Label for the submit button */
+  submitLabel: string;
+  /** Whether a mutation is in progress */
+  loading?: boolean;
+}
+
+export function UserFormDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  formData,
+  onFormChange,
+  onSubmit,
+  submitLabel,
+  loading = false,
+}: UserFormDialogProps) {
+  const isValid = isUserFormValid(formData);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <UserForm formData={formData} onChange={onFormChange} />
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" disabled={loading}>
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button onClick={onSubmit} disabled={!isValid || loading}>
+            {loading ? 'Saving...' : submitLabel}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

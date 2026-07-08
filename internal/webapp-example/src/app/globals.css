@@ -1,0 +1,67 @@
+/**
+ * Example Creative App - Global Styles
+ *
+ * Theme Strategy: Dynamic theme switching with all themes available
+ *
+ * IMPORTANT: Import order matters!
+ * 1. Tailwind CSS v4 (base framework)
+ * 2. Content sources (@source directives)
+ * 3. Tailwind theme mappings (CSS vars → utilities)
+ * 4. Base design system (default tokens)
+ * 5. All themes (shadcn + custom themes)
+ * 6. App-specific overrides
+ * 7. Animation library
+ */
+
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Content sources for Tailwind v4 class scanning */
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+
+@import '@core/config/styles/tailwind-theme.css';
+@import '@core/config/styles/globals.css';
+@import '@core/config/styles/themes.css';
+@import '@core/config/styles/radius-calc.css';
+@import '../styles/theme.css';
+
+/**
+ * App-specific animations
+ */
+@theme inline {
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+/**
+ * Base Layer - Applied to all elements
+ */
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+    outline-color: hsl(var(--ring) / 0.5);
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}

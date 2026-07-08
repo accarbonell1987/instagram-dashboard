@@ -1,0 +1,14 @@
+/**
+ * Docs App - Global Styles
+ *
+ * Pattern: Base Design System (no custom overrides needed)
+ *
+ * 1. Tailwind CSS
+ * 2. Base design system from @core/config (shadcn defaults)
+ *
+ * To customize the theme, create a src/styles/theme.css file
+ * and import it after the base design system.
+ */
+
+@import "tailwindcss";
+@import "@core/config/styles/globals.css";

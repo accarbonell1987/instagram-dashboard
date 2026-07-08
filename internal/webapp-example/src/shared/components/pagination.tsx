@@ -1,0 +1,56 @@
+'use client';
+
+import { Button } from '@core/ui';
+
+export interface PaginationProps {
+  /** Current page number (1-indexed) */
+  page: number;
+  /** Total number of pages */
+  totalPages: number;
+  /** Callback to go to previous page */
+  onPrevious: () => void;
+  /** Callback to go to next page */
+  onNext: () => void;
+  /** Additional class name */
+  className?: string;
+}
+
+export function Pagination({
+  page,
+  totalPages,
+  onPrevious,
+  onNext,
+  className = '',
+}: PaginationProps) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <div className={`mt-4 flex items-center justify-between ${className}`}>
+      <p className="text-muted-foreground text-sm">
+        Page {page} of {totalPages}
+      </p>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onPrevious}
+          disabled={page <= 1}
+          aria-label="Go to previous page"
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onNext}
+          disabled={page >= totalPages}
+          aria-label="Go to next page"
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}

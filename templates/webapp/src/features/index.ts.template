@@ -1,0 +1,6 @@
+// Feature modules - Screaming Architecture
+// Re-export page components with named exports to avoid conflicts
+export { UsersPage, useUsers } from './users';
+
+// Re-export types with unique names
+export type { User, UserCreate, UserUpdate, UserFormData, UserRole } from './users';

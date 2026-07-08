@@ -1,0 +1,71 @@
+{
+  "name": "@core/config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "tokens:build": "node tokens/build.js",
+    "build": "pnpm tokens:build",
+    "dev": "pnpm tokens:build"
+  },
+  "exports": {
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/nextjs": "./eslint/nextjs.js",
+    "./eslint/library": "./eslint/library.js",
+    "./eslint/node": "./eslint/node.js",
+    "./prettier": "./prettier/prettier.config.js",
+    "./tailwind": "./tailwind/tailwind.config.ts",
+    "./typescript/base": "./typescript/base.json",
+    "./typescript/nextjs": "./typescript/nextjs.json",
+    "./typescript/library": "./typescript/library.json",
+    "./typescript/node": "./typescript/node.json",
+    "./styles/globals.css": "./styles/globals.css",
+    "./styles/tailwind-theme.css": "./styles/tailwind-theme.css",
+    "./styles/radius-calc.css": "./styles/radius-calc.css",
+    "./styles/themes.css": "./styles/themes/all.css",
+    "./styles/themes/all.css": "./styles/themes/all.css",
+    "./styles/themes/shadcn.css": "./styles/themes/shadcn/index.css",
+    "./styles/themes/custom.css": "./styles/themes/custom/index.css",
+    "./styles/tokens": {
+      "types": "./styles/tokens.ts",
+      "import": "./styles/tokens.ts",
+      "default": "./styles/tokens.ts"
+    },
+    "./styles/themes": {
+      "types": "./styles/themes/index.ts",
+      "import": "./styles/themes/index.ts",
+      "default": "./styles/themes/index.ts"
+    },
+    "./styles/themes/registry": {
+      "types": "./styles/themes/registry.ts",
+      "import": "./styles/themes/registry.ts",
+      "default": "./styles/themes/registry.ts"
+    },
+    "./styles": {
+      "types": "./styles/index.ts",
+      "import": "./styles/index.ts",
+      "default": "./styles/index.ts"
+    }
+  },
+  "dependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-import-x": "^4.6.1",
+    "globals": "^15.14.0",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "typescript-eslint": "^8.21.0",
+    "tailwindcss": "^4.0.6"
+  },
+  "devDependencies": {
+    "@next/eslint-plugin-next": "^15.1.6",
+    "style-dictionary": "^4.2.0",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Party {
+  id          String   @id @default(cuid())
+  type        String   // "person" | "organization"
+  displayName String
+  email       String?
+  phone       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User?
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String?
+  partyId   String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  party     Party      @relation(fields: [partyId], references: [id])
+  userRoles UserRole[]
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  permissions String[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userRoles   UserRole[]
+}
+
+model UserRole {
+  userId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}

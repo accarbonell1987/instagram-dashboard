@@ -1,0 +1,72 @@
+{
+  "name": "mono-template",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "///// DOCKER DEV /////": "",
+    "docker:up": "bash dev.sh up",
+    "docker:down": "bash dev.sh down",
+    "docker:reset": "bash dev.sh reset",
+    "docker:logs": "bash dev.sh logs",
+    "docker:build": "bash dev.sh build",
+    "docker:status": "bash dev.sh ps",
+    "///// DEVELOPMENT /////": "",
+    "dev": "turbo dev",
+    "dev:apps": "turbo dev --filter=./apps/*",
+    "dev:internal": "turbo dev --filter=./internal/*",
+    "dev:webapp": "turbo dev --filter=@internal/webapp-example",
+    "dev:api": "turbo dev --filter=@internal/api-example",
+    "dev:docs": "turbo dev --filter=@internal/docs",
+    "///// BUILD /////": "",
+    "build": "turbo build",
+    "build:apps": "turbo build --filter=./apps/*",
+    "build:internal": "turbo build --filter=./internal/*",
+    "build:webapp": "turbo build --filter=@internal/webapp-example",
+    "build:api": "turbo build --filter=@internal/api-example",
+    "build:docs": "turbo build --filter=@internal/docs",
+    "///// START (PRODUCTION) /////": "",
+    "start:webapp": "turbo start --filter=@internal/webapp-example",
+    "start:api": "turbo start --filter=@internal/api-example",
+    "start:docs": "turbo start --filter=@internal/docs",
+    "///// TESTING /////": "",
+    "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
+    "test:e2e": "turbo test:e2e",
+    "test:e2e:ui": "pnpm --filter=@corehub/hub exec playwright test --ui",
+    "test:e2e:debug": "pnpm --filter=@corehub/hub exec playwright test --debug",
+    "///// LINTING & FORMATTING /////": "",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint -- --fix",
+    "type-check": "turbo type-check",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "///// DATABASE /////": "",
+    "db:generate": "turbo db:generate",
+    "db:push": "turbo db:push",
+    "db:studio": "pnpm --filter=@core/database exec prisma studio",
+    "db:reset": "pnpm --filter=@corehub/api-iam exec prisma migrate reset --force && pnpm --filter=@corehub/api-instagram-analytics exec prisma db push --force-reset && pnpm --filter=@corehub/api-iam exec prisma generate && pnpm --filter=@corehub/api-instagram-analytics exec prisma generate",
+    "db:seed": "pnpm --filter=@corehub/api-iam db:seed && echo '\n✅ BD lista — tenants, usuarios y planes creados.'",
+    "///// CLI GENERATOR /////": "",
+    "core": "pnpm --filter=@core/cli start",
+    "///// UTILITIES /////": "",
+    "ui:add": "pnpm --filter=@core/ui exec shadcn add",
+    "clean": "turbo clean && rm -rf node_modules",
+    "clean-absolute": "find . -name 'node_modules' -type d -prune -exec rm -rf {} + && find . -name 'dist' -type d -prune -exec rm -rf {} + && find . -name '.turbo' -type d -prune -exec rm -rf {} + && find . -name '.storybook-static' -type d -prune -exec rm -rf {} + && rm -rf 'package-lock.json' && rm -rf 'bun.lockb'"
+  },
+  "devDependencies": {
+    "@core/config": "workspace:*",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.3.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.2.4",
+      "react-dom": "19.2.4"
+    }
+  }
+}
