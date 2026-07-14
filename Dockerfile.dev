@@ -21,6 +21,7 @@ COPY packages/shared/package.json        packages/shared/
 COPY packages/database/package.json      packages/database/
 COPY packages/cli/package.json           packages/cli/
 COPY apps/api-iam/package.json           apps/api-iam/
+COPY apps/api-instagram-analytics/package.json apps/api-instagram-analytics/
 COPY apps/hub/package.json               apps/hub/
 COPY apps/landing-page/package.json      apps/landing-page/
 COPY internal/docs/package.json          internal/docs/

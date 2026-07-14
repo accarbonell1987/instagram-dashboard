@@ -1,1 +1,1 @@
-CREATE DATABASE tympano_instagram;
+CREATE DATABASE corehub_instagram;

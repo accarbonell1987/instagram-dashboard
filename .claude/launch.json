@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hub",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@corehub/hub", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "api-iam",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@corehub/api-iam", "dev"],
+      "port": 8080
+    },
+    {
+      "name": "api-instagram-analytics",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@corehub/api-instagram-analytics", "dev"],
+      "port": 3003
+    },
+    {
+      "name": "landing-page",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@corehub/landing-page", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "docs",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@internal/docs", "dev"],
+      "port": 3002
+    }
+  ]
+}
