@@ -178,3 +178,86 @@ describe('ModuleRepository — resolveEffectiveModules (a3)', () => {
     )
   })
 })
+
+// b1 (5.1/5.3): trial grants are Entitlement(source: trial, kind: grant,
+// expiresAt) rows, upserted on the same [tenantId, productId, moduleId,
+// source] unique key the override sync already uses (a re-grant renews the
+// expiry instead of erroring on a duplicate row).
+describe('ModuleRepository — grantTrial (b1, 5.1)', () => {
+  it('upserts a grant Entitlement(source: trial) row with the given expiresAt', async () => {
+    const prisma = makePrisma()
+    const repo = createModuleRepository(prisma as never)
+    const expiresAt = new Date('2026-08-15T00:00:00.000Z')
+
+    await repo.grantTrial('tenant-1', 'instagram-dashboard', 'mod-a', expiresAt, 'admin-1', 'evaluation')
+
+    expect(prisma.entitlement.upsert).toHaveBeenCalledWith({
+      where: {
+        tenantId_productId_moduleId_source: {
+          tenantId: 'tenant-1',
+          productId: 'instagram-dashboard',
+          moduleId: 'mod-a',
+          source: 'trial',
+        },
+      },
+      create: {
+        tenantId: 'tenant-1',
+        productId: 'instagram-dashboard',
+        moduleId: 'mod-a',
+        source: 'trial',
+        kind: 'grant',
+        expiresAt,
+        createdBy: 'admin-1',
+        reason: 'evaluation',
+      },
+      update: { kind: 'grant', expiresAt, createdBy: 'admin-1', reason: 'evaluation' },
+    })
+  })
+})
+
+// b1 (5.2/5.3): the resolver (resolveEffectiveModules) already excludes
+// entitlements with expiresAt in the past at request time — see the
+// `OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]` filter above, so
+// access is already denied the moment a trial expires. The sweep's job is
+// hygiene (delete stale rows) + returning the affected (tenant, product)
+// pairs so the caller can fan out a cache purge (packages/entitlements'
+// 60s TTL would otherwise keep serving a stale allow for up to a minute).
+describe('ModuleRepository — sweepExpiredTrials (b1, 5.2)', () => {
+  it('deletes expired grant trial entitlements and returns affected tenant/product pairs', async () => {
+    const prisma = makePrisma({
+      entitlement: {
+        upsert: vi.fn(),
+        deleteMany: vi.fn().mockResolvedValue({ count: 2 }),
+        findMany: vi.fn().mockResolvedValue([
+          { tenantId: 't1', productId: 'instagram-dashboard' },
+          { tenantId: 't1', productId: 'instagram-dashboard' },
+        ]),
+      },
+    })
+    const repo = createModuleRepository(prisma as never)
+
+    const result = await repo.sweepExpiredTrials()
+
+    expect(prisma.entitlement.findMany).toHaveBeenCalledWith({
+      where: { source: 'trial', kind: 'grant', expiresAt: { lt: expect.any(Date) } },
+      select: { tenantId: true, productId: true },
+    })
+    expect(prisma.entitlement.deleteMany).toHaveBeenCalledWith({
+      where: { source: 'trial', kind: 'grant', expiresAt: { lt: expect.any(Date) } },
+    })
+    // deduped — both expired rows belong to the same (tenant, product) pair
+    expect(result).toEqual([{ tenantId: 't1', productId: 'instagram-dashboard' }])
+  })
+
+  it('does not call deleteMany when nothing is expired', async () => {
+    const prisma = makePrisma({
+      entitlement: { upsert: vi.fn(), deleteMany: vi.fn(), findMany: vi.fn().mockResolvedValue([]) },
+    })
+    const repo = createModuleRepository(prisma as never)
+
+    const result = await repo.sweepExpiredTrials()
+
+    expect(prisma.entitlement.deleteMany).not.toHaveBeenCalled()
+    expect(result).toEqual([])
+  })
+})

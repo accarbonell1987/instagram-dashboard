@@ -168,3 +168,30 @@ export const UpsertPlanQuotasRequestSchema = z.object({
 });
 
 export type AdminUpsertPlanQuotasRequest = z.infer<typeof UpsertPlanQuotasRequestSchema>;
+
+// ── Admin Trial schemas (b1, 5.1) ────────────────────────────────────────────
+
+export const TrialParamsSchema = z.object({
+  tenantId: z.string(),
+})
+
+export type TrialParams = z.infer<typeof TrialParamsSchema>
+
+export const GrantTrialRequestSchema = z.object({
+  productId: z.string().min(1),
+  // Required: resolveEffectiveModules has no consumer for a whole-product
+  // Entitlement (moduleId: null) yet — see ModuleRepository.grantTrial.
+  moduleId: z.string().min(1),
+  durationDays: z.number().int().positive().optional(),
+})
+
+export type GrantTrialRequest = z.infer<typeof GrantTrialRequestSchema>
+
+export const GrantTrialResponseSchema = z.object({
+  tenantId: z.string(),
+  productId: z.string(),
+  moduleId: z.string(),
+  expiresAt: z.string(),
+})
+
+export type GrantTrialResponse = z.infer<typeof GrantTrialResponseSchema>

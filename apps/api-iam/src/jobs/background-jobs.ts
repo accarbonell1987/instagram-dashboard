@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid'
 import cron from 'node-cron'
 import type { Logger } from '../lib/logger.js'
 import type { Repositories } from '../repositories/index.js'
+import { purgeAnalyticsEntitlementsCache } from '../lib/entitlements-purge.js'
 
 export function startBackgroundJobs(repos: Repositories, logger: Logger): void {
   if (process.env['NODE_ENV'] === 'test') return
@@ -36,5 +37,19 @@ export function startBackgroundJobs(repos: Repositories, logger: Logger): void {
 
   cron.schedule('0 3 * * *', () => {
     void runJob('cleanup-drafts', () => repos.draftRepo.deleteExpired())
+  })
+
+  // b1 (5.2): expired trial Entitlements are already inactive at read time
+  // (resolveEffectiveModules filters expiresAt), so this sweep is hygiene
+  // (delete stale rows) + a cache-purge fan-out so the guard's 60s TTL
+  // doesn't keep serving a stale allow past expiry.
+  cron.schedule('*/15 * * * *', () => {
+    void runJob('sweep-expired-trials', async () => {
+      const expired = await repos.moduleRepository.sweepExpiredTrials()
+      for (const { tenantId, productId } of expired) {
+        purgeAnalyticsEntitlementsCache(tenantId, productId)
+      }
+      return expired
+    })
   })
 }

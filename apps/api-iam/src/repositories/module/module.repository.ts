@@ -17,6 +17,16 @@ export type ModuleRepository = {
   setPlanModules(planId: string, moduleIds: string[]): Promise<void>
   upsertTenantOverride(tenantId: string, moduleId: string, enabled: boolean, createdBy?: string, reason?: string): Promise<void>
   deleteTenantOverride(tenantId: string, moduleId: string): Promise<void>
+  // b1 (5.1): tenant-level trial grant — Entitlement(source: trial, kind: grant).
+  // moduleId is required: a whole-product Entitlement (moduleId: null) has no
+  // consumer in resolveEffectiveModules yet (see the ponytail note above) and
+  // Prisma's generated compound-unique input for a nullable @@unique member
+  // doesn't accept null, so there is no atomic upsert path for it today.
+  grantTrial(tenantId: string, productId: string, moduleId: string, expiresAt: Date, createdBy?: string, reason?: string): Promise<void>
+  // b1 (5.2): deletes expired trial grants (hygiene — resolveEffectiveModules
+  // already excludes them at read time) and returns the affected (tenant,
+  // product) pairs for the caller to fan out a cache purge.
+  sweepExpiredTrials(): Promise<{ tenantId: string; productId: string }[]>
 }
 
 export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
@@ -171,6 +181,33 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
           where: { tenantId, productId: DEFAULT_PRODUCT_ID, moduleId, source: 'override' },
         }),
       ])
+    },
+
+    async grantTrial(tenantId, productId, moduleId, expiresAt, createdBy, reason) {
+      const key = { tenantId, productId, moduleId, source: 'trial' as const }
+      await prisma.entitlement.upsert({
+        where: { tenantId_productId_moduleId_source: key },
+        create: { ...key, kind: 'grant', expiresAt, createdBy: createdBy ?? null, reason: reason ?? null },
+        update: { kind: 'grant', expiresAt, createdBy: createdBy ?? null, reason: reason ?? null },
+      })
+    },
+
+    async sweepExpiredTrials() {
+      const where = { source: 'trial' as const, kind: 'grant' as const, expiresAt: { lt: new Date() } }
+      const expired = await prisma.entitlement.findMany({ where, select: { tenantId: true, productId: true } })
+      if (expired.length === 0) return []
+
+      await prisma.entitlement.deleteMany({ where })
+
+      const seen = new Set<string>()
+      const pairs: { tenantId: string; productId: string }[] = []
+      for (const entitlement of expired) {
+        const pairKey = `${entitlement.tenantId}:${entitlement.productId}`
+        if (seen.has(pairKey)) continue
+        seen.add(pairKey)
+        pairs.push(entitlement)
+      }
+      return pairs
     },
   }
 }

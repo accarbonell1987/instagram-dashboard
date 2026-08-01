@@ -38,6 +38,7 @@ import { createInvitationsRouter } from './invitations/index.js';
 import { createTenantModulesRouter, createAdminModulesRouter } from './modules/index.js';
 import { createAdminPlansRouter } from './admin/plans.js';
 import { createAdminTenantsRouter } from './admin/tenants.js';
+import { createAdminTrialsRouter } from './admin/trials.js';
 import { createAdminQuizzesRouter } from './admin/quizzes.js';
 import { createTenantQuizzesRouter } from './tenant/quizzes.js';
 import { createStubBancardRouter } from './stub/index.js';
@@ -119,6 +120,7 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   const adminModulesRouter = createAdminModulesRouter(services.moduleService, authGuard, idempotency);
   const adminPlansRouter = createAdminPlansRouter(services.planService, planQuotaRepo, authGuard, idempotency);
   const adminTenantsRouter = createAdminTenantsRouter(services.adminTenantService, authGuard, idempotency);
+  const adminTrialsRouter = createAdminTrialsRouter(services.moduleService, authGuard, idempotency);
   const adminQuizzesRouter = createAdminQuizzesRouter(services.quizService, services.quizAttemptService, authGuard, idempotency, prisma);
   const tenantQuizzesRouter = createTenantQuizzesRouter(services.quizService, services.quizAttemptService, authGuard);
   const internalRouter = createInternalRouter(prisma, services.moduleService);
@@ -137,6 +139,7 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   app.route('/', adminModulesRouter);
   app.route('/', adminPlansRouter);
   app.route('/', adminTenantsRouter);
+  app.route('/', adminTrialsRouter);
   app.route('/', adminQuizzesRouter);
   app.route('/', tenantQuizzesRouter);
 

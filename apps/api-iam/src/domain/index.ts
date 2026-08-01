@@ -203,6 +203,10 @@ export interface Document {
 // multi-product declaration (phase e) exists.
 export const DEFAULT_PRODUCT_ID = 'instagram-dashboard'
 
+// b1 (owner-confirmed #1677): default trial length; admins can override per
+// grant.
+export const DEFAULT_TRIAL_DURATION_DAYS = 14
+
 export type Module = {
   id: string
   name: string
