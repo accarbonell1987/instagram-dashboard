@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { UsageTracker } from './usage-tracker.service.js';
 import type { PrismaClient } from '@prisma/client';
 
@@ -12,7 +12,9 @@ function makeMockPrisma(overrides: Record<string, unknown> = {}) {
       count: vi.fn(),
     },
     ...overrides,
-  } as unknown as PrismaClient;
+  } as unknown as PrismaClient & {
+    aiUsageLog: Record<'create' | 'aggregate' | 'groupBy' | 'count', Mock>;
+  };
 }
 
 // Helper to create a mock fetch

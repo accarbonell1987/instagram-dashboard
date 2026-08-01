@@ -339,7 +339,7 @@ export function createAdminPlansRouter(
     }
 
     // Fire-and-forget cache bust to analytics
-    const analyticsUrl = process.env.ANALYTICS_INTERNAL_URL ?? 'http://localhost:3003'
+    const analyticsUrl = process.env['ANALYTICS_INTERNAL_URL'] ?? 'http://localhost:3003'
     fetch(`${analyticsUrl}/internal/quotas/purge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

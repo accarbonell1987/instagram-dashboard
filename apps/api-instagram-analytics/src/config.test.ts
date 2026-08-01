@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 
 // Mock dotenv BEFORE any import of config.ts to prevent .env file from loading
 vi.mock('dotenv', () => ({
@@ -18,10 +18,10 @@ describe('ConfigSchema — ENABLE_USAGE_TRACKING', () => {
 
   // We test the schema directly to isolate the ENABLE_USAGE_TRACKING field
   // Import the ConfigSchema dynamically after mocking dotenv
-  let ConfigSchema: typeof import('./config').ConfigSchema;
+  let ConfigSchema: typeof import('./config.js').ConfigSchema;
 
   beforeAll(async () => {
-    const mod = await import('./config');
+    const mod = await import('./config.js');
     ConfigSchema = mod.ConfigSchema;
   });
 

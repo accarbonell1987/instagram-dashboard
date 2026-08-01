@@ -1,7 +1,7 @@
 /**
  * Unit tests for ChatMessage repository
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
 import { PrismaChatMessageRepository } from './chat-message.repository.js';
 import type { IChatMessageRepository } from './chat-message.repository.js';
@@ -15,7 +15,9 @@ const mockPrisma = {
     delete: vi.fn(),
     deleteMany: vi.fn(),
   },
-} as unknown as PrismaClient;
+} as unknown as PrismaClient & {
+  chatMessage: Record<'create' | 'findMany' | 'delete' | 'deleteMany', Mock>;
+};
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 

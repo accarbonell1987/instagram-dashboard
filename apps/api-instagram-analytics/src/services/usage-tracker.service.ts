@@ -76,10 +76,17 @@ export class UsageTracker {
       },
     });
 
+    // Prisma types `_sum` as a union keyed on the aggregated fields; the branch
+    // here mirrors the `_sum` selection above, so widen to read the field safely.
+    const totals = used._sum as {
+      imageCount?: number | null;
+      promptTokens?: number | null;
+      completionTokens?: number | null;
+    };
     const sum =
       resourceType === 'fal_images'
-        ? (used._sum.imageCount ?? 0)
-        : ((used._sum.promptTokens ?? 0) + (used._sum.completionTokens ?? 0));
+        ? (totals.imageCount ?? 0)
+        : ((totals.promptTokens ?? 0) + (totals.completionTokens ?? 0));
 
     return {
       allowed: sum < quota.limit,

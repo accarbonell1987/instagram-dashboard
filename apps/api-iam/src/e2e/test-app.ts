@@ -295,6 +295,7 @@ export async function createTestApp(): Promise<TestApp> {
     keyProvider: adapters.keyProvider,
     config,
     planRepo: repos.planRepo,
+    planQuotaRepo: repos.planQuotaRepo,
     paymentRepo: repos.paymentRepo,
     draftRepo: repos.draftRepo,
     prisma,

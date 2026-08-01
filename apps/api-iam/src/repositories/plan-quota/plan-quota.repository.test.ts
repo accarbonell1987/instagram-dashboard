@@ -65,9 +65,9 @@ describe('PrismaPlanQuotaRepository', () => {
       const result = await repo.findByPlanId('plan-1');
 
       expect(result).toHaveLength(2);
-      expect(result[0].resourceType).toBe('deepseek_tokens');
-      expect(result[1].resourceType).toBe('fal_images');
-      expect(result[0].limit).toBe(5000);
+      expect(result[0]!.resourceType).toBe('deepseek_tokens');
+      expect(result[1]!.resourceType).toBe('fal_images');
+      expect(result[0]!.limit).toBe(5000);
     });
   });
 
