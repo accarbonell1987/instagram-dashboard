@@ -117,7 +117,7 @@ describe('TopPostsRanking', () => {
       const links = screen.getAllByRole('link');
       // All 3 items have permalinks
       expect(links.length).toBe(3);
-      expect(links[0].getAttribute('target')).toBe('_blank');
+      expect(links[0]!.getAttribute('target')).toBe('_blank');
     });
 
     it('items without permalink are not clickable', () => {
@@ -159,7 +159,7 @@ describe('TopPostsRanking', () => {
       render(<TopPostsRanking ranking={mockRanking} />);
       const links = screen.getAllByRole('link');
       // Post 2 has totalEngagement 280 — should be first
-      expect(links[0].getAttribute('aria-label')).toMatch(/Carrusel de productos/);
+      expect(links[0]!.getAttribute('aria-label')).toMatch(/Carrusel de productos/);
     });
 
     it('re-sorts when switching to score mode', () => {
@@ -170,7 +170,7 @@ describe('TopPostsRanking', () => {
       // Post 3: (90×3)+(30×3)+(20×2)+(150×1) = 270+90+40+150 = 550
       // Post 2 should still be first
       const links = screen.getAllByRole('link');
-      expect(links[0].getAttribute('aria-label')).toMatch(/Carrusel/);
+      expect(links[0]!.getAttribute('aria-label')).toMatch(/Carrusel/);
     });
   });
 });

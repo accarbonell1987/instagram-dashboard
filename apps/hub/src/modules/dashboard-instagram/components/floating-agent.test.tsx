@@ -22,6 +22,13 @@ function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgent
     deleteSelected: vi.fn().mockResolvedValue(undefined),
     clearSelection: vi.fn(),
     clearSuggestions: vi.fn().mockResolvedValue(undefined),
+    refreshSuggestions: vi.fn().mockResolvedValue(undefined),
+    agentConfig: null,
+    hasFalApiKey: false,
+    isSettingsOpen: false,
+    openSettings: vi.fn(),
+    closeSettings: vi.fn(),
+    saveAgentConfig: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   }
 }

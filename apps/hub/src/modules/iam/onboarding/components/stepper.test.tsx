@@ -24,7 +24,7 @@ function makeDraft(overrides: Partial<DraftState> = {}): DraftState {
 
 describe('Stepper', () => {
   it('renders all 6 step labels', () => {
-    render(<Stepper current="plan" draft={makeDraft()} />);
+    render(<Stepper current="plan" draft={makeDraft()} draftId="draft-001" />);
     expect(screen.getByText('Plan')).toBeInTheDocument();
     expect(screen.getByText('Representante')).toBeInTheDocument();
     expect(screen.getByText('Verificación')).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe('Stepper', () => {
   });
 
   it('current step has aria-current="step"', () => {
-    render(<Stepper current="otp" draft={makeDraft()} />);
+    render(<Stepper current="otp" draft={makeDraft()} draftId="draft-001" />);
     const currentItem = screen.getByRole('listitem', { name: /Verificación/i });
     expect(currentItem).toHaveAttribute('aria-current', 'step');
   });
@@ -44,14 +44,14 @@ describe('Stepper', () => {
       plan: { id: 'starter', name: 'Básico', price: 150_000, currency: 'PYG', billingCycle: 'monthly', features: [], popular: false },
       representative: { email: 'a@b.com', fullName: 'Ana', phone: '' },
     });
-    render(<Stepper current="otp" draft={draft} />);
+    render(<Stepper current="otp" draft={draft} draftId="draft-001" />);
     // Plan and Representative should be completed
     const planItem = screen.getByRole('listitem', { name: /Plan/i });
     expect(planItem).toHaveAttribute('data-status', 'completed');
   });
 
   it('renders mobile compact indicator', () => {
-    render(<Stepper current="company" draft={makeDraft()} />);
+    render(<Stepper current="company" draft={makeDraft()} draftId="draft-001" />);
     // Mobile compact dot indicator shows "Paso N/6"
     expect(screen.getByText(/Paso 4/i)).toBeInTheDocument();
   });

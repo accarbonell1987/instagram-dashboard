@@ -42,7 +42,7 @@ describe('useTimer', () => {
     })
 
     expect(result.current.isExpired).toBe(true)
-    expect(result.current.remaining).toBeUndefined
+    expect(result.current.formatted).toBe('00:00')
   })
 
   it('counts down over time', () => {

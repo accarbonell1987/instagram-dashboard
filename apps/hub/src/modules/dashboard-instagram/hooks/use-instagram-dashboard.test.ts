@@ -7,6 +7,7 @@ import {
   useGrowthData,
 } from './use-instagram-dashboard';
 import * as instagramService from '../services/instagram.service';
+import type { GrowthMetric, GrowthPeriod } from '../types/instagram.types';
 
 vi.mock('../services/instagram.service');
 
@@ -420,7 +421,7 @@ describe('useGrowthData', () => {
 
     const { result, rerender } = renderHook(
       ({ metric }) => useGrowthData(metric, '7d'),
-      { initialProps: { metric: 'followers' as const } },
+      { initialProps: { metric: 'followers' as GrowthMetric } },
     );
 
     await waitFor(() => {
@@ -446,7 +447,7 @@ describe('useGrowthData', () => {
 
     const { result, rerender } = renderHook(
       ({ period }) => useGrowthData('followers', period),
-      { initialProps: { period: '7d' as const } },
+      { initialProps: { period: '7d' as GrowthPeriod } },
     );
 
     await waitFor(() => {

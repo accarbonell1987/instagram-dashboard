@@ -94,6 +94,7 @@ import { useModules } from '@/modules/shared/modules';
 import type { AccessibleModule } from '@/modules/shared/modules/services/modules.service';
 import type {
   DashboardData,
+  InstagramPeriod,
   SyncState,
 } from './types/instagram.types';
 
@@ -102,6 +103,8 @@ function mockDashboardHook(overrides: Partial<ReturnType<typeof useInstagramDash
     data: null as DashboardData | null,
     isLoading: false,
     error: null as string | null,
+    period: '7d' as InstagramPeriod,
+    setPeriod: vi.fn(),
     refetch: vi.fn(),
   };
   const mock = { ...defaults, ...overrides };
