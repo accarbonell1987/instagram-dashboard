@@ -180,6 +180,102 @@ describe('TokenService', () => {
 
       expect(payload['user_status']).toBe('suspended')
     })
+
+    // c2 (8.1/8.3, PR9): product_roles claim — see design "Per-Product
+    // Roles / JWT" and owner decision #1679/2.
+    it('populates the product_roles claim as a compact { productKey: roleKey[] } map, keyed by ProductRole.key not id', async () => {
+      const { jwtVerify } = await import('jose')
+      const pair = await makeKeyPair()
+      const kp: KeyProvider = {
+        getSigningKey: vi.fn().mockResolvedValue({ privateKey: pair.privateKey, kid: TEST_KID }),
+        getVerifyingKeys: vi.fn().mockResolvedValue([{ publicKey: pair.publicKey, kid: TEST_KID }]),
+        getJwks: vi.fn().mockResolvedValue({ keys: [] }),
+      }
+      const productRoleRepository = {
+        listRoleKeysByUser: vi.fn().mockResolvedValue([
+          { productId: 'instagram-dashboard', roleKey: 'analyst' },
+          { productId: 'instagram-dashboard', roleKey: 'editor' },
+        ]),
+      }
+      const service = createTokenService({ keyProvider: kp, config, productRoleRepository: productRoleRepository as never })
+      const { accessToken } = await service.signAccessToken({
+        sub: 'user-1',
+        email: 'test@test.com',
+        name: 'Test User',
+        tenantId: 'acme',
+        tenantUuid: 'uuid-1',
+        role: 'User',
+        user_status: 'active',
+      })
+
+      const { payload } = await jwtVerify(accessToken, pair.publicKey, {
+        issuer: TEST_ISSUER,
+        audience: TEST_AUDIENCE,
+      })
+
+      expect(payload['product_roles']).toEqual({ 'instagram-dashboard': ['analyst', 'editor'] })
+      expect(productRoleRepository.listRoleKeysByUser).toHaveBeenCalledWith('user-1')
+      // the global role claim stays intact, layered underneath
+      expect(payload['role']).toBe('User')
+    })
+
+    it('omits the product_roles claim entirely when the user has no product roles', async () => {
+      const { jwtVerify } = await import('jose')
+      const pair = await makeKeyPair()
+      const kp: KeyProvider = {
+        getSigningKey: vi.fn().mockResolvedValue({ privateKey: pair.privateKey, kid: TEST_KID }),
+        getVerifyingKeys: vi.fn().mockResolvedValue([{ publicKey: pair.publicKey, kid: TEST_KID }]),
+        getJwks: vi.fn().mockResolvedValue({ keys: [] }),
+      }
+      const productRoleRepository = {
+        listRoleKeysByUser: vi.fn().mockResolvedValue([]),
+      }
+      const service = createTokenService({ keyProvider: kp, config, productRoleRepository: productRoleRepository as never })
+      const { accessToken } = await service.signAccessToken({
+        sub: 'user-1',
+        email: 'test@test.com',
+        name: 'Test User',
+        tenantId: 'acme',
+        tenantUuid: 'uuid-1',
+        role: 'User',
+        user_status: 'active',
+      })
+
+      const { payload } = await jwtVerify(accessToken, pair.publicKey, {
+        issuer: TEST_ISSUER,
+        audience: TEST_AUDIENCE,
+      })
+
+      expect(payload).not.toHaveProperty('product_roles')
+    })
+
+    it('omits the product_roles claim when no productRoleRepository dependency is configured (backward compatible)', async () => {
+      const { jwtVerify } = await import('jose')
+      const pair = await makeKeyPair()
+      const kp: KeyProvider = {
+        getSigningKey: vi.fn().mockResolvedValue({ privateKey: pair.privateKey, kid: TEST_KID }),
+        getVerifyingKeys: vi.fn().mockResolvedValue([{ publicKey: pair.publicKey, kid: TEST_KID }]),
+        getJwks: vi.fn().mockResolvedValue({ keys: [] }),
+      }
+      const service = createTokenService({ keyProvider: kp, config })
+      const { accessToken } = await service.signAccessToken({
+        sub: 'user-1',
+        email: 'test@test.com',
+        name: 'Test User',
+        tenantId: 'acme',
+        tenantUuid: 'uuid-1',
+        role: 'User',
+        user_status: 'active',
+      })
+
+      const { payload } = await jwtVerify(accessToken, pair.publicKey, {
+        issuer: TEST_ISSUER,
+        audience: TEST_AUDIENCE,
+      })
+
+      expect(payload).not.toHaveProperty('product_roles')
+      expect(payload['role']).toBe('User')
+    })
   })
 
   describe('verifyAccessToken', () => {

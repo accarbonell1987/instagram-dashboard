@@ -22,6 +22,7 @@ import {
   createIdentityService,
   createPlanChangeService,
   createModuleService,
+  createProductRoleService,
   createAdminTenantService,
   createQuizService,
   createQuizAttemptService,
@@ -88,7 +89,11 @@ export async function createTestApp(): Promise<TestApp> {
   const adapters = createAdapters(config, logger)
   const repos = createRepositories(prisma)
 
-  const tokenService = createTokenService({ keyProvider: adapters.keyProvider, config })
+  const tokenService = createTokenService({
+    keyProvider: adapters.keyProvider,
+    config,
+    productRoleRepository: repos.productRoleRepository,
+  })
 
   const otpService = createOtpService({
     otpCodeRepo: repos.otpCodeRepo,
@@ -222,6 +227,12 @@ export async function createTestApp(): Promise<TestApp> {
     logger,
   })
 
+  const productRoleService = createProductRoleService({
+    productRoleRepository: repos.productRoleRepository,
+    userRepo: repos.userRepo,
+    logger,
+  })
+
   const adminTenantService = createAdminTenantService({
     tenantRepo: repos.tenantRepo,
     userRepo: repos.userRepo,
@@ -255,6 +266,7 @@ export async function createTestApp(): Promise<TestApp> {
     webhookService,
     planChangeService,
     moduleService,
+    productRoleService,
     adminTenantService,
     quizService,
     quizAttemptService,

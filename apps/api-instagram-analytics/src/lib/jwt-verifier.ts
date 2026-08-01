@@ -8,6 +8,10 @@ export interface TenantContext {
   tenantId: string;       // UUID
   tenantSlug: string;     // slug
   role: string;
+  // c2 (8.2, PR9): optional per-product roles, layered on top of `role`
+  // above — { productKey: roleKey[] }. Absent on tokens issued before this
+  // claim existed; downstream guards must treat it as optional.
+  productRoles?: Record<string, string[]>;
 }
 
 interface AccessTokenClaims extends JWTPayload {
@@ -19,6 +23,7 @@ interface AccessTokenClaims extends JWTPayload {
   user_status?: string;
   jti: string;
   kid: string;
+  product_roles?: Record<string, string[]>;
 }
 
 let _jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -44,6 +49,7 @@ export async function verifyAccessToken(token: string): Promise<TenantContext> {
       tenantId: claims.tenant_uuid,
       tenantSlug: claims.tenant_slug ?? claims.tenant_id,
       role: claims.role,
+      ...(claims.product_roles !== undefined ? { productRoles: claims.product_roles } : {}),
     };
   } catch (error) {
     if (error instanceof Error && error.name === 'JWTExpired') {

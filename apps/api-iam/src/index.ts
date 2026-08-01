@@ -25,6 +25,7 @@ import {
   createIdentityService,
   createPlanChangeService,
   createModuleService,
+  createProductRoleService,
   createAdminTenantService,
   createQuizService,
   createQuizAttemptService,
@@ -58,6 +59,7 @@ async function main(): Promise<void> {
   const tokenService = createTokenService({
     keyProvider: adapters.keyProvider,
     config,
+    productRoleRepository: repos.productRoleRepository,
   });
 
   const otpService = createOtpService({
@@ -194,6 +196,12 @@ async function main(): Promise<void> {
     logger: rootLogger,
   });
 
+  const productRoleService = createProductRoleService({
+    productRoleRepository: repos.productRoleRepository,
+    userRepo: repos.userRepo,
+    logger: rootLogger,
+  });
+
   const adminTenantService = createAdminTenantService({
     tenantRepo: repos.tenantRepo,
     userRepo: repos.userRepo,
@@ -227,6 +235,7 @@ async function main(): Promise<void> {
     webhookService,
     planChangeService,
     moduleService,
+    productRoleService,
     adminTenantService,
     quizService,
     quizAttemptService,

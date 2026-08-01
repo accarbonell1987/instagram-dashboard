@@ -8,6 +8,9 @@ import {
   AdminTenantListItemSchema,
   AdminTenantDetailSchema,
   GrantTrialRequestSchema,
+  CreateProductRoleRequestSchema,
+  UpdateProductRoleRequestSchema,
+  AssignProductRoleRequestSchema,
 } from './admin.schemas.js'
 
 // ─── AdminCreatePlanSchema ──────────────────────────────────────────────────────
@@ -278,6 +281,53 @@ describe('GrantTrialRequestSchema', () => {
       moduleId: 'growth-agent',
       durationDays: 0,
     })
+    expect(result.success).toBe(false)
+  })
+})
+
+// ─── CreateProductRoleRequestSchema (c1, 7.2) ──────────────────────────────
+
+describe('CreateProductRoleRequestSchema', () => {
+  it('accepts a valid key + name', () => {
+    const result = CreateProductRoleRequestSchema.safeParse({ key: 'analyst', name: 'Analyst' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects an empty key', () => {
+    const result = CreateProductRoleRequestSchema.safeParse({ key: '', name: 'Analyst' })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects a missing name', () => {
+    const result = CreateProductRoleRequestSchema.safeParse({ key: 'analyst' })
+    expect(result.success).toBe(false)
+  })
+})
+
+// ─── UpdateProductRoleRequestSchema (c1, 7.2) ──────────────────────────────
+
+describe('UpdateProductRoleRequestSchema', () => {
+  it('accepts a new name', () => {
+    const result = UpdateProductRoleRequestSchema.safeParse({ name: 'Senior Analyst' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects an empty name', () => {
+    const result = UpdateProductRoleRequestSchema.safeParse({ name: '' })
+    expect(result.success).toBe(false)
+  })
+})
+
+// ─── AssignProductRoleRequestSchema (c1, 7.2) ──────────────────────────────
+
+describe('AssignProductRoleRequestSchema', () => {
+  it('accepts a productRoleId', () => {
+    const result = AssignProductRoleRequestSchema.safeParse({ productRoleId: 'role-1' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a missing productRoleId', () => {
+    const result = AssignProductRoleRequestSchema.safeParse({})
     expect(result.success).toBe(false)
   })
 })

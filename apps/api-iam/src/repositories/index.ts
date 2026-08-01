@@ -14,6 +14,7 @@ import { PrismaInvitationRepository } from './invitation/index.js'
 import { PrismaDocumentRepository } from './document/index.js'
 import { PrismaPlanChangeRepository } from './plan-change/index.js'
 import { createModuleRepository } from './module/index.js'
+import { createProductRoleRepository } from './product-role/index.js'
 import { createQuizRepository } from './quiz/index.js'
 import { createQuizAttemptRepository } from './quiz-attempt/index.js'
 import { PrismaPlanQuotaRepository } from './plan-quota/index.js'
@@ -33,6 +34,7 @@ export type { InvitationRepository, CreateInvitationInput, InvitationStatus, Raw
 export type { DocumentRepository, CreateDocumentInput } from './document/index.js'
 export type { PlanChangeRepository, CreatePlanChangeInput, PlanChangeRepositoryItem } from './plan-change/index.js'
 export type { ModuleRepository } from './module/index.js'
+export type { ProductRoleRepository } from './product-role/index.js'
 export type { QuizRepository } from './quiz/index.js'
 export type { QuizAttemptRepository } from './quiz-attempt/index.js'
 export type { PlanQuotaRepository, PlanQuotaData, CreatePlanQuotaInput, UpsertPlanQuotaInput } from './plan-quota/index.js'
@@ -72,6 +74,7 @@ export function createRepositories(prisma: PrismaClient) {
     documentRepo: new PrismaDocumentRepository(prisma),
     planChangeRepo: new PrismaPlanChangeRepository(prisma),
     moduleRepository: createModuleRepository(prisma),
+    productRoleRepository: createProductRoleRepository(prisma),
     quizRepository: createQuizRepository(prisma),
     quizAttemptRepository: createQuizAttemptRepository(prisma),
     planQuotaRepo: new PrismaPlanQuotaRepository(prisma),
