@@ -59,6 +59,7 @@ async function main(): Promise<void> {
   const tokenService = createTokenService({
     keyProvider: adapters.keyProvider,
     config,
+    productRoleRepository: repos.productRoleRepository,
   });
 
   const otpService = createOtpService({

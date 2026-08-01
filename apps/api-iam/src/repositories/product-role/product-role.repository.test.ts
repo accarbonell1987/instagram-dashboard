@@ -148,4 +148,38 @@ describe('ProductRoleRepository', () => {
 
     expect(prisma.userProductRole.findMany).toHaveBeenCalledWith({ where: { userId: 'user-1' } })
   })
+
+  // c2 (8.1, PR9): JWT product_roles claim needs (productId, roleKey) pairs,
+  // not just the raw join row — see design "Per-Product Roles / JWT".
+  it('listRoleKeysByUser returns the (productId, roleKey) pairs for a user, scoped by userId', async () => {
+    const prisma = makePrisma({
+      userProductRole: {
+        findMany: vi.fn().mockResolvedValue([
+          { productRole: { productId: 'instagram-dashboard', key: 'analyst' } },
+          { productRole: { productId: 'instagram-dashboard', key: 'editor' } },
+        ]),
+      },
+    })
+    const repo = createProductRoleRepository(prisma as never)
+
+    const result = await repo.listRoleKeysByUser('user-1')
+
+    expect(result).toEqual([
+      { productId: 'instagram-dashboard', roleKey: 'analyst' },
+      { productId: 'instagram-dashboard', roleKey: 'editor' },
+    ])
+    expect(prisma.userProductRole.findMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+      include: { productRole: true },
+    })
+  })
+
+  it('listRoleKeysByUser returns an empty array when the user has no product roles', async () => {
+    const prisma = makePrisma()
+    const repo = createProductRoleRepository(prisma as never)
+
+    const result = await repo.listRoleKeysByUser('user-1')
+
+    expect(result).toEqual([])
+  })
 })

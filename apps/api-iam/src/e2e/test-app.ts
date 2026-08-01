@@ -89,7 +89,11 @@ export async function createTestApp(): Promise<TestApp> {
   const adapters = createAdapters(config, logger)
   const repos = createRepositories(prisma)
 
-  const tokenService = createTokenService({ keyProvider: adapters.keyProvider, config })
+  const tokenService = createTokenService({
+    keyProvider: adapters.keyProvider,
+    config,
+    productRoleRepository: repos.productRoleRepository,
+  })
 
   const otpService = createOtpService({
     otpCodeRepo: repos.otpCodeRepo,

@@ -38,6 +38,7 @@ function makeDeps(overrides: Partial<ProductRoleServiceDeps> = {}): ProductRoleS
       assignToUser: vi.fn().mockResolvedValue(makeAssignment()),
       unassignFromUser: vi.fn().mockResolvedValue(undefined),
       listByUser: vi.fn().mockResolvedValue([makeAssignment()]),
+      listRoleKeysByUser: vi.fn().mockResolvedValue([]),
     },
     userRepo: {
       findById: vi.fn().mockResolvedValue({ id: 'user-1' }),

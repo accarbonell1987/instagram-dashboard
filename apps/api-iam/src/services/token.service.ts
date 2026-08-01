@@ -3,11 +3,16 @@ import { nanoid } from 'nanoid'
 import type { KeyProvider } from '../adapters/index.js'
 import type { Config } from '../config.js'
 import type { OtpPurpose, UserRole } from '../domain/index.js'
+import type { ProductRoleRepository } from '../repositories/product-role/index.js'
 import { GoneError, UnauthorizedError, ValidationError } from '../errors.js'
 
 export type TokenServiceDeps = {
   keyProvider: KeyProvider
   config: Config
+  // c2 (8.1, PR9): optional so existing callers/tests keep working —
+  // when absent, the product_roles claim is simply omitted (see design
+  // "Per-Product Roles / JWT", owner decision #1679/2).
+  productRoleRepository?: ProductRoleRepository
 }
 
 export type AccessTokenClaims = {
@@ -19,6 +24,7 @@ export type AccessTokenClaims = {
   jti: string
   kid: string
   user_status?: string | undefined
+  product_roles?: Record<string, string[]> | undefined
 }
 
 export type AccessTokenResult = {
@@ -34,7 +40,19 @@ export type OtpVerificationTokenPayload = {
 }
 
 export function createTokenService(deps: TokenServiceDeps) {
-  const { keyProvider, config } = deps
+  const { keyProvider, config, productRoleRepository } = deps
+
+  async function buildProductRolesClaim(userId: string): Promise<Record<string, string[]> | undefined> {
+    if (!productRoleRepository) return undefined
+    const rows = await productRoleRepository.listRoleKeysByUser(userId)
+    if (rows.length === 0) return undefined
+
+    const productRoles: Record<string, string[]> = {}
+    for (const { productId, roleKey } of rows) {
+      ;(productRoles[productId] ??= []).push(roleKey)
+    }
+    return productRoles
+  }
 
   async function signAccessToken(claims: {
     sub: string
@@ -48,6 +66,7 @@ export function createTokenService(deps: TokenServiceDeps) {
   }): Promise<AccessTokenResult> {
     const { privateKey, kid } = await keyProvider.getSigningKey()
     const now = Math.floor(Date.now() / 1000)
+    const productRoles = await buildProductRolesClaim(claims.sub)
     const accessToken = await new SignJWT({
       email: claims.email,
       name: claims.name,
@@ -60,6 +79,9 @@ export function createTokenService(deps: TokenServiceDeps) {
       role: claims.role,
       user_status: claims.user_status,
       ...(claims.phone !== undefined ? { phone: claims.phone } : {}),
+      // c2 (8.1, PR9): layered on top of the global `role` claim above —
+      // compact { productKey: roleKey[] } map, omitted entirely when empty.
+      ...(productRoles !== undefined ? { product_roles: productRoles } : {}),
       jti: nanoid(),
       kid,
     })
