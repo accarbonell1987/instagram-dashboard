@@ -57,6 +57,13 @@ export function getAppsDir(): string {
 }
 
 /**
+ * Get the products directory path (`products/{product}/{api,web}` topology)
+ */
+export function getProductsDir(): string {
+  return path.join(getMonorepoRoot(), 'products');
+}
+
+/**
  * Check if a directory exists
  */
 export async function directoryExists(dirPath: string): Promise<boolean> {

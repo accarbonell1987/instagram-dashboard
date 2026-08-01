@@ -17,6 +17,7 @@ export {
   getMonorepoRoot,
   getTemplatesDir,
   getAppsDir,
+  getProductsDir,
   directoryExists,
   appExists,
   ensureDir,
