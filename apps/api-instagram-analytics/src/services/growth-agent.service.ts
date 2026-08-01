@@ -25,12 +25,13 @@ import {
 // ─── Timeout helper ───────────────────────────────────────────────────────────
 
 function withTimeout<T>(promise: Promise<T>, ms: number, errorCode: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new InternalError(errorCode)), ms)
-    ),
-  ]);
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new InternalError(errorCode)), ms);
+  });
+  // Clear the timer once the race settles so the loser never rejects an
+  // orphaned promise (which would surface as an unhandled rejection).
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 // ─── System Prompt ────────────────────────────────────────────────────────────

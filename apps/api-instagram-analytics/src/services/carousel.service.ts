@@ -75,8 +75,11 @@ export class CarouselService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const basePrompt = (agentConfig as any)?.imageGen?.basePrompt as string | undefined;
 
-    // Fire-and-forget background generation
-    void this._generateAsync(carousel.id, tenantId, topic, basePrompt, approvedSlides);
+    // Fire-and-forget background generation — background rejections must be
+    // caught here or they surface as unhandled process-level rejections.
+    this._generateAsync(carousel.id, tenantId, topic, basePrompt, approvedSlides).catch((error) => {
+      console.error(`[carousel:${carousel.id}] background generation failed:`, error);
+    });
 
     return { id: carousel.id, status: carousel.status };
   }
@@ -179,7 +182,9 @@ export class CarouselService {
         if (stack) console.error(stack);
         await this.carouselRepo.updateSlideStatus(slideId, 'failed');
       }
-    })();
+    })().catch((error) => {
+      console.error(`[carousel:${carouselId}] slide ${slideId} regeneration task failed:`, error);
+    });
   }
 
   async reorderSlides(
@@ -224,7 +229,9 @@ export class CarouselService {
     await this.carouselRepo.resetForRegeneration(carouselId, input.topic);
 
     const topic = input.topic ?? carousel.topic;
-    void this._generateAsync(carouselId, tenantId, topic, basePrompt);
+    this._generateAsync(carouselId, tenantId, topic, basePrompt).catch((error) => {
+      console.error(`[carousel:${carouselId}] background generation failed:`, error);
+    });
 
     return { id: carouselId, status: 'pending' };
   }
@@ -424,7 +431,9 @@ export class CarouselService {
           await this.carouselRepo.updateSlideStatus(slideId, 'failed');
         }
         await this.finalizeCarouselIfComplete(carouselId, tenantId);
-      })();
+      })().catch((error) => {
+        console.error(`[carousel:${carouselId}] img2img slide ${slideId} task failed:`, error);
+      });
       return;
     }
 
