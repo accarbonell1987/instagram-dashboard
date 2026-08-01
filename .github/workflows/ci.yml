@@ -14,6 +14,27 @@ jobs:
     name: Type-check, lint & test
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: corehub
+          POSTGRES_PASSWORD: corehub_dev_password
+          POSTGRES_DB: corehub_iam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U corehub"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # Prisma 7 resolves env("DATABASE_URL") when loading prisma.config.ts —
+    # even `prisma generate` fails without it. A single URL serves every package.
+    env:
+      DATABASE_URL: postgresql://corehub:corehub_dev_password@localhost:5432/corehub_iam
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,10 +51,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Prisma client must exist before type-check/test on the APIs.
-      # `prisma generate` is offline — no database connection required.
       - name: Generate Prisma client
         run: pnpm db:generate
+
+      # Apply the IAM schema so database-backed tests have their tables.
+      - name: Apply database migrations
+        run: pnpm --filter @corehub/api-iam exec prisma migrate deploy
 
       - name: Type-check
         run: pnpm type-check
