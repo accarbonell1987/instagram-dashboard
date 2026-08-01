@@ -15,6 +15,7 @@ import type { TokenService } from './token.service.js'
 import type { Config } from '../config.js'
 import type { Tenant } from '../domain/index.js'
 import { DEFAULT_PRODUCT_ID } from '../domain/index.js'
+import { purgeAnalyticsEntitlementsCache } from '../lib/entitlements-purge.js'
 import { slugToSchemaName } from '../db/with-tenant.js'
 import { runTenantMigrations } from '../db/migration-runner.js'
 import { ConflictError, InternalError } from '../errors.js'
@@ -359,6 +360,13 @@ export function createSubmitService(deps: SubmitServiceDeps) {
     }
 
     log.info({ category: 'auth', event: 'tenant_provisioned', tenantId, ownerUserId: userId })
+
+    // a4 (subscription changes fan-out, best-effort, outside transaction):
+    // the TenantProductSubscription upsert above (Step 8) is the only
+    // Tenant.planId/subscription write path today — purge the product API's
+    // guard cache in case an entitlement check for this tenant was already
+    // (incorrectly) cached before provisioning completed.
+    purgeAnalyticsEntitlementsCache(tenantId, DEFAULT_PRODUCT_ID)
 
     // ── Step 14: Sign access token ────────────────────────────────────────
     // Bug 9 fix: No longer generating pre-signed URLs here (old TTL was 300s — too short).

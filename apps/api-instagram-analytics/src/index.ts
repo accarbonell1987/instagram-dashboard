@@ -21,6 +21,7 @@ import { CarouselService } from './services/carousel.service.js';
 import { FalAiImageProvider } from './lib/image/fal-ai-image-provider.js';
 import { DiskImageStorage } from './lib/image/disk-image-storage.js';
 import { UsageTracker } from './services/usage-tracker.service.js';
+import { entitlementGuard, createEntitlementsPurgeRoute } from '@core/entitlements';
 import { authGuard } from './middleware/auth-guard.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { ConflictError } from './errors.js';
@@ -95,9 +96,20 @@ async function bootstrap() {
   // params and works without tenant context.
   app.route('/api/auth/instagram', createAuthRoutes(oauthService));
 
+  // Entitlement guard (a4): fetch+cache (60s TTL, mirrors UsageTracker) +
+  // fail-closed on iam downtime (owner-confirmed, apply-signoff #1672).
+  // Product-level gate — no moduleId yet (no product API module is
+  // per-module-gated today; growth-agent gets a stricter moduleId-scoped
+  // mount once that module is promoted, per design).
+  const entitlementsGuard = entitlementGuard({
+    productId: 'instagram-dashboard',
+    iamBaseUrl: config.IAM_INTERNAL_URL,
+  });
+
   // Protected routes (JWT required)
   const api = new OpenAPIHono();
   api.use('*', authGuard);
+  api.use('*', entitlementsGuard);
   api.route('/dashboard', createDashboardRoutes(dashboardService, insightService));
   api.route('/media', createMediaRoutes(dashboardService));
   api.route('/sync', createSyncRoutes(syncService));
@@ -137,6 +149,10 @@ async function bootstrap() {
 
   // Internal routes (no auth guard — protected by network/firewall)
   app.route('/internal', createInternalRoutes(usageTracker));
+  // a4 purge-direction correction (owner-resolved): the entitlement cache
+  // lives in the guard, so the purge route is hosted here — api-iam is the
+  // CALLER on entitlement-mutating writes (mirrors the quotas purge pattern).
+  app.route('/', createEntitlementsPurgeRoute(entitlementsGuard));
 
   // Static file serving for generated carousel images
   app.use('/carousels/*', serveStatic({ root: './public' }));

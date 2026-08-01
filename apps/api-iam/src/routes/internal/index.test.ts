@@ -106,28 +106,7 @@ describe('GET /internal/tenants/:tenantId/entitlements', () => {
   })
 })
 
-// 3.3/3.4: cache purge hook, mirrors the /internal/quotas/purge network-
-// protected style already used between api-iam and the analytics product API.
-describe('POST /internal/entitlements/purge', () => {
-  it('returns 200 with purged:true', async () => {
-    const app = buildApp(makePrisma(), makeModuleService())
-
-    const response = await app.request('/internal/entitlements/purge', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantId: 'tenant-1', productId: 'instagram-dashboard' }),
-    })
-
-    expect(response.status).toBe(200)
-    const body = (await response.json()) as JsonBody
-    expect((body['data'] as JsonBody)['purged']).toBe(true)
-  })
-
-  it('returns 200 even with an empty body (fire-and-forget callers)', async () => {
-    const app = buildApp(makePrisma(), makeModuleService())
-
-    const response = await app.request('/internal/entitlements/purge', { method: 'POST' })
-
-    expect(response.status).toBe(200)
-  })
-})
+// a4 purge-direction correction (owner-resolved): POST /internal/entitlements/purge
+// is now hosted by packages/entitlements (mounted on the product API), not
+// api-iam — api-iam is the CALLER. The a3 placeholder route + its tests were
+// removed; see lib/entitlements-purge.test.ts for the caller-side coverage.
