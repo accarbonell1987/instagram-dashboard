@@ -6,10 +6,13 @@
  *
  * Strict TDD: RED phase — test written before implementation.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { createInternalRoutes } from './internal.routes.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { errorHandler } from '../../middleware/error-handler.js';
+
+import { createInternalRoutes } from './internal.routes.js';
+
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 

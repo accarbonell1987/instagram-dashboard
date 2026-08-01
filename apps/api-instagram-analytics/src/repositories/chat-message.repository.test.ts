@@ -1,8 +1,9 @@
 /**
  * Unit tests for ChatMessage repository
  */
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+
 import { PrismaChatMessageRepository } from './chat-message.repository.js';
 import type { IChatMessageRepository } from './chat-message.repository.js';
 

@@ -1,30 +1,23 @@
-import { serve } from '@hono/node-server';
-import { serveStatic } from '@hono/node-server/serve-static';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { swaggerUI } from '@hono/swagger-ui';
-import { cors } from 'hono/cors';
-import { logger } from 'hono/logger';
-import { PrismaClient } from '@prisma/client';
 import { join } from 'node:path';
 
+import { entitlementGuard, createEntitlementsPurgeRoute } from '@core/entitlements';
+import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
+import { swaggerUI } from '@hono/swagger-ui';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { PrismaClient } from '@prisma/client';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+
 import { config } from './config.js';
+import { ConflictError } from './errors.js';
 import { createRepositories } from './lib/create-repositories.js';
-import { OAuthService } from './services/oauth.service.js';
-import { SyncService } from './services/sync.service.js';
-import { DashboardService } from './services/dashboard.service.js';
-import { InsightService } from './services/insight.service.js';
 import { DeepSeekClient } from './lib/deepseek-client.js';
-import { SuggestionService } from './services/suggestion.service.js';
-import { GrowthAgentService } from './services/growth-agent.service.js';
-import { ScriptGeneratorService } from './services/script-generator.service.js';
-import { CarouselService } from './services/carousel.service.js';
 import { FalAiImageProvider } from './lib/image/fal-ai-image-provider.js';
 import { DiskImageStorage } from './lib/image/disk-image-storage.js';
 import { UsageTracker } from './services/usage-tracker.service.js';
-import { entitlementGuard, createEntitlementsPurgeRoute } from '@core/entitlements';
 import { authGuard } from './middleware/auth-guard.js';
 import { errorHandler } from './middleware/error-handler.js';
-import { ConflictError } from './errors.js';
 import { createHealthRoutes } from './routes/health/health.routes.js';
 import { createAuthRoutes } from './routes/auth/auth.routes.js';
 import { createDashboardRoutes } from './routes/dashboard/dashboard.routes.js';
@@ -35,6 +28,14 @@ import { createSuggestionsRoutes } from './routes/suggestions/suggestions.routes
 import { createAgentRoutes } from './routes/agent/agent.routes.js';
 import { createCarouselRoutes } from './routes/carousels/carousels.routes.js';
 import { createInternalRoutes } from './routes/internal/internal.routes.js';
+import { CarouselService } from './services/carousel.service.js';
+import { DashboardService } from './services/dashboard.service.js';
+import { GrowthAgentService } from './services/growth-agent.service.js';
+import { InsightService } from './services/insight.service.js';
+import { OAuthService } from './services/oauth.service.js';
+import { ScriptGeneratorService } from './services/script-generator.service.js';
+import { SuggestionService } from './services/suggestion.service.js';
+import { SyncService } from './services/sync.service.js';
 
 async function bootstrap() {
   // Initialize Prisma

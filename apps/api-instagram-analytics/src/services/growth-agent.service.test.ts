@@ -3,8 +3,10 @@
  * TDD: RED phase — written before implementation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GrowthAgentService } from './growth-agent.service.js';
+
 import { InternalError, QuotaExceededError } from '../errors.js';
+
+import { GrowthAgentService } from './growth-agent.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────

@@ -1,10 +1,11 @@
-import type { Repositories } from '../lib/create-repositories.js';
-import type { DashboardService } from './dashboard.service.js';
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
-import type { SuggestionService } from './suggestion.service.js';
-import type { UsageTracker } from './usage-tracker.service.js';
-import { TOOL_DEFINITIONS } from '../lib/tool-definitions.js';
-import { InternalError, QuotaExceededError } from '../errors.js';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
+
+import {
+  DEFAULT_SYSTEM_PROMPT,
+  buildSystemPrompt,
+  buildSuggestionPrompt,
+} from '../config/prompts.js';
+import type { AgentConfig } from '../domain/account.js';
 import type {
   DashboardContext,
   PostSummary,
@@ -13,25 +14,29 @@ import type {
   SuggestionOutcomeResult,
   ToolCall,
 } from '../domain/growth-agent.js';
+import { InternalError, QuotaExceededError } from '../errors.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import type { DeepSeekClient } from '../lib/deepseek-client.js';
+import { TOOL_DEFINITIONS } from '../lib/tool-definitions.js';
 import type { ContentSuggestion } from '../repositories/suggestion.repository.js';
-import type { AgentConfig } from '../domain/account.js';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
-import {
-  DEFAULT_SYSTEM_PROMPT,
-  buildSystemPrompt,
-  buildSuggestionPrompt,
-} from '../config/prompts.js';
+
+import type { DashboardService } from './dashboard.service.js';
+import type { SuggestionService } from './suggestion.service.js';
+import type { UsageTracker } from './usage-tracker.service.js';
+
+
+
 
 // ─── Timeout helper ───────────────────────────────────────────────────────────
 
 function withTimeout<T>(promise: Promise<T>, ms: number, errorCode: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new InternalError(errorCode)), ms);
+    timer = setTimeout(() => { reject(new InternalError(errorCode)); }, ms);
   });
   // Clear the timer once the race settles so the loser never rejects an
   // orphaned promise (which would surface as an unhandled rejection).
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  return Promise.race([promise, timeout]).finally(() => { clearTimeout(timer); });
 }
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
@@ -53,7 +58,7 @@ interface ChatParams {
   userId: string;
   sessionId: string;
   userMessage: string;
-  history: Array<{ role: 'user' | 'assistant'; content: string }>;
+  history: { role: 'user' | 'assistant'; content: string }[];
 }
 
 interface ChatResult {
@@ -93,7 +98,7 @@ export class GrowthAgentService {
 
     const messages: ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
-      ...history.map((h) => ({ role: h.role as 'user' | 'assistant', content: h.content })),
+      ...history.map((h) => ({ role: h.role, content: h.content })),
       { role: 'user', content: userMessage },
     ];
 
@@ -193,7 +198,7 @@ export class GrowthAgentService {
         messages.push({
           role: 'assistant',
           content: response.content,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           tool_calls: response.toolCalls.map((tc) => ({
             id: tc.id,
             type: 'function' as const,

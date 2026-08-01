@@ -1,6 +1,6 @@
 import type { InstagramAccount, ConnectAccountInput, AgentConfig } from '../../domain/account.js';
-import type { InstagramMedia, MediaMetrics, MediaWithMetrics, PaginatedMedia } from '../../domain/media.js';
 import type { AccountInsight, DashboardData, InsightSnapshot, NorthStarMetrics } from '../../domain/insight.js';
+import type { InstagramMedia, MediaMetrics, MediaWithMetrics, PaginatedMedia } from '../../domain/media.js';
 import type { FilterParams } from '../repository.interface.js';
 
 export interface InstagramRepository {
@@ -12,7 +12,7 @@ export interface InstagramRepository {
   ): Promise<{ id: string; igUserId: string; tokenEncrypted: string | null } | null>;
   findAccountsExpiringSoon(
     daysThreshold: number,
-  ): Promise<Array<{ id: string; tenantId: string; igUserId: string; tokenEncrypted: string }>>;
+  ): Promise<{ id: string; tenantId: string; igUserId: string; tokenEncrypted: string }[]>;
   upsertAccount(
     tenantId: string,
     input: ConnectAccountInput,
@@ -79,7 +79,7 @@ export interface InstagramRepository {
   countAccountInsightHistory(accountId: string): Promise<number>;
   bulkCreateFollowerSnapshots(
     accountId: string,
-    snapshots: Array<{ date: Date; followerCount: number; reach: number }>,
+    snapshots: { date: Date; followerCount: number; reach: number }[],
   ): Promise<number>;
 
   // Dashboard Aggregation

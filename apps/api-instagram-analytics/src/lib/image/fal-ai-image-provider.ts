@@ -1,4 +1,5 @@
 import { createFalClient } from '@fal-ai/client';
+
 import type { ImageProvider, ImageGenerateOptions } from './image-provider.js';
 
 const DEFAULT_T2I_MODEL = 'fal-ai/ideogram/v3';
@@ -20,7 +21,7 @@ export class FalAiImageProvider implements ImageProvider {
     const client = createFalClient({ credentials: apiKey });
     const resolvedModel = model ?? DEFAULT_T2I_MODEL;
 
-    let result: { data: { images?: Array<{ url: string }> } };
+    let result: { data: { images?: { url: string }[] } };
     try {
       result = await client.subscribe(resolvedModel, {
         input: {
@@ -30,7 +31,7 @@ export class FalAiImageProvider implements ImageProvider {
           image_size: IMAGE_SIZE,
           rendering_speed: 'BALANCED',
         },
-      }) as { data: { images?: Array<{ url: string }> } };
+      }) as { data: { images?: { url: string }[] } };
     } catch (error) {
       const falError = error as { status?: number; body?: unknown; requestId?: string; message?: string };
       const detail = JSON.stringify({ status: falError.status, body: falError.body, requestId: falError.requestId });
@@ -59,7 +60,7 @@ export class FalAiImageProvider implements ImageProvider {
     const uploadedUrl = await client.storage.upload(imageFile);
     console.log(`[fal.ai] uploaded base image to fal storage: ${uploadedUrl.slice(0, 80)}...`);
 
-    let result: { data: { images?: Array<{ url: string }> } };
+    let result: { data: { images?: { url: string }[] } };
     try {
       result = await client.subscribe(resolvedModel, {
         input: {
@@ -68,7 +69,7 @@ export class FalAiImageProvider implements ImageProvider {
           strength: IMG2IMG_STRENGTH,
           num_images: 1,
         },
-      }) as { data: { images?: Array<{ url: string }> } };
+      }) as { data: { images?: { url: string }[] } };
     } catch (error) {
       const falError = error as { status?: number; body?: unknown; requestId?: string; message?: string };
       const detail = JSON.stringify({ status: falError.status, body: falError.body, requestId: falError.requestId });

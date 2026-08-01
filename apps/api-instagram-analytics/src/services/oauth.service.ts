@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
-import type { Repositories } from '../lib/create-repositories.js';
-import { InstagramClient } from '../lib/instagram-client.js';
-import { encryptToken, decryptToken } from '../lib/crypto.js';
+
 import { config } from '../config.js';
-import { AccountNotConnectedError, NotFoundError, ValidationError } from '../errors.js';
 import type { ConnectionStatus } from '../domain/account.js';
+import { AccountNotConnectedError, NotFoundError, ValidationError } from '../errors.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import { encryptToken, decryptToken } from '../lib/crypto.js';
+import { InstagramClient } from '../lib/instagram-client.js';
 
 export class OAuthService {
   constructor(private readonly repos: Repositories) {}

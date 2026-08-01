@@ -7,12 +7,12 @@ const CONSISTENT_MIN = 5;
 // Ratio mínimo para que el hallazgo valga la pena mostrar (30% mejor)
 const MIN_LIFT = 1.3;
 
-type RankingItem = {
+interface RankingItem {
   mediaType: string;
   saves: number;
   shares: number;
   caption: string | null;
-};
+}
 
 const DAY_LABELS: Record<number, string> = {
   0: 'domingos', 1: 'lunes', 2: 'martes', 3: 'miércoles',

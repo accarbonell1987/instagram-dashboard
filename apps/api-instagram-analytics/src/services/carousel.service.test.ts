@@ -3,9 +3,11 @@
  * TDD: RED phase — tests written before implementation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { QuotaExceededError } from '../errors.js';
+
 import { CarouselService } from './carousel.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
-import { QuotaExceededError } from '../errors.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 

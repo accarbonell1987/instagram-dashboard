@@ -1,9 +1,4 @@
-import type { ICarouselRepository } from '../repositories/carousel.repository.js';
-import type { InstagramRepository } from '../repositories/instagram/index.js';
-import type { ScriptGeneratorService } from './script-generator.service.js';
-import type { ImageProvider } from '../lib/image/image-provider.js';
-import type { ImageStorage } from '../lib/image/image-storage.js';
-import type { UsageTracker } from './usage-tracker.service.js';
+import { config } from '../config.js';
 import type {
   Carousel,
   CarouselSlide,
@@ -14,11 +9,18 @@ import type {
   RegenerateCarouselInput,
   CreateUploadCarouselInput,
 } from '../domain/carousel.js';
-import { decryptToken } from '../lib/crypto.js';
 import { NotFoundError, InsufficientScopeError, InstagramAPIError, AppError, QuotaExceededError } from '../errors.js';
-import { InstagramClient } from '../lib/instagram-client.js';
-import { config } from '../config.js';
+import { decryptToken } from '../lib/crypto.js';
+import type { ImageProvider } from '../lib/image/image-provider.js';
+import type { ImageStorage } from '../lib/image/image-storage.js';
 import { compositeTextOnImage } from '../lib/image/text-compositor.js';
+import { InstagramClient } from '../lib/instagram-client.js';
+import type { ICarouselRepository } from '../repositories/carousel.repository.js';
+import type { InstagramRepository } from '../repositories/instagram/index.js';
+
+import type { ScriptGeneratorService } from './script-generator.service.js';
+import type { UsageTracker } from './usage-tracker.service.js';
+
 
 export class CarouselService {
   constructor(
@@ -190,7 +192,7 @@ export class CarouselService {
   async reorderSlides(
     carouselId: string,
     tenantId: string,
-    order: Array<{ id: string; order: number }>,
+    order: { id: string; order: number }[],
   ): Promise<CarouselSlide[]> {
     const carousel = await this.carouselRepo.findById(tenantId, carouselId);
     if (!carousel) throw new NotFoundError('Carousel', carouselId);
@@ -219,7 +221,7 @@ export class CarouselService {
     }
 
     const account = await this.instagramRepo.findAccountByTenantId(tenantId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const agentConfig = account
       ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
       : null;
@@ -335,7 +337,7 @@ export class CarouselService {
   async createUploadCarousel(
     tenantId: string,
     input: CreateUploadCarouselInput,
-  ): Promise<{ id: string; status: string; slides: Array<{ id: string; order: number; status: string }> }> {
+  ): Promise<{ id: string; status: string; slides: { id: string; order: number; status: string }[] }> {
     const account = await this.instagramRepo.findAccountByTenantId(tenantId);
 
     const carousel = await this.carouselRepo.create({

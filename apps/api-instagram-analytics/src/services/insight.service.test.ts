@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { InsightService } from './insight.service.js';
+
 import type { DashboardData } from '../domain/insight.js';
+
+import { InsightService } from './insight.service.js';
 
 function createMockDashboard(overrides: Partial<DashboardData> = {}): DashboardData {
   return {

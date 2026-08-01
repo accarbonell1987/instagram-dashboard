@@ -1,12 +1,12 @@
-import type { Repositories } from '../lib/create-repositories.js';
-import { InstagramClient, extractInsightValue } from '../lib/instagram-client.js';
-import { decryptToken } from '../lib/crypto.js';
-import { invalidateCache } from '../lib/cache.js';
 import {
   AccountNotConnectedError,
   InstagramAPIError,
   RateLimitError,
 } from '../errors.js';
+import { invalidateCache } from '../lib/cache.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import { decryptToken } from '../lib/crypto.js';
+import { InstagramClient, extractInsightValue } from '../lib/instagram-client.js';
 
 // Media-level metrics (v25.0, graph.instagram.com). NOTE: correct names are
 // `saved` (not `saves`) and `views` (not `video_views`). `impressions` is still
@@ -157,7 +157,7 @@ export class SyncService {
     try {
       // Get account with encrypted token
       const tokenRecord = await this.repos.instagram.findAccountWithToken(accountId);
-      if (!tokenRecord || !tokenRecord.tokenEncrypted) {
+      if (!tokenRecord?.tokenEncrypted) {
         await this.repos.instagram.updateSyncLog(logId, 'failed', 0, {
           error: 'No encrypted token found',
         });

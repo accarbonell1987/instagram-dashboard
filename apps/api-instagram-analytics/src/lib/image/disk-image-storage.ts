@@ -1,12 +1,13 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import type { ImageStorage } from './image-storage.js';
 
 export class DiskImageStorage implements ImageStorage {
   constructor(
     private readonly publicDir: string,
     // baseUrl kept for interface compatibility but no longer embedded in the stored path
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     private readonly _baseUrl: string,
   ) {}
 

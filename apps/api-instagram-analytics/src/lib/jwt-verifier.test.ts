@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { UnauthorizedError } from '../errors.js';
 
 // c2 (8.2/8.3, PR9): optional product_roles claim parsing — see design
@@ -11,6 +12,7 @@ vi.mock('jose', () => ({
 }));
 
 import { jwtVerify } from 'jose';
+
 import { verifyAccessToken } from './jwt-verifier.js';
 
 function mockPayload(overrides: Record<string, unknown> = {}) {

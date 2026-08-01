@@ -1,5 +1,5 @@
-import type { PrismaClient } from '@prisma/client';
-import { CarouselStatus, SlideStatus, SlideRole } from '@prisma/client';
+import type { PrismaClient, CarouselStatus, SlideStatus, type SlideRole  } from '@prisma/client';
+
 import type { Carousel, CarouselSlide, CarouselStatus as DomainCarouselStatus, SlideStatus as DomainSlideStatus, SlideRole as DomainSlideRole, ImageMode, CarouselType, PublishStatus } from '../domain/carousel.js';
 import { NotFoundError } from '../errors.js';
 
@@ -31,7 +31,7 @@ export interface ICarouselRepository {
   updateSlide(tenantId: string, carouselId: string, slideId: string, data: { text?: string; visualPrompt?: string }): Promise<CarouselSlide>;
   updateSlideStatus(slideId: string, status: DomainSlideStatus, imageUrl?: string, uploadedImageUrl?: string): Promise<void>;
   countPendingSlides(carouselId: string): Promise<number>;
-  reorderSlides(carouselId: string, order: Array<{ id: string; order: number }>): Promise<CarouselSlide[]>;
+  reorderSlides(carouselId: string, order: { id: string; order: number }[]): Promise<CarouselSlide[]>;
   deleteSlides(carouselId: string): Promise<void>;
   updatePublishStatus(
     carouselId: string,
@@ -173,7 +173,7 @@ export class PrismaCarouselRepository implements ICarouselRepository {
 
   async reorderSlides(
     carouselId: string,
-    order: Array<{ id: string; order: number }>,
+    order: { id: string; order: number }[],
   ): Promise<CarouselSlide[]> {
     // Two-phase update to avoid @@unique([carouselId, order]) collisions mid-transaction
     await this.prisma.$transaction(async (tx) => {

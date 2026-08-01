@@ -1,11 +1,14 @@
 /**
  * Unit tests for agent routes
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { createAgentRoutes } from './agent.routes.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+
 import { NotFoundError } from '../../errors.js';
 import { errorHandler } from '../../middleware/error-handler.js';
+
+import { createAgentRoutes } from './agent.routes.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 

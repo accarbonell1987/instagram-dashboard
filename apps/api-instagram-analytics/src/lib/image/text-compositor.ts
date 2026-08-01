@@ -49,7 +49,7 @@ export async function compositeTextOnImage(
   if (!text.trim()) return imageBuffer;
 
   const image = sharp(imageBuffer);
-  const { width = 1080, height = 1350 } = await image.metadata();
+  const { width, height } = await image.metadata();
 
   const layout = getLayout(text.length);
   const lines = wrapText(text.trim(), layout.charsPerLine);

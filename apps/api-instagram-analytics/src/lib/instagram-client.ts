@@ -21,16 +21,16 @@ interface DemographicsBreakdownResult {
 }
 
 interface DemographicsInsightResponse {
-  data: Array<{
+  data: {
     name: string;
     period: string;
     total_value?: {
-      breakdowns: Array<{
+      breakdowns: {
         dimension_types: string[];
         results: DemographicsBreakdownResult[];
-      }>;
+      }[];
     };
-  }>;
+  }[];
 }
 
 interface InstagramMediaListResponse {
@@ -42,14 +42,14 @@ interface InstagramMediaListResponse {
 }
 
 interface InstagramInsightResponse {
-  data: Array<{
+  data: {
     name: string;
     period: string;
     // Time-series shape (no metric_type): values[].value
-    values?: Array<{ value: number; end_time?: string }>;
+    values?: { value: number; end_time?: string }[];
     // total_value shape (metric_type=total_value): total_value.value
     total_value?: { value: number };
-  }>;
+  }[];
 }
 
 /**
@@ -59,7 +59,7 @@ interface InstagramInsightResponse {
  * Returns null when the metric came back empty (so callers can log it).
  */
 export function extractInsightValue(insight: {
-  values?: Array<{ value: number }>;
+  values?: { value: number }[];
   total_value?: { value: number };
 }): number | null {
   if (insight.total_value && typeof insight.total_value.value === 'number') {
@@ -91,7 +91,7 @@ type JsonBody = Record<string, any>;
 
 async function safeJson(response: Response): Promise<JsonBody> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+     
     return response.json() as Promise<JsonBody>;
   } catch {
     return {};
@@ -105,7 +105,7 @@ async function igFetch<T>(
 ): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
   if (params) {
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    Object.entries(params).forEach(([k, v]) => { url.searchParams.set(k, v); });
   }
 
   const response = await fetch(url.toString(), {
@@ -120,11 +120,11 @@ async function igFetch<T>(
   if (response.status === 401 || response.status === 403) {
     const body = await safeJson(response);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const errorCode = body['error']?.['code'];
+    const errorCode = body['error']?.code;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const errorType: string | undefined = body['error']?.['type'];
+    const errorType: string | undefined = body['error']?.type;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const errorMessage: string | undefined = body['error']?.['message'];
+    const errorMessage: string | undefined = body['error']?.message;
     if (errorCode === 190) {
       throw new TokenExpiredError();
     }
@@ -144,7 +144,7 @@ async function igFetch<T>(
   if (!response.ok) {
     const body = await safeJson(response);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const errorMessage: string | undefined = body['error']?.['message'];
+    const errorMessage: string | undefined = body['error']?.message;
     throw new InstagramAPIError(
       `Instagram API error (${response.status}): ${errorMessage ?? 'Unknown'}`,
       body,
@@ -176,11 +176,11 @@ async function igPost<T>(
   if (response.status === 401 || response.status === 403) {
     const responseBody = await safeJson(response);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const errorCode = responseBody['error']?.['code'];
+    const errorCode = responseBody['error']?.code;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const errorType: string | undefined = responseBody['error']?.['type'];
+    const errorType: string | undefined = responseBody['error']?.type;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const errorMessage: string | undefined = responseBody['error']?.['message'];
+    const errorMessage: string | undefined = responseBody['error']?.message;
     if (errorCode === 190) throw new TokenExpiredError();
     if (errorType === 'OAuthException' && (errorCode === 10 || errorCode === 200)) {
       throw new InsufficientScopeError();
@@ -191,7 +191,7 @@ async function igPost<T>(
   if (!response.ok) {
     const responseBody = await safeJson(response);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const errorMessage: string | undefined = responseBody['error']?.['message'];
+    const errorMessage: string | undefined = responseBody['error']?.message;
     throw new InstagramAPIError(
       `Instagram API error (${response.status}): ${errorMessage ?? 'Unknown'}`,
       responseBody,
@@ -289,9 +289,9 @@ export class InstagramClient {
     igUserId: string,
     sinceDate: Date,
     untilDate: Date,
-  ): Promise<Array<{ date: Date; followerCount: number; reach: number }>> {
+  ): Promise<{ date: Date; followerCount: number; reach: number }[]> {
     const CHUNK_DAYS = 30;
-    const results: Array<{ date: Date; followerCount: number; reach: number }> = [];
+    const results: { date: Date; followerCount: number; reach: number }[] = [];
 
     let chunkStart = new Date(sinceDate);
     while (chunkStart < untilDate) {
@@ -440,7 +440,7 @@ export class InstagramClient {
 
     if (!response.ok) {
       const err = await safeJson(response);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       const errMsg: string | undefined = err['error_message'];
       throw new InstagramAPIError(
         `Token exchange failed: ${errMsg ?? 'Unknown error'}`,
@@ -463,7 +463,7 @@ export class InstagramClient {
 
     if (!response.ok) {
       const err = await safeJson(response);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       const errMsg: string | undefined = err['error_message'];
       throw new InstagramAPIError(
         `Long-lived token exchange failed: ${errMsg ?? 'Unknown'}`,
@@ -483,7 +483,7 @@ export class InstagramClient {
 
     if (!response.ok) {
       const err = await safeJson(response);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       const errMsg: string | undefined = err['error_message'];
       throw new InstagramAPIError(
         `Token refresh failed: ${errMsg ?? 'Unknown'}`,

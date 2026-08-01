@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { OAuthService } from './oauth.service.js';
+
 import type { InstagramRepository } from '../repositories/instagram/index.js';
+
+import { OAuthService } from './oauth.service.js';
 
 function createMockRepo(): {
   instagram: Record<keyof InstagramRepository, ReturnType<typeof vi.fn>>;

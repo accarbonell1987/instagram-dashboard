@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SyncService } from './sync.service.js';
-import type { InstagramRepository } from '../repositories/instagram/index.js';
+
 import { AccountNotConnectedError } from '../errors.js';
+import type { InstagramRepository } from '../repositories/instagram/index.js';
+
+import { SyncService } from './sync.service.js';
 
 vi.mock('../lib/crypto.js', () => ({ decryptToken: vi.fn(() => 'mock-token') }));
 vi.mock('../lib/instagram-client.js', () => ({

@@ -1,5 +1,8 @@
 import { Hono } from 'hono';
+
+import { AppError, InsufficientScopeError } from '../../errors.js';
 import type { CarouselService } from '../../services/carousel.service.js';
+
 import {
   CreateCarouselBodySchema,
   CreateUploadCarouselBodySchema,
@@ -9,7 +12,6 @@ import {
   RegenerateCarouselBodySchema,
   PublishCarouselBodySchema,
 } from './carousels.schemas.js';
-import { AppError, InsufficientScopeError } from '../../errors.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createCarouselRoutes(carouselService: CarouselService): Hono<any> {

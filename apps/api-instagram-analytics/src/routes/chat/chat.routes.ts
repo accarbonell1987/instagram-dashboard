@@ -1,8 +1,11 @@
 import { Hono } from 'hono';
-import type { GrowthAgentService } from '../../services/growth-agent.service.js';
-import type { IChatMessageRepository } from '../../lib/create-repositories.js';
-import { ChatRequestSchema, DeleteMessageParamsSchema, DeleteHistoryQuerySchema } from './chat.schemas.js';
+
 import { InternalError, RateLimitError } from '../../errors.js';
+import type { IChatMessageRepository } from '../../lib/create-repositories.js';
+import type { GrowthAgentService } from '../../services/growth-agent.service.js';
+
+import { ChatRequestSchema, DeleteMessageParamsSchema, DeleteHistoryQuerySchema } from './chat.schemas.js';
+
 
 // In-memory per-tenant chat rate limiter (10 req/min)
 const chatCounters = new Map<string, { count: number; windowStart: number }>();
@@ -26,7 +29,7 @@ function checkChatRateLimit(tenantId: string): { allowed: boolean } {
   return { allowed: true };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function createChatRoutes(
   growthAgentService: GrowthAgentService,
   chatMessageRepo: IChatMessageRepository,
@@ -47,7 +50,7 @@ export function createChatRoutes(
     }
 
     // Parse and validate body
-    let body: { sessionId?: string | undefined; message: string; history?: Array<{ role: 'user' | 'assistant'; content: string }> | undefined };
+    let body: { sessionId?: string | undefined; message: string; history?: { role: 'user' | 'assistant'; content: string }[] | undefined };
     try {
       const raw = await c.req.json() as unknown;
       const parsed = ChatRequestSchema.safeParse(raw);

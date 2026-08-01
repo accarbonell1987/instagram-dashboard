@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { authGuard } from './auth-guard.js';
+
 import { UnauthorizedError } from '../errors.js';
 
 // Mock jwt-verifier

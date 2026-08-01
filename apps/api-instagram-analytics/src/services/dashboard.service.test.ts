@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DashboardService } from './dashboard.service.js';
-import type { InstagramRepository } from '../repositories/instagram/index.js';
+
 import { AccountNotConnectedError, NotFoundError } from '../errors.js';
 import { clearAllCache } from '../lib/cache.js';
+import type { InstagramRepository } from '../repositories/instagram/index.js';
+
+import { DashboardService } from './dashboard.service.js';
 
 function createMockRepo(): {
   instagram: Record<keyof InstagramRepository, ReturnType<typeof vi.fn>>;

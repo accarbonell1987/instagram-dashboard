@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions.js';
+
 import { config } from '../config.js';
 
 export type DeepSeekModel = 'deepseek-v4-flash' | 'deepseek-v4-pro';

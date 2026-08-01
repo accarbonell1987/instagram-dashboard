@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
-import type { SuggestionService } from '../../services/suggestion.service.js';
-import { SuggestionsQuerySchema, MarkUsedRequestSchema, GenerateIdeaBodySchema } from './suggestions.schemas.js';
+
 import type { SuggestionStatus } from '../../repositories/suggestion.repository.js';
+import type { SuggestionService } from '../../services/suggestion.service.js';
+
+import { SuggestionsQuerySchema, MarkUsedRequestSchema, GenerateIdeaBodySchema } from './suggestions.schemas.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createSuggestionsRoutes(suggestionService: SuggestionService): Hono<any> {
@@ -42,7 +44,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
     });
 
     const status = query.success ? query.data.status : undefined;
-    const suggestions = await suggestionService.getSuggestions(tenantId, status as SuggestionStatus | undefined);
+    const suggestions = await suggestionService.getSuggestions(tenantId, status);
 
     return c.json(
       {

@@ -1,10 +1,11 @@
-import type { Repositories } from '../lib/create-repositories.js';
-import { AccountNotConnectedError, NotFoundError } from '../errors.js';
-import { getCached, setCache } from '../lib/cache.js';
 import type { DashboardData, DemographicsData, NorthStarMetrics } from '../domain/insight.js';
 import type { MediaWithMetrics, PaginatedMedia } from '../domain/media.js';
-import { InstagramClient } from '../lib/instagram-client.js';
+import { AccountNotConnectedError, NotFoundError } from '../errors.js';
+import { getCached, setCache } from '../lib/cache.js';
+import type { Repositories } from '../lib/create-repositories.js';
 import { decryptToken } from '../lib/crypto.js';
+import { InstagramClient } from '../lib/instagram-client.js';
+
 import { computeFindings } from './content-intelligence.service.js';
 
 export interface GrowthDataPoint {
@@ -94,7 +95,7 @@ export class DashboardService {
 
     const followersTotal = account.followersCount ?? 0;
 
-    const toItems = (results: Array<{ dimension_values: string[]; value: number }>) => {
+    const toItems = (results: { dimension_values: string[]; value: number }[]) => {
       const total = results.reduce((s, r) => s + r.value, 0);
       return results
         .map((r) => ({
@@ -158,7 +159,7 @@ export class DashboardService {
     if (!account) throw new AccountNotConnectedError();
 
     const media = await this.repos.instagram.findMediaById(mediaId);
-    if (!media || media.accountId !== account.id) throw new NotFoundError('Media', mediaId);
+    if (media?.accountId !== account.id) throw new NotFoundError('Media', mediaId);
 
     const tokenRecord = await this.repos.instagram.findAccountWithToken(account.id);
     if (!tokenRecord?.tokenEncrypted) throw new AccountNotConnectedError();

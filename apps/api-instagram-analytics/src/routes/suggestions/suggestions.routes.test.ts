@@ -2,11 +2,14 @@
  * Unit tests for suggestions routes
  * TDD: RED phase — written before implementation
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { createSuggestionsRoutes } from './suggestions.routes.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+
 import { NotFoundError } from '../../errors.js';
 import { errorHandler } from '../../middleware/error-handler.js';
+
+import { createSuggestionsRoutes } from './suggestions.routes.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 

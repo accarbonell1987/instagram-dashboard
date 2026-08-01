@@ -1,11 +1,13 @@
 import { Hono } from 'hono';
-import type { InstagramRepository } from '../../repositories/instagram/index.js';
-import type { UsageTracker } from '../../services/usage-tracker.service.js';
-import { SaveAgentSettingsBodySchema } from './agent.schemas.js';
+
 import { NotFoundError } from '../../errors.js';
 import { encryptToken } from '../../lib/crypto.js';
+import type { InstagramRepository } from '../../repositories/instagram/index.js';
+import type { UsageTracker } from '../../services/usage-tracker.service.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { SaveAgentSettingsBodySchema } from './agent.schemas.js';
+
+ 
 export function createAgentRoutes(
   repos: InstagramRepository,
   usageTracker: UsageTracker,

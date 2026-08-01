@@ -1,7 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { PrismaInstagramRepository } from './instagram.prisma.repository.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { config } from '../../config.js';
+
+import { PrismaInstagramRepository } from './instagram.prisma.repository.js';
+
 
 // Skip integration tests if no real database is configured.
 // The vitest setup sets DATABASE_URL to a local PostgreSQL URL by default.

@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+
 import { DataResponseSchema } from '../../lib/shared-schemas.js';
 
 // ─── Request schemas ──────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { errorHandler } from './error-handler.js';
+
 import {
   NotFoundError,
   ValidationError,
@@ -8,6 +8,8 @@ import {
   AccountNotConnectedError,
   RateLimitError,
 } from '../errors.js';
+
+import { errorHandler } from './error-handler.js';
 
 function createMockContext() {
   return {

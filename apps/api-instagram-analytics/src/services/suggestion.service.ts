@@ -1,13 +1,13 @@
+import { InternalError, QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
+import type { DeepSeekClient } from '../lib/deepseek-client.js';
 import type {
   ContentSuggestion,
   SuggestionBatch,
-  SuggestionStatus,
+  SuggestionStatus, SuggestionCategory 
 } from '../repositories/suggestion.repository.js';
-import type { SuggestionCategory } from '../repositories/suggestion.repository.js';
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
+
 import type { UsageTracker } from './usage-tracker.service.js';
-import { InternalError, QuotaExceededError } from '../errors.js';
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 

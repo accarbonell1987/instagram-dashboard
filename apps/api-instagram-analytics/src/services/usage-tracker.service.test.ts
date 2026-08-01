@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { UsageTracker } from './usage-tracker.service.js';
 import type { PrismaClient } from '@prisma/client';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+
+import { UsageTracker } from './usage-tracker.service.js';
 
 // Helper to create a basic mock PrismaClient
 function makeMockPrisma(overrides: Record<string, unknown> = {}) {

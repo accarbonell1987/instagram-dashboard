@@ -2,11 +2,14 @@
  * Unit tests for chat routes
  * TDD: RED phase — written before implementation
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { createChatRoutes } from './chat.routes.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+
 import { InternalError, RateLimitError } from '../../errors.js';
 import { errorHandler } from '../../middleware/error-handler.js';
+
+import { createChatRoutes } from './chat.routes.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 

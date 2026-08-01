@@ -1,7 +1,8 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { JWTPayload } from 'jose';
-import { UnauthorizedError, ForbiddenError } from '../errors.js';
+
 import { config } from '../config.js';
+import { UnauthorizedError, ForbiddenError } from '../errors.js';
 
 export interface TenantContext {
   userId: string;

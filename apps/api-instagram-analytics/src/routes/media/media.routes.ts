@@ -4,6 +4,7 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { createApiRouter } from '../../lib/create-openapi-router.js';
 import { ErrorResponseSchema, IdParamSchema } from '../../lib/shared-schemas.js';
 import type { DashboardService } from '../../services/dashboard.service.js';
+
 import {
   MediaDetailResponseSchema,
   MediaListResponseSchema,

@@ -23,11 +23,11 @@ const { DeepSeekClient } = await import('./deepseek-client.js');
 function makeCompletionResponse(overrides: {
   content?: string | undefined;
   finishReason?: string;
-  toolCalls?: Array<{
+  toolCalls?: {
     id: string;
     type: 'function';
     function: { name: string; arguments: string };
-  }>;
+  }[];
   promptTokens?: number;
   completionTokens?: number;
 }) {
