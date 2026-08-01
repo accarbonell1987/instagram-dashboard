@@ -76,6 +76,9 @@ export type {
 export { createModuleService } from './module.service.js';
 export type { ModuleService } from './module.service.js';
 
+export { createProductRoleService } from './product-role.service.js';
+export type { ProductRoleService, ProductRoleServiceDeps } from './product-role.service.js';
+
 export { createAdminTenantService } from './admin-tenant.service.js';
 export type {
   AdminTenantService,

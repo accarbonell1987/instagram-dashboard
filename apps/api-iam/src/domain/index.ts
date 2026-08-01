@@ -222,6 +222,25 @@ export type EffectiveModule = Module & {
   source: 'plan' | 'override' | 'trial' | 'admin'
 }
 
+// c1 (7.2, PR8): per-product roles, layered over the global UserRole enum —
+// see design "Per-Product Roles / JWT". `key` is the stable identifier c2's
+// JWT claim will use (not the UUID `id`).
+export interface ProductRole {
+  id: string
+  productId: string
+  key: string
+  name: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface UserProductRole {
+  userId: string
+  productRoleId: string
+  assignedBy: string | undefined
+  createdAt: Date
+}
+
 // ============================================================
 // QUIZ TYPES
 // ============================================================

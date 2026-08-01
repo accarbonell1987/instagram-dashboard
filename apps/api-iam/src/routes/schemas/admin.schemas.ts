@@ -196,3 +196,84 @@ export const GrantTrialResponseSchema = z.object({
 })
 
 export type GrantTrialResponse = z.infer<typeof GrantTrialResponseSchema>
+
+// ── Admin Product Role schemas (c1, 7.2) ────────────────────────────────────
+
+export const ProductRoleSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  key: z.string(),
+  name: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type AdminProductRole = z.infer<typeof ProductRoleSchema>
+
+export const ProductRoleListResponseSchema = z.object({
+  roles: z.array(ProductRoleSchema),
+})
+
+export type AdminProductRoleListResponse = z.infer<typeof ProductRoleListResponseSchema>
+
+export const ProductRoleParamsSchema = z.object({
+  productId: z.string(),
+})
+
+export type ProductRoleParams = z.infer<typeof ProductRoleParamsSchema>
+
+export const ProductRoleIdParamsSchema = z.object({
+  productId: z.string(),
+  roleId: z.string(),
+})
+
+export type ProductRoleIdParams = z.infer<typeof ProductRoleIdParamsSchema>
+
+export const CreateProductRoleRequestSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+})
+
+export type CreateProductRoleRequest = z.infer<typeof CreateProductRoleRequestSchema>
+
+export const UpdateProductRoleRequestSchema = z.object({
+  name: z.string().min(1),
+})
+
+export type UpdateProductRoleRequest = z.infer<typeof UpdateProductRoleRequestSchema>
+
+// ── Admin User Product Role schemas (c1, 7.2) ───────────────────────────────
+
+export const UserProductRoleParamsSchema = z.object({
+  userId: z.string(),
+})
+
+export type UserProductRoleParams = z.infer<typeof UserProductRoleParamsSchema>
+
+export const UserProductRoleIdParamsSchema = z.object({
+  userId: z.string(),
+  productRoleId: z.string(),
+})
+
+export type UserProductRoleIdParams = z.infer<typeof UserProductRoleIdParamsSchema>
+
+export const AssignProductRoleRequestSchema = z.object({
+  productRoleId: z.string().min(1),
+})
+
+export type AssignProductRoleRequest = z.infer<typeof AssignProductRoleRequestSchema>
+
+export const UserProductRoleSchema = z.object({
+  userId: z.string(),
+  productRoleId: z.string(),
+  assignedBy: z.string().nullable(),
+  createdAt: z.string(),
+})
+
+export type AdminUserProductRole = z.infer<typeof UserProductRoleSchema>
+
+export const UserProductRoleListResponseSchema = z.object({
+  roles: z.array(UserProductRoleSchema),
+})
+
+export type AdminUserProductRoleListResponse = z.infer<typeof UserProductRoleListResponseSchema>

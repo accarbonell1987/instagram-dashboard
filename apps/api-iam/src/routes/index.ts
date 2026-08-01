@@ -16,6 +16,7 @@ import type {
   PasswordService,
   PlanChangeService,
   ModuleService,
+  ProductRoleService,
   AdminTenantService,
   QuizService,
   QuizAttemptService,
@@ -39,6 +40,7 @@ import { createTenantModulesRouter, createAdminModulesRouter } from './modules/i
 import { createAdminPlansRouter } from './admin/plans.js';
 import { createAdminTenantsRouter } from './admin/tenants.js';
 import { createAdminTrialsRouter } from './admin/trials.js';
+import { createAdminProductRolesRouter } from './admin/product-roles.js';
 import { createAdminQuizzesRouter } from './admin/quizzes.js';
 import { createTenantQuizzesRouter } from './tenant/quizzes.js';
 import { createStubBancardRouter } from './stub/index.js';
@@ -60,6 +62,7 @@ export type Services = {
   webhookService: WebhookService;
   planChangeService: PlanChangeService;
   moduleService: ModuleService;
+  productRoleService: ProductRoleService;
   adminTenantService: AdminTenantService;
   quizService: QuizService;
   quizAttemptService: QuizAttemptService;
@@ -121,6 +124,7 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   const adminPlansRouter = createAdminPlansRouter(services.planService, planQuotaRepo, authGuard, idempotency);
   const adminTenantsRouter = createAdminTenantsRouter(services.adminTenantService, authGuard, idempotency);
   const adminTrialsRouter = createAdminTrialsRouter(services.moduleService, authGuard, idempotency);
+  const adminProductRolesRouter = createAdminProductRolesRouter(services.productRoleService, authGuard, idempotency);
   const adminQuizzesRouter = createAdminQuizzesRouter(services.quizService, services.quizAttemptService, authGuard, idempotency, prisma);
   const tenantQuizzesRouter = createTenantQuizzesRouter(services.quizService, services.quizAttemptService, authGuard);
   const internalRouter = createInternalRouter(prisma, services.moduleService);
@@ -140,6 +144,7 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   app.route('/', adminPlansRouter);
   app.route('/', adminTenantsRouter);
   app.route('/', adminTrialsRouter);
+  app.route('/', adminProductRolesRouter);
   app.route('/', adminQuizzesRouter);
   app.route('/', tenantQuizzesRouter);
 

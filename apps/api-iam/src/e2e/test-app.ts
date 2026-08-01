@@ -22,6 +22,7 @@ import {
   createIdentityService,
   createPlanChangeService,
   createModuleService,
+  createProductRoleService,
   createAdminTenantService,
   createQuizService,
   createQuizAttemptService,
@@ -222,6 +223,12 @@ export async function createTestApp(): Promise<TestApp> {
     logger,
   })
 
+  const productRoleService = createProductRoleService({
+    productRoleRepository: repos.productRoleRepository,
+    userRepo: repos.userRepo,
+    logger,
+  })
+
   const adminTenantService = createAdminTenantService({
     tenantRepo: repos.tenantRepo,
     userRepo: repos.userRepo,
@@ -255,6 +262,7 @@ export async function createTestApp(): Promise<TestApp> {
     webhookService,
     planChangeService,
     moduleService,
+    productRoleService,
     adminTenantService,
     quizService,
     quizAttemptService,
