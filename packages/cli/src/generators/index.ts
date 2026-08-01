@@ -5,6 +5,19 @@
 
 export { generateApi } from './api.generator.js';
 export { generateWebapp } from './webapp.generator.js';
+export { generateProduct } from './product.generator.js';
+export type { ProductGeneratorOptions } from './product.generator.js';
+export {
+  createDefaultProductDeclaration,
+  validateProductDeclaration,
+} from './product-declaration.js';
+export type {
+  ProductDeclaration,
+  ProductModuleDeclaration,
+  ProductPlanDeclaration,
+  ProductRoleDeclaration,
+  ValidationResult as ProductValidationResult,
+} from './product-declaration.js';
 
 // Docs generators
 export {

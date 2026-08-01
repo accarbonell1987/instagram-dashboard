@@ -6,7 +6,7 @@
 
 import { Command } from 'commander';
 
-import { generateApi, generateWebapp } from '../generators/index.js';
+import { generateApi, generateProduct, generateWebapp } from '../generators/index.js';
 import type {
   ApiGeneratorOptions as _ApiGeneratorOptions,
   WebappGeneratorOptions as _WebappGeneratorOptions,
@@ -14,6 +14,7 @@ import type {
 import {
   promptApiOptions,
   promptWebappOptions,
+  promptForName,
   confirmOverwrite,
   showSuccess,
   showError,
@@ -32,6 +33,13 @@ interface ApiCommandOptions {
 /** Command options parsed from commander */
 interface WebappCommandOptions {
   port?: number;
+  api?: string;
+  theme?: string;
+  targetDir?: string;
+}
+
+/** Command options parsed from commander */
+interface ProductCommandOptions {
   api?: string;
   theme?: string;
   targetDir?: string;
@@ -156,13 +164,64 @@ function createWebappCommand(): Command {
 }
 
 /**
+ * Create the 'new product' subcommand
+ *
+ * Scaffolds a `products/{name}/{api,web}` bundle by composing the existing
+ * api/webapp generators, plus a `product.config.ts` declaring the product's
+ * modules, plans, and roles (validated against the shipped Product/Module/
+ * Plan/ProductRole schema).
+ */
+function createProductCommand(): Command {
+  return new Command('product')
+    .description('Declare a new product: scaffolds api/web and a Product/Module/Plan/Role declaration')
+    .argument('[name]', 'Product name (kebab-case)')
+    .option('--api <url>', 'API URL the scaffolded webapp should point at')
+    .option('-t, --theme <name>', 'Initial theme for the scaffolded webapp (default: zinc)')
+    .option('--target-dir <path>', 'Custom target directory (default: products/{name})')
+    .action(async (name: string | undefined, cmdOptions: ProductCommandOptions) => {
+      try {
+        const resolvedName = await promptForName(name, 'product');
+
+        const result = await generateProduct({
+          name: resolvedName,
+          targetDir: cmdOptions.targetDir,
+          apiUrl: cmdOptions.api,
+          theme: cmdOptions.theme,
+        });
+
+        if (result.success) {
+          showSuccess(result.message);
+
+          for (const warning of result.warnings) {
+            showWarning(warning);
+          }
+
+          showNextSteps(resolvedName, [
+            `cd products/${resolvedName}`,
+            'pnpm install (from monorepo root)',
+            'Review product.config.ts and adjust its modules/plans/roles',
+            'Call seedProduct(...) from a Prisma-connected seed script to persist it',
+          ]);
+        } else {
+          showError(result.message);
+          process.exit(1);
+        }
+      } catch (error) {
+        showError(error instanceof Error ? error.message : 'Unknown error');
+        process.exit(1);
+      }
+    });
+}
+
+/**
  * Create the 'new' command with subcommands
  */
 export function createNewCommand(): Command {
   const newCmd = new Command('new')
     .description('Generate a new application')
     .addCommand(createApiCommand())
-    .addCommand(createWebappCommand());
+    .addCommand(createWebappCommand())
+    .addCommand(createProductCommand());
 
   return newCmd;
 }

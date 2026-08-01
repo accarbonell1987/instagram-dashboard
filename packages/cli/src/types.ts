@@ -4,7 +4,7 @@
  */
 
 /** Type of application that can be generated */
-export type AppType = 'api' | 'webapp';
+export type AppType = 'api' | 'webapp' | 'product';
 
 /** Base options shared by all generators */
 export interface BaseGeneratorOptions {
