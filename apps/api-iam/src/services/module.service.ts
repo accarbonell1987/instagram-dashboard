@@ -24,18 +24,19 @@ export type ModuleService = {
   setPlanModules(planId: string, moduleIds: string[]): Promise<void>
   upsertTenantOverride(tenantId: string, moduleId: string, enabled: boolean, createdBy?: string, reason?: string): Promise<void>
   removeTenantOverride(tenantId: string, moduleId: string): Promise<void>
-  // b1 (5.1): admin trial grant — durationDays defaults to
-  // DEFAULT_TRIAL_DURATION_DAYS (14, owner-confirmed #1677). moduleId is
-  // required (see ModuleRepository.grantTrial note — whole-product trials
-  // have no resolver consumer yet).
+  // b1 (5.1) + b1.5 (PR7, owner decision #1679/1): admin trial grant —
+  // durationDays defaults to DEFAULT_TRIAL_DURATION_DAYS (14,
+  // owner-confirmed #1677). moduleId: null means a product-scoped grant
+  // (see ModuleRepository.grantTrial — resolveEffectiveModules expands it to
+  // every module of the product).
   grantTrial(
     tenantId: string,
     productId: string,
-    moduleId: string,
+    moduleId: string | null,
     durationDays: number | undefined,
     createdBy?: string,
     reason?: string,
-  ): Promise<{ tenantId: string; productId: string; moduleId: string; expiresAt: Date }>
+  ): Promise<{ tenantId: string; productId: string; moduleId: string | null; expiresAt: Date }>
   // b1 (5.2): cron sweep of expired trials — returns affected (tenant,
   // product) pairs for the caller to fan out a cache purge.
   sweepExpiredTrials(): Promise<{ tenantId: string; productId: string }[]>

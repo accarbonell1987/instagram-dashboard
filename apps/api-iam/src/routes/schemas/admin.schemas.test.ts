@@ -259,8 +259,16 @@ describe('GrantTrialRequestSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('rejects a missing moduleId', () => {
+  // PR7 (b1.5, owner decision #1679/1): omitting moduleId now means a
+  // product-scoped grant (all modules of the product), not an invalid
+  // request.
+  it('accepts a missing moduleId as a product-scoped grant', () => {
     const result = GrantTrialRequestSchema.safeParse({ productId: 'instagram-dashboard' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects an empty-string moduleId', () => {
+    const result = GrantTrialRequestSchema.safeParse({ productId: 'instagram-dashboard', moduleId: '' })
     expect(result.success).toBe(false)
   })
 

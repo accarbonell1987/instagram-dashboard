@@ -130,6 +130,25 @@ describe('ModuleService — grantTrial (b1, 5.1)', () => {
     )
   })
 
+  // PR7 (b1.5, owner decision #1679/1): moduleId: null (product-scoped grant)
+  // passes through to the repository unchanged.
+  it('forwards a null moduleId (product-scoped grant) to the repository unchanged', async () => {
+    const deps = makeDeps()
+    const service = createModuleService(deps)
+
+    const result = await service.grantTrial('tenant-uuid-1', DEFAULT_PRODUCT_ID, null, undefined, 'admin-1')
+
+    expect(deps.moduleRepository.grantTrial).toHaveBeenCalledWith(
+      'tenant-uuid-1',
+      DEFAULT_PRODUCT_ID,
+      null,
+      expect.any(Date),
+      'admin-1',
+      undefined,
+    )
+    expect(result.moduleId).toBeNull()
+  })
+
   it('throws NotFoundError (via tenantRepository.findByUuid) for an unknown tenant', async () => {
     const deps = makeDeps({
       tenantRepository: {

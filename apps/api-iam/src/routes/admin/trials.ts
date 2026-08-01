@@ -12,10 +12,11 @@ function assertSuperAdmin(role: string): void {
   }
 }
 
-// b1 (5.1, owner-confirmed #1677): tenant-level trial grant — creates
-// Entitlement(source: trial, kind: grant, expiresAt), then fans out a
-// best-effort cache purge (mirrors upsertTenantModuleOverride's fan-out in
-// admin-modules.ts).
+// b1 (5.1, owner-confirmed #1677) + b1.5 (PR7, owner decision #1679/1):
+// tenant-level trial grant — creates Entitlement(source: trial, kind:
+// grant, expiresAt), then fans out a best-effort cache purge (mirrors
+// upsertTenantModuleOverride's fan-out in admin-modules.ts). Omitted
+// moduleId means a product-scoped grant (all modules of the product).
 export function createAdminTrialsRouter(
   moduleService: ModuleService,
   authGuard: MiddlewareHandler,
@@ -54,7 +55,7 @@ export function createAdminTrialsRouter(
     const { tenantId } = c.req.valid('param')
     const { productId, moduleId, durationDays } = c.req.valid('json')
     const createdBy = c.var.user.sub
-    const trial = await moduleService.grantTrial(tenantId, productId, moduleId, durationDays, createdBy)
+    const trial = await moduleService.grantTrial(tenantId, productId, moduleId ?? null, durationDays, createdBy)
     purgeAnalyticsEntitlementsCache(tenantId, productId)
 
     return c.json(

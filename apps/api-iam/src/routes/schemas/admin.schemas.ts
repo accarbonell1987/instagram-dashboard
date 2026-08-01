@@ -179,9 +179,10 @@ export type TrialParams = z.infer<typeof TrialParamsSchema>
 
 export const GrantTrialRequestSchema = z.object({
   productId: z.string().min(1),
-  // Required: resolveEffectiveModules has no consumer for a whole-product
-  // Entitlement (moduleId: null) yet — see ModuleRepository.grantTrial.
-  moduleId: z.string().min(1),
+  // Optional (PR7/b1.5, owner decision #1679/1): omitted moduleId means a
+  // product-scoped grant — resolveEffectiveModules expands it to every
+  // module of the product. See ModuleRepository.grantTrial.
+  moduleId: z.string().min(1).optional(),
   durationDays: z.number().int().positive().optional(),
 })
 
@@ -190,7 +191,7 @@ export type GrantTrialRequest = z.infer<typeof GrantTrialRequestSchema>
 export const GrantTrialResponseSchema = z.object({
   tenantId: z.string(),
   productId: z.string(),
-  moduleId: z.string(),
+  moduleId: z.string().nullable(),
   expiresAt: z.string(),
 })
 
