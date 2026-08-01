@@ -14,6 +14,7 @@ import { activationTemplate } from '../adapters/email/templates/index.js'
 import type { TokenService } from './token.service.js'
 import type { Config } from '../config.js'
 import type { Tenant } from '../domain/index.js'
+import { DEFAULT_PRODUCT_ID } from '../domain/index.js'
 import { slugToSchemaName } from '../db/with-tenant.js'
 import { runTenantMigrations } from '../db/migration-runner.js'
 import { ConflictError, InternalError } from '../errors.js'
@@ -237,6 +238,15 @@ export function createSubmitService(deps: SubmitServiceDeps) {
           await tx.tenant.update({
             where: { id: tenant.id },
             data: { status: 'active' },
+          })
+
+          // a2 (2.2): keep TenantProductSubscription in sync with the plan
+          // assignment written above — this is the only write path for
+          // Tenant.planId today (see design "Backfill scope").
+          await tx.tenantProductSubscription.upsert({
+            where: { tenantId_productId: { tenantId: tenant.id, productId: DEFAULT_PRODUCT_ID } },
+            create: { tenantId: tenant.id, productId: DEFAULT_PRODUCT_ID, planId },
+            update: { planId },
           })
 
           // ── Step 9: UPDATE draft status = completed ────────────────────

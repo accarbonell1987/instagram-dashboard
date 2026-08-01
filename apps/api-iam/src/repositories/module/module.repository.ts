@@ -1,5 +1,6 @@
 import type { PrismaClient } from '../../generated/prisma/client.js'
 import type { Module, EffectiveModule } from '../../domain/index.js'
+import { DEFAULT_PRODUCT_ID } from '../../domain/index.js'
 
 export type ModuleRepository = {
   findAll(): Promise<Module[]>
@@ -79,17 +80,52 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
     },
 
     async upsertTenantOverride(tenantId, moduleId, enabled, createdBy, reason) {
-      await prisma.tenantModuleOverride.upsert({
-        where: { tenantId_moduleId: { tenantId, moduleId } },
-        create: { tenantId, moduleId, enabled, createdBy: createdBy ?? null, reason: reason ?? null },
-        update: { enabled, reason: reason ?? null },
-      })
+      // a2: Entitlement is a grant-only model (presence = access), so only an
+      // enabled override maps to an Entitlement(source: override) row. A
+      // disabled override suppresses plan access and has no grant to store —
+      // drop any stale Entitlement row instead (see design "admin write
+      // paths additionally upsert the corresponding Entitlement row").
+      await prisma.$transaction([
+        prisma.tenantModuleOverride.upsert({
+          where: { tenantId_moduleId: { tenantId, moduleId } },
+          create: { tenantId, moduleId, enabled, createdBy: createdBy ?? null, reason: reason ?? null },
+          update: { enabled, reason: reason ?? null },
+        }),
+        enabled
+          ? prisma.entitlement.upsert({
+              where: {
+                tenantId_productId_moduleId_source: {
+                  tenantId,
+                  productId: DEFAULT_PRODUCT_ID,
+                  moduleId,
+                  source: 'override',
+                },
+              },
+              create: {
+                tenantId,
+                productId: DEFAULT_PRODUCT_ID,
+                moduleId,
+                source: 'override',
+                createdBy: createdBy ?? null,
+                reason: reason ?? null,
+              },
+              update: { createdBy: createdBy ?? null, reason: reason ?? null },
+            })
+          : prisma.entitlement.deleteMany({
+              where: { tenantId, productId: DEFAULT_PRODUCT_ID, moduleId, source: 'override' },
+            }),
+      ])
     },
 
     async deleteTenantOverride(tenantId, moduleId) {
-      await prisma.tenantModuleOverride.delete({
-        where: { tenantId_moduleId: { tenantId, moduleId } },
-      })
+      await prisma.$transaction([
+        prisma.tenantModuleOverride.delete({
+          where: { tenantId_moduleId: { tenantId, moduleId } },
+        }),
+        prisma.entitlement.deleteMany({
+          where: { tenantId, productId: DEFAULT_PRODUCT_ID, moduleId, source: 'override' },
+        }),
+      ])
     },
   }
 }
