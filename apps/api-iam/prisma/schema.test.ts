@@ -16,9 +16,11 @@ describe('schema.prisma — platform-productization PR1 (a1 + c1 schema)', () =>
     expect(body).toMatch(/\badmin\b/)
   })
 
-  it('defines Product as a top-level entity', () => {
+  it('defines Product as a top-level entity with a reserved billing reference', () => {
     expect(schema).toMatch(/model Product \{/)
     expect(schema).toMatch(/@@map\("products"\)/)
+    const productMatch = schema.match(/model Product \{([\s\S]*?)\n\}/)
+    expect(productMatch![1]).toMatch(/billingRef\s+String\?\s+@map\("billing_ref"\)/)
   })
 
   it('keys Plan to Product (nullable, additive-migration friendly)', () => {

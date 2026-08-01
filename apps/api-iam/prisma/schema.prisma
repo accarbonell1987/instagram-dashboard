@@ -175,6 +175,7 @@ model Product {
   name        String
   description String?
   active      Boolean  @default(true)
+  billingRef  String?  @map("billing_ref") // reserved for billing integration (owner decision #5)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
