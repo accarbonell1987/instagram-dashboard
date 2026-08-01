@@ -31,8 +31,8 @@ export * from "./enums.js"
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more Plans
- * const plans = await prisma.plan.findMany()
+ * // Fetch zero or more Products
+ * const products = await prisma.product.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -41,6 +41,11 @@ export const PrismaClient = $Class.getPrismaClientClass()
 export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts extends Prisma.PrismaClientOptions["omit"] = Prisma.PrismaClientOptions["omit"], ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>
 export { Prisma }
 
+/**
+ * Model Product
+ * 
+ */
+export type Product = Prisma.ProductModel
 /**
  * Model Plan
  * 
@@ -131,6 +136,26 @@ export type PlanModule = Prisma.PlanModuleModel
  * 
  */
 export type TenantModuleOverride = Prisma.TenantModuleOverrideModel
+/**
+ * Model TenantProductSubscription
+ * 
+ */
+export type TenantProductSubscription = Prisma.TenantProductSubscriptionModel
+/**
+ * Model Entitlement
+ * 
+ */
+export type Entitlement = Prisma.EntitlementModel
+/**
+ * Model ProductRole
+ * 
+ */
+export type ProductRole = Prisma.ProductRoleModel
+/**
+ * Model UserProductRole
+ * 
+ */
+export type UserProductRole = Prisma.UserProductRoleModel
 /**
  * Model Quiz
  * 

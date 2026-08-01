@@ -51,6 +51,7 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  Product: 'Product',
   Plan: 'Plan',
   PlanQuota: 'PlanQuota',
   Tenant: 'Tenant',
@@ -69,6 +70,10 @@ export const ModelName = {
   Module: 'Module',
   PlanModule: 'PlanModule',
   TenantModuleOverride: 'TenantModuleOverride',
+  TenantProductSubscription: 'TenantProductSubscription',
+  Entitlement: 'Entitlement',
+  ProductRole: 'ProductRole',
+  UserProductRole: 'UserProductRole',
   Quiz: 'Quiz',
   Question: 'Question',
   QuestionOption: 'QuestionOption',
@@ -92,6 +97,18 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const ProductScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
 export const PlanScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -103,6 +120,7 @@ export const PlanScalarFieldEnum = {
   features: 'features',
   popular: 'popular',
   active: 'active',
+  productId: 'productId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -332,6 +350,7 @@ export const ModuleScalarFieldEnum = {
   description: 'description',
   defaultUrl: 'defaultUrl',
   active: 'active',
+  productId: 'productId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -357,6 +376,59 @@ export const TenantModuleOverrideScalarFieldEnum = {
 } as const
 
 export type TenantModuleOverrideScalarFieldEnum = (typeof TenantModuleOverrideScalarFieldEnum)[keyof typeof TenantModuleOverrideScalarFieldEnum]
+
+
+export const TenantProductSubscriptionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  productId: 'productId',
+  planId: 'planId',
+  startsAt: 'startsAt',
+  endsAt: 'endsAt',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TenantProductSubscriptionScalarFieldEnum = (typeof TenantProductSubscriptionScalarFieldEnum)[keyof typeof TenantProductSubscriptionScalarFieldEnum]
+
+
+export const EntitlementScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  productId: 'productId',
+  moduleId: 'moduleId',
+  userId: 'userId',
+  source: 'source',
+  expiresAt: 'expiresAt',
+  reason: 'reason',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+} as const
+
+export type EntitlementScalarFieldEnum = (typeof EntitlementScalarFieldEnum)[keyof typeof EntitlementScalarFieldEnum]
+
+
+export const ProductRoleScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  key: 'key',
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductRoleScalarFieldEnum = (typeof ProductRoleScalarFieldEnum)[keyof typeof ProductRoleScalarFieldEnum]
+
+
+export const UserProductRoleScalarFieldEnum = {
+  userId: 'userId',
+  productRoleId: 'productRoleId',
+  assignedBy: 'assignedBy',
+  createdAt: 'createdAt'
+} as const
+
+export type UserProductRoleScalarFieldEnum = (typeof UserProductRoleScalarFieldEnum)[keyof typeof UserProductRoleScalarFieldEnum]
 
 
 export const QuizScalarFieldEnum = {
@@ -458,6 +530,14 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -465,12 +545,4 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
-
-
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

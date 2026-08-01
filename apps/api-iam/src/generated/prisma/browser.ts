@@ -18,6 +18,11 @@ export { Prisma }
 export * as $Enums from './enums.js'
 export * from './enums.js';
 /**
+ * Model Product
+ * 
+ */
+export type Product = Prisma.ProductModel
+/**
  * Model Plan
  * 
  */
@@ -107,6 +112,26 @@ export type PlanModule = Prisma.PlanModuleModel
  * 
  */
 export type TenantModuleOverride = Prisma.TenantModuleOverrideModel
+/**
+ * Model TenantProductSubscription
+ * 
+ */
+export type TenantProductSubscription = Prisma.TenantProductSubscriptionModel
+/**
+ * Model Entitlement
+ * 
+ */
+export type Entitlement = Prisma.EntitlementModel
+/**
+ * Model ProductRole
+ * 
+ */
+export type ProductRole = Prisma.ProductRoleModel
+/**
+ * Model UserProductRole
+ * 
+ */
+export type UserProductRole = Prisma.UserProductRoleModel
 /**
  * Model Quiz
  * 
