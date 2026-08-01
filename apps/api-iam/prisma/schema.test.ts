@@ -69,3 +69,19 @@ describe('schema.prisma — platform-productization PR1 (a1 + c1 schema)', () =>
     expect(schema).toMatch(/@@id\(\[userId, productRoleId\]\)/)
   })
 })
+
+describe('schema.prisma — platform-productization PR3 (a3 negative-override amendment)', () => {
+  it('defines the EntitlementKind enum with grant|revoke', () => {
+    const enumMatch = schema.match(/enum EntitlementKind \{([\s\S]*?)\}/)
+    expect(enumMatch).not.toBeNull()
+    const body = enumMatch![1]
+    expect(body).toMatch(/\bgrant\b/)
+    expect(body).toMatch(/\brevoke\b/)
+  })
+
+  it('Entitlement carries a kind field defaulting to grant', () => {
+    const match = schema.match(/model Entitlement \{([\s\S]*?)\n\}/)
+    expect(match).not.toBeNull()
+    expect(match![1]).toMatch(/kind\s+EntitlementKind\s+@default\(grant\)/)
+  })
+})

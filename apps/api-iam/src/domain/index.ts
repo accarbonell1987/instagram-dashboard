@@ -198,6 +198,11 @@ export interface Document {
   updatedAt: Date;
 }
 
+// Bootstrap Product (owner decision #5, design "Backfill scope"): the only
+// product today. Used by the a2 backfill and admin write-path sync until
+// multi-product declaration (phase e) exists.
+export const DEFAULT_PRODUCT_ID = 'instagram-dashboard'
+
 export type Module = {
   id: string
   name: string
@@ -208,7 +213,9 @@ export type Module = {
 
 export type EffectiveModule = Module & {
   effectiveUrl: string
-  source: 'plan' | 'override' | 'admin'
+  // a3: 'trial' added — grant Entitlements surface their real source (see
+  // design "source gains a trial value for free").
+  source: 'plan' | 'override' | 'trial' | 'admin'
 }
 
 // ============================================================

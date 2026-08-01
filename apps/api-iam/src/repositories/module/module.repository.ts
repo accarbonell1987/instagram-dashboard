@@ -1,10 +1,16 @@
 import type { PrismaClient } from '../../generated/prisma/client.js'
 import type { Module, EffectiveModule } from '../../domain/index.js'
+import { DEFAULT_PRODUCT_ID } from '../../domain/index.js'
 
 export type ModuleRepository = {
   findAll(): Promise<Module[]>
   findById(id: string): Promise<Module | null>
+  // Legacy resolver (pre-a3). Kept available for one release per the design
+  // rollout notes — rollback lever if the a3 switch needs to be reverted.
   findEffectiveForTenant(planId: string, tenantId: string): Promise<EffectiveModule[]>
+  // a3: effective modules = (plan live-join ∪ grant Entitlements) − revoke
+  // Entitlements, scoped to (tenantId, productId).
+  resolveEffectiveModules(tenantId: string, productId: string): Promise<EffectiveModule[]>
   create(data: { id: string; name: string; description?: string; defaultUrl: string }): Promise<Module>
   update(id: string, data: Partial<{ name: string; description: string; defaultUrl: string; active: boolean }>): Promise<Module>
   delete(id: string): Promise<void>
@@ -55,6 +61,49 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
       return Array.from(result.values())
     },
 
+    async resolveEffectiveModules(tenantId, productId) {
+      const now = new Date()
+      const [subscription, entitlements] = await Promise.all([
+        prisma.tenantProductSubscription.findUnique({
+          where: { tenantId_productId: { tenantId, productId } },
+        }),
+        prisma.entitlement.findMany({
+          where: {
+            tenantId,
+            productId,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          },
+          include: { module: true },
+        }),
+      ])
+
+      const result = new Map<string, EffectiveModule>()
+
+      if (subscription) {
+        const planModules = await prisma.planModule.findMany({
+          where: { planId: subscription.planId, module: { active: true } },
+          include: { module: true },
+        })
+        for (const pm of planModules) {
+          result.set(pm.moduleId, { ...toModule(pm.module), effectiveUrl: pm.module.defaultUrl, source: 'plan' })
+        }
+      }
+
+      // ponytail: only per-module grants/revokes are resolved today — a
+      // whole-product entitlement (moduleId: null) has no consumer yet, add
+      // handling (enumerate Product.modules) once one is actually granted.
+      for (const ent of entitlements) {
+        if (ent.kind !== 'grant' || !ent.moduleId || !ent.module?.active) continue
+        result.set(ent.moduleId, { ...toModule(ent.module), effectiveUrl: ent.module.defaultUrl, source: ent.source })
+      }
+
+      for (const ent of entitlements) {
+        if (ent.kind === 'revoke' && ent.moduleId) result.delete(ent.moduleId)
+      }
+
+      return Array.from(result.values())
+    },
+
     async create(data) {
       const row = await prisma.module.create({ data })
       return toModule(row)
@@ -79,17 +128,49 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
     },
 
     async upsertTenantOverride(tenantId, moduleId, enabled, createdBy, reason) {
-      await prisma.tenantModuleOverride.upsert({
-        where: { tenantId_moduleId: { tenantId, moduleId } },
-        create: { tenantId, moduleId, enabled, createdBy: createdBy ?? null, reason: reason ?? null },
-        update: { enabled, reason: reason ?? null },
-      })
+      // a3 (owner-confirmed #1675): a disabled override is a negative
+      // entitlement (kind: revoke), not a deleted row — the resolver now
+      // reads (plan ∪ grant) − revoke, so a disable must persist a revoke
+      // row to keep suppressing plan-derived access.
+      const kind = enabled ? 'grant' : 'revoke'
+      await prisma.$transaction([
+        prisma.tenantModuleOverride.upsert({
+          where: { tenantId_moduleId: { tenantId, moduleId } },
+          create: { tenantId, moduleId, enabled, createdBy: createdBy ?? null, reason: reason ?? null },
+          update: { enabled, reason: reason ?? null },
+        }),
+        prisma.entitlement.upsert({
+          where: {
+            tenantId_productId_moduleId_source: {
+              tenantId,
+              productId: DEFAULT_PRODUCT_ID,
+              moduleId,
+              source: 'override',
+            },
+          },
+          create: {
+            tenantId,
+            productId: DEFAULT_PRODUCT_ID,
+            moduleId,
+            source: 'override',
+            kind,
+            createdBy: createdBy ?? null,
+            reason: reason ?? null,
+          },
+          update: { kind, createdBy: createdBy ?? null, reason: reason ?? null },
+        }),
+      ])
     },
 
     async deleteTenantOverride(tenantId, moduleId) {
-      await prisma.tenantModuleOverride.delete({
-        where: { tenantId_moduleId: { tenantId, moduleId } },
-      })
+      await prisma.$transaction([
+        prisma.tenantModuleOverride.delete({
+          where: { tenantId_moduleId: { tenantId, moduleId } },
+        }),
+        prisma.entitlement.deleteMany({
+          where: { tenantId, productId: DEFAULT_PRODUCT_ID, moduleId, source: 'override' },
+        }),
+      ])
     },
   }
 }

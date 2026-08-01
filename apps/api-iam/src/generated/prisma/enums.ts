@@ -167,3 +167,11 @@ export const EntitlementSource = {
 } as const
 
 export type EntitlementSource = (typeof EntitlementSource)[keyof typeof EntitlementSource]
+
+
+export const EntitlementKind = {
+  grant: 'grant',
+  revoke: 'revoke'
+} as const
+
+export type EntitlementKind = (typeof EntitlementKind)[keyof typeof EntitlementKind]

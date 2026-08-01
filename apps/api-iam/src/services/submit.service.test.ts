@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { OnboardingDraft, Tenant } from '../domain/index.js'
+import { DEFAULT_PRODUCT_ID } from '../domain/index.js'
 import { ConflictError, InternalError } from '../errors.js'
 import { createSubmitService } from './submit.service.js'
 import { silentLogger } from '../test-helpers/logger.js'
@@ -95,6 +96,9 @@ function makeTxClient(draftStatus = 'payment_confirmed' as OnboardingDraft['stat
     },
     refreshToken: {
       create: vi.fn().mockResolvedValue({}),
+    },
+    tenantProductSubscription: {
+      upsert: vi.fn().mockResolvedValue({}),
     },
   }
 }
@@ -236,6 +240,15 @@ describe('SubmitService', () => {
       // Draft completed
       expect(deps.tx.onboardingDraft.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ status: 'completed' }) }),
+      )
+
+      // a2 (2.2): tenant's plan assignment stays in sync with TenantProductSubscription
+      expect(deps.tx.tenantProductSubscription.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { tenantId_productId: { tenantId: 'tenant-uuid-1', productId: DEFAULT_PRODUCT_ID } },
+          create: expect.objectContaining({ tenantId: 'tenant-uuid-1', productId: DEFAULT_PRODUCT_ID, planId: 'professional' }),
+          update: expect.objectContaining({ planId: 'professional' }),
+        }),
       )
 
       // PDFs generated (2 — invoice + contract)

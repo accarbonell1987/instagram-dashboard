@@ -154,6 +154,16 @@ enum EntitlementSource {
   @@map("entitlement_source")
 }
 
+// PR3 (a3) negative-override amendment (owner-confirmed #1675): grant is an
+// additive Entitlement (adds access), revoke suppresses plan-derived access
+// for the same (tenant, product, module). Resolver = (plan ∪ grant) − revoke.
+enum EntitlementKind {
+  grant
+  revoke
+
+  @@map("entitlement_kind")
+}
+
 // ============================================================
 // CORE TABLES — public schema
 // ============================================================
@@ -550,6 +560,7 @@ model Entitlement {
   moduleId  String?           @map("module_id")
   userId    String?           @map("user_id") @db.Uuid
   source    EntitlementSource
+  kind      EntitlementKind   @default(grant)
   expiresAt DateTime?         @map("expires_at")
   reason    String?
   createdBy String?           @map("created_by") @db.Uuid

@@ -603,6 +603,13 @@ export type EnumEntitlementSourceFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel> | $Enums.EntitlementSource
 }
 
+export type EnumEntitlementKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.EntitlementKind | Prisma.EnumEntitlementKindFieldRefInput<$PrismaModel>
+  in?: $Enums.EntitlementKind[] | Prisma.ListEnumEntitlementKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EntitlementKind[] | Prisma.ListEnumEntitlementKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEntitlementKindFilter<$PrismaModel> | $Enums.EntitlementKind
+}
+
 export type EnumEntitlementSourceWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.EntitlementSource | Prisma.EnumEntitlementSourceFieldRefInput<$PrismaModel>
   in?: $Enums.EntitlementSource[] | Prisma.ListEnumEntitlementSourceFieldRefInput<$PrismaModel>
@@ -611,6 +618,16 @@ export type EnumEntitlementSourceWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel>
   _max?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel>
+}
+
+export type EnumEntitlementKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EntitlementKind | Prisma.EnumEntitlementKindFieldRefInput<$PrismaModel>
+  in?: $Enums.EntitlementKind[] | Prisma.ListEnumEntitlementKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EntitlementKind[] | Prisma.ListEnumEntitlementKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEntitlementKindWithAggregatesFilter<$PrismaModel> | $Enums.EntitlementKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEntitlementKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEntitlementKindFilter<$PrismaModel>
 }
 
 export type IntNullableFilter<$PrismaModel = never> = {
@@ -1231,6 +1248,13 @@ export type NestedEnumEntitlementSourceFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel> | $Enums.EntitlementSource
 }
 
+export type NestedEnumEntitlementKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.EntitlementKind | Prisma.EnumEntitlementKindFieldRefInput<$PrismaModel>
+  in?: $Enums.EntitlementKind[] | Prisma.ListEnumEntitlementKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EntitlementKind[] | Prisma.ListEnumEntitlementKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEntitlementKindFilter<$PrismaModel> | $Enums.EntitlementKind
+}
+
 export type NestedEnumEntitlementSourceWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.EntitlementSource | Prisma.EnumEntitlementSourceFieldRefInput<$PrismaModel>
   in?: $Enums.EntitlementSource[] | Prisma.ListEnumEntitlementSourceFieldRefInput<$PrismaModel>
@@ -1239,6 +1263,16 @@ export type NestedEnumEntitlementSourceWithAggregatesFilter<$PrismaModel = never
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel>
   _max?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel>
+}
+
+export type NestedEnumEntitlementKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EntitlementKind | Prisma.EnumEntitlementKindFieldRefInput<$PrismaModel>
+  in?: $Enums.EntitlementKind[] | Prisma.ListEnumEntitlementKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EntitlementKind[] | Prisma.ListEnumEntitlementKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEntitlementKindWithAggregatesFilter<$PrismaModel> | $Enums.EntitlementKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEntitlementKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEntitlementKindFilter<$PrismaModel>
 }
 
 export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {

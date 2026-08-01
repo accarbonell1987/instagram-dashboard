@@ -31,6 +31,7 @@ export type EntitlementMinAggregateOutputType = {
   moduleId: string | null
   userId: string | null
   source: $Enums.EntitlementSource | null
+  kind: $Enums.EntitlementKind | null
   expiresAt: Date | null
   reason: string | null
   createdBy: string | null
@@ -44,6 +45,7 @@ export type EntitlementMaxAggregateOutputType = {
   moduleId: string | null
   userId: string | null
   source: $Enums.EntitlementSource | null
+  kind: $Enums.EntitlementKind | null
   expiresAt: Date | null
   reason: string | null
   createdBy: string | null
@@ -57,6 +59,7 @@ export type EntitlementCountAggregateOutputType = {
   moduleId: number
   userId: number
   source: number
+  kind: number
   expiresAt: number
   reason: number
   createdBy: number
@@ -72,6 +75,7 @@ export type EntitlementMinAggregateInputType = {
   moduleId?: true
   userId?: true
   source?: true
+  kind?: true
   expiresAt?: true
   reason?: true
   createdBy?: true
@@ -85,6 +89,7 @@ export type EntitlementMaxAggregateInputType = {
   moduleId?: true
   userId?: true
   source?: true
+  kind?: true
   expiresAt?: true
   reason?: true
   createdBy?: true
@@ -98,6 +103,7 @@ export type EntitlementCountAggregateInputType = {
   moduleId?: true
   userId?: true
   source?: true
+  kind?: true
   expiresAt?: true
   reason?: true
   createdBy?: true
@@ -184,6 +190,7 @@ export type EntitlementGroupByOutputType = {
   moduleId: string | null
   userId: string | null
   source: $Enums.EntitlementSource
+  kind: $Enums.EntitlementKind
   expiresAt: Date | null
   reason: string | null
   createdBy: string | null
@@ -218,6 +225,7 @@ export type EntitlementWhereInput = {
   moduleId?: Prisma.StringNullableFilter<"Entitlement"> | string | null
   userId?: Prisma.UuidNullableFilter<"Entitlement"> | string | null
   source?: Prisma.EnumEntitlementSourceFilter<"Entitlement"> | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFilter<"Entitlement"> | $Enums.EntitlementKind
   expiresAt?: Prisma.DateTimeNullableFilter<"Entitlement"> | Date | string | null
   reason?: Prisma.StringNullableFilter<"Entitlement"> | string | null
   createdBy?: Prisma.UuidNullableFilter<"Entitlement"> | string | null
@@ -234,6 +242,7 @@ export type EntitlementOrderByWithRelationInput = {
   moduleId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   source?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -254,6 +263,7 @@ export type EntitlementWhereUniqueInput = Prisma.AtLeast<{
   moduleId?: Prisma.StringNullableFilter<"Entitlement"> | string | null
   userId?: Prisma.UuidNullableFilter<"Entitlement"> | string | null
   source?: Prisma.EnumEntitlementSourceFilter<"Entitlement"> | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFilter<"Entitlement"> | $Enums.EntitlementKind
   expiresAt?: Prisma.DateTimeNullableFilter<"Entitlement"> | Date | string | null
   reason?: Prisma.StringNullableFilter<"Entitlement"> | string | null
   createdBy?: Prisma.UuidNullableFilter<"Entitlement"> | string | null
@@ -270,6 +280,7 @@ export type EntitlementOrderByWithAggregationInput = {
   moduleId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   source?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -289,6 +300,7 @@ export type EntitlementScalarWhereWithAggregatesInput = {
   moduleId?: Prisma.StringNullableWithAggregatesFilter<"Entitlement"> | string | null
   userId?: Prisma.UuidNullableWithAggregatesFilter<"Entitlement"> | string | null
   source?: Prisma.EnumEntitlementSourceWithAggregatesFilter<"Entitlement"> | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindWithAggregatesFilter<"Entitlement"> | $Enums.EntitlementKind
   expiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Entitlement"> | Date | string | null
   reason?: Prisma.StringNullableWithAggregatesFilter<"Entitlement"> | string | null
   createdBy?: Prisma.UuidNullableWithAggregatesFilter<"Entitlement"> | string | null
@@ -299,6 +311,7 @@ export type EntitlementCreateInput = {
   id?: string
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -315,6 +328,7 @@ export type EntitlementUncheckedCreateInput = {
   moduleId?: string | null
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -325,6 +339,7 @@ export type EntitlementUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -341,6 +356,7 @@ export type EntitlementUncheckedUpdateInput = {
   moduleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -354,6 +370,7 @@ export type EntitlementCreateManyInput = {
   moduleId?: string | null
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -364,6 +381,7 @@ export type EntitlementUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -377,6 +395,7 @@ export type EntitlementUncheckedUpdateManyInput = {
   moduleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -407,6 +426,7 @@ export type EntitlementCountOrderByAggregateInput = {
   moduleId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   source?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
@@ -420,6 +440,7 @@ export type EntitlementMaxOrderByAggregateInput = {
   moduleId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   source?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
@@ -433,6 +454,7 @@ export type EntitlementMinOrderByAggregateInput = {
   moduleId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   source?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
@@ -569,10 +591,15 @@ export type EnumEntitlementSourceFieldUpdateOperationsInput = {
   set?: $Enums.EntitlementSource
 }
 
+export type EnumEntitlementKindFieldUpdateOperationsInput = {
+  set?: $Enums.EntitlementKind
+}
+
 export type EntitlementCreateWithoutProductInput = {
   id?: string
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -587,6 +614,7 @@ export type EntitlementUncheckedCreateWithoutProductInput = {
   moduleId?: string | null
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -629,6 +657,7 @@ export type EntitlementScalarWhereInput = {
   moduleId?: Prisma.StringNullableFilter<"Entitlement"> | string | null
   userId?: Prisma.UuidNullableFilter<"Entitlement"> | string | null
   source?: Prisma.EnumEntitlementSourceFilter<"Entitlement"> | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFilter<"Entitlement"> | $Enums.EntitlementKind
   expiresAt?: Prisma.DateTimeNullableFilter<"Entitlement"> | Date | string | null
   reason?: Prisma.StringNullableFilter<"Entitlement"> | string | null
   createdBy?: Prisma.UuidNullableFilter<"Entitlement"> | string | null
@@ -639,6 +668,7 @@ export type EntitlementCreateWithoutTenantInput = {
   id?: string
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -653,6 +683,7 @@ export type EntitlementUncheckedCreateWithoutTenantInput = {
   moduleId?: string | null
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -689,6 +720,7 @@ export type EntitlementCreateWithoutModuleInput = {
   id?: string
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -703,6 +735,7 @@ export type EntitlementUncheckedCreateWithoutModuleInput = {
   productId: string
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -741,6 +774,7 @@ export type EntitlementCreateManyProductInput = {
   moduleId?: string | null
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -751,6 +785,7 @@ export type EntitlementUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -765,6 +800,7 @@ export type EntitlementUncheckedUpdateWithoutProductInput = {
   moduleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -777,6 +813,7 @@ export type EntitlementUncheckedUpdateManyWithoutProductInput = {
   moduleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -789,6 +826,7 @@ export type EntitlementCreateManyTenantInput = {
   moduleId?: string | null
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -799,6 +837,7 @@ export type EntitlementUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -813,6 +852,7 @@ export type EntitlementUncheckedUpdateWithoutTenantInput = {
   moduleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -825,6 +865,7 @@ export type EntitlementUncheckedUpdateManyWithoutTenantInput = {
   moduleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -837,6 +878,7 @@ export type EntitlementCreateManyModuleInput = {
   productId: string
   userId?: string | null
   source: $Enums.EntitlementSource
+  kind?: $Enums.EntitlementKind
   expiresAt?: Date | string | null
   reason?: string | null
   createdBy?: string | null
@@ -847,6 +889,7 @@ export type EntitlementUpdateWithoutModuleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -861,6 +904,7 @@ export type EntitlementUncheckedUpdateWithoutModuleInput = {
   productId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -873,6 +917,7 @@ export type EntitlementUncheckedUpdateManyWithoutModuleInput = {
   productId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumEntitlementSourceFieldUpdateOperationsInput | $Enums.EntitlementSource
+  kind?: Prisma.EnumEntitlementKindFieldUpdateOperationsInput | $Enums.EntitlementKind
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -888,6 +933,7 @@ export type EntitlementSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   moduleId?: boolean
   userId?: boolean
   source?: boolean
+  kind?: boolean
   expiresAt?: boolean
   reason?: boolean
   createdBy?: boolean
@@ -904,6 +950,7 @@ export type EntitlementSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   moduleId?: boolean
   userId?: boolean
   source?: boolean
+  kind?: boolean
   expiresAt?: boolean
   reason?: boolean
   createdBy?: boolean
@@ -920,6 +967,7 @@ export type EntitlementSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   moduleId?: boolean
   userId?: boolean
   source?: boolean
+  kind?: boolean
   expiresAt?: boolean
   reason?: boolean
   createdBy?: boolean
@@ -936,13 +984,14 @@ export type EntitlementSelectScalar = {
   moduleId?: boolean
   userId?: boolean
   source?: boolean
+  kind?: boolean
   expiresAt?: boolean
   reason?: boolean
   createdBy?: boolean
   createdAt?: boolean
 }
 
-export type EntitlementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "productId" | "moduleId" | "userId" | "source" | "expiresAt" | "reason" | "createdBy" | "createdAt", ExtArgs["result"]["entitlement"]>
+export type EntitlementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "productId" | "moduleId" | "userId" | "source" | "kind" | "expiresAt" | "reason" | "createdBy" | "createdAt", ExtArgs["result"]["entitlement"]>
 export type EntitlementInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
@@ -973,6 +1022,7 @@ export type $EntitlementPayload<ExtArgs extends runtime.Types.Extensions.Interna
     moduleId: string | null
     userId: string | null
     source: $Enums.EntitlementSource
+    kind: $Enums.EntitlementKind
     expiresAt: Date | null
     reason: string | null
     createdBy: string | null
@@ -1409,6 +1459,7 @@ export interface EntitlementFieldRefs {
   readonly moduleId: Prisma.FieldRef<"Entitlement", 'String'>
   readonly userId: Prisma.FieldRef<"Entitlement", 'String'>
   readonly source: Prisma.FieldRef<"Entitlement", 'EntitlementSource'>
+  readonly kind: Prisma.FieldRef<"Entitlement", 'EntitlementKind'>
   readonly expiresAt: Prisma.FieldRef<"Entitlement", 'DateTime'>
   readonly reason: Prisma.FieldRef<"Entitlement", 'String'>
   readonly createdBy: Prisma.FieldRef<"Entitlement", 'String'>
