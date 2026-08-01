@@ -17,7 +17,7 @@ export const EffectiveModuleSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   defaultUrl: z.string(),
-  source: z.enum(['plan', 'override', 'admin']),
+  source: z.enum(['plan', 'override', 'trial', 'admin']),
 })
 
 export type EffectiveModule = z.infer<typeof EffectiveModuleSchema>

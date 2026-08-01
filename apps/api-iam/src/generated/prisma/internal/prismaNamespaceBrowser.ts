@@ -400,6 +400,7 @@ export const EntitlementScalarFieldEnum = {
   moduleId: 'moduleId',
   userId: 'userId',
   source: 'source',
+  kind: 'kind',
   expiresAt: 'expiresAt',
   reason: 'reason',
   createdBy: 'createdBy',

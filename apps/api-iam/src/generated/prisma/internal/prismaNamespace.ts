@@ -2845,6 +2845,7 @@ export const EntitlementScalarFieldEnum = {
   moduleId: 'moduleId',
   userId: 'userId',
   source: 'source',
+  kind: 'kind',
   expiresAt: 'expiresAt',
   reason: 'reason',
   createdBy: 'createdBy',
@@ -3282,6 +3283,20 @@ export type EnumEntitlementSourceFieldRefInput<$PrismaModel> = FieldRefInputType
  * Reference to a field of type 'EntitlementSource[]'
  */
 export type ListEnumEntitlementSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EntitlementSource[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EntitlementKind'
+ */
+export type EnumEntitlementKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EntitlementKind'>
+    
+
+
+/**
+ * Reference to a field of type 'EntitlementKind[]'
+ */
+export type ListEnumEntitlementKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EntitlementKind[]'>
     
 
 

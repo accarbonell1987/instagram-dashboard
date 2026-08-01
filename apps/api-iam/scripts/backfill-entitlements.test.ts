@@ -120,4 +120,46 @@ describe.skipIf(!connectionString)('backfillEntitlements (integration)', () => {
 
     expect(after).toEqual(before)
   })
+
+  // a3 (owner-confirmed #1675): the negative-override gap PR2 flagged — a
+  // disabled override migrates into Entitlement(kind: revoke), not just a
+  // skip, so the a3 resolver keeps suppressing plan-derived access.
+  it('migrates disabled TenantModuleOverride rows into Entitlement(source: override, kind: revoke)', async () => {
+    const tenant = await prisma.tenant.findUniqueOrThrow({ where: { slug: 'backfill-tenant' } })
+    await prisma.tenantModuleOverride.upsert({
+      where: { tenantId_moduleId: { tenantId: tenant.id, moduleId: 'backfill-module' } },
+      update: { enabled: false },
+      create: { tenantId: tenant.id, moduleId: 'backfill-module', enabled: false },
+    })
+
+    const stats = await backfillEntitlements(prisma)
+    expect(stats.revokesMigrated).toBeGreaterThanOrEqual(1)
+
+    const entitlement = await prisma.entitlement.findUnique({
+      where: {
+        tenantId_productId_moduleId_source: {
+          tenantId: tenant.id,
+          productId: DEFAULT_PRODUCT_ID,
+          moduleId: 'backfill-module',
+          source: 'override',
+        },
+      },
+    })
+    expect(entitlement?.kind).toBe('revoke')
+  })
+
+  it('a revoke-backfilled disabled override removes the plan-granted module from the a3 resolver output', async () => {
+    const moduleRepo = createModuleRepository(prisma)
+    const tenant = await prisma.tenant.findUniqueOrThrow({ where: { slug: 'backfill-tenant' } })
+    await prisma.tenantModuleOverride.upsert({
+      where: { tenantId_moduleId: { tenantId: tenant.id, moduleId: 'backfill-module' } },
+      update: { enabled: false },
+      create: { tenantId: tenant.id, moduleId: 'backfill-module', enabled: false },
+    })
+
+    await backfillEntitlements(prisma)
+
+    const effective = await moduleRepo.resolveEffectiveModules(tenant.id, DEFAULT_PRODUCT_ID)
+    expect(effective.find((module) => module.id === 'backfill-module')).toBeUndefined()
+  })
 })

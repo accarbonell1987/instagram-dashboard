@@ -121,7 +121,7 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   const adminTenantsRouter = createAdminTenantsRouter(services.adminTenantService, authGuard, idempotency);
   const adminQuizzesRouter = createAdminQuizzesRouter(services.quizService, services.quizAttemptService, authGuard, idempotency, prisma);
   const tenantQuizzesRouter = createTenantQuizzesRouter(services.quizService, services.quizAttemptService, authGuard);
-  const internalRouter = createInternalRouter(prisma);
+  const internalRouter = createInternalRouter(prisma, services.moduleService);
 
   app.route('/', healthRouter);
   app.route('/', wellKnownRouter);

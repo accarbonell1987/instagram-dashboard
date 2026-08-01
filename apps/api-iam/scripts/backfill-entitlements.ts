@@ -1,8 +1,9 @@
 // a2: idempotent backfill from the pre-entitlements model into Entitlement /
 // TenantProductSubscription. See design "Backfill scope" (owner decision #6,
 // apply-signoff #1672 — live-join interpretation):
-//   1. TenantModuleOverride(enabled: true) → Entitlement(source: override)
-//   2. Tenant.planId                       → TenantProductSubscription
+//   1. TenantModuleOverride(enabled: true)  → Entitlement(source: override, kind: grant)
+//   2. TenantModuleOverride(enabled: false) → Entitlement(source: override, kind: revoke) (a3, owner-confirmed #1675)
+//   3. Tenant.planId                        → TenantProductSubscription
 // Plan-derived access is NEVER materialized here — it stays a live join
 // (TenantProductSubscription → Plan → PlanModule), resolved in a3.
 import 'dotenv/config'
@@ -13,7 +14,7 @@ import { DEFAULT_PRODUCT_ID } from '../src/domain/index.js'
 
 export type BackfillStats = {
   overridesMigrated: number
-  overridesSkipped: number
+  revokesMigrated: number
   subscriptionsMigrated: number
 }
 
@@ -28,16 +29,13 @@ export async function backfillEntitlements(prisma: PrismaClient): Promise<Backfi
 
   const overrides = await prisma.tenantModuleOverride.findMany()
   let overridesMigrated = 0
-  let overridesSkipped = 0
+  let revokesMigrated = 0
 
   for (const override of overrides) {
-    // Entitlement is grant-only (presence = access); a disabled override
-    // suppresses access instead of granting it and has no Entitlement shape
-    // — leave it represented by TenantModuleOverride alone.
-    if (!override.enabled) {
-      overridesSkipped++
-      continue
-    }
+    // a3 (owner-confirmed #1675): a disabled override is now a negative
+    // entitlement (kind: revoke) — it suppresses plan-derived access for
+    // this (tenant, module) instead of being unrepresented.
+    const kind = override.enabled ? 'grant' : 'revoke'
 
     await prisma.entitlement.upsert({
       where: {
@@ -48,17 +46,20 @@ export async function backfillEntitlements(prisma: PrismaClient): Promise<Backfi
           source: 'override',
         },
       },
-      update: { reason: override.reason, createdBy: override.createdBy },
+      update: { kind, reason: override.reason, createdBy: override.createdBy },
       create: {
         tenantId: override.tenantId,
         productId: DEFAULT_PRODUCT_ID,
         moduleId: override.moduleId,
         source: 'override',
+        kind,
         reason: override.reason,
         createdBy: override.createdBy,
       },
     })
-    overridesMigrated++
+
+    if (override.enabled) overridesMigrated++
+    else revokesMigrated++
   }
 
   const tenants = await prisma.tenant.findMany({ select: { id: true, planId: true } })
@@ -73,7 +74,7 @@ export async function backfillEntitlements(prisma: PrismaClient): Promise<Backfi
     subscriptionsMigrated++
   }
 
-  return { overridesMigrated, overridesSkipped, subscriptionsMigrated }
+  return { overridesMigrated, revokesMigrated, subscriptionsMigrated }
 }
 
 async function main() {

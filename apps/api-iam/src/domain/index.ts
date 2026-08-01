@@ -213,7 +213,9 @@ export type Module = {
 
 export type EffectiveModule = Module & {
   effectiveUrl: string
-  source: 'plan' | 'override' | 'admin'
+  // a3: 'trial' added — grant Entitlements surface their real source (see
+  // design "source gains a trial value for free").
+  source: 'plan' | 'override' | 'trial' | 'admin'
 }
 
 // ============================================================

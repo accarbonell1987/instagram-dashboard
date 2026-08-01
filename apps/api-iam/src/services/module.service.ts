@@ -2,9 +2,10 @@ import type { Logger } from 'pino'
 import type { ModuleRepository } from '../repositories/module/index.js'
 import type { TenantRepository } from '../repositories/tenant/index.js'
 import type { EffectiveModule, Module } from '../domain/index.js'
+import { DEFAULT_PRODUCT_ID } from '../domain/index.js'
 import { NotFoundError } from '../errors.js'
 
-type ModuleServiceDeps = {
+export type ModuleServiceDeps = {
   moduleRepository: ModuleRepository
   tenantRepository: TenantRepository
   logger: Logger
@@ -12,6 +13,9 @@ type ModuleServiceDeps = {
 
 export type ModuleService = {
   getEffectiveModulesForTenant(tenantUuid: string): Promise<EffectiveModule[]>
+  // a3 (3.2): arbitrary-product variant backing the internal entitlements
+  // endpoint the future entitlement middleware calls.
+  getEffectiveModulesForTenantAndProduct(tenantUuid: string, productId: string): Promise<EffectiveModule[]>
   listAll(): Promise<Module[]>
   getById(id: string): Promise<Module>
   create(data: { id: string; name: string; description?: string; defaultUrl: string }): Promise<Module>
@@ -29,8 +33,17 @@ export function createModuleService(deps: ModuleServiceDeps): ModuleService {
   return {
     async getEffectiveModulesForTenant(tenantUuid) {
       log.debug({ tenantUuid }, 'resolving effective modules')
-      const tenant = await tenantRepository.findByUuid(tenantUuid)
-      return moduleRepository.findEffectiveForTenant(tenant.planId, tenantUuid)
+      // a3: switched from the legacy findEffectiveForTenant(planId, tenantId)
+      // join to the union-minus-revoke resolver. findByUuid is kept as the
+      // 404 guard for an unknown tenant; findEffectiveForTenant stays
+      // available in the repository as the one-release rollback lever.
+      await tenantRepository.findByUuid(tenantUuid)
+      return moduleRepository.resolveEffectiveModules(tenantUuid, DEFAULT_PRODUCT_ID)
+    },
+
+    async getEffectiveModulesForTenantAndProduct(tenantUuid, productId) {
+      log.debug({ tenantUuid, productId }, 'resolving effective modules for product')
+      return moduleRepository.resolveEffectiveModules(tenantUuid, productId)
     },
 
     async listAll() {
