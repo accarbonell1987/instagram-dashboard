@@ -7,6 +7,7 @@ import {
   AdminPlanSchema,
   AdminTenantListItemSchema,
   AdminTenantDetailSchema,
+  GrantTrialRequestSchema,
 } from './admin.schemas.js'
 
 // ─── AdminCreatePlanSchema ──────────────────────────────────────────────────────
@@ -233,5 +234,50 @@ describe('AdminTenantDetailSchema', () => {
       updatedAt: '2026-05-01T00:00:00.000Z',
     })
     expect(result.success).toBe(true)
+  })
+})
+
+// ─── GrantTrialRequestSchema (b1, 5.1) ─────────────────────────────────────
+
+describe('GrantTrialRequestSchema', () => {
+  it('accepts productId + moduleId (durationDays optional — default 14d applied by the service)', () => {
+    const result = GrantTrialRequestSchema.safeParse({ productId: 'instagram-dashboard', moduleId: 'growth-agent' })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts an explicit durationDays override', () => {
+    const result = GrantTrialRequestSchema.safeParse({
+      productId: 'instagram-dashboard',
+      moduleId: 'growth-agent',
+      durationDays: 30,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a missing productId', () => {
+    const result = GrantTrialRequestSchema.safeParse({ moduleId: 'growth-agent' })
+    expect(result.success).toBe(false)
+  })
+
+  // PR7 (b1.5, owner decision #1679/1): omitting moduleId now means a
+  // product-scoped grant (all modules of the product), not an invalid
+  // request.
+  it('accepts a missing moduleId as a product-scoped grant', () => {
+    const result = GrantTrialRequestSchema.safeParse({ productId: 'instagram-dashboard' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects an empty-string moduleId', () => {
+    const result = GrantTrialRequestSchema.safeParse({ productId: 'instagram-dashboard', moduleId: '' })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects a non-positive durationDays override', () => {
+    const result = GrantTrialRequestSchema.safeParse({
+      productId: 'instagram-dashboard',
+      moduleId: 'growth-agent',
+      durationDays: 0,
+    })
+    expect(result.success).toBe(false)
   })
 })

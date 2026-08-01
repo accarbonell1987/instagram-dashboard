@@ -17,6 +17,18 @@ export type ModuleRepository = {
   setPlanModules(planId: string, moduleIds: string[]): Promise<void>
   upsertTenantOverride(tenantId: string, moduleId: string, enabled: boolean, createdBy?: string, reason?: string): Promise<void>
   deleteTenantOverride(tenantId: string, moduleId: string): Promise<void>
+  // b1 (5.1) + b1.5 (PR7, owner decision #1679/1): tenant-level trial grant —
+  // Entitlement(source: trial, kind: grant). moduleId: null means a
+  // whole-product grant (resolveEffectiveModules expands it to every module
+  // of the product). Prisma's generated compound-unique input for a
+  // nullable @@unique member doesn't accept null, so the null case uses
+  // findFirst+create/update inside a $transaction instead of the compound
+  // upsert used for the module-scoped case.
+  grantTrial(tenantId: string, productId: string, moduleId: string | null, expiresAt: Date, createdBy?: string, reason?: string): Promise<void>
+  // b1 (5.2): deletes expired trial grants (hygiene — resolveEffectiveModules
+  // already excludes them at read time) and returns the affected (tenant,
+  // product) pairs for the caller to fan out a cache purge.
+  sweepExpiredTrials(): Promise<{ tenantId: string; productId: string }[]>
 }
 
 export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
@@ -89,16 +101,36 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
         }
       }
 
-      // ponytail: only per-module grants/revokes are resolved today — a
-      // whole-product entitlement (moduleId: null) has no consumer yet, add
-      // handling (enumerate Product.modules) once one is actually granted.
+      // b1.5 (PR7, owner decision #1679/1): a product-scoped entitlement
+      // (moduleId: null) applies to every module of the product — fetch the
+      // product's active modules only when one is actually present.
+      const hasProductScoped = entitlements.some((ent) => ent.moduleId === null)
+      const productModules = hasProductScoped
+        ? await prisma.module.findMany({ where: { productId, active: true } })
+        : []
+
+      // Precedence: (plan ∪ all grants [module + product-expanded]) − all
+      // revokes [module + product-expanded] — a revoke at EITHER scope wins,
+      // so revokes are always applied after every grant.
       for (const ent of entitlements) {
-        if (ent.kind !== 'grant' || !ent.moduleId || !ent.module?.active) continue
-        result.set(ent.moduleId, { ...toModule(ent.module), effectiveUrl: ent.module.defaultUrl, source: ent.source })
+        if (ent.kind !== 'grant') continue
+        if (ent.moduleId) {
+          if (!ent.module?.active) continue
+          result.set(ent.moduleId, { ...toModule(ent.module), effectiveUrl: ent.module.defaultUrl, source: ent.source })
+        } else {
+          for (const module of productModules) {
+            result.set(module.id, { ...toModule(module), effectiveUrl: module.defaultUrl, source: ent.source })
+          }
+        }
       }
 
       for (const ent of entitlements) {
-        if (ent.kind === 'revoke' && ent.moduleId) result.delete(ent.moduleId)
+        if (ent.kind !== 'revoke') continue
+        if (ent.moduleId) {
+          result.delete(ent.moduleId)
+        } else {
+          for (const module of productModules) result.delete(module.id)
+        }
       }
 
       return Array.from(result.values())
@@ -171,6 +203,55 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
           where: { tenantId, productId: DEFAULT_PRODUCT_ID, moduleId, source: 'override' },
         }),
       ])
+    },
+
+    async grantTrial(tenantId, productId, moduleId, expiresAt, createdBy, reason) {
+      // ponytail: only the null-moduleId case needs the non-atomic
+      // findFirst+create/update workaround — Prisma's compound-unique
+      // upsert already handles the module-scoped case atomically.
+      if (moduleId === null) {
+        await prisma.$transaction(async (tx) => {
+          const existing = await tx.entitlement.findFirst({
+            where: { tenantId, productId, moduleId: null, source: 'trial' },
+          })
+          if (existing) {
+            await tx.entitlement.update({
+              where: { id: existing.id },
+              data: { kind: 'grant', expiresAt, createdBy: createdBy ?? null, reason: reason ?? null },
+            })
+          } else {
+            await tx.entitlement.create({
+              data: { tenantId, productId, moduleId: null, source: 'trial', kind: 'grant', expiresAt, createdBy: createdBy ?? null, reason: reason ?? null },
+            })
+          }
+        })
+        return
+      }
+
+      const key = { tenantId, productId, moduleId, source: 'trial' as const }
+      await prisma.entitlement.upsert({
+        where: { tenantId_productId_moduleId_source: key },
+        create: { ...key, kind: 'grant', expiresAt, createdBy: createdBy ?? null, reason: reason ?? null },
+        update: { kind: 'grant', expiresAt, createdBy: createdBy ?? null, reason: reason ?? null },
+      })
+    },
+
+    async sweepExpiredTrials() {
+      const where = { source: 'trial' as const, kind: 'grant' as const, expiresAt: { lt: new Date() } }
+      const expired = await prisma.entitlement.findMany({ where, select: { tenantId: true, productId: true } })
+      if (expired.length === 0) return []
+
+      await prisma.entitlement.deleteMany({ where })
+
+      const seen = new Set<string>()
+      const pairs: { tenantId: string; productId: string }[] = []
+      for (const entitlement of expired) {
+        const pairKey = `${entitlement.tenantId}:${entitlement.productId}`
+        if (seen.has(pairKey)) continue
+        seen.add(pairKey)
+        pairs.push(entitlement)
+      }
+      return pairs
     },
   }
 }
