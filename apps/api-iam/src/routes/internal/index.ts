@@ -59,26 +59,11 @@ export function createInternalRouter(prisma: PrismaClient, moduleService: Module
     );
   });
 
-  // a3 (3.3): POST /internal/entitlements/purge — cache-purge hook mirroring
-  // the /internal/quotas/purge style already used between api-iam and
-  // product APIs (see routes/admin/plans.ts). api-iam resolves entitlements
-  // live and has no cache of its own; this reserves the contract so admin
-  // write paths and future callers can trigger downstream cache
-  // invalidation once packages/entitlements (a4) mounts a product-API cache.
-  router.post('/internal/entitlements/purge', async (c) => {
-    const body = await c.req.json().catch(() => ({}) as Record<string, unknown>);
-    return c.json(
-      {
-        success: true,
-        data: {
-          purged: true,
-          tenantId: (body['tenantId'] as string | undefined) ?? null,
-          productId: (body['productId'] as string | undefined) ?? null,
-        },
-      },
-      200,
-    );
-  });
+  // a4 purge-direction correction (owner-resolved): the entitlement cache
+  // lives in the guard (packages/entitlements, mounted by the product API),
+  // so the purge route lives there too — api-iam is the CALLER
+  // (see lib/entitlements-purge.ts), not the host. The reserved placeholder
+  // added in a3 was wrong-directional and has been removed.
 
   return router;
 }

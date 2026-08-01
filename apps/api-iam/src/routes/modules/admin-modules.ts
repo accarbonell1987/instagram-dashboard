@@ -2,6 +2,8 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import type { MiddlewareHandler } from 'hono'
 import type { ModuleService } from '../../services/index.js'
 import { ForbiddenError } from '../../errors.js'
+import { DEFAULT_PRODUCT_ID } from '../../domain/index.js'
+import { purgeAnalyticsEntitlementsCache } from '../../lib/entitlements-purge.js'
 import {
   ModuleSchema,
   ListAllModulesResponseSchema,
@@ -303,6 +305,7 @@ export function createAdminModulesRouter(
     const { enabled, reason } = c.req.valid('json')
     const createdBy = c.var.user.sub
     await moduleService.upsertTenantOverride(tenantId, moduleId, enabled, createdBy, reason)
+    purgeAnalyticsEntitlementsCache(tenantId, DEFAULT_PRODUCT_ID)
 
     return c.body(null, 204)
   })
