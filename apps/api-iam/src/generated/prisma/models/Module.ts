@@ -30,6 +30,7 @@ export type ModuleMinAggregateOutputType = {
   description: string | null
   defaultUrl: string | null
   active: boolean | null
+  productId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -40,6 +41,7 @@ export type ModuleMaxAggregateOutputType = {
   description: string | null
   defaultUrl: string | null
   active: boolean | null
+  productId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,6 +52,7 @@ export type ModuleCountAggregateOutputType = {
   description: number
   defaultUrl: number
   active: number
+  productId: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -62,6 +65,7 @@ export type ModuleMinAggregateInputType = {
   description?: true
   defaultUrl?: true
   active?: true
+  productId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -72,6 +76,7 @@ export type ModuleMaxAggregateInputType = {
   description?: true
   defaultUrl?: true
   active?: true
+  productId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +87,7 @@ export type ModuleCountAggregateInputType = {
   description?: true
   defaultUrl?: true
   active?: true
+  productId?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -165,6 +171,7 @@ export type ModuleGroupByOutputType = {
   description: string | null
   defaultUrl: string
   active: boolean
+  productId: string | null
   createdAt: Date
   updatedAt: Date
   _count: ModuleCountAggregateOutputType | null
@@ -196,11 +203,14 @@ export type ModuleWhereInput = {
   description?: Prisma.StringNullableFilter<"Module"> | string | null
   defaultUrl?: Prisma.StringFilter<"Module"> | string
   active?: Prisma.BoolFilter<"Module"> | boolean
+  productId?: Prisma.StringNullableFilter<"Module"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Module"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Module"> | Date | string
+  product?: Prisma.XOR<Prisma.ProductNullableScalarRelationFilter, Prisma.ProductWhereInput> | null
   planModules?: Prisma.PlanModuleListRelationFilter
   tenantOverrides?: Prisma.TenantModuleOverrideListRelationFilter
   quizzes?: Prisma.QuizListRelationFilter
+  entitlements?: Prisma.EntitlementListRelationFilter
 }
 
 export type ModuleOrderByWithRelationInput = {
@@ -209,11 +219,14 @@ export type ModuleOrderByWithRelationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   defaultUrl?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  productId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  product?: Prisma.ProductOrderByWithRelationInput
   planModules?: Prisma.PlanModuleOrderByRelationAggregateInput
   tenantOverrides?: Prisma.TenantModuleOverrideOrderByRelationAggregateInput
   quizzes?: Prisma.QuizOrderByRelationAggregateInput
+  entitlements?: Prisma.EntitlementOrderByRelationAggregateInput
 }
 
 export type ModuleWhereUniqueInput = Prisma.AtLeast<{
@@ -225,11 +238,14 @@ export type ModuleWhereUniqueInput = Prisma.AtLeast<{
   description?: Prisma.StringNullableFilter<"Module"> | string | null
   defaultUrl?: Prisma.StringFilter<"Module"> | string
   active?: Prisma.BoolFilter<"Module"> | boolean
+  productId?: Prisma.StringNullableFilter<"Module"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Module"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Module"> | Date | string
+  product?: Prisma.XOR<Prisma.ProductNullableScalarRelationFilter, Prisma.ProductWhereInput> | null
   planModules?: Prisma.PlanModuleListRelationFilter
   tenantOverrides?: Prisma.TenantModuleOverrideListRelationFilter
   quizzes?: Prisma.QuizListRelationFilter
+  entitlements?: Prisma.EntitlementListRelationFilter
 }, "id">
 
 export type ModuleOrderByWithAggregationInput = {
@@ -238,6 +254,7 @@ export type ModuleOrderByWithAggregationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   defaultUrl?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  productId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ModuleCountOrderByAggregateInput
@@ -254,6 +271,7 @@ export type ModuleScalarWhereWithAggregatesInput = {
   description?: Prisma.StringNullableWithAggregatesFilter<"Module"> | string | null
   defaultUrl?: Prisma.StringWithAggregatesFilter<"Module"> | string
   active?: Prisma.BoolWithAggregatesFilter<"Module"> | boolean
+  productId?: Prisma.StringNullableWithAggregatesFilter<"Module"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Module"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Module"> | Date | string
 }
@@ -266,9 +284,11 @@ export type ModuleCreateInput = {
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  product?: Prisma.ProductCreateNestedOneWithoutModulesInput
   planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateInput = {
@@ -277,11 +297,13 @@ export type ModuleUncheckedCreateInput = {
   description?: string | null
   defaultUrl: string
   active?: boolean
+  productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUpdateInput = {
@@ -292,9 +314,11 @@ export type ModuleUpdateInput = {
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneWithoutModulesNestedInput
   planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateInput = {
@@ -303,11 +327,13 @@ export type ModuleUncheckedUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleCreateManyInput = {
@@ -316,6 +342,7 @@ export type ModuleCreateManyInput = {
   description?: string | null
   defaultUrl: string
   active?: boolean
+  productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -336,8 +363,19 @@ export type ModuleUncheckedUpdateManyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ModuleListRelationFilter = {
+  every?: Prisma.ModuleWhereInput
+  some?: Prisma.ModuleWhereInput
+  none?: Prisma.ModuleWhereInput
+}
+
+export type ModuleOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type ModuleCountOrderByAggregateInput = {
@@ -346,6 +384,7 @@ export type ModuleCountOrderByAggregateInput = {
   description?: Prisma.SortOrder
   defaultUrl?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -356,6 +395,7 @@ export type ModuleMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder
   defaultUrl?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -366,6 +406,7 @@ export type ModuleMinOrderByAggregateInput = {
   description?: Prisma.SortOrder
   defaultUrl?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -378,6 +419,48 @@ export type ModuleScalarRelationFilter = {
 export type ModuleNullableScalarRelationFilter = {
   is?: Prisma.ModuleWhereInput | null
   isNot?: Prisma.ModuleWhereInput | null
+}
+
+export type ModuleCreateNestedManyWithoutProductInput = {
+  create?: Prisma.XOR<Prisma.ModuleCreateWithoutProductInput, Prisma.ModuleUncheckedCreateWithoutProductInput> | Prisma.ModuleCreateWithoutProductInput[] | Prisma.ModuleUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutProductInput | Prisma.ModuleCreateOrConnectWithoutProductInput[]
+  createMany?: Prisma.ModuleCreateManyProductInputEnvelope
+  connect?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+}
+
+export type ModuleUncheckedCreateNestedManyWithoutProductInput = {
+  create?: Prisma.XOR<Prisma.ModuleCreateWithoutProductInput, Prisma.ModuleUncheckedCreateWithoutProductInput> | Prisma.ModuleCreateWithoutProductInput[] | Prisma.ModuleUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutProductInput | Prisma.ModuleCreateOrConnectWithoutProductInput[]
+  createMany?: Prisma.ModuleCreateManyProductInputEnvelope
+  connect?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+}
+
+export type ModuleUpdateManyWithoutProductNestedInput = {
+  create?: Prisma.XOR<Prisma.ModuleCreateWithoutProductInput, Prisma.ModuleUncheckedCreateWithoutProductInput> | Prisma.ModuleCreateWithoutProductInput[] | Prisma.ModuleUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutProductInput | Prisma.ModuleCreateOrConnectWithoutProductInput[]
+  upsert?: Prisma.ModuleUpsertWithWhereUniqueWithoutProductInput | Prisma.ModuleUpsertWithWhereUniqueWithoutProductInput[]
+  createMany?: Prisma.ModuleCreateManyProductInputEnvelope
+  set?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+  disconnect?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+  delete?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+  connect?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+  update?: Prisma.ModuleUpdateWithWhereUniqueWithoutProductInput | Prisma.ModuleUpdateWithWhereUniqueWithoutProductInput[]
+  updateMany?: Prisma.ModuleUpdateManyWithWhereWithoutProductInput | Prisma.ModuleUpdateManyWithWhereWithoutProductInput[]
+  deleteMany?: Prisma.ModuleScalarWhereInput | Prisma.ModuleScalarWhereInput[]
+}
+
+export type ModuleUncheckedUpdateManyWithoutProductNestedInput = {
+  create?: Prisma.XOR<Prisma.ModuleCreateWithoutProductInput, Prisma.ModuleUncheckedCreateWithoutProductInput> | Prisma.ModuleCreateWithoutProductInput[] | Prisma.ModuleUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutProductInput | Prisma.ModuleCreateOrConnectWithoutProductInput[]
+  upsert?: Prisma.ModuleUpsertWithWhereUniqueWithoutProductInput | Prisma.ModuleUpsertWithWhereUniqueWithoutProductInput[]
+  createMany?: Prisma.ModuleCreateManyProductInputEnvelope
+  set?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+  disconnect?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+  delete?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+  connect?: Prisma.ModuleWhereUniqueInput | Prisma.ModuleWhereUniqueInput[]
+  update?: Prisma.ModuleUpdateWithWhereUniqueWithoutProductInput | Prisma.ModuleUpdateWithWhereUniqueWithoutProductInput[]
+  updateMany?: Prisma.ModuleUpdateManyWithWhereWithoutProductInput | Prisma.ModuleUpdateManyWithWhereWithoutProductInput[]
+  deleteMany?: Prisma.ModuleScalarWhereInput | Prisma.ModuleScalarWhereInput[]
 }
 
 export type ModuleCreateNestedOneWithoutPlanModulesInput = {
@@ -408,6 +491,22 @@ export type ModuleUpdateOneRequiredWithoutTenantOverridesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ModuleUpdateToOneWithWhereWithoutTenantOverridesInput, Prisma.ModuleUpdateWithoutTenantOverridesInput>, Prisma.ModuleUncheckedUpdateWithoutTenantOverridesInput>
 }
 
+export type ModuleCreateNestedOneWithoutEntitlementsInput = {
+  create?: Prisma.XOR<Prisma.ModuleCreateWithoutEntitlementsInput, Prisma.ModuleUncheckedCreateWithoutEntitlementsInput>
+  connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutEntitlementsInput
+  connect?: Prisma.ModuleWhereUniqueInput
+}
+
+export type ModuleUpdateOneWithoutEntitlementsNestedInput = {
+  create?: Prisma.XOR<Prisma.ModuleCreateWithoutEntitlementsInput, Prisma.ModuleUncheckedCreateWithoutEntitlementsInput>
+  connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutEntitlementsInput
+  upsert?: Prisma.ModuleUpsertWithoutEntitlementsInput
+  disconnect?: Prisma.ModuleWhereInput | boolean
+  delete?: Prisma.ModuleWhereInput | boolean
+  connect?: Prisma.ModuleWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ModuleUpdateToOneWithWhereWithoutEntitlementsInput, Prisma.ModuleUpdateWithoutEntitlementsInput>, Prisma.ModuleUncheckedUpdateWithoutEntitlementsInput>
+}
+
 export type ModuleCreateNestedOneWithoutQuizzesInput = {
   create?: Prisma.XOR<Prisma.ModuleCreateWithoutQuizzesInput, Prisma.ModuleUncheckedCreateWithoutQuizzesInput>
   connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutQuizzesInput
@@ -424,6 +523,74 @@ export type ModuleUpdateOneWithoutQuizzesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ModuleUpdateToOneWithWhereWithoutQuizzesInput, Prisma.ModuleUpdateWithoutQuizzesInput>, Prisma.ModuleUncheckedUpdateWithoutQuizzesInput>
 }
 
+export type ModuleCreateWithoutProductInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl: string
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
+  tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
+  quizzes?: Prisma.QuizCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
+}
+
+export type ModuleUncheckedCreateWithoutProductInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl: string
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
+  quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
+}
+
+export type ModuleCreateOrConnectWithoutProductInput = {
+  where: Prisma.ModuleWhereUniqueInput
+  create: Prisma.XOR<Prisma.ModuleCreateWithoutProductInput, Prisma.ModuleUncheckedCreateWithoutProductInput>
+}
+
+export type ModuleCreateManyProductInputEnvelope = {
+  data: Prisma.ModuleCreateManyProductInput | Prisma.ModuleCreateManyProductInput[]
+  skipDuplicates?: boolean
+}
+
+export type ModuleUpsertWithWhereUniqueWithoutProductInput = {
+  where: Prisma.ModuleWhereUniqueInput
+  update: Prisma.XOR<Prisma.ModuleUpdateWithoutProductInput, Prisma.ModuleUncheckedUpdateWithoutProductInput>
+  create: Prisma.XOR<Prisma.ModuleCreateWithoutProductInput, Prisma.ModuleUncheckedCreateWithoutProductInput>
+}
+
+export type ModuleUpdateWithWhereUniqueWithoutProductInput = {
+  where: Prisma.ModuleWhereUniqueInput
+  data: Prisma.XOR<Prisma.ModuleUpdateWithoutProductInput, Prisma.ModuleUncheckedUpdateWithoutProductInput>
+}
+
+export type ModuleUpdateManyWithWhereWithoutProductInput = {
+  where: Prisma.ModuleScalarWhereInput
+  data: Prisma.XOR<Prisma.ModuleUpdateManyMutationInput, Prisma.ModuleUncheckedUpdateManyWithoutProductInput>
+}
+
+export type ModuleScalarWhereInput = {
+  AND?: Prisma.ModuleScalarWhereInput | Prisma.ModuleScalarWhereInput[]
+  OR?: Prisma.ModuleScalarWhereInput[]
+  NOT?: Prisma.ModuleScalarWhereInput | Prisma.ModuleScalarWhereInput[]
+  id?: Prisma.StringFilter<"Module"> | string
+  name?: Prisma.StringFilter<"Module"> | string
+  description?: Prisma.StringNullableFilter<"Module"> | string | null
+  defaultUrl?: Prisma.StringFilter<"Module"> | string
+  active?: Prisma.BoolFilter<"Module"> | boolean
+  productId?: Prisma.StringNullableFilter<"Module"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Module"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Module"> | Date | string
+}
+
 export type ModuleCreateWithoutPlanModulesInput = {
   id: string
   name: string
@@ -432,8 +599,10 @@ export type ModuleCreateWithoutPlanModulesInput = {
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  product?: Prisma.ProductCreateNestedOneWithoutModulesInput
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutPlanModulesInput = {
@@ -442,10 +611,12 @@ export type ModuleUncheckedCreateWithoutPlanModulesInput = {
   description?: string | null
   defaultUrl: string
   active?: boolean
+  productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutPlanModulesInput = {
@@ -472,8 +643,10 @@ export type ModuleUpdateWithoutPlanModulesInput = {
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneWithoutModulesNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutPlanModulesInput = {
@@ -482,10 +655,12 @@ export type ModuleUncheckedUpdateWithoutPlanModulesInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleCreateWithoutTenantOverridesInput = {
@@ -496,8 +671,10 @@ export type ModuleCreateWithoutTenantOverridesInput = {
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  product?: Prisma.ProductCreateNestedOneWithoutModulesInput
   planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutTenantOverridesInput = {
@@ -506,10 +683,12 @@ export type ModuleUncheckedCreateWithoutTenantOverridesInput = {
   description?: string | null
   defaultUrl: string
   active?: boolean
+  productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutTenantOverridesInput = {
@@ -536,8 +715,10 @@ export type ModuleUpdateWithoutTenantOverridesInput = {
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneWithoutModulesNestedInput
   planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutTenantOverridesInput = {
@@ -546,9 +727,83 @@ export type ModuleUncheckedUpdateWithoutTenantOverridesInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
+  quizzes?: Prisma.QuizUncheckedUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
+}
+
+export type ModuleCreateWithoutEntitlementsInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl: string
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  product?: Prisma.ProductCreateNestedOneWithoutModulesInput
+  planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
+  tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
+  quizzes?: Prisma.QuizCreateNestedManyWithoutModuleInput
+}
+
+export type ModuleUncheckedCreateWithoutEntitlementsInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl: string
+  active?: boolean
+  productId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
+  quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutModuleInput
+}
+
+export type ModuleCreateOrConnectWithoutEntitlementsInput = {
+  where: Prisma.ModuleWhereUniqueInput
+  create: Prisma.XOR<Prisma.ModuleCreateWithoutEntitlementsInput, Prisma.ModuleUncheckedCreateWithoutEntitlementsInput>
+}
+
+export type ModuleUpsertWithoutEntitlementsInput = {
+  update: Prisma.XOR<Prisma.ModuleUpdateWithoutEntitlementsInput, Prisma.ModuleUncheckedUpdateWithoutEntitlementsInput>
+  create: Prisma.XOR<Prisma.ModuleCreateWithoutEntitlementsInput, Prisma.ModuleUncheckedCreateWithoutEntitlementsInput>
+  where?: Prisma.ModuleWhereInput
+}
+
+export type ModuleUpdateToOneWithWhereWithoutEntitlementsInput = {
+  where?: Prisma.ModuleWhereInput
+  data: Prisma.XOR<Prisma.ModuleUpdateWithoutEntitlementsInput, Prisma.ModuleUncheckedUpdateWithoutEntitlementsInput>
+}
+
+export type ModuleUpdateWithoutEntitlementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneWithoutModulesNestedInput
+  planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
+  quizzes?: Prisma.QuizUpdateManyWithoutModuleNestedInput
+}
+
+export type ModuleUncheckedUpdateWithoutEntitlementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutModuleNestedInput
 }
 
@@ -560,8 +815,10 @@ export type ModuleCreateWithoutQuizzesInput = {
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  product?: Prisma.ProductCreateNestedOneWithoutModulesInput
   planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutQuizzesInput = {
@@ -570,10 +827,12 @@ export type ModuleUncheckedCreateWithoutQuizzesInput = {
   description?: string | null
   defaultUrl: string
   active?: boolean
+  productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutQuizzesInput = {
@@ -600,11 +859,51 @@ export type ModuleUpdateWithoutQuizzesInput = {
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneWithoutModulesNestedInput
   planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutQuizzesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
+}
+
+export type ModuleCreateManyProductInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl: string
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ModuleUpdateWithoutProductInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
+  quizzes?: Prisma.QuizUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
+}
+
+export type ModuleUncheckedUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -614,6 +913,18 @@ export type ModuleUncheckedUpdateWithoutQuizzesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
+  quizzes?: Prisma.QuizUncheckedUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
+}
+
+export type ModuleUncheckedUpdateManyWithoutProductInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -625,12 +936,14 @@ export type ModuleCountOutputType = {
   planModules: number
   tenantOverrides: number
   quizzes: number
+  entitlements: number
 }
 
 export type ModuleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   planModules?: boolean | ModuleCountOutputTypeCountPlanModulesArgs
   tenantOverrides?: boolean | ModuleCountOutputTypeCountTenantOverridesArgs
   quizzes?: boolean | ModuleCountOutputTypeCountQuizzesArgs
+  entitlements?: boolean | ModuleCountOutputTypeCountEntitlementsArgs
 }
 
 /**
@@ -664,6 +977,13 @@ export type ModuleCountOutputTypeCountQuizzesArgs<ExtArgs extends runtime.Types.
   where?: Prisma.QuizWhereInput
 }
 
+/**
+ * ModuleCountOutputType without action
+ */
+export type ModuleCountOutputTypeCountEntitlementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EntitlementWhereInput
+}
+
 
 export type ModuleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -671,11 +991,14 @@ export type ModuleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   description?: boolean
   defaultUrl?: boolean
   active?: boolean
+  productId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  product?: boolean | Prisma.Module$productArgs<ExtArgs>
   planModules?: boolean | Prisma.Module$planModulesArgs<ExtArgs>
   tenantOverrides?: boolean | Prisma.Module$tenantOverridesArgs<ExtArgs>
   quizzes?: boolean | Prisma.Module$quizzesArgs<ExtArgs>
+  entitlements?: boolean | Prisma.Module$entitlementsArgs<ExtArgs>
   _count?: boolean | Prisma.ModuleCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["module"]>
 
@@ -685,8 +1008,10 @@ export type ModuleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   description?: boolean
   defaultUrl?: boolean
   active?: boolean
+  productId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  product?: boolean | Prisma.Module$productArgs<ExtArgs>
 }, ExtArgs["result"]["module"]>
 
 export type ModuleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -695,8 +1020,10 @@ export type ModuleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   description?: boolean
   defaultUrl?: boolean
   active?: boolean
+  productId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  product?: boolean | Prisma.Module$productArgs<ExtArgs>
 }, ExtArgs["result"]["module"]>
 
 export type ModuleSelectScalar = {
@@ -705,26 +1032,35 @@ export type ModuleSelectScalar = {
   description?: boolean
   defaultUrl?: boolean
   active?: boolean
+  productId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ModuleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "defaultUrl" | "active" | "createdAt" | "updatedAt", ExtArgs["result"]["module"]>
+export type ModuleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "defaultUrl" | "active" | "productId" | "createdAt" | "updatedAt", ExtArgs["result"]["module"]>
 export type ModuleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  product?: boolean | Prisma.Module$productArgs<ExtArgs>
   planModules?: boolean | Prisma.Module$planModulesArgs<ExtArgs>
   tenantOverrides?: boolean | Prisma.Module$tenantOverridesArgs<ExtArgs>
   quizzes?: boolean | Prisma.Module$quizzesArgs<ExtArgs>
+  entitlements?: boolean | Prisma.Module$entitlementsArgs<ExtArgs>
   _count?: boolean | Prisma.ModuleCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type ModuleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type ModuleIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type ModuleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  product?: boolean | Prisma.Module$productArgs<ExtArgs>
+}
+export type ModuleIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  product?: boolean | Prisma.Module$productArgs<ExtArgs>
+}
 
 export type $ModulePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Module"
   objects: {
+    product: Prisma.$ProductPayload<ExtArgs> | null
     planModules: Prisma.$PlanModulePayload<ExtArgs>[]
     tenantOverrides: Prisma.$TenantModuleOverridePayload<ExtArgs>[]
     quizzes: Prisma.$QuizPayload<ExtArgs>[]
+    entitlements: Prisma.$EntitlementPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -732,6 +1068,7 @@ export type $ModulePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     description: string | null
     defaultUrl: string
     active: boolean
+    productId: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["module"]>
@@ -1128,9 +1465,11 @@ readonly fields: ModuleFieldRefs;
  */
 export interface Prisma__ModuleClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  product<T extends Prisma.Module$productArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$productArgs<ExtArgs>>): Prisma.Prisma__ProductClient<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   planModules<T extends Prisma.Module$planModulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$planModulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlanModulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tenantOverrides<T extends Prisma.Module$tenantOverridesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$tenantOverridesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantModuleOverridePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   quizzes<T extends Prisma.Module$quizzesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$quizzesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuizPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  entitlements<T extends Prisma.Module$entitlementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$entitlementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntitlementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1165,6 +1504,7 @@ export interface ModuleFieldRefs {
   readonly description: Prisma.FieldRef<"Module", 'String'>
   readonly defaultUrl: Prisma.FieldRef<"Module", 'String'>
   readonly active: Prisma.FieldRef<"Module", 'Boolean'>
+  readonly productId: Prisma.FieldRef<"Module", 'String'>
   readonly createdAt: Prisma.FieldRef<"Module", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Module", 'DateTime'>
 }
@@ -1421,6 +1761,10 @@ export type ModuleCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensio
    */
   data: Prisma.ModuleCreateManyInput | Prisma.ModuleCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ModuleIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1491,6 +1835,10 @@ export type ModuleUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensio
    * Limit how many Modules to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ModuleIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1557,6 +1905,25 @@ export type ModuleDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * Limit how many Modules to delete.
    */
   limit?: number
+}
+
+/**
+ * Module.product
+ */
+export type Module$productArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Product
+   */
+  select?: Prisma.ProductSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Product
+   */
+  omit?: Prisma.ProductOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProductInclude<ExtArgs> | null
+  where?: Prisma.ProductWhereInput
 }
 
 /**
@@ -1629,6 +1996,30 @@ export type Module$quizzesArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.QuizScalarFieldEnum | Prisma.QuizScalarFieldEnum[]
+}
+
+/**
+ * Module.entitlements
+ */
+export type Module$entitlementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Entitlement
+   */
+  select?: Prisma.EntitlementSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Entitlement
+   */
+  omit?: Prisma.EntitlementOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EntitlementInclude<ExtArgs> | null
+  where?: Prisma.EntitlementWhereInput
+  orderBy?: Prisma.EntitlementOrderByWithRelationInput | Prisma.EntitlementOrderByWithRelationInput[]
+  cursor?: Prisma.EntitlementWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EntitlementScalarFieldEnum | Prisma.EntitlementScalarFieldEnum[]
 }
 
 /**

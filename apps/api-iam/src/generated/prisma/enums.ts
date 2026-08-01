@@ -157,3 +157,13 @@ export const QuotaPeriod = {
 } as const
 
 export type QuotaPeriod = (typeof QuotaPeriod)[keyof typeof QuotaPeriod]
+
+
+export const EntitlementSource = {
+  plan: 'plan',
+  override: 'override',
+  trial: 'trial',
+  admin: 'admin'
+} as const
+
+export type EntitlementSource = (typeof EntitlementSource)[keyof typeof EntitlementSource]

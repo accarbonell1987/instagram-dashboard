@@ -145,9 +145,37 @@ enum QuotaPeriod {
   @@map("quota_period")
 }
 
+enum EntitlementSource {
+  plan
+  override
+  trial
+  admin
+
+  @@map("entitlement_source")
+}
+
 // ============================================================
 // CORE TABLES — public schema
 // ============================================================
+
+// Billing boundary (owner decision #5): a Product is the unit customers
+// subscribe to. "instagram-dashboard" is the only product today.
+model Product {
+  id          String   @id
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  modules       Module[]
+  plans         Plan[]
+  subscriptions TenantProductSubscription[]
+  entitlements  Entitlement[]
+  productRoles  ProductRole[]
+
+  @@map("products")
+}
 
 model Plan {
   id              String   @id
@@ -160,13 +188,18 @@ model Plan {
   features        Json     @default("{}")
   popular         Boolean  @default(false)
   active          Boolean  @default(true)
+  // Nullable for phase a1 (additive migration); backfilled in a2, tightened to
+  // NOT NULL in a follow-up migration once verified (see design Migration/Rollout).
+  productId       String?  @map("product_id")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  tenants     Tenant[]
-  drafts      OnboardingDraft[]
-  planModules PlanModule[]
-  quotas      PlanQuota[]
+  product       Product?                     @relation(fields: [productId], references: [id])
+  tenants       Tenant[]
+  drafts        OnboardingDraft[]
+  planModules   PlanModule[]
+  quotas        PlanQuota[]
+  subscriptions TenantProductSubscription[]
 
   @@map("plans")
 }
@@ -211,6 +244,8 @@ model Tenant {
   planChangeRequests PlanChangeRequest[]
   moduleOverrides    TenantModuleOverride[]
   quizAttempts       QuizAttempt[]
+  productSubscriptions TenantProductSubscription[]
+  entitlements         Entitlement[]
 
   @@index([planId])
   @@map("tenants")
@@ -241,6 +276,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   invitationsSent     Invitation[]         @relation("InvitationInviter")
   planChangeRequests  PlanChangeRequest[]  @relation("PlanChangeRequests")
+  productRoleAssignments UserProductRole[]
 
   @@unique([tenantId, email])
   @@index([email])
@@ -443,12 +479,17 @@ model Module {
   description String?
   defaultUrl  String   @map("default_url")
   active      Boolean  @default(true)
+  // Nullable for phase a1 (additive migration); backfilled in a2, tightened to
+  // NOT NULL in a follow-up migration once verified (see design Migration/Rollout).
+  productId   String?  @map("product_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  product         Product?               @relation(fields: [productId], references: [id])
   planModules     PlanModule[]
   tenantOverrides TenantModuleOverride[]
   quizzes         Quiz[]
+  entitlements    Entitlement[]
 
   @@map("modules")
 }
@@ -476,6 +517,79 @@ model TenantModuleOverride {
 
   @@unique([tenantId, moduleId])
   @@map("tenant_module_overrides")
+}
+
+// The billing-boundary anchor (owner decision #5): one row per tenant per
+// product. Plan-derived entitlements are resolved live via
+// TenantProductSubscription → Plan → PlanModule — never materialized.
+model TenantProductSubscription {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  productId String    @map("product_id")
+  planId    String    @map("plan_id")
+  startsAt  DateTime  @default(now()) @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+  status    String    @default("active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  plan    Plan    @relation(fields: [planId], references: [id])
+
+  @@unique([tenantId, productId])
+  @@map("tenant_product_subscriptions")
+}
+
+// Only non-plan-derived grants are stored here (source: override|trial|admin).
+// Plan-derived access is always a live join, never a materialized Entitlement row.
+model Entitlement {
+  id        String            @id @default(uuid()) @db.Uuid
+  tenantId  String            @map("tenant_id") @db.Uuid
+  productId String            @map("product_id")
+  moduleId  String?           @map("module_id")
+  userId    String?           @map("user_id") @db.Uuid
+  source    EntitlementSource
+  expiresAt DateTime?         @map("expires_at")
+  reason    String?
+  createdBy String?           @map("created_by") @db.Uuid
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  module  Module? @relation(fields: [moduleId], references: [id])
+
+  @@unique([tenantId, productId, moduleId, source])
+  @@index([expiresAt])
+  @@map("entitlements")
+}
+
+model ProductRole {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @map("product_id")
+  key       String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  assignments UserProductRole[]
+
+  @@unique([productId, key])
+  @@map("product_roles")
+}
+
+model UserProductRole {
+  userId        String   @map("user_id") @db.Uuid
+  productRoleId String   @map("product_role_id") @db.Uuid
+  assignedBy    String?  @map("assigned_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productRole ProductRole @relation(fields: [productRoleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productRoleId])
+  @@map("user_product_roles")
 }
 
 model Quiz {

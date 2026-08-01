@@ -8,6 +8,7 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/Product.js'
 export type * from './models/Plan.js'
 export type * from './models/PlanQuota.js'
 export type * from './models/Tenant.js'
@@ -26,6 +27,10 @@ export type * from './models/PlanChangeRequest.js'
 export type * from './models/Module.js'
 export type * from './models/PlanModule.js'
 export type * from './models/TenantModuleOverride.js'
+export type * from './models/TenantProductSubscription.js'
+export type * from './models/Entitlement.js'
+export type * from './models/ProductRole.js'
+export type * from './models/UserProductRole.js'
 export type * from './models/Quiz.js'
 export type * from './models/Question.js'
 export type * from './models/QuestionOption.js'

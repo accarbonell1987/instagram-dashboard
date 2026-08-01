@@ -318,6 +318,7 @@ export type UserWhereInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
   invitationsSent?: Prisma.InvitationListRelationFilter
   planChangeRequests?: Prisma.PlanChangeRequestListRelationFilter
+  productRoleAssignments?: Prisma.UserProductRoleListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -344,6 +345,7 @@ export type UserOrderByWithRelationInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenOrderByRelationAggregateInput
   invitationsSent?: Prisma.InvitationOrderByRelationAggregateInput
   planChangeRequests?: Prisma.PlanChangeRequestOrderByRelationAggregateInput
+  productRoleAssignments?: Prisma.UserProductRoleOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -374,6 +376,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
   invitationsSent?: Prisma.InvitationListRelationFilter
   planChangeRequests?: Prisma.PlanChangeRequestListRelationFilter
+  productRoleAssignments?: Prisma.UserProductRoleListRelationFilter
 }, "id" | "activationTokenHash" | "tenantId_email">
 
 export type UserOrderByWithAggregationInput = {
@@ -447,6 +450,7 @@ export type UserCreateInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -472,6 +476,7 @@ export type UserUncheckedCreateInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -497,6 +502,7 @@ export type UserUpdateInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -522,6 +528,7 @@ export type UserUncheckedUpdateInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -802,6 +809,20 @@ export type UserUpdateOneRequiredWithoutPlanChangeRequestsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPlanChangeRequestsInput, Prisma.UserUpdateWithoutPlanChangeRequestsInput>, Prisma.UserUncheckedUpdateWithoutPlanChangeRequestsInput>
 }
 
+export type UserCreateNestedOneWithoutProductRoleAssignmentsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutProductRoleAssignmentsInput, Prisma.UserUncheckedCreateWithoutProductRoleAssignmentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutProductRoleAssignmentsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutProductRoleAssignmentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutProductRoleAssignmentsInput, Prisma.UserUncheckedCreateWithoutProductRoleAssignmentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutProductRoleAssignmentsInput
+  upsert?: Prisma.UserUpsertWithoutProductRoleAssignmentsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutProductRoleAssignmentsInput, Prisma.UserUpdateWithoutProductRoleAssignmentsInput>, Prisma.UserUncheckedUpdateWithoutProductRoleAssignmentsInput>
+}
+
 export type UserCreateWithoutTenantInput = {
   id?: string
   email: string
@@ -824,6 +845,7 @@ export type UserCreateWithoutTenantInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTenantInput = {
@@ -848,6 +870,7 @@ export type UserUncheckedCreateWithoutTenantInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTenantInput = {
@@ -921,6 +944,7 @@ export type UserCreateWithoutRefreshTokensInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRefreshTokensInput = {
@@ -945,6 +969,7 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRefreshTokensInput = {
@@ -985,6 +1010,7 @@ export type UserUpdateWithoutRefreshTokensInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRefreshTokensInput = {
@@ -1009,6 +1035,7 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutDeviceTrustsInput = {
@@ -1033,6 +1060,7 @@ export type UserCreateWithoutDeviceTrustsInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDeviceTrustsInput = {
@@ -1057,6 +1085,7 @@ export type UserUncheckedCreateWithoutDeviceTrustsInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDeviceTrustsInput = {
@@ -1097,6 +1126,7 @@ export type UserUpdateWithoutDeviceTrustsInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDeviceTrustsInput = {
@@ -1121,6 +1151,7 @@ export type UserUncheckedUpdateWithoutDeviceTrustsInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPasswordResetTokensInput = {
@@ -1145,6 +1176,7 @@ export type UserCreateWithoutPasswordResetTokensInput = {
   deviceTrusts?: Prisma.DeviceTrustCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
@@ -1169,6 +1201,7 @@ export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
   deviceTrusts?: Prisma.DeviceTrustUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPasswordResetTokensInput = {
@@ -1209,6 +1242,7 @@ export type UserUpdateWithoutPasswordResetTokensInput = {
   deviceTrusts?: Prisma.DeviceTrustUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
@@ -1233,6 +1267,7 @@ export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
   deviceTrusts?: Prisma.DeviceTrustUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutInvitationsSentInput = {
@@ -1257,6 +1292,7 @@ export type UserCreateWithoutInvitationsSentInput = {
   deviceTrusts?: Prisma.DeviceTrustCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutInvitationsSentInput = {
@@ -1281,6 +1317,7 @@ export type UserUncheckedCreateWithoutInvitationsSentInput = {
   deviceTrusts?: Prisma.DeviceTrustUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutRequesterInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInvitationsSentInput = {
@@ -1321,6 +1358,7 @@ export type UserUpdateWithoutInvitationsSentInput = {
   deviceTrusts?: Prisma.DeviceTrustUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInvitationsSentInput = {
@@ -1345,6 +1383,7 @@ export type UserUncheckedUpdateWithoutInvitationsSentInput = {
   deviceTrusts?: Prisma.DeviceTrustUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPlanChangeRequestsInput = {
@@ -1369,6 +1408,7 @@ export type UserCreateWithoutPlanChangeRequestsInput = {
   deviceTrusts?: Prisma.DeviceTrustCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  productRoleAssignments?: Prisma.UserProductRoleCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPlanChangeRequestsInput = {
@@ -1393,6 +1433,7 @@ export type UserUncheckedCreateWithoutPlanChangeRequestsInput = {
   deviceTrusts?: Prisma.DeviceTrustUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPlanChangeRequestsInput = {
@@ -1433,6 +1474,7 @@ export type UserUpdateWithoutPlanChangeRequestsInput = {
   deviceTrusts?: Prisma.DeviceTrustUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPlanChangeRequestsInput = {
@@ -1457,6 +1499,123 @@ export type UserUncheckedUpdateWithoutPlanChangeRequestsInput = {
   deviceTrusts?: Prisma.DeviceTrustUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutProductRoleAssignmentsInput = {
+  id?: string
+  email: string
+  passwordHash?: string | null
+  role: $Enums.UserRole
+  fullName?: string | null
+  phone?: string | null
+  picture?: string | null
+  status?: $Enums.UserStatus
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  activationTokenHash?: string | null
+  activationTokenExpiresAt?: Date | string | null
+  activationTokenUsed?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutUsersInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  deviceTrusts?: Prisma.DeviceTrustCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutRequesterInput
+}
+
+export type UserUncheckedCreateWithoutProductRoleAssignmentsInput = {
+  id?: string
+  tenantId: string
+  email: string
+  passwordHash?: string | null
+  role: $Enums.UserRole
+  fullName?: string | null
+  phone?: string | null
+  picture?: string | null
+  status?: $Enums.UserStatus
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  activationTokenHash?: string | null
+  activationTokenExpiresAt?: Date | string | null
+  activationTokenUsed?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  deviceTrusts?: Prisma.DeviceTrustUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutRequesterInput
+}
+
+export type UserCreateOrConnectWithoutProductRoleAssignmentsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutProductRoleAssignmentsInput, Prisma.UserUncheckedCreateWithoutProductRoleAssignmentsInput>
+}
+
+export type UserUpsertWithoutProductRoleAssignmentsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutProductRoleAssignmentsInput, Prisma.UserUncheckedUpdateWithoutProductRoleAssignmentsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutProductRoleAssignmentsInput, Prisma.UserUncheckedCreateWithoutProductRoleAssignmentsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutProductRoleAssignmentsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutProductRoleAssignmentsInput, Prisma.UserUncheckedUpdateWithoutProductRoleAssignmentsInput>
+}
+
+export type UserUpdateWithoutProductRoleAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  picture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationTokenUsed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutUsersNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  deviceTrusts?: Prisma.DeviceTrustUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutRequesterNestedInput
+}
+
+export type UserUncheckedUpdateWithoutProductRoleAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  picture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationTokenUsed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  deviceTrusts?: Prisma.DeviceTrustUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutRequesterNestedInput
 }
 
 export type UserCreateManyTenantInput = {
@@ -1500,6 +1659,7 @@ export type UserUpdateWithoutTenantInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTenantInput = {
@@ -1524,6 +1684,7 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutRequesterNestedInput
+  productRoleAssignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutTenantInput = {
@@ -1556,6 +1717,7 @@ export type UserCountOutputType = {
   passwordResetTokens: number
   invitationsSent: number
   planChangeRequests: number
+  productRoleAssignments: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1564,6 +1726,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   passwordResetTokens?: boolean | UserCountOutputTypeCountPasswordResetTokensArgs
   invitationsSent?: boolean | UserCountOutputTypeCountInvitationsSentArgs
   planChangeRequests?: boolean | UserCountOutputTypeCountPlanChangeRequestsArgs
+  productRoleAssignments?: boolean | UserCountOutputTypeCountProductRoleAssignmentsArgs
 }
 
 /**
@@ -1611,6 +1774,13 @@ export type UserCountOutputTypeCountPlanChangeRequestsArgs<ExtArgs extends runti
   where?: Prisma.PlanChangeRequestWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountProductRoleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserProductRoleWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1636,6 +1806,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
   invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
   planChangeRequests?: boolean | Prisma.User$planChangeRequestsArgs<ExtArgs>
+  productRoleAssignments?: boolean | Prisma.User$productRoleAssignmentsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1709,6 +1880,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
   invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
   planChangeRequests?: boolean | Prisma.User$planChangeRequestsArgs<ExtArgs>
+  productRoleAssignments?: boolean | Prisma.User$productRoleAssignmentsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1727,6 +1899,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     passwordResetTokens: Prisma.$PasswordResetTokenPayload<ExtArgs>[]
     invitationsSent: Prisma.$InvitationPayload<ExtArgs>[]
     planChangeRequests: Prisma.$PlanChangeRequestPayload<ExtArgs>[]
+    productRoleAssignments: Prisma.$UserProductRolePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2146,6 +2319,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   passwordResetTokens<T extends Prisma.User$passwordResetTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passwordResetTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitationsSent<T extends Prisma.User$invitationsSentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitationsSentArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   planChangeRequests<T extends Prisma.User$planChangeRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$planChangeRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlanChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  productRoleAssignments<T extends Prisma.User$productRoleAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$productRoleAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserProductRolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2710,6 +2884,30 @@ export type User$planChangeRequestsArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.PlanChangeRequestScalarFieldEnum | Prisma.PlanChangeRequestScalarFieldEnum[]
+}
+
+/**
+ * User.productRoleAssignments
+ */
+export type User$productRoleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserProductRole
+   */
+  select?: Prisma.UserProductRoleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserProductRole
+   */
+  omit?: Prisma.UserProductRoleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserProductRoleInclude<ExtArgs> | null
+  where?: Prisma.UserProductRoleWhereInput
+  orderBy?: Prisma.UserProductRoleOrderByWithRelationInput | Prisma.UserProductRoleOrderByWithRelationInput[]
+  cursor?: Prisma.UserProductRoleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserProductRoleScalarFieldEnum | Prisma.UserProductRoleScalarFieldEnum[]
 }
 
 /**
