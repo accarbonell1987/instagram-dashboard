@@ -234,14 +234,17 @@ const BASE_MODULES = [
     defaultUrl: '/prueba',
   },
   {
-    // NOTE: This module serves the frontend dashboard at /dashboard-instagram.
-    // The backend API for Instagram Analytics is a separate standalone service
-    // (apps/api-instagram-analytics, port 3003) — not registered as a module here.
-    // The API uses JWT auth verified against api-iam's JWKS endpoint.
+    // The Instagram Dashboard frontend is a standalone product web app
+    // (products/instagram-dashboard/web) that hub loads via the module iframe
+    // shell. A full URL here (not a leading-slash path) makes hub route through
+    // /apps/[slug] (ModuleShell) instead of an internal route. Dev defaults to
+    // localhost:3010; set INSTAGRAM_DASHBOARD_WEB_URL for deployed environments.
+    // The backend API (products/instagram-dashboard/api, port 3003) is a separate
+    // service, authenticated with JWT verified against api-iam's JWKS endpoint.
     id: 'dashboard-instagram',
     name: 'Dashboard Instagram',
     description: 'Panel de análisis y métricas de Instagram',
-    defaultUrl: '/dashboard-instagram',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
 ];
 
