@@ -1,5 +1,6 @@
 'use client';
 
+import { getHubToken, clearHubToken } from '../lib/hub-token';
 import type {
   ConnectionStatus,
   DashboardData,
@@ -35,8 +36,6 @@ import type {
   SuggestionBatchesResponse,
 } from '../types/instagram.types';
 
-import { getAccessToken, isExpired } from '@/modules/iam/identity/session/token';
-
 // ── API base URL ──
 const API_BASE = process.env['NEXT_PUBLIC_INSTAGRAM_API_URL'] ?? 'http://localhost:3003'
 
@@ -68,8 +67,9 @@ export class InstagramApiError extends Error {
 }
 
 // ── Thin fetch wrapper ──
-// Targets the Instagram API origin. Injects the Hub JWT (from getAccessToken())
-// so the backend can verify tenant context via api-iam JWKS.
+// Targets the Instagram API origin. Injects the Hub JWT (from getHubToken(),
+// delivered via postMessage) so the backend can verify tenant context via
+// api-iam JWKS.
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
 
@@ -78,9 +78,9 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     ...(options?.headers as Record<string, string> | undefined),
   };
 
-  const token = getAccessToken();
-  if (token !== null && !isExpired(token)) {
-    headers['Authorization'] = `Bearer ${token.raw}`;
+  const token = getHubToken();
+  if (token !== null) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(url, {
@@ -89,11 +89,10 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (response.status === 401) {
-    // Access token expired — the instagram service doesn't auto-refresh tokens.
-    // Redirect to login so the user gets a fresh session.
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
+    // Stale/absent token. This app runs inside the hub's iframe and can't
+    // refresh on its own — drop the token and surface the error. The hub owns
+    // re-authentication and will push a fresh token via postMessage.
+    clearHubToken();
     throw new Error('Session expired. Please log in again.');
   }
 
@@ -432,9 +431,9 @@ export async function publishCarousel(
 ): Promise<PublishCarouselResult> {
   const url = `${API_BASE}/api/carousels/${encodeURIComponent(carouselId)}/publish`
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  const token = getAccessToken()
-  if (token !== null && !isExpired(token)) {
-    headers['Authorization'] = `Bearer ${token.raw}`
+  const token = getHubToken()
+  if (token !== null) {
+    headers['Authorization'] = `Bearer ${token}`
   }
   const response = await fetch(url, {
     method: 'POST',
@@ -496,9 +495,9 @@ export async function uploadSlideImage(
 
   const url = `${API_BASE}/api/carousels/${encodeURIComponent(carouselId)}/slides/${encodeURIComponent(slideId)}/image`;
   const headers: Record<string, string> = {};
-  const token = getAccessToken();
-  if (token !== null && !isExpired(token)) {
-    headers['Authorization'] = `Bearer ${token.raw}`;
+  const token = getHubToken();
+  if (token !== null) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(url, { method: 'PUT', headers, body: formData });

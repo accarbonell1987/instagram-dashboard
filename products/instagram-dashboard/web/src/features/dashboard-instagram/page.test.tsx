@@ -69,11 +69,6 @@ vi.mock('./components/floating-agent', () => ({
   FloatingAgent: () => <div data-testid="floating-agent" />,
 }));
 
-// Mock modules hook for RF-11 module gating
-vi.mock('@/modules/shared/modules', () => ({
-  useModules: vi.fn(),
-}));
-
 // Mock the Instagram service for ConnectAccount and DisconnectButton
 vi.mock('./services/instagram.service', () => ({
   getOAuthUrl: vi.fn(() => 'https://instagram.com/oauth'),
@@ -101,9 +96,6 @@ import type {
   InstagramPeriod,
   SyncState,
 } from './types/instagram.types';
-
-import { useModules } from '@/modules/shared/modules';
-import type { AccessibleModule } from '@/modules/shared/modules/services/modules.service';
 
 
 function mockDashboardHook(overrides: Partial<ReturnType<typeof useInstagramDashboard>> = {}) {
@@ -142,25 +134,6 @@ function mockSyncHook(overrides: Partial<ReturnType<typeof useSyncStatus>> = {})
   };
   const mock = { ...defaults, ...overrides };
   vi.mocked(useSyncStatus).mockReturnValue(mock);
-  return mock;
-}
-
-function mockModulesHook(overrides: Partial<ReturnType<typeof useModules>> = {}) {
-  const defaults: ReturnType<typeof useModules> = {
-    modules: [
-      {
-        id: 'dashboard-instagram',
-        name: 'Instagram Analytics',
-        description: 'Analytics dashboard for Instagram',
-        defaultUrl: '/dashboard-instagram',
-        source: 'plan',
-      } as AccessibleModule,
-    ],
-    isLoading: false,
-    error: null,
-  };
-  const mock = { ...defaults, ...overrides };
-  vi.mocked(useModules).mockReturnValue(mock);
   return mock;
 }
 
@@ -211,8 +184,6 @@ const mockDashboardData = {
 describe('DashboardInstagramPage — state machine', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default: module access granted — allows all existing state machine tests to pass
-    mockModulesHook();
   });
 
   describe('STATE 1: Checking connection', () => {

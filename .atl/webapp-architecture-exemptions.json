@@ -16,6 +16,14 @@
       "since": "2026-04-26",
       "owner": "marketing",
       "reviewBy": null
+    },
+    {
+      "app": "products/instagram-dashboard/web",
+      "rules": ["§1"],
+      "reason": "Standalone Instagram analytics app. Consumes a separate analytics API over its own bespoke fetch layer with postMessage-based auth, not @core/core CRUD/AuthStrategy — so no createCoreServices/domain-services/ServicesProvider. Same class of exemption as apps/hub. Keeps ThemeProvider + TooltipProvider + Toaster shell.",
+      "since": "2026-08-02",
+      "owner": "feat/product-ig-extraction",
+      "reviewBy": "2026-11-02"
     }
   ]
 }

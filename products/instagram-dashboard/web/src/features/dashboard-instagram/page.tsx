@@ -39,11 +39,7 @@ import type {
   TopPost,
 } from './types/instagram.types';
 
-import { useModules } from '@/modules/shared/modules';
-
 export function DashboardInstagramPage(): JSX.Element {
-  const { modules, isLoading: isModulesLoading, error: modulesError } = useModules();
-
   const { isConnected, isLoading: isCheckingConnection } = useConnectionStatus();
   const { data, isLoading, error, refetch } = useInstagramDashboard('30d', {
     enabled: isConnected,
@@ -109,27 +105,6 @@ export function DashboardInstagramPage(): JSX.Element {
   };
 
   // ── Guards ────────────────────────────────────────────────────────────────
-
-  if (isModulesLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <p className="text-muted-foreground text-sm">Verificando acceso al módulo...</p>
-      </div>
-    );
-  }
-
-  const hasModuleAccess =
-    modulesError !== null || modules.some((m) => m.id === 'dashboard-instagram');
-  if (!hasModuleAccess) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-12 text-center sm:px-6 lg:px-8">
-        <h2 className="mb-2 text-xl font-semibold">Módulo no disponible</h2>
-        <p className="text-muted-foreground text-sm">
-          El módulo de Instagram Analytics no está incluido en tu plan actual.
-        </p>
-      </div>
-    );
-  }
 
   if (isCheckingConnection) {
     return (

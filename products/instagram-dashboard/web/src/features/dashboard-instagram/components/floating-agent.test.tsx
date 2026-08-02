@@ -4,6 +4,20 @@ import { describe, it, expect, vi } from 'vitest'
 import type { UseGrowthAgentResult } from './chat-panel.types'
 import { FloatingAgent } from './floating-agent'
 
+// FloatingAgent fetches usage on open. The hub relied on a global MSW server for
+// this; the standalone app has none, so stub the service directly. Shape mirrors
+// the hub's `happy` scenario (Tokens 12K/100K, Imágenes 8/50).
+vi.mock('../services/instagram.service', () => ({
+  getUsage: vi.fn().mockResolvedValue({
+    quotas: {
+      deepseek_tokens: { used: 12000, limit: 100000, period: 'month', resetsAt: '2026-07-01T00:00:00.000Z' },
+      fal_images: { used: 8, limit: 50, period: 'month', resetsAt: '2026-07-01T00:00:00.000Z' },
+    },
+    periodStart: '2026-06-01T00:00:00.000Z',
+    periodEnd: '2026-07-01T00:00:00.000Z',
+  }),
+}))
+
 // Build a mock hook result
 function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgentResult {
   return {
