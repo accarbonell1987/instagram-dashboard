@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'apps/**'
+      - 'products/*/web/**'
       - 'internal/webapp-example/**'
       - '.atl/webapp-architecture.md'
       - '.atl/webapp-architecture-exemptions.json'
@@ -13,6 +14,7 @@ on:
     branches: [main, develop]
     paths:
       - 'apps/**'
+      - 'products/*/web/**'
       - 'internal/webapp-example/**'
       - '.atl/webapp-architecture.md'
       - '.atl/webapp-architecture-exemptions.json'

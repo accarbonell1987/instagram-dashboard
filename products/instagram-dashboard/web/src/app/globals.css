@@ -1,0 +1,31 @@
+/**
+ * Instagram Dashboard - Global Styles
+ *
+ * Import order matters (Tailwind CSS v4):
+ * 1. Tailwind CSS v4 (base framework)
+ * 2. Content sources (@source directives)
+ * 3. Tailwind theme mappings + design system tokens + themes
+ */
+
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Content sources for Tailwind v4 class scanning */
+@source "../../../../../packages/ui/src/**/*.{ts,tsx}";
+
+@import '@core/config/styles/tailwind-theme.css';
+@import '@core/config/styles/globals.css';
+@import '@core/config/styles/themes.css';
+@import '@core/config/styles/radius-calc.css';
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+    outline-color: hsl(var(--ring) / 0.5);
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}

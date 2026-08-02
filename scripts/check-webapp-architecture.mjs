@@ -3,7 +3,7 @@
  * Webapp Architecture Compliance Check
  *
  * Mechanical assertion of the rules in `.atl/webapp-architecture.md` against
- * every directory under `apps/**` and `internal/webapp-example/`.
+ * every directory under `apps/`, `products/<name>/web`, and `internal/webapp-example/`.
  *
  * Honors `.atl/webapp-architecture-exemptions.json`: if an app exempts a rule
  * group (e.g. "§1", "§4"), the corresponding checks are skipped.
@@ -37,6 +37,20 @@ const onlyApp = onlyAppArg >= 0 ? args[onlyAppArg + 1] : null;
 
 async function discoverTargets() {
   const targets = [];
+
+  async function tryAdd(id, path, kind) {
+    const s = await stat(path).catch(() => null);
+    if (!s?.isDirectory()) return;
+    // Skip non-Next.js dirs (e.g. apps/api-iam — backend, not a webapp).
+    const pkgPath = join(path, 'package.json');
+    if (!existsSync(pkgPath)) return;
+    const pkg = JSON.parse(await readFile(pkgPath, 'utf8'));
+    const isWebapp =
+      Boolean(pkg.dependencies?.next) || Boolean(pkg.devDependencies?.next);
+    if (!isWebapp) return;
+    targets.push({ id, root: path, kind });
+  }
+
   const candidateRoots = [
     { dir: 'apps', kind: 'production' },
     { dir: 'internal', kind: 'reference', filter: (n) => n === 'webapp-example' },
@@ -47,19 +61,20 @@ async function discoverTargets() {
     const entries = await readdir(abs);
     for (const name of entries) {
       if (filter && !filter(name)) continue;
-      const path = join(abs, name);
-      const s = await stat(path).catch(() => null);
-      if (!s?.isDirectory()) continue;
-      // Skip non-Next.js dirs (e.g. apps/api-iam — backend, not a webapp).
-      const pkgPath = join(path, 'package.json');
-      if (!existsSync(pkgPath)) continue;
-      const pkg = JSON.parse(await readFile(pkgPath, 'utf8'));
-      const isWebapp =
-        Boolean(pkg.dependencies?.next) || Boolean(pkg.devDependencies?.next);
-      if (!isWebapp) continue;
-      targets.push({ id: `${dir}/${name}`, root: path, kind });
+      await tryAdd(`${dir}/${name}`, join(abs, name), kind);
     }
   }
+
+  // products/*/web — standalone product webapps (e.g. products/instagram-dashboard/web).
+  const productsRoot = join(ROOT, 'products');
+  if (existsSync(productsRoot)) {
+    for (const product of await readdir(productsRoot)) {
+      const webPath = join(productsRoot, product, 'web');
+      if (!existsSync(webPath)) continue;
+      await tryAdd(`products/${product}/web`, webPath, 'production');
+    }
+  }
+
   return targets;
 }
 
