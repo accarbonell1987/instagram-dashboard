@@ -189,23 +189,6 @@ describe('ChatPanel', () => {
     expect(deleteBtn).toBeInTheDocument()
   })
 
-  // T-22: Gear icon button for agent settings
-  it('gear icon button is visible in header', () => {
-    render(<ChatPanel hook={makeHook()} />)
-    const gearBtn = screen.getByRole('button', { name: /Configurar agente/i })
-    expect(gearBtn).toBeInTheDocument()
-  })
-
-  it('clicking gear icon calls openSettings', () => {
-    const openSettings = vi.fn()
-    render(<ChatPanel hook={makeHook({ openSettings })} />)
-    const gearBtn = screen.getByRole('button', { name: /Configurar agente/i })
-    fireEvent.click(gearBtn)
-    expect(openSettings).toHaveBeenCalledTimes(1)
-  })
-
-  it('renders AgentSettingsModal when isSettingsOpen is true', () => {
-    render(<ChatPanel hook={makeHook({ isSettingsOpen: true })} />)
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-  })
+  // Agent settings (gear icon + modal) moved to the FloatingAgent header/shell;
+  // that behavior is covered in floating-agent.test.tsx.
 })

@@ -46,7 +46,7 @@ describe('InvitePage', () => {
     });
 
     // Assert the "already used" view is shown
-    expect(screen.getByText(/ya fue usada/i)).toBeInTheDocument();
+    expect(screen.getByText(/ya utilizada/i)).toBeInTheDocument();
 
     // Assert the "Aceptar invitación" button is NOT shown
     expect(screen.queryByRole('button', { name: /Aceptar invitación/i })).not.toBeInTheDocument();

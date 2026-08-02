@@ -113,37 +113,22 @@ describe('PlansPage — Module Assignment', () => {
     setupDefaultHandlers()
   })
 
-  it('renders module count badges for each plan', async () => {
+  it('renders module count badge on plans with modules', async () => {
     await renderPage()
 
-    // Plan Básico has 2 modules, Plan Pro has 0
-    expect(screen.getByText('2 módulos')).toBeInTheDocument()
-    expect(screen.getByText('Sin módulos')).toBeInTheDocument()
+    // The module column is an icon button per plan; a numeric badge shows the
+    // assigned count only when > 0. Plan Básico has 2, Plan Pro has 0.
+    await waitFor(() => {
+      expect(screen.getByLabelText('Módulos de Plan Básico')).toHaveTextContent('2')
+    })
+    expect(screen.getByLabelText('Módulos de Plan Pro').textContent).toBe('')
   })
 
-  it('shows module name pills under badge when modules assigned', async () => {
-    await renderPage()
-
-    // Plan Básico has buscador-app + facturacion-app assigned
-    expect(screen.getByText('Buscador de Clientes')).toBeInTheDocument()
-    expect(screen.getByText('Facturación Electrónica')).toBeInTheDocument()
-  })
+  // Assigned module names are shown inside the assignment dialog (not as row
+  // pills anymore); that is covered by 'displays modules in dual-list' below.
 
   it('opens module assignment dialog when clicking module badge', async () => {
     await openModuleDialog('Plan Básico')
-  })
-
-  it('opens module assignment dialog when clicking module name pill', async () => {
-    const user = userEvent.setup()
-    await renderPage()
-
-    // Click the module name pill for "Buscador de Clientes"
-    const pill = screen.getByText('Buscador de Clientes')
-    await user.click(pill)
-
-    await waitFor(() => {
-      expect(screen.getByText('Módulos — Plan Básico')).toBeInTheDocument()
-    })
   })
 
   it('shows loading skeleton when dialog opens', async () => {

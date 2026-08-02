@@ -155,4 +155,27 @@ describe('FloatingAgent', () => {
     // But the meter labels should eventually appear
     expect(screen.getByRole('dialog', { name: /Agente de Crecimiento/i })).toBeInTheDocument()
   })
+
+  // ── Agent Settings (gear icon) ──
+
+  it('gear icon button is visible in the panel header', () => {
+    render(<FloatingAgent hook={makeHook()} />)
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente de crecimiento/i }))
+    expect(screen.getByRole('button', { name: /Configurar agente/i })).toBeInTheDocument()
+  })
+
+  it('clicking gear icon calls openSettings', () => {
+    const openSettings = vi.fn()
+    render(<FloatingAgent hook={makeHook({ openSettings })} />)
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente de crecimiento/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Configurar agente/i }))
+    expect(openSettings).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders AgentSettingsModal when isSettingsOpen is true', () => {
+    render(<FloatingAgent hook={makeHook({ isSettingsOpen: true })} />)
+    // The floating panel dialog is aria-hidden while closed, so the only
+    // active dialog is the settings modal.
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
 })

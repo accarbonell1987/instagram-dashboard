@@ -21,6 +21,13 @@ vi.mock('./hooks/use-instagram-dashboard', () => ({
     data: [],
     isLoading: false,
     error: null,
+    refetch: vi.fn(),
+  })),
+  usePublications: vi.fn(() => ({
+    data: null,
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   })),
   useReels: vi.fn(() => ({
     data: null,
@@ -156,7 +163,18 @@ function mockModulesHook(overrides: Partial<ReturnType<typeof useModules>> = {})
   return mock;
 }
 
-const mockDashboardData: DashboardData = {
+// The page maps its view model from the backend response shape (`account`,
+// `overview`, `ranking`…), casting `data` internally. The fixture mirrors that
+// shape; the legacy `profile`/`overview` fields are kept for the type.
+const mockDashboardData = {
+  account: {
+    username: 'testuser',
+    displayName: 'Test User',
+    profilePictureUrl: 'https://example.com/avatar.jpg',
+    accountType: 'BUSINESS',
+    followerCount: 1000,
+    mediaCount: 50,
+  },
   profile: {
     username: 'testuser',
     fullName: 'Test User',
@@ -187,7 +205,7 @@ const mockDashboardData: DashboardData = {
   },
   period: '7d',
   lastUpdated: '2026-06-10T10:00:00Z',
-};
+} as unknown as DashboardData;
 
 describe('DashboardInstagramPage — state machine', () => {
   beforeEach(() => {

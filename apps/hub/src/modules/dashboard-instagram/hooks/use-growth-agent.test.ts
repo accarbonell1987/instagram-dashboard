@@ -34,6 +34,21 @@ const makeSuggestion = (overrides: Partial<ContentSuggestion & { id: string }> =
   ...overrides,
 })
 
+// Suggestions surface via getSuggestionBatches (flattened), not the chat payload.
+const makeBatchesResponse = (suggestions: ContentSuggestion[]) => ({
+  batches: [
+    {
+      id: 'batch-1',
+      userMessage: 'msg',
+      createdAt: new Date().toISOString(),
+      suggestions,
+    },
+  ],
+  total: 1,
+  page: 1,
+  limit: 50,
+})
+
 describe('useGrowthAgent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -123,6 +138,9 @@ describe('useGrowthAgent', () => {
 
     await waitFor(() => expect(result.current.sessionId).not.toBe(''))
 
+    // After a chat response with suggestions, the hook reloads batches.
+    mockedService.getSuggestionBatches.mockResolvedValue(makeBatchesResponse([newSuggestion]))
+
     await act(async () => {
       await result.current.sendMessage('Give me suggestions')
     })
@@ -145,7 +163,8 @@ describe('useGrowthAgent', () => {
 
     await waitFor(() => expect(result.current.sessionId).not.toBe(''))
 
-    // Add suggestion via chat
+    // Add suggestion via chat (surfaces through reloaded batches)
+    mockedService.getSuggestionBatches.mockResolvedValue(makeBatchesResponse([suggestion]))
     await act(async () => {
       await result.current.sendMessage('msg')
     })
@@ -175,6 +194,7 @@ describe('useGrowthAgent', () => {
 
     await waitFor(() => expect(result.current.sessionId).not.toBe(''))
 
+    mockedService.getSuggestionBatches.mockResolvedValue(makeBatchesResponse([suggestion]))
     await act(async () => {
       await result.current.sendMessage('msg')
     })
