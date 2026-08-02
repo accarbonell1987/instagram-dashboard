@@ -52,7 +52,7 @@ export const adminHandlers = [
       }
     }
 
-    const id = `inv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const id = `inv-${String(Date.now())}-${Math.random().toString(36).slice(2, 9)}`;
     const expiresAt = stableFuture(7 * 24 * 3600);
 
     db.invitation.create({
@@ -146,7 +146,7 @@ export const adminHandlers = [
       email: user.email,
       fullName: user.fullName,
       role: user.role,
-      status: user.status ?? 'active',
+      status: user.status,
       createdAt: stableNow(),
     }));
 
@@ -232,7 +232,7 @@ export const adminHandlers = [
       return conflict('plan_change.pending_exists');
     }
 
-    const id = `pcr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const id = `pcr-${String(Date.now())}-${Math.random().toString(36).slice(2, 9)}`;
 
     db.planChangeRequest.create({
       id,

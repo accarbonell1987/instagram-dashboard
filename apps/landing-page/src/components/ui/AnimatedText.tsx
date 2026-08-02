@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion, useScroll, useTransform, type MotionValue } from 'motion/react';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 interface AnimatedTextProps {
@@ -44,16 +44,30 @@ function AnimatedChars({ chars, containerRef }: { chars: string[]; containerRef:
 
   return (
     <>
-      {chars.map((char, i) => {
-        const start = i / chars.length;
-        const end = (i + 1) / chars.length;
-        const opacity = useTransform(scrollYProgress, [start, end], [0.2, 1]);
-        return (
-          <motion.span key={i} style={{ opacity }}>
-            {char === ' ' ? '\u00A0' : char}
-          </motion.span>
-        );
-      })}
+      {chars.map((char, i) => (
+        <AnimatedChar
+          key={i}
+          char={char}
+          progress={scrollYProgress}
+          start={i / chars.length}
+          end={(i + 1) / chars.length}
+        />
+      ))}
     </>
   );
+}
+
+function AnimatedChar({
+  char,
+  progress,
+  start,
+  end,
+}: {
+  char: string;
+  progress: MotionValue<number>;
+  start: number;
+  end: number;
+}) {
+  const opacity = useTransform(progress, [start, end], [0.2, 1]);
+  return <motion.span style={{ opacity }}>{char === ' ' ? '\u00A0' : char}</motion.span>;
 }

@@ -4,7 +4,7 @@ import { apiFetchWithInterceptors } from '@/lib/api/interceptors'
 
 export type TenantStatus = 'pending' | 'active' | 'suspended'
 
-export type AdminTenantListItem = {
+export interface AdminTenantListItem {
   id: string
   name: string
   slug: string
@@ -15,14 +15,14 @@ export type AdminTenantListItem = {
   createdAt: string
 }
 
-export type AdminTenantListResponse = {
+export interface AdminTenantListResponse {
   items: AdminTenantListItem[]
   total: number
   page: number
   pageSize: number
 }
 
-export type AdminTenantDetail = {
+export interface AdminTenantDetail {
   id: string
   name: string
   slug: string
@@ -39,7 +39,7 @@ export type AdminTenantDetail = {
   updatedAt: string
 }
 
-export type ListTenantsParams = {
+export interface ListTenantsParams {
   page?: number | undefined
   pageSize?: number | undefined
   search?: string | undefined

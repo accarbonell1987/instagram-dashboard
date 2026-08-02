@@ -1,6 +1,7 @@
 'use client'
 
 import type { JSX } from 'react'
+
 import type { UsageResponse } from '../types/instagram.types'
 
 interface UsageMeterProps {
@@ -14,7 +15,7 @@ function formatNumber(n: number): string {
   if (n >= 1000) {
     const k = n / 1000
     // Only show decimal if it's a round number
-    return k % 1 === 0 ? `${k}K` : `${k.toFixed(1).replace(/\.0$/, '')}K`
+    return k % 1 === 0 ? `${String(k)}K` : `${k.toFixed(1).replace(/\.0$/, '')}K`
   }
   return String(n)
 }
@@ -95,7 +96,7 @@ export function UsageMeter({ usage, isLoading }: UsageMeterProps): JSX.Element |
                 >
                   <div
                     className={`h-full rounded-full transition-all ${barColor}`}
-                    style={{ width: `${pct}%` }}
+                    style={{ width: `${String(pct)}%` }}
                   />
                 </div>
               </>

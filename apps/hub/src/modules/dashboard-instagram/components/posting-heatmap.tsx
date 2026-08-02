@@ -41,7 +41,7 @@ function InsufficientDataState({ totalPosts }: { totalPosts: number }) {
       </p>
       <p className="text-xs text-muted-foreground/60">
         {totalPosts > 0
-          ? `${totalPosts} post${totalPosts !== 1 ? 's' : ''} registrado${totalPosts !== 1 ? 's' : ''}. Se necesitan al menos ${MIN_POSTS_TOTAL} para un análisis útil.`
+          ? `${String(totalPosts)} post${totalPosts !== 1 ? 's' : ''} registrado${totalPosts !== 1 ? 's' : ''}. Se necesitan al menos ${String(MIN_POSTS_TOTAL)} para un análisis útil.`
           : 'Sin datos aún.'}
       </p>
     </div>
@@ -121,8 +121,8 @@ export function PostingHeatmap({ cells }: PostingHeatmapProps) {
                     .join(' ')}
                   title={
                     count > 0
-                      ? `${DAY_LABELS[dayIdx]} ${slot?.label}: ${count} post${count !== 1 ? 's' : ''}${isLowConfidence ? ' · pocos datos' : ''}`
-                      : `${DAY_LABELS[dayIdx]} ${slot?.label}: sin datos`
+                      ? `${String(DAY_LABELS[dayIdx])} ${String(slot?.label)}: ${String(count)} post${count !== 1 ? 's' : ''}${isLowConfidence ? ' · pocos datos' : ''}`
+                      : `${String(DAY_LABELS[dayIdx])} ${String(slot?.label)}: sin datos`
                   }
                 >
                   {count > 0 && (

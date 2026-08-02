@@ -1,8 +1,8 @@
 'use client';
 
+import { Input, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, cn } from '@core/ui';
 import { type JSX } from 'react';
 import { Controller, type UseFormRegister, type FieldErrors, type Control } from 'react-hook-form';
-import { Input, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, cn } from '@core/ui';
 
 import { StepFormField } from '../shared/step-form-field';
 

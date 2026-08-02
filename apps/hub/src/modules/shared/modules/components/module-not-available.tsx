@@ -1,8 +1,8 @@
 'use client';
 
+import { Lock } from 'lucide-react';
 import type { JSX } from 'react';
 
-import { Lock } from 'lucide-react';
 
 interface ModuleNotAvailableProps {
   moduleId: string;

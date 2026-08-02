@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
 
 import { Button } from '@core/ui'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { useState } from 'react'
 
 import type { DemographicItem } from '../types/instagram.types'
 
@@ -25,7 +25,7 @@ function RegionBar({ item, maxValue }: { item: DemographicItem; maxValue: number
       <div className="relative flex-1">
         <div
           className="h-3 rounded-sm bg-primary/40"
-          style={{ width: `${barWidth}%` }}
+          style={{ width: `${String(barWidth)}%` }}
           aria-hidden="true"
         />
       </div>
@@ -52,7 +52,7 @@ function RegionList({
 
   const mapped = displayed.map((item) => ({
     ...item,
-    label: mapLabel ? (mapLabel(item.label) ?? item.label) : item.label,
+    label: mapLabel ? mapLabel(item.label) : item.label,
   }))
 
   if (items.length === 0) {
@@ -82,7 +82,7 @@ function RegionList({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => { setExpanded(!expanded); }}
           className="mt-2 text-primary"
         >
           {expanded ? (

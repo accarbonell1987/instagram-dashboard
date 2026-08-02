@@ -1,6 +1,5 @@
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 // Mock Recharts to avoid ResponsiveContainer dimension issues in jsdom
 vi.mock('recharts', async () => {
@@ -91,19 +90,21 @@ vi.mock('./components/sync-status-badge', () => ({
   SyncStatusBadge: () => <div data-testid="sync-status-badge" />,
 }));
 
-import { DashboardInstagramPage } from './page';
 import {
   useInstagramDashboard,
   useConnectionStatus,
   useSyncStatus,
 } from './hooks/use-instagram-dashboard';
-import { useModules } from '@/modules/shared/modules';
-import type { AccessibleModule } from '@/modules/shared/modules/services/modules.service';
+import { DashboardInstagramPage } from './page';
 import type {
   DashboardData,
   InstagramPeriod,
   SyncState,
 } from './types/instagram.types';
+
+import { useModules } from '@/modules/shared/modules';
+import type { AccessibleModule } from '@/modules/shared/modules/services/modules.service';
+
 
 function mockDashboardHook(overrides: Partial<ReturnType<typeof useInstagramDashboard>> = {}) {
   const defaults = {

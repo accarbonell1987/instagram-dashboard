@@ -1,10 +1,11 @@
 'use client'
 
+import { Button } from '@core/ui'
+import { X, ExternalLink, AlertTriangle } from 'lucide-react'
 import type { JSX } from 'react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Button } from '@core/ui'
-import { X, ExternalLink, AlertTriangle } from 'lucide-react'
+
 import { publishCarousel, InstagramApiError, getOAuthUrl } from '../services/instagram.service'
 
 type DialogState = 'idle' | 'publishing' | 'success' | 'insufficient_scope' | 'error'

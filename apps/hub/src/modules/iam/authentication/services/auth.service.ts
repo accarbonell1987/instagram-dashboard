@@ -1,9 +1,10 @@
+import { getOrCreateDeviceId } from '../lib/device';
+
 import { apiFetchWithInterceptors } from '@/lib/api/interceptors';
 import type { SchemaPasswordPolicy, SchemaSession, SchemaOtpId } from '@/lib/api/types';
 import { setSessionState } from '@/modules/iam/identity/session/store';
 import type { Session, SessionUser, SessionTenant } from '@/modules/iam/identity/session/store';
 import { setAccessToken, fromJwt } from '@/modules/iam/identity/session/token';
-import { getOrCreateDeviceId } from '../lib/device';
 
 // ─── Local input/output types ────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ function applySession(apiSession: SchemaSession): Session {
   const tenant: SessionTenant = {
     id: apiSession.tenant.id,
     slug: apiSession.tenant.slug,
-    name: apiSession.tenant.name ?? undefined,
+    name: apiSession.tenant.name,
   };
 
   const session: Session = {

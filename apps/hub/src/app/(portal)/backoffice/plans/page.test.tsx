@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import { server } from '@/lib/mocks/server'
 
 // Mock sonner toast
 vi.mock('sonner', () => ({
@@ -63,7 +62,7 @@ function setupDefaultHandlers() {
       return HttpResponse.json({ moduleIds: [] }, { status: 200 })
     }),
     // PUT /admin/plans/:planId/modules
-    http.put(`${BASE}/admin/plans/:planId/modules`, async ({ params }) => {
+    http.put(`${BASE}/admin/plans/:planId/modules`, ({ params }) => {
       const { planId } = params as { planId: string }
       if (planId === 'error-plan') {
         return HttpResponse.json({ type: 'about:blank', title: 'Internal Error', status: 500 }, { status: 500, headers: { 'Content-Type': 'application/problem+json' } })
@@ -74,6 +73,8 @@ function setupDefaultHandlers() {
 }
 
 import PlansPage from './page'
+
+import { server } from '@/lib/mocks/server'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -150,7 +151,9 @@ describe('PlansPage — Module Assignment', () => {
     await renderPage()
 
     // Click badge for Plan Básico
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- row exists; the plan was rendered above
     const row = screen.getByText('Plan Básico').closest('tr')!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- badge button exists in the rendered row
     const badgeBtn = row.querySelector('button')!
     await user.click(badgeBtn)
 
@@ -279,6 +282,7 @@ describe('PlansPage — Module Assignment', () => {
     expect(cancelarBtn).toBeDisabled()
 
     // Cleanup: resolve the pending promise
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- resolveSave is assigned synchronously by the handler before this runs
     resolveSave!()
   })
 
@@ -294,7 +298,9 @@ describe('PlansPage — Module Assignment', () => {
     await renderPage()
 
     // Click badge for Plan Básico
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- row exists; the plan was rendered above
     const row = screen.getByText('Plan Básico').closest('tr')!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- badge button exists in the rendered row
     const badgeBtn = row.querySelector('button')!
     await user.click(badgeBtn)
 
@@ -349,7 +355,7 @@ describe('PlansPage — Quota Section', () => {
       http.get(`${BASE}/admin/plans/:planId/modules`, () => {
         return HttpResponse.json({ moduleIds: [] }, { status: 200 })
       }),
-      http.post(`${BASE}/admin/plans`, async () => {
+      http.post(`${BASE}/admin/plans`, () => {
         return HttpResponse.json({
           id: 'plan-new',
           name: 'Plan Test',
@@ -363,7 +369,7 @@ describe('PlansPage — Quota Section', () => {
           updatedAt: '2026-01-01T00:00:00.000Z',
         }, { status: 201 })
       }),
-      http.put(`${BASE}/admin/plans/:planId/quotas`, async () => {
+      http.put(`${BASE}/admin/plans/:planId/quotas`, () => {
         return HttpResponse.json({ success: true }, { status: 200 })
       }),
     )

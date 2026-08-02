@@ -53,6 +53,7 @@ export const moduleVisuals: Record<string, ModuleVisuals> = {
     color: 'purple',
   },
   'dashboard-instagram': {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- brand icon still needed
     icon: Instagram,
     color: 'orange',
   },

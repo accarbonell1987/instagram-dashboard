@@ -124,6 +124,7 @@ describe('StepCompanyData', () => {
     // Radix Select renders hidden native <select aria-hidden="true"> — use those for fireEvent.change
     // Index 0 = tipoEmpresa, index 1 = departamento
     const hiddenSelects = container.querySelectorAll('select[aria-hidden="true"]');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     fireEvent.change(hiddenSelects[1]!, { target: { value: 'Central' } });
     fireEvent.change(screen.getByLabelText(/teléfono/i), { target: { value: '+59521123456' } });
     fireEvent.change(screen.getByLabelText(/persona de contacto/i), {

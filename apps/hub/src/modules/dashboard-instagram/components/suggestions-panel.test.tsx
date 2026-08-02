@@ -1,7 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { SuggestionsPanel } from './suggestions-panel'
+import { describe, it, expect, vi } from 'vitest'
+
 import type { ContentSuggestion } from '../types/instagram.types'
+
+import { SuggestionsPanel } from './suggestions-panel'
+
 
 const makeSuggestion = (id: string, overrides: Partial<ContentSuggestion> = {}): ContentSuggestion => ({
   id,
@@ -43,6 +46,7 @@ describe('SuggestionsPanel', () => {
     )
 
     const usarButtons = screen.getAllByRole('button', { name: /Marcar como usada/i })
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- getAllByRole guarantees at least one match here
     fireEvent.click(usarButtons[0]!)
 
     expect(onMarkUsed).toHaveBeenCalledWith('s1')
@@ -60,6 +64,7 @@ describe('SuggestionsPanel', () => {
     )
 
     const descartarButtons = screen.getAllByRole('button', { name: /Descartar sugerencia/i })
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- getAllByRole guarantees at least one match here
     fireEvent.click(descartarButtons[0]!)
 
     expect(onDismiss).toHaveBeenCalledWith('s2')

@@ -1,7 +1,6 @@
-import { describe, it, expect } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { AuthError, ForbiddenError, ConflictError } from '@/lib/api/errors'
-import { server } from '@/lib/mocks/server'
+import { describe, it, expect } from 'vitest'
+
 import {
   listPlans,
   createPlan,
@@ -10,6 +9,10 @@ import {
   savePlanQuotas,
   getPlanQuotas,
 } from './plan-admin.service'
+
+import { AuthError } from '@/lib/api/errors'
+import { server } from '@/lib/mocks/server'
+
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080'
 
@@ -38,6 +41,7 @@ describe('plan-admin.service — listPlans', () => {
     )
     const result = await listPlans()
     expect(result.plans).toHaveLength(2)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result.plans[0]!.name).toBe('Enterprise')
   })
 
@@ -65,32 +69,32 @@ describe('plan-admin.service — listPlans', () => {
 
 describe('plan-admin.service — createPlan', () => {
   it('creates a plan via POST /admin/plans', async () => {
-    let capturedBody: any = null
+    let capturedBody: Record<string, unknown> = {}
     server.use(
       http.post(`${BASE}/admin/plans`, async ({ request }) => {
-        capturedBody = await request.json()
+        capturedBody = (await request.json()) as Record<string, unknown>
         return HttpResponse.json(makePlan({ name: 'New Plan' }), { status: 201 })
       })
     )
     const result = await createPlan({ name: 'New Plan', price: 99, currency: 'PYG', billingInterval: 'month' })
     expect(result.name).toBe('New Plan')
-    expect(capturedBody.price).toBe(99)
+    expect(capturedBody['price']).toBe(99)
   })
 })
 
 describe('plan-admin.service — updatePlan', () => {
   it('updates a plan via PATCH /admin/plans/:id', async () => {
-    let capturedBody: any = null
+    let capturedBody: Record<string, unknown> = {}
     server.use(
       http.patch(`${BASE}/admin/plans/:id`, async ({ request, params }) => {
-        capturedBody = await request.json()
+        capturedBody = (await request.json()) as Record<string, unknown>
         expect(params['id']).toBe('plan-1')
         return HttpResponse.json(makePlan({ name: 'Updated' }), { status: 200 })
       })
     )
     const result = await updatePlan('plan-1', { name: 'Updated' })
     expect(result.name).toBe('Updated')
-    expect(capturedBody.name).toBe('Updated')
+    expect(capturedBody['name']).toBe('Updated')
   })
 })
 
@@ -109,11 +113,11 @@ describe('plan-admin.service — archivePlan', () => {
 describe('plan-admin.service — savePlanQuotas', () => {
   it('sends PUT with correct URL and quotas body', async () => {
     let capturedUrl = ''
-    let capturedBody: any = null
+    let capturedBody: Record<string, unknown> = {}
     server.use(
       http.put(`${BASE}/admin/plans/:planId/quotas`, async ({ request, params }) => {
         capturedUrl = request.url
-        capturedBody = await request.json()
+        capturedBody = (await request.json()) as Record<string, unknown>
         expect(params['planId']).toBe('plan-1')
         return HttpResponse.json({ success: true }, { status: 200 })
       })
@@ -134,10 +138,10 @@ describe('plan-admin.service — savePlanQuotas', () => {
   })
 
   it('sends empty quotas array', async () => {
-    let capturedBody: any = null
+    let capturedBody: Record<string, unknown> = {}
     server.use(
       http.put(`${BASE}/admin/plans/:planId/quotas`, async ({ request }) => {
-        capturedBody = await request.json()
+        capturedBody = (await request.json()) as Record<string, unknown>
         return HttpResponse.json({ success: true }, { status: 200 })
       })
     )
@@ -163,8 +167,11 @@ describe('plan-admin.service — getPlanQuotas', () => {
 
     const result = await getPlanQuotas('plan-1')
     expect(result).toHaveLength(2)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result[0]!.resourceType).toBe('deepseek_tokens')
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result[0]!.limit).toBe(100000)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result[1]!.resourceType).toBe('fal_images')
   })
 

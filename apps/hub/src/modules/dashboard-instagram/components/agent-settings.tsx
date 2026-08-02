@@ -1,10 +1,10 @@
 'use client'
 
+import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from '@core/ui'
 import type { JSX } from 'react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from '@core/ui'
 
 import type { AgentConfig, AgentLimits, ImageGenConfig } from '../types/instagram.types'
 
@@ -33,7 +33,7 @@ const PREDEFINED_TAGS = [
 type ActiveTab = 'agent' | 'images'
 type PromptTab = 'base' | 'hook' | 'development' | 'cta'
 
-const T2I_MODELS: Array<{ id: string; label: string; description: string }> = [
+const T2I_MODELS: { id: string; label: string; description: string }[] = [
   { id: 'fal-ai/ideogram/v3', label: 'Ideogram V3', description: 'Tipografía perfecta para logos y carteles. Por defecto.' },
   { id: 'fal-ai/flux/dev', label: 'FLUX.1 dev', description: 'Balance calidad/velocidad, uso comercial libre.' },
   { id: 'fal-ai/flux/schnell', label: 'FLUX.1 schnell', description: 'El más rápido. Ideal para pruebas rápidas.' },
@@ -41,7 +41,7 @@ const T2I_MODELS: Array<{ id: string; label: string; description: string }> = [
   { id: 'fal-ai/flux-2-pro', label: 'FLUX.2 pro', description: 'Último modelo de Black Forest Labs.' },
 ]
 
-const I2I_MODELS: Array<{ id: string; label: string; description: string }> = [
+const I2I_MODELS: { id: string; label: string; description: string }[] = [
   { id: 'fal-ai/flux/dev/image-to-image', label: 'FLUX.1 dev img2img', description: 'Transforma tu foto manteniendo la composición. Por defecto.' },
   { id: 'fal-ai/flux-2-pro', label: 'FLUX.2 pro', description: 'Manipulación avanzada y style transfer.' },
 ]
@@ -157,14 +157,14 @@ export function AgentSettingsModal({
     }
   }
 
-  const PROMPT_TABS: Array<{
+  const PROMPT_TABS: {
     key: PromptTab
     label: string
     value: string
     setValue: (v: string) => void
     placeholder: string
     hint: string
-  }> = [
+  }[] = [
     {
       key: 'base',
       label: 'Base',
@@ -199,6 +199,7 @@ export function AgentSettingsModal({
     },
   ]
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- PROMPT_TABS is a non-empty constant array, so [0] is always defined
   const activePrompt = PROMPT_TABS.find((t) => t.key === activePromptTab) ?? PROMPT_TABS[0]!
 
   return createPortal(
@@ -225,7 +226,7 @@ export function AgentSettingsModal({
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActiveTab)} className="flex flex-col flex-1 min-h-0">
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ActiveTab); }} className="flex flex-col flex-1 min-h-0">
           <TabsList className="mx-6 shrink-0">
             <TabsTrigger value="agent">Agente</TabsTrigger>
             <TabsTrigger value="images">Imágenes</TabsTrigger>
@@ -246,7 +247,7 @@ export function AgentSettingsModal({
                   id="fal-api-key"
                   type="password"
                   value={falApiKey}
-                  onChange={(e) => setFalApiKey(e.target.value)}
+                  onChange={(e) => { setFalApiKey(e.target.value); }}
                   placeholder={hasFalApiKey ? 'Dejar vacío para mantener la actual' : 'fal_xxxxxxxxxxxx'}
                   className="font-mono"
                   aria-label="API Key de fal.ai"
@@ -282,7 +283,7 @@ export function AgentSettingsModal({
                   <Label htmlFor="t2i-model" className="block text-xs text-muted-foreground mb-1">
                     Texto → Imagen <span className="text-[10px]">(carruseles IA)</span>
                   </Label>
-                  <Select value={t2iModel} onValueChange={(v) => setT2iModel(v)}>
+                  <Select value={t2iModel} onValueChange={(v) => { setT2iModel(v); }}>
                     <SelectTrigger id="t2i-model" className="w-full h-9 rounded-md px-3 text-sm" aria-label="Modelo de generación texto a imagen">
                       <SelectValue />
                     </SelectTrigger>
@@ -301,7 +302,7 @@ export function AgentSettingsModal({
                   <Label htmlFor="i2i-model" className="block text-xs text-muted-foreground mb-1">
                     Imagen → Imagen <span className="text-[10px]">(transformar con fal.ai)</span>
                   </Label>
-                  <Select value={i2iModel} onValueChange={(v) => setI2iModel(v)}>
+                  <Select value={i2iModel} onValueChange={(v) => { setI2iModel(v); }}>
                     <SelectTrigger id="i2i-model" className="w-full h-9 rounded-md px-3 text-sm" aria-label="Modelo de transformación imagen a imagen">
                       <SelectValue />
                     </SelectTrigger>
@@ -322,7 +323,7 @@ export function AgentSettingsModal({
                 <label className="block text-sm font-medium mb-2">Estilo visual por rol</label>
 
                 {/* Mini tab bar */}
-                <Tabs value={activePromptTab} onValueChange={(v) => setActivePromptTab(v as PromptTab)}>
+                <Tabs value={activePromptTab} onValueChange={(v) => { setActivePromptTab(v as PromptTab); }}>
                   <TabsList className="mb-3 w-full">
                     {PROMPT_TABS.map((t) => (
                       <TabsTrigger key={t.key} value={t.key} className="flex-1 text-xs">{t.label}</TabsTrigger>
@@ -334,7 +335,7 @@ export function AgentSettingsModal({
                 <Textarea
                   key={activePromptTab}
                   value={activePrompt.value}
-                  onChange={(e) => activePrompt.setValue(e.target.value)}
+                  onChange={(e) => { activePrompt.setValue(e.target.value); }}
                   maxLength={1000}
                   rows={4}
                   placeholder={activePrompt.placeholder}
@@ -358,7 +359,7 @@ export function AgentSettingsModal({
                       key={tag}
                       variant={selectedTags.includes(tag) ? 'default' : 'secondary'}
                       size="sm"
-                      onClick={() => toggleTag(tag)}
+                      onClick={() => { toggleTag(tag); }}
                       type="button"
                       className="rounded-full"
                       aria-pressed={selectedTags.includes(tag)}
@@ -374,7 +375,7 @@ export function AgentSettingsModal({
                   <Input
                     type="text"
                     value={customTagInput}
-                    onChange={(e) => setCustomTagInput(e.target.value)}
+                    onChange={(e) => { setCustomTagInput(e.target.value); }}
                     onKeyDown={handleCustomTagKeyDown}
                     placeholder="Agregar tema..."
                     className="flex-1"
@@ -406,7 +407,7 @@ export function AgentSettingsModal({
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => toggleTag(tag)}
+                          onClick={() => { toggleTag(tag); }}
                           type="button"
                           className="text-primary/60 hover:text-primary"
                           aria-label={`Quitar ${tag}`}
@@ -427,7 +428,7 @@ export function AgentSettingsModal({
                 <Textarea
                   id="agent-custom-prompt"
                   value={customPrompt}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  onChange={(e) => { setCustomPrompt(e.target.value); }}
                   maxLength={2000}
                   rows={4}
                   placeholder="Ej: Sé conciso, usa ejemplos concretos..."
@@ -453,7 +454,7 @@ export function AgentSettingsModal({
                       min={50}
                       max={500}
                       value={slideTextLimit}
-                      onChange={(e) => setSlideTextLimit(Math.min(500, Math.max(50, Number(e.target.value))))}
+                      onChange={(e) => { setSlideTextLimit(Math.min(500, Math.max(50, Number(e.target.value)))); }}
                       aria-label="Límite de caracteres para texto de slide"
                     />
                   </div>
@@ -467,7 +468,7 @@ export function AgentSettingsModal({
                       min={50}
                       max={1000}
                       value={visualPromptLimit}
-                      onChange={(e) => setVisualPromptLimit(Math.min(1000, Math.max(50, Number(e.target.value))))}
+                      onChange={(e) => { setVisualPromptLimit(Math.min(1000, Math.max(50, Number(e.target.value)))); }}
                       aria-label="Límite de caracteres para prompt visual"
                     />
                   </div>

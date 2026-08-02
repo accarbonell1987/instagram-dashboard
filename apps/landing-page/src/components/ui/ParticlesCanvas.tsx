@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 interface Particle {
   x: number;
@@ -14,19 +15,11 @@ interface Particle {
 
 export function ParticlesCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [shouldRender, setShouldRender] = useState(true);
-
   // Don't render on mobile or when OS prefers reduced motion
-  useEffect(() => {
-    const mq = window.matchMedia(
-      '(max-width: 767px), (prefers-reduced-motion: reduce)',
-    );
-    setShouldRender(!mq.matches);
-  }, []);
-
-  if (!shouldRender) return null;
+  const shouldRender = !useReducedMotion();
 
   useEffect(() => {
+    if (!shouldRender) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -91,7 +84,9 @@ export function ParticlesCanvas() {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [shouldRender]);
+
+  if (!shouldRender) return null;
 
   return (
     <canvas

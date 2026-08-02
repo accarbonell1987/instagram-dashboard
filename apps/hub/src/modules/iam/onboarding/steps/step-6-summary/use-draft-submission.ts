@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { submitDraft } from '../../services/draft.service';
-import { ConflictError } from '@/lib/api/errors';
 
 import type { SummaryDocuments } from './summary-types';
+
+import { ConflictError } from '@/lib/api/errors';
+
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 

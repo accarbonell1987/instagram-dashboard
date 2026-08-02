@@ -1,7 +1,5 @@
 'use client'
 
-import type { JSX } from 'react'
-import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@core/ui'
 import {
   LayoutGrid,
@@ -18,8 +16,12 @@ import {
   Send,
   Upload,
 } from 'lucide-react'
-import type { AgentLimits, Carousel } from '../types/instagram.types'
+import type { JSX } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+
 import { listCarousels, deleteCarousel, resolveImageUrl } from '../services/instagram.service'
+import type { AgentLimits, Carousel } from '../types/instagram.types'
+
 import { ScriptPreviewModal } from './script-preview-modal'
 import { UploadCarouselModal } from './upload-carousel-modal'
 
@@ -28,11 +30,11 @@ function relativeTime(date: Date | string): string {
   const diffMs = Date.now() - d.getTime()
   const mins = Math.floor(diffMs / 60000)
   if (mins < 1) return 'ahora'
-  if (mins < 60) return `hace ${mins} min`
+  if (mins < 60) return `hace ${String(mins)} min`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `hace ${hours} h`
+  if (hours < 24) return `hace ${String(hours)} h`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `hace ${days} día${days !== 1 ? 's' : ''}`
+  if (days < 7) return `hace ${String(days)} día${days !== 1 ? 's' : ''}`
   return d.toLocaleDateString('es-AR')
 }
 
@@ -115,7 +117,7 @@ function CarouselActions({ carousel, onOpen, onDelete, isDeleting }: CarouselCar
           variant="default"
           size="sm"
           className="h-7 px-2.5 text-xs gap-1"
-          onClick={() => onOpen(carousel.id)}
+          onClick={() => { onOpen(carousel.id); }}
         >
           <Send className="h-3 w-3" aria-hidden="true" />
           Publicar
@@ -125,7 +127,7 @@ function CarouselActions({ carousel, onOpen, onDelete, isDeleting }: CarouselCar
           variant="outline"
           size="sm"
           className="h-7 px-2.5 text-xs gap-1"
-          onClick={() => onOpen(carousel.id)}
+          onClick={() => { onOpen(carousel.id); }}
         >
           <LayoutGrid className="h-3 w-3" aria-hidden="true" />
           {carousel.publishStatus === 'published' ? 'Ver' : 'Abrir'}
@@ -149,7 +151,7 @@ function CarouselActions({ carousel, onOpen, onDelete, isDeleting }: CarouselCar
         variant="ghost"
         size="icon"
         className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-        onClick={() => onDelete(carousel.id)}
+        onClick={() => { onDelete(carousel.id); }}
         disabled={isDeleting}
         aria-label="Eliminar carrusel"
         title="Eliminar"
@@ -167,7 +169,7 @@ function CarouselCard({ carousel, onOpen, onDelete, isDeleting }: CarouselCardPr
       <button
         type="button"
         className="block w-full p-2 pb-0 cursor-pointer"
-        onClick={() => onOpen(carousel.id)}
+        onClick={() => { onOpen(carousel.id); }}
         aria-label={`Abrir carrusel: ${carousel.topic}`}
       >
         <CarouselThumbnail carousel={carousel} />
@@ -205,7 +207,7 @@ function CarouselListItem({ carousel, onOpen, onDelete, isDeleting }: CarouselCa
       <button
         type="button"
         className="shrink-0 cursor-pointer"
-        onClick={() => onOpen(carousel.id)}
+        onClick={() => { onOpen(carousel.id); }}
         aria-label={`Abrir carrusel: ${carousel.topic}`}
       >
         <div className="h-14 w-11 overflow-hidden rounded-md bg-muted/60 flex items-center justify-center">
@@ -297,7 +299,7 @@ export function CarouselsSection({
   useEffect(() => {
     if (!activeCarouselId) return
     const timer = setTimeout(() => { void fetchCarousels(page) }, 3000)
-    return () => clearTimeout(timer)
+    return () => { clearTimeout(timer); }
   }, [activeCarouselId, fetchCarousels, page])
 
   const handleDelete = async (id: string) => {
@@ -340,7 +342,7 @@ export function CarouselsSection({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-muted-foreground">
-            {total > 0 ? `${total} carrusel${total !== 1 ? 'es' : ''}` : 'Sin carruseles aún'}
+            {total > 0 ? `${String(total)} carrusel${total !== 1 ? 'es' : ''}` : 'Sin carruseles aún'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -359,7 +361,7 @@ export function CarouselsSection({
             variant="outline"
             size="sm"
             className="h-8 gap-1.5"
-            onClick={() => setShowUploadModal(true)}
+            onClick={() => { setShowUploadModal(true); }}
             title="Crear carrusel con mis fotos"
           >
             <Upload className="h-3.5 w-3.5" aria-hidden="true" />
@@ -383,8 +385,8 @@ export function CarouselsSection({
             ref={topicInputRef}
             type="text"
             value={newTopic}
-            onChange={(e) => setNewTopic(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') void handleCreate() }}
+            onChange={(e) => { setNewTopic(e.target.value); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
             placeholder="Ej: 3 consejos para mejorar tu engagement en Instagram"
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             maxLength={200}
@@ -394,7 +396,7 @@ export function CarouselsSection({
               variant="ghost"
               size="sm"
               className="h-8"
-              onClick={() => setShowNewForm(false)}
+              onClick={() => { setShowNewForm(false); }}
             >
               Cancelar
             </Button>
@@ -416,7 +418,7 @@ export function CarouselsSection({
         <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 flex items-center justify-between gap-3">
           <p className="text-sm text-destructive">¿Eliminar este carrusel? Esta acción no se puede deshacer.</p>
           <div className="flex gap-2 shrink-0">
-            <Button variant="outline" size="sm" className="h-7" onClick={() => setConfirmDeleteId(null)}>
+            <Button variant="outline" size="sm" className="h-7" onClick={() => { setConfirmDeleteId(null); }}>
               Cancelar
             </Button>
             <Button
@@ -540,7 +542,7 @@ export function CarouselsSection({
         <ScriptPreviewModal
           topic={scriptPreviewTopic}
           limits={limits}
-          onClose={() => setScriptPreviewTopic(null)}
+          onClose={() => { setScriptPreviewTopic(null); }}
           onCreated={async (id) => {
             setScriptPreviewTopic(null)
             await fetchCarousels(1)
@@ -552,7 +554,7 @@ export function CarouselsSection({
       {/* Upload carousel modal — user photo flow */}
       {showUploadModal && (
         <UploadCarouselModal
-          onClose={() => setShowUploadModal(false)}
+          onClose={() => { setShowUploadModal(false); }}
           onCreated={async (id) => {
             setShowUploadModal(false)
             await fetchCarousels(1)

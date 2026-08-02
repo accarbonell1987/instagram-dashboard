@@ -3,8 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@core/ui';
 import { type JSX } from 'react';
 
-import type { components } from '@/lib/api/types';
 import { InlineEditField } from './inline-edit-field';
+
+import type { components } from '@/lib/api/types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 

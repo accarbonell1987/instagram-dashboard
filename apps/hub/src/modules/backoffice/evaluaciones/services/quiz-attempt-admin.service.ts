@@ -4,7 +4,7 @@ import { apiFetchWithInterceptors } from '@/lib/api/interceptors'
 
 export type AttemptStatus = 'in_progress' | 'completed' | 'abandoned'
 
-export type AdminQuizAttempt = {
+export interface AdminQuizAttempt {
   id: string
   quizId: string
   tenantId: string
@@ -18,7 +18,7 @@ export type AdminQuizAttempt = {
   updatedAt: string
 }
 
-export type AdminQuizAttemptAnswer = {
+export interface AdminQuizAttemptAnswer {
   id: string
   attemptId: string
   questionId: string
@@ -30,11 +30,11 @@ export type AdminQuizAttemptDetail = AdminQuizAttempt & {
   answers?: AdminQuizAttemptAnswer[] | undefined
 }
 
-export type QuizResultsResponse = {
+export interface QuizResultsResponse {
   attempts: AdminQuizAttempt[]
 }
 
-export type ListResultsParams = {
+export interface ListResultsParams {
   quizId?: string | undefined
   tenantId?: string | undefined
 }

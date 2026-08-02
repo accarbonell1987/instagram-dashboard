@@ -17,16 +17,16 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-import type { ReelMedia } from '../types/instagram.types'
 import { useReelDetail } from '../hooks/use-instagram-dashboard'
 import { getReelPlaybackUrl } from '../services/instagram.service'
+import type { ReelMedia } from '../types/instagram.types'
 
 function formatMs(ms: number): string {
   const seconds = ms / 1000
   if (seconds >= 60) {
     const m = Math.floor(seconds / 60)
     const s = Math.round(seconds % 60)
-    return `${m}m ${s}s`
+    return `${String(m)}m ${String(s)}s`
   }
   return `${seconds.toFixed(1)}s`
 }
@@ -174,7 +174,7 @@ export function MediaDetailPanel({ mediaId, onClose, baselineViews }: MediaDetai
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
+    return () => { document.removeEventListener('keydown', handleKey); }
   }, [onClose])
 
   useEffect(() => {
@@ -186,7 +186,7 @@ export function MediaDetailPanel({ mediaId, onClose, baselineViews }: MediaDetai
   const label = media ? getMediaLabel(media) : 'Publicación'
 
   const primaryMetric = isReel
-    ? (media?.metrics?.videoViews ?? media?.metrics?.totalInteractions ?? 0)
+    ? (media.metrics?.videoViews ?? media.metrics?.totalInteractions ?? 0)
     : (media?.metrics?.reach ?? 0)
 
   return (
@@ -354,8 +354,8 @@ export function MediaDetailPanel({ mediaId, onClose, baselineViews }: MediaDetai
                               <Progress value={Math.min(ratio, 100)} className="h-2" />
                               <p className={`text-xs font-medium ${isAbove ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
                                 {isAbove
-                                  ? `${ratio}% de la mediana — superó el baseline`
-                                  : `${ratio}% de la mediana — por debajo del baseline`}
+                                  ? `${String(ratio)}% de la mediana — superó el baseline`
+                                  : `${String(ratio)}% de la mediana — por debajo del baseline`}
                               </p>
                             </div>
                           )

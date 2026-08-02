@@ -1,9 +1,9 @@
 import { apiFetchWithInterceptors } from '@/lib/api/interceptors';
 import type { SchemaSession, SchemaUpdateProfileResponse } from '@/lib/api/types';
+import { getOrCreateDeviceId } from '@/modules/iam/authentication/lib/device';
 import { setSessionState, buildSessionFromToken } from '@/modules/iam/identity/session/store';
 import type { Session, SessionUser, SessionTenant } from '@/modules/iam/identity/session/store';
 import { setAccessToken, fromJwt } from '@/modules/iam/identity/session/token';
-import { getOrCreateDeviceId } from '@/modules/iam/authentication/lib/device';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Se
   const tenant: SessionTenant = {
     id: response.tenant.id,
     slug: response.tenant.slug,
-    name: response.tenant.name ?? undefined,
+    name: response.tenant.name,
   };
 
   const session: Session = {

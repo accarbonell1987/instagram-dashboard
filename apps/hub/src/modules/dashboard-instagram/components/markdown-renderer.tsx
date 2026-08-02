@@ -1,11 +1,11 @@
 'use client';
 
+import { Separator } from '@core/ui';
 import type { JSX } from 'react';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import remarkGfm from 'remark-gfm';
 
-import { Separator } from '@core/ui';
 
 // ─── Shared style tokens ──────────────────────────────────────────────────────
 

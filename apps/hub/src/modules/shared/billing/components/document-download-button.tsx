@@ -1,9 +1,9 @@
 'use client';
 
+import { Button } from '@core/ui';
 import { Download } from 'lucide-react';
 import { useState, type JSX } from 'react';
 
-import { Button } from '@core/ui';
 import { getDocumentSignedUrl } from '../services/document.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

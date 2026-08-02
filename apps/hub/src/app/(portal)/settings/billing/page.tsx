@@ -4,8 +4,8 @@ import type { JSX } from 'react';
 
 import { RequireRole } from '@/modules/iam/identity/guards/require-role';
 import { BillingPlanSection } from '@/modules/shared/billing/components/billing-plan-section';
-import { PaymentMethodSection } from '@/modules/shared/billing/components/payment-method-section';
 import { InvoicesSection } from '@/modules/shared/billing/components/invoices-section';
+import { PaymentMethodSection } from '@/modules/shared/billing/components/payment-method-section';
 
 export default function BillingPage(): JSX.Element {
   return (

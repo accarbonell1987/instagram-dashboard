@@ -31,8 +31,9 @@ import type {
   PublishCarouselResult,
   PaginatedCarousels,
   UsageResponse,
+  PublicationFilter,
+  SuggestionBatchesResponse,
 } from '../types/instagram.types';
-import type { InstagramPeriod } from '../types/instagram.types';
 
 import { getAccessToken, isExpired } from '@/modules/iam/identity/session/token';
 
@@ -98,7 +99,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const text = await response.text().catch(() => '');
-    throw new Error(`Instagram API error ${response.status}: ${text || response.statusText}`);
+    throw new Error(`Instagram API error ${String(response.status)}: ${text || response.statusText}`);
   }
 
   return response.json() as Promise<T>;
@@ -169,19 +170,19 @@ export async function getMediaList(page = 1, pageSize = 10): Promise<PaginatedMe
   const result = await apiFetch<{
     success: true;
     data: PaginatedMediaList;
-  }>(`/api/media?page=${page}&pageSize=${pageSize}`);
+  }>(`/api/media?page=${String(page)}&pageSize=${String(pageSize)}`);
   return result.data;
 }
 
 export async function getReels(page = 1, pageSize = 20): Promise<PaginatedReels> {
   const result = await apiFetch<{ success: true; data: PaginatedReels }>(
-    `/api/media?productType=REELS&page=${page}&pageSize=${pageSize}`,
+    `/api/media?productType=REELS&page=${String(page)}&pageSize=${String(pageSize)}`,
   );
   return result.data;
 }
 
 export async function getPublications(
-  filter: import('../types/instagram.types').PublicationFilter,
+  filter: PublicationFilter,
   page = 1,
   pageSize = 50,
 ): Promise<PaginatedReels> {
@@ -221,7 +222,7 @@ export async function getDemographics(): Promise<DemographicsData> {
 export async function sendChatMessage(
   message: string,
   sessionId?: string,
-  history?: Array<{ role: string; content: string }>,
+  history?: { role: string; content: string }[],
 ): Promise<ChatResponse> {
   const result = await apiFetch<{ success: true; data: ChatResponse }>('/api/chat', {
     method: 'POST',
@@ -252,11 +253,11 @@ export async function getSuggestions(status?: string): Promise<ContentSuggestion
 export async function getSuggestionBatches(
   page = 1,
   limit = 10,
-): Promise<import('../types/instagram.types').SuggestionBatchesResponse> {
+): Promise<SuggestionBatchesResponse> {
   const result = await apiFetch<{
     success: true;
-    data: import('../types/instagram.types').SuggestionBatchesResponse;
-  }>(`/api/suggestions/batches?page=${page}&limit=${limit}`);
+    data: SuggestionBatchesResponse;
+  }>(`/api/suggestions/batches?page=${String(page)}&limit=${String(limit)}`);
   return result.data;
 }
 
@@ -343,7 +344,7 @@ export async function saveAgentSettings(
 
 export async function listCarousels(page = 1, limit = 20): Promise<PaginatedCarousels> {
   const result = await apiFetch<{ success: true; data: PaginatedCarousels }>(
-    `/api/carousels?page=${page}&limit=${limit}`,
+    `/api/carousels?page=${String(page)}&limit=${String(limit)}`,
   )
   return result.data
 }
@@ -416,7 +417,7 @@ export async function regenerateCarouselSlide(
 
 export async function reorderCarouselSlides(
   carouselId: string,
-  order: Array<{ id: string; order: number }>,
+  order: { id: string; order: number }[],
 ): Promise<CarouselSlide[]> {
   const result = await apiFetch<{ success: true; data: { slides: CarouselSlide[] } }>(
     `/api/carousels/${encodeURIComponent(carouselId)}/reorder`,
@@ -447,8 +448,8 @@ export async function publishCarousel(
     } | null
     throw new InstagramApiError(
       response.status,
-      body?.error?.code ?? 'UNKNOWN',
-      body?.error?.message ?? response.statusText,
+      body?.error.code ?? 'UNKNOWN',
+      body?.error.message ?? response.statusText,
     )
   }
   const result = await response.json() as { success: true; data: PublishCarouselResult }
@@ -508,8 +509,8 @@ export async function uploadSlideImage(
     } | null;
     throw new InstagramApiError(
       response.status,
-      body?.error?.code ?? 'UNKNOWN',
-      body?.error?.message ?? response.statusText,
+      body?.error.code ?? 'UNKNOWN',
+      body?.error.message ?? response.statusText,
     );
   }
 }

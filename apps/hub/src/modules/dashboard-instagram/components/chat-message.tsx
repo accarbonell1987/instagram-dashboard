@@ -1,11 +1,12 @@
 'use client'
 
-import type { JSX } from 'react'
-import { X } from 'lucide-react'
-
 import { Button } from '@core/ui'
+import { X } from 'lucide-react'
+import type { JSX } from 'react'
+
 
 import type { ChatMessage } from '../types/instagram.types'
+
 import { MarkdownRenderer } from './markdown-renderer'
 
 interface ChatMessageBubbleProps {
@@ -34,7 +35,7 @@ export function ChatMessageBubble({
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={() => onDelete(message.id)}
+          onClick={() => { onDelete(message.id); }}
           className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100
             rounded-full bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground
             z-10"
@@ -50,7 +51,7 @@ export function ChatMessageBubble({
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={() => onToggleSelect(message.id)}
+          onClick={() => { onToggleSelect(message.id); }}
           className="absolute top-1/2 -translate-y-1/2 -left-7 z-10"
           aria-label={isSelected ? 'Deseleccionar mensaje' : 'Seleccionar mensaje'}
         >

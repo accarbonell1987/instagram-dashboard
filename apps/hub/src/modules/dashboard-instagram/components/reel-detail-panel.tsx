@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { Button, Progress } from '@core/ui'
 import {
   X,
   ExternalLink,
@@ -9,15 +9,13 @@ import {
   Share2,
   MessageCircle,
   Heart,
-  Play,
   Clock,
   TrendingUp,
   Loader2,
   AlertCircle,
 } from 'lucide-react'
-import { Button, Progress } from '@core/ui'
+import { useEffect, useRef, useState, useCallback } from 'react'
 
-import type { ReelMedia } from '../types/instagram.types'
 import { useReelDetail } from '../hooks/use-instagram-dashboard'
 import { getReelPlaybackUrl } from '../services/instagram.service'
 
@@ -26,7 +24,7 @@ function formatMs(ms: number): string {
   if (seconds >= 60) {
     const m = Math.floor(seconds / 60)
     const s = Math.round(seconds % 60)
-    return `${m}m ${s}s`
+    return `${String(m)}m ${String(s)}s`
   }
   return `${seconds.toFixed(1)}s`
 }
@@ -120,7 +118,7 @@ export function ReelDetailPanel({ reelId, onClose, baselineViews }: ReelDetailPa
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
+    return () => { document.removeEventListener('keydown', handleKey); }
   }, [onClose])
 
   // Focus panel when opened
@@ -332,8 +330,8 @@ export function ReelDetailPanel({ reelId, onClose, baselineViews }: ReelDetailPa
                               <Progress value={Math.min(ratio, 100)} className="h-2" />
                               <p className={`text-xs font-medium ${isAbove ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
                                 {isAbove
-                                  ? `${ratio}% de la mediana — superó el baseline`
-                                  : `${ratio}% de la mediana — por debajo del baseline`}
+                                  ? `${String(ratio)}% de la mediana — superó el baseline`
+                                  : `${String(ratio)}% de la mediana — por debajo del baseline`}
                               </p>
                             </div>
                           )

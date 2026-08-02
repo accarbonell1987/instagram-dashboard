@@ -90,7 +90,10 @@ export function PricingShader() {
     const tLoc = gl.getUniformLocation(prog, 'iTime');
     const rLoc = gl.getUniformLocation(prog, 'iResolution');
     bgLocRef.current = gl.getUniformLocation(prog, 'uBg');
-    gl.uniform3fv(bgLocRef.current, new Float32Array(bgColor));
+    // Read the current theme directly so this one-time setup effect need not
+    // depend on bgColor state (the effect above keeps the uniform in sync after).
+    const initialBg = document.documentElement.classList.contains('dark') ? [0, 0, 0] : [1, 1, 1];
+    gl.uniform3fv(bgLocRef.current, new Float32Array(initialBg));
 
     let frame: number;
     const render = (time: number) => {

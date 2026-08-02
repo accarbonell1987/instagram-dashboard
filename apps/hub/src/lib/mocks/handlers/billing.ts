@@ -1,9 +1,9 @@
 import { http, HttpResponse } from 'msw';
 
 import { db } from '../db';
+import { getActiveScenario } from '../scenarios/index';
 import { SEED } from '../seed';
 import { stableFuture, stableNow } from '../seed-utils';
-import { getActiveScenario } from '../scenarios/index';
 
 import { conflict, notFound } from './problem';
 
@@ -87,7 +87,7 @@ export const billingHandlers = [
       },
     });
 
-    if (invoice === null || invoice.documentId === null) {
+    if (invoice?.documentId == null) {
       return notFound('invoice.not_found');
     }
 

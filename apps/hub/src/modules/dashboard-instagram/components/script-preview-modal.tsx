@@ -1,11 +1,12 @@
 'use client'
 
-import type { JSX } from 'react'
-import { useState, useEffect } from 'react'
 import { Button, Label, Textarea } from '@core/ui'
 import { RefreshCw, X, Sparkles } from 'lucide-react'
-import type { AgentLimits, GeneratedSlide, SlideRole } from '../types/instagram.types'
+import type { JSX } from 'react'
+import { useState, useEffect } from 'react'
+
 import { previewCarouselScript, createCarousel } from '../services/instagram.service'
+import type { AgentLimits, GeneratedSlide, SlideRole } from '../types/instagram.types'
 
 interface ScriptPreviewModalProps {
   topic: string
@@ -121,7 +122,7 @@ export function ScriptPreviewModal({
               <Textarea
                 id="preview-topic"
                 value={topic}
-                onChange={(e) => setTopic(e.target.value)}
+                onChange={(e) => { setTopic(e.target.value); }}
                 rows={2}
                 maxLength={2000}
                 disabled={isLoading || isCreating}
@@ -151,7 +152,7 @@ export function ScriptPreviewModal({
           )}
 
           {/* Slides */}
-          {!isLoading && slides && slides.map((slide, index) => (
+          {!isLoading && slides?.map((slide, index) => (
             <div key={slide.order} className="rounded-lg border bg-muted/20 p-3 space-y-2.5">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground">
@@ -173,7 +174,7 @@ export function ScriptPreviewModal({
                 <Textarea
                   id={`slide-text-${String(index)}`}
                   value={slide.text}
-                  onChange={(e) => updateSlide(index, 'text', e.target.value)}
+                  onChange={(e) => { updateSlide(index, 'text', e.target.value); }}
                   rows={2}
                   maxLength={slideTextMax}
                   disabled={isCreating}
@@ -193,7 +194,7 @@ export function ScriptPreviewModal({
                 <Textarea
                   id={`slide-prompt-${String(index)}`}
                   value={slide.visualPrompt}
-                  onChange={(e) => updateSlide(index, 'visualPrompt', e.target.value)}
+                  onChange={(e) => { updateSlide(index, 'visualPrompt', e.target.value); }}
                   rows={2}
                   maxLength={visualPromptMax}
                   disabled={isCreating}

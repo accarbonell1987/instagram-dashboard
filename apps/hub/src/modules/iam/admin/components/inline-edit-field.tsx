@@ -86,7 +86,7 @@ export function InlineEditField({ label, value, onSave }: InlineEditFieldProps):
         <Input
           ref={inputRef}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => { setDraft(e.target.value); }}
           onKeyDown={handleKeyDown}
           disabled={mode === 'saving'}
           aria-label={label}

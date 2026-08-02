@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('recharts', async () => {
   const actual = await vi.importActual('recharts');
@@ -10,8 +10,9 @@ vi.mock('recharts', async () => {
   };
 });
 
-import { FormatBreakdownChart } from './format-breakdown-chart';
 import type { FormatBreakdown } from '../types/instagram.types';
+
+import { FormatBreakdownChart } from './format-breakdown-chart';
 
 const mockBreakdown: FormatBreakdown[] = [
   {

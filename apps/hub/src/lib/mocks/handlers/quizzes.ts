@@ -62,8 +62,8 @@ interface MockAnswer {
   createdAt: string;
 }
 
-let quizStore: MockQuiz[] = [];
-let attemptStore: MockAttempt[] = [];
+const quizStore: MockQuiz[] = [];
+const attemptStore: MockAttempt[] = [];
 
 function now(): string {
   return new Date().toISOString();
@@ -165,6 +165,7 @@ export const quizHandlers = [
       id: uuid(),
       quizId: quiz.id,
       text: body.text,
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- body.type is untrusted; cast asserts the union but runtime value may be absent
       type: (body.type as 'multiple_choice' | 'true_false') ?? 'multiple_choice',
       order: quiz.questions.length,
       createdAt: now(),
@@ -298,14 +299,14 @@ export const quizHandlers = [
   // GET /tenants/current/quizzes/:quizId — Get quiz detail
   http.get(`${BASE}/tenants/current/quizzes/:quizId`, ({ params }) => {
     const quiz = quizStore.find((q) => q.id === params['quizId']);
-    if (!quiz || !quiz.active) return notFound('quizzes.not_found');
+    if (!quiz?.active) return notFound('quizzes.not_found');
     return HttpResponse.json({ ...quiz, questions: undefined, questionCount: quiz.questions.length }, { status: 200 });
   }),
 
   // POST /tenants/current/quizzes/:quizId/attempts — Start attempt
   http.post(`${BASE}/tenants/current/quizzes/:quizId/attempts`, ({ params }) => {
     const quiz = quizStore.find((q) => q.id === params['quizId']);
-    if (!quiz || !quiz.active) return notFound('quizzes.not_found');
+    if (!quiz?.active) return notFound('quizzes.not_found');
 
     const existing = attemptStore.find((a) => a.quizId === quiz.id && a.status === 'in_progress');
     if (existing) return conflict('attempts.already_in_progress');
@@ -369,7 +370,7 @@ export const quizHandlers = [
     for (const question of quiz.questions) {
       const correctOption = question.options.find((o) => o.isCorrect);
       const answer = attempt.answers.find((a) => a.questionId === question.id);
-      if (correctOption && answer && answer.selectedOptionId === correctOption.id) {
+      if (correctOption && answer?.selectedOptionId === correctOption.id) {
         correctCount++;
       }
     }

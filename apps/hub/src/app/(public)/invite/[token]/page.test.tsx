@@ -34,6 +34,7 @@ describe('InvitePage', () => {
   it('muestra "ya fue usada" cuando la API retorna 409', async () => {
     applyScenario('invitation-used');
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- async act relies on a returned Promise to flush effects
     await act(async () => {
       renderWithProviders(
         <InvitePage params={Promise.resolve({ token: 'test-token' })} />

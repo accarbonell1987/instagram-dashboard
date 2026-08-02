@@ -25,7 +25,7 @@ export function AuroraBackground({ children }: AuroraBackgroundProps) {
       repeat: Infinity,
       repeatType: 'mirror',
     });
-  }, []);
+  }, [color]);
 
   const backgroundImage = useMotionTemplate`
     radial-gradient(125% 125% at 50% 0%, var(--color-bg) 50%, ${color})

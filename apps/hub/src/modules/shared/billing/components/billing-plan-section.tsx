@@ -2,11 +2,11 @@
 
 import { useEffect, useState, type JSX } from 'react';
 
-import type { components } from '@/lib/api/types';
 import { listPlans } from '@/lib/api/plans';
-import { getCurrentTenant } from '@/modules/iam/admin/services/organization.service';
+import type { components } from '@/lib/api/types';
 import { CurrentPlanCard } from '@/modules/iam/admin/components/current-plan-card';
 import { PlanChangeRequestDialog } from '@/modules/iam/admin/components/plan-change-request-dialog';
+import { getCurrentTenant } from '@/modules/iam/admin/services/organization.service';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 

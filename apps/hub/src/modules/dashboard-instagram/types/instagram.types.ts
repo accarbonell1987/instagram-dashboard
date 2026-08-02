@@ -305,7 +305,7 @@ export interface ChatResponse {
   reply: string
   sessionId: string
   suggestions: ContentSuggestion[]
-  toolCallsTrace: Array<{ name: string; arguments: Record<string, unknown> }>
+  toolCallsTrace: { name: string; arguments: Record<string, unknown> }[]
 }
 
 export interface ClearHistoryResponse {
@@ -411,7 +411,7 @@ export interface CreateCarouselResult {
 export interface CreateUploadCarouselResult {
   id: string
   status: string
-  slides: Array<{ id: string; order: number; status: string }>
+  slides: { id: string; order: number; status: string }[]
 }
 
 export interface PublishCarouselResult {

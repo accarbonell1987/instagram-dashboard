@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { FloatingAgent } from './floating-agent'
+import { describe, it, expect, vi } from 'vitest'
+
 import type { UseGrowthAgentResult } from './chat-panel.types'
+import { FloatingAgent } from './floating-agent'
 
 // Build a mock hook result
 function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgentResult {

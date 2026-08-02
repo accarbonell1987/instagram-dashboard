@@ -6,8 +6,9 @@ import { useState, type JSX } from 'react';
 import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
 import { z } from 'zod';
 
-import { PhoneCompositeInput } from '@/modules/iam/onboarding/steps/step-2-representative/phone-composite-input';
 import { updateProfile } from '../services/invitation.service';
+
+import { PhoneCompositeInput } from '@/modules/iam/onboarding/steps/step-2-representative/phone-composite-input';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 

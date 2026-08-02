@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+
+import type { InsightResult } from '../types/instagram.types';
 
 import { InsightCard } from './insight-card';
-import type { InsightResult } from '../types/instagram.types';
 
 const mockInsight: InsightResult = {
   insight: 'Tus Reels generan 3× más saves que las imágenes estáticas.',

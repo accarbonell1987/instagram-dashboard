@@ -4,11 +4,13 @@ import { Button } from '@core/ui';
 import { CheckCircle2 } from 'lucide-react';
 import { useEffect, useState, type JSX } from 'react';
 
-import type { components } from '@/lib/api/types';
-import { ConflictError } from '@/lib/api/errors';
 
 import { getPaymentMethod, requestPaymentMethodChange } from '../services/billing.service';
+
 import { PaymentMethodCard } from './payment-method-card';
+
+import { ConflictError } from '@/lib/api/errors';
+import type { components } from '@/lib/api/types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 

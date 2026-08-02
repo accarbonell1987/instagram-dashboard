@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+
+import type { HeatmapCell } from '../types/instagram.types';
 
 import { PostingHeatmap } from './posting-heatmap';
-import type { HeatmapCell } from '../types/instagram.types';
 
 // 16 total posts — enough for the heatmap to render (≥ 8)
 const richCells: HeatmapCell[] = [

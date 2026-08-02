@@ -82,6 +82,7 @@ describe('InvitationsList', () => {
     );
 
     const revokeButtons = screen.getAllByRole('button', { name: /Revocar/i });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await user.click(revokeButtons[0]!);
 
     expect(mockOnRevoke).toHaveBeenCalledWith('inv-pending-001', 'pending1@corehub.com');

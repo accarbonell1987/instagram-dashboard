@@ -16,10 +16,11 @@ export function useParallax(
   const reducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
 
-  // Return static value if reduced motion
-  if (reducedMotion) {
-    return useTransform(scrollY, [0, 1], [offset, offset]);
-  }
-
-  return useTransform(scrollY, [0, 1000], [offset, offset * speed * -1]);
+  // Hooks must run unconditionally: when reduced motion is on, map to a constant
+  // so the returned MotionValue stays at `offset` regardless of scroll.
+  return useTransform(
+    scrollY,
+    [0, reducedMotion ? 1 : 1000],
+    [offset, reducedMotion ? offset : offset * speed * -1],
+  );
 }

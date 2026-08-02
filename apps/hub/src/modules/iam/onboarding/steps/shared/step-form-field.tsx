@@ -1,8 +1,8 @@
 'use client';
 
+import { Label } from '@core/ui';
 import { type JSX } from 'react';
 
-import { Label } from '@core/ui';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+
 import { ChatPanel } from './chat-panel'
 import type { UseGrowthAgentResult } from './chat-panel.types'
 
@@ -104,7 +105,7 @@ describe('ChatPanel', () => {
   })
 
   // T-19: Clear conversation button
-  it('"Limpiar conversación" button renders and calls clearConversation', async () => {
+  it('"Limpiar conversación" button renders and calls clearConversation', () => {
     const clearConversation = vi.fn().mockResolvedValue(undefined)
     render(<ChatPanel hook={makeHook({ clearConversation })} />)
 

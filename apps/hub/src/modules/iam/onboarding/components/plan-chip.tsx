@@ -1,8 +1,8 @@
 'use client';
 
+import { Button } from '@core/ui';
 import type { JSX } from 'react';
 
-import { Button } from '@core/ui';
 import type { Plan } from '../services/plans.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

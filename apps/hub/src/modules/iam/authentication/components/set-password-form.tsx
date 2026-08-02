@@ -74,7 +74,6 @@ export function SetPasswordForm({
 
   const passwordValue = form.watch('password');
   const checklist = evaluatePasswordChecklist(activePolicy, passwordValue);
-  const allRulesPass = checklist.every((item) => item.passes);
 
   const handleSubmit: SubmitHandler<FormData> = async (data) => {
     setIsSubmitting(true);

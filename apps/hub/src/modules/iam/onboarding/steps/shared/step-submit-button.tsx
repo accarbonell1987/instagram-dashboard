@@ -1,7 +1,7 @@
 'use client';
 
-import { type JSX } from 'react';
 import { Button } from '@core/ui';
+import { type JSX } from 'react';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

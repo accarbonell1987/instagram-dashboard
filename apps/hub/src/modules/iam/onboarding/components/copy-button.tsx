@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback, type JSX } from 'react';
-import { Check, Copy, Link } from 'lucide-react';
-
 import { Button } from '@core/ui';
+import { Check, Copy, Link } from 'lucide-react';
+import { useState, useCallback, type JSX } from 'react';
+
 
 export interface CopyButtonProps {
   url: string;

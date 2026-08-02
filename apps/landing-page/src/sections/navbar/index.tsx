@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@core/ui';
@@ -11,6 +11,7 @@ import { BrandButton } from '@/components/ui/BrandButton';
 import { MobileNav } from './mobile-nav';
 import { SunIcon, MoonIcon, GlobeIcon, MenuIcon } from '@/components/icons';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
+import { useMounted } from '@/hooks/use-mounted';
 import type { Locale } from '@/lib/types';
 
 const NAV_LINKS = [
@@ -35,9 +36,7 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
 
   const isDark = theme === 'dark';
 

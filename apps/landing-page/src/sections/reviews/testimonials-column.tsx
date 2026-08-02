@@ -41,6 +41,9 @@ export function TestimonialsColumn({
               >
                 <p className="text-text-dim flex-1 text-sm leading-relaxed">{text}</p>
                 <div className="mt-5 flex items-center gap-3">
+                  {/* Decorative 40x40 avatar from a remote host not configured in
+                      next.config images.remotePatterns; next/image would fail at runtime. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={image}
                     alt={name}

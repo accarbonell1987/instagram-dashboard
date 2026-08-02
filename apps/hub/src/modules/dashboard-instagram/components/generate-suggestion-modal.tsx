@@ -1,9 +1,10 @@
 'use client'
 
-import type { JSX } from 'react'
-import { useState } from 'react'
 import { Button, Label, Textarea } from '@core/ui'
 import { Sparkles, X } from 'lucide-react'
+import type { JSX } from 'react'
+import { useState } from 'react'
+
 import { generateContentSuggestion } from '../services/instagram.service'
 
 interface GenerateSuggestionModalProps {
@@ -69,7 +70,7 @@ export function GenerateSuggestionModal({ onClose, onGenerated }: GenerateSugges
           <Textarea
             id="idea-prompt"
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => { setPrompt(e.target.value); }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void handleGenerate()
             }}

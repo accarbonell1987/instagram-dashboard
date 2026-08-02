@@ -4,7 +4,6 @@ import { Button } from '@core/ui';
 import type { JSX } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-import { useModules } from '@/modules/shared/modules';
 
 import { ConnectAccount } from './components/connect-account';
 import { ContentIntelligenceSection } from './components/content-intelligence-section';
@@ -18,6 +17,7 @@ import { ProfileHeader } from './components/profile-header';
 import { PublicationsList } from './components/publications-list';
 import { SectionHeader } from './components/section-header';
 import { SyncStatusBadge } from './components/sync-status-badge';
+import { useGrowthAgent } from './hooks/use-growth-agent';
 import {
   useInstagramDashboard,
   useConnectionStatus,
@@ -26,7 +26,6 @@ import {
   usePublications,
   useDemographics,
 } from './hooks/use-instagram-dashboard';
-import { useGrowthAgent } from './hooks/use-growth-agent';
 import { backfillFollowerHistory } from './services/instagram.service';
 import type {
   ContentFinding,
@@ -40,11 +39,12 @@ import type {
   TopPost,
 } from './types/instagram.types';
 
+import { useModules } from '@/modules/shared/modules';
+
 export function DashboardInstagramPage(): JSX.Element {
   const { modules, isLoading: isModulesLoading, error: modulesError } = useModules();
 
-  const { isConnected, isLoading: isCheckingConnection, refetch: refetchConnectionStatus } =
-    useConnectionStatus();
+  const { isConnected, isLoading: isCheckingConnection } = useConnectionStatus();
   const { data, isLoading, error, refetch } = useInstagramDashboard('30d', {
     enabled: isConnected,
   });
@@ -63,7 +63,7 @@ export function DashboardInstagramPage(): JSX.Element {
       const result = await backfillFollowerHistory();
       setBackfillMessage(
         result.inserted > 0
-          ? `${result.inserted} registros históricos cargados`
+          ? `${String(result.inserted)} registros históricos cargados`
           : 'El historial ya está completo',
       );
       if (result.inserted > 0) {
@@ -353,7 +353,7 @@ export function DashboardInstagramPage(): JSX.Element {
                 key={m}
                 variant={growthMetric === m ? 'default' : 'secondary'}
                 size="sm"
-                onClick={() => setGrowthMetric(m)}
+                onClick={() => { setGrowthMetric(m); }}
               >
                 {label}
               </Button>

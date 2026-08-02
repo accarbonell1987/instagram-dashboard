@@ -2,11 +2,11 @@
 
 import { useEffect, useState, type JSX } from 'react';
 
-import { SettingsStatsCard } from '@/modules/iam/admin/components/settings-stats-card';
-import { getCurrentTenant, getTenantMembers } from '@/modules/iam/admin/services/organization.service';
-import { listAdminInvitations } from '@/modules/iam/admin/services/invitation.service';
-import { RequireRole } from '@/modules/iam/identity/guards/require-role';
 import type { components } from '@/lib/api/types';
+import { SettingsStatsCard } from '@/modules/iam/admin/components/settings-stats-card';
+import { listAdminInvitations } from '@/modules/iam/admin/services/invitation.service';
+import { getCurrentTenant, getTenantMembers } from '@/modules/iam/admin/services/organization.service';
+import { RequireRole } from '@/modules/iam/identity/guards/require-role';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 

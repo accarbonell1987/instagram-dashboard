@@ -1,8 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
-import { useGrowthAgent } from './use-growth-agent'
-import type { ChatMessage, ContentSuggestion, ChatResponse } from '../types/instagram.types'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
 import * as service from '../services/instagram.service'
+import type { ChatMessage, ContentSuggestion, ChatResponse } from '../types/instagram.types'
+
+import { useGrowthAgent } from './use-growth-agent'
+
 
 vi.mock('../services/instagram.service')
 
@@ -14,6 +17,7 @@ const localStorageMock = (() => {
   return {
     getItem: (key: string) => store[key] ?? null,
     setItem: (key: string, value: string) => { store[key] = value },
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     removeItem: (key: string) => { delete store[key] },
     clear: () => { store = {} },
   }
@@ -97,7 +101,7 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     // Start send (don't await)
     act(() => {
@@ -136,7 +140,7 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     // After a chat response with suggestions, the hook reloads batches.
     mockedService.getSuggestionBatches.mockResolvedValue(makeBatchesResponse([newSuggestion]))
@@ -161,7 +165,7 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     // Add suggestion via chat (surfaces through reloaded batches)
     mockedService.getSuggestionBatches.mockResolvedValue(makeBatchesResponse([suggestion]))
@@ -192,7 +196,7 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     mockedService.getSuggestionBatches.mockResolvedValue(makeBatchesResponse([suggestion]))
     await act(async () => {
@@ -277,7 +281,7 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     // Send a message first — this populates messages before history resolves
     await act(async () => {
@@ -285,6 +289,7 @@ describe('useGrowthAgent', () => {
     })
 
     // Now resolve history — should be ignored because messages.length > 0
+    // eslint-disable-next-line @typescript-eslint/require-await -- act() async callback returns a promise so React flushes the resolved history microtask
     await act(async () => {
       resolveHistory([
         { id: 'h-1', sessionId: storedId, role: 'user', content: 'Should not appear', createdAt: '2026-01-01T00:00:00.000Z' },
@@ -328,7 +333,7 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     await act(async () => {
       await result.current.sendMessage('Hello')
@@ -337,6 +342,7 @@ describe('useGrowthAgent', () => {
     // Should have 2 messages (user + assistant)
     expect(result.current.messages).toHaveLength(2)
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const msgToDelete = result.current.messages[0]!
 
     await act(async () => {
@@ -368,16 +374,16 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     await act(async () => {
       await result.current.sendMessage('Hello')
     })
 
     expect(result.current.messages).toHaveLength(2)
-    const originalMessages = [...result.current.messages]
 
     await act(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await result.current.deleteMessage(result.current.messages[0]!.id)
     })
 
@@ -400,7 +406,7 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     await act(async () => {
       await result.current.sendMessage('Hello')
@@ -428,7 +434,7 @@ describe('useGrowthAgent', () => {
 
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     await act(async () => {
       await result.current.sendMessage('Hello')
@@ -524,7 +530,7 @@ describe('useGrowthAgent', () => {
   it('openSettings sets isSettingsOpen to true', async () => {
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     act(() => {
       result.current.openSettings()
@@ -536,7 +542,7 @@ describe('useGrowthAgent', () => {
   it('closeSettings sets isSettingsOpen to false', async () => {
     const { result } = renderHook(() => useGrowthAgent())
 
-    await waitFor(() => expect(result.current.sessionId).not.toBe(''))
+    await waitFor(() => { expect(result.current.sessionId).not.toBe(''); })
 
     act(() => {
       result.current.openSettings()

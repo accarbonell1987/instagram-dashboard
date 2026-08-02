@@ -1,13 +1,16 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+
+import * as instagramService from '../services/instagram.service';
+import type { DashboardData, GrowthMetric, GrowthPeriod } from '../types/instagram.types';
+
 import {
   useConnectionStatus,
   useSyncStatus,
   useInstagramDashboard,
   useGrowthData,
 } from './use-instagram-dashboard';
-import * as instagramService from '../services/instagram.service';
-import type { GrowthMetric, GrowthPeriod } from '../types/instagram.types';
 
 vi.mock('../services/instagram.service');
 
@@ -276,7 +279,7 @@ describe('useInstagramDashboard', () => {
       },
       period: '7d',
       lastUpdated: '2026-01-01',
-    } as any);
+    } as unknown as DashboardData);
 
     const { result } = renderHook(() => useInstagramDashboard());
 
@@ -322,11 +325,11 @@ describe('useInstagramDashboard', () => {
     };
 
     mockedService.getDashboardData
-      .mockResolvedValueOnce(firstData as any)
+      .mockResolvedValueOnce(firstData as unknown as DashboardData)
       .mockResolvedValueOnce({
         ...firstData,
         profile: { ...firstData.profile, username: 'updated' },
-      } as any);
+      } as unknown as DashboardData);
 
     const { result } = renderHook(() => useInstagramDashboard());
 
@@ -357,7 +360,7 @@ describe('useInstagramDashboard', () => {
       audience: { ageRanges: [], topCities: [], topCountries: [], genderSplit: { male: 50, female: 50, other: 0 } },
       period: '7d',
       lastUpdated: '2026-01-01',
-    } as any);
+    } as unknown as DashboardData);
 
     const { result } = renderHook(() => useInstagramDashboard());
 
@@ -367,6 +370,7 @@ describe('useInstagramDashboard', () => {
 
     expect(result.current.period).toBe('7d');
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- act() async callback returns a promise so React flushes the setPeriod state update
     await act(async () => {
       result.current.setPeriod('30d');
     });
@@ -437,6 +441,7 @@ describe('useGrowthData', () => {
     });
 
     expect(mockedService.getGrowthData).toHaveBeenLastCalledWith('engagement', '7d');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result.current.data[0]!.value).toBe(5.0);
   });
 

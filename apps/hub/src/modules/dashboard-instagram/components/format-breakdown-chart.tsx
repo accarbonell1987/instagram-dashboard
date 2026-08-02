@@ -1,6 +1,7 @@
 'use client'
 
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+
 import type { FormatBreakdown } from '../types/instagram.types'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -67,7 +68,9 @@ function buildInsight(
     .sort((a, b) => b.rate - a.rate)
 
   if (rated.length >= 2) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by rated.length >= 2 above
     const best = rated[0]!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by rated.length >= 2 above
     const second = rated[1]!
     const lift = best.rate / second.rate
     if (lift >= MIN_LIFT) {
@@ -86,7 +89,7 @@ function buildInsight(
   const reelPct = reelItem ? Math.round((reelItem.postCount / totalPosts) * 100) : 0
   if (totalPosts >= 5 && reelPct < 50) {
     return {
-      text: `Solo el ${reelPct}% de tus publicaciones son Reels. Los Reels tienen mayor alcance orgánico — probá llevarlos al 60% de tu mezcla esta semana.`,
+      text: `Solo el ${String(reelPct)}% de tus publicaciones son Reels. Los Reels tienen mayor alcance orgánico — probá llevarlos al 60% de tu mezcla esta semana.`,
       postCount: reelItem?.postCount ?? 0,
     }
   }
@@ -111,7 +114,7 @@ function CustomTooltip({
   label,
 }: {
   active?: boolean
-  payload?: Array<{ payload?: ChartEntry }>
+  payload?: { payload?: ChartEntry }[]
   label?: string
 }) {
   if (!active || !payload?.length) return null
@@ -180,18 +183,18 @@ function MixRow({ label, realPct, ideal, color, postCount }: MixRowProps) {
       <div className="relative h-1.5 rounded-full bg-muted overflow-hidden">
         <div
           className="absolute left-0 top-0 h-full rounded-full"
-          style={{ width: `${Math.min(roundedPct, 100)}%`, backgroundColor: color }}
+          style={{ width: `${String(Math.min(roundedPct, 100))}%`, backgroundColor: color }}
         />
         {ideal !== undefined && ideal.min > 0 && (
           <div
             className="absolute top-0 h-full w-px bg-foreground/25"
-            style={{ left: `${ideal.min}%` }}
+            style={{ left: `${String(ideal.min)}%` }}
           />
         )}
         {ideal !== undefined && ideal.max < 100 && (
           <div
             className="absolute top-0 h-full w-px bg-foreground/25"
-            style={{ left: `${ideal.max}%` }}
+            style={{ left: `${String(ideal.max)}%` }}
           />
         )}
       </div>
@@ -209,7 +212,7 @@ interface FormatBreakdownChartProps {
 }
 
 export function FormatBreakdownChart({ breakdown }: FormatBreakdownChartProps) {
-  if (!breakdown || breakdown.length === 0) {
+  if (breakdown.length === 0) {
     return (
       <div className="bg-card border border-border rounded-xl p-6">
         <h3 className="text-base font-semibold mb-2">Rendimiento por formato</h3>

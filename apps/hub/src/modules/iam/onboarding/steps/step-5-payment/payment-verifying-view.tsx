@@ -1,9 +1,9 @@
 'use client';
 
+import { Button } from '@core/ui';
 import { useRouter } from 'next/navigation';
 import { type JSX } from 'react';
 
-import { Button } from '@core/ui';
 import { WizardNav } from '../../components/wizard-nav';
 
 const POLL_MAX_SECONDS = 60;

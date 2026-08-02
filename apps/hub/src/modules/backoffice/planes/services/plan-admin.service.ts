@@ -2,7 +2,7 @@ import { apiFetchWithInterceptors } from '@/lib/api/interceptors'
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
-export type AdminPlan = {
+export interface AdminPlan {
   id: string
   name: string
   description?: string
@@ -15,11 +15,11 @@ export type AdminPlan = {
   updatedAt: string
 }
 
-export type AdminPlanListResponse = {
+export interface AdminPlanListResponse {
   plans: AdminPlan[]
 }
 
-export type CreatePlanParams = {
+export interface CreatePlanParams {
   name: string
   description?: string | undefined
   price: number
@@ -27,7 +27,7 @@ export type CreatePlanParams = {
   billingInterval: string
 }
 
-export type UpdatePlanParams = {
+export interface UpdatePlanParams {
   name?: string | undefined
   description?: string | undefined
   price?: number | undefined
@@ -77,7 +77,7 @@ export async function archivePlan(id: string): Promise<void> {
 
 // ─── Quota Types ───────────────────────────────────────────────────────────────
 
-export type PlanQuota = {
+export interface PlanQuota {
   resourceType: string
   limit: number
   period: string

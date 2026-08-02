@@ -308,7 +308,7 @@ export function PublicationsList({
       >
         {pageItems.map((media) => (
           <div key={media.id} role="listitem">
-            <MediaCard media={media} onClick={() => onSelectMedia(media.id)} />
+            <MediaCard media={media} onClick={() => { onSelectMedia(media.id); }} />
           </div>
         ))}
       </div>
@@ -319,7 +319,7 @@ export function PublicationsList({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => { setPage((p) => Math.max(1, p - 1)); }}
             disabled={page === 1}
             aria-label="Página anterior"
           >
@@ -333,8 +333,8 @@ export function PublicationsList({
                 key={p}
                 variant={p === page ? 'default' : 'secondary'}
                 size="sm"
-                onClick={() => setPage(p)}
-                aria-label={`Ir a página ${p}`}
+                onClick={() => { setPage(p); }}
+                aria-label={`Ir a página ${String(p)}`}
                 aria-current={p === page ? 'page' : undefined}
               >
                 {p}
@@ -345,7 +345,7 @@ export function PublicationsList({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); }}
             disabled={page === totalPages}
             aria-label="Página siguiente"
           >

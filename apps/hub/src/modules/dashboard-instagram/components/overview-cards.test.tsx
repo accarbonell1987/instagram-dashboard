@@ -1,7 +1,10 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { OverviewCards } from './overview-cards';
+import { describe, it, expect } from 'vitest';
+
 import type { OverviewStats } from '../types/instagram.types';
+
+import { OverviewCards } from './overview-cards';
+
 
 function createStats(overrides: Partial<OverviewStats> = {}): OverviewStats {
   return {

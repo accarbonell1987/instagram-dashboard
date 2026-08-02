@@ -1,10 +1,10 @@
 'use client'
 
-import type { JSX } from 'react'
-import { useState, useEffect, useRef, useCallback } from 'react'
 import { Button, Label, Textarea } from '@core/ui'
 import { ChevronLeft, ChevronRight, RefreshCw, X, ExternalLink, AlertCircle, AlertTriangle, ImageOff } from 'lucide-react'
-import type { Carousel, CarouselSlide } from '../types/instagram.types'
+import type { JSX } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+
 import {
   getCarousel,
   updateCarouselSlide,
@@ -12,8 +12,10 @@ import {
   reorderCarouselSlides,
   resolveImageUrl,
 } from '../services/instagram.service'
-import { RedoPromptPanel } from './redo-prompt-panel'
+import type { Carousel, CarouselSlide } from '../types/instagram.types'
+
 import { PublishConfirmDialog } from './publish-confirm-dialog'
+import { RedoPromptPanel } from './redo-prompt-panel'
 
 const INITIAL_POLL_MS = 1_000
 const MAX_POLL_MS = 8_000
@@ -92,7 +94,7 @@ function EditableText({ slide, onSave }: EditableTextProps): JSX.Element {
     return (
       <Textarea
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => { setValue(e.target.value); }}
         onBlur={() => void handleBlur()}
         maxLength={150}
         rows={3}
@@ -107,7 +109,7 @@ function EditableText({ slide, onSave }: EditableTextProps): JSX.Element {
   return (
     <button
       type="button"
-      onClick={() => setEditing(true)}
+      onClick={() => { setEditing(true); }}
       className="w-full text-left text-sm p-2 rounded hover:bg-muted/50 transition-colors cursor-text"
       title="Clic para editar"
       aria-label="Editar texto del slide"
@@ -248,7 +250,6 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
 
   const isReady = carousel?.status === 'ready'
   const isFailed = carousel?.status === 'failed'
-  const isUnpublished = carousel?.publishStatus === 'unpublished'
   const isPublished = carousel?.publishStatus === 'published'
   const allSlidesHaveImages = slides.length > 0 && slides.every((s) => s.imageUrl !== null)
   const canPublish = isReady && !isPublished && allSlidesHaveImages
@@ -291,7 +292,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0"
-                onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                onClick={() => { setCurrentIndex((i) => Math.max(0, i - 1)); }}
                 disabled={slides.length <= 1 || currentIndex === 0}
                 aria-label="Slide anterior"
               >
@@ -303,7 +304,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => setCurrentIndex(i)}
+                    onClick={() => { setCurrentIndex(i); }}
                     className={`w-2 h-2 rounded-full transition-colors ${
                       i === currentIndex
                         ? 'bg-primary'
@@ -320,7 +321,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0"
-                onClick={() => setCurrentIndex((i) => Math.min(slides.length - 1, i + 1))}
+                onClick={() => { setCurrentIndex((i) => Math.min(slides.length - 1, i + 1)); }}
                 disabled={slides.length <= 1 || currentIndex === slides.length - 1}
                 aria-label="Siguiente slide"
               >
@@ -362,7 +363,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
                       variant="outline"
                       size="sm"
                       className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
-                      onClick={() => setShowRedoPanel(true)}
+                      onClick={() => { setShowRedoPanel(true); }}
                     >
                       Reintentar con nuevo prompt
                     </Button>
@@ -462,7 +463,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
                         <Textarea
                           id="carousel-caption"
                           value={caption}
-                          onChange={(e) => setCaption(e.target.value)}
+                          onChange={(e) => { setCaption(e.target.value); }}
                           rows={3}
                           maxLength={2200}
                           disabled={isPublished}
@@ -484,7 +485,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
           {/* Publish / Redo — sticky footer, visible when ready and not yet successfully published */}
           {isReady && !isPublished && (
             <div className="flex flex-col gap-2 px-4 py-3 border-t shrink-0 bg-background">
-              {carousel?.publishStatus === 'failed' && (
+              {carousel.publishStatus === 'failed' && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                   <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
                   El intento anterior falló. Podés reintentar.
@@ -495,14 +496,14 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => setShowRedoPanel(true)}
+                  onClick={() => { setShowRedoPanel(true); }}
                 >
                   Rehacer
                 </Button>
                 <Button
                   size="sm"
                   className="flex-1"
-                  onClick={() => setShowPublishDialog(true)}
+                  onClick={() => { setShowPublishDialog(true); }}
                   disabled={!canPublish}
                   title={!allSlidesHaveImages ? 'Regenera las imágenes faltantes antes de publicar' : undefined}
                 >
@@ -513,7 +514,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
           )}
 
           {/* Published link — sticky footer when already published */}
-          {isPublished && carousel?.igPermalink && (
+          {isPublished && carousel.igPermalink && (
             <div className="flex items-center justify-center px-4 py-3 border-t shrink-0 bg-background">
               <a
                 href={carousel.igPermalink}
@@ -532,7 +533,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
       {showRedoPanel && carousel && (
         <RedoPromptPanel
           carousel={carousel}
-          onClose={() => setShowRedoPanel(false)}
+          onClose={() => { setShowRedoPanel(false); }}
           onRegenerated={handleRedoRegenerated}
         />
       )}
@@ -541,7 +542,7 @@ export function CarouselPreviewPanel({ carouselId, onClose }: CarouselPreviewPan
         <PublishConfirmDialog
           carouselId={carouselId}
           caption={caption}
-          onClose={() => setShowPublishDialog(false)}
+          onClose={() => { setShowPublishDialog(false); }}
           onSuccess={handlePublishSuccess}
         />
       )}

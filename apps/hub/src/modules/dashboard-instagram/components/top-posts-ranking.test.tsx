@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+
+import type { TopPost } from '../types/instagram.types';
 
 import { TopPostsRanking } from './top-posts-ranking';
-import type { TopPost } from '../types/instagram.types';
 
 function makePost(overrides: Partial<TopPost> & Pick<TopPost, 'igMediaId'>): TopPost {
   return {
@@ -117,6 +118,7 @@ describe('TopPostsRanking', () => {
       const links = screen.getAllByRole('link');
       // All 3 items have permalinks
       expect(links.length).toBe(3);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 3 links asserted above, so [0] exists
       expect(links[0]!.getAttribute('target')).toBe('_blank');
     });
 
@@ -159,6 +161,7 @@ describe('TopPostsRanking', () => {
       render(<TopPostsRanking ranking={mockRanking} />);
       const links = screen.getAllByRole('link');
       // Post 2 has totalEngagement 280 — should be first
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ranking has 3 posts, so links[0] exists
       expect(links[0]!.getAttribute('aria-label')).toMatch(/Carrusel de productos/);
     });
 
@@ -170,6 +173,7 @@ describe('TopPostsRanking', () => {
       // Post 3: (90×3)+(30×3)+(20×2)+(150×1) = 270+90+40+150 = 550
       // Post 2 should still be first
       const links = screen.getAllByRole('link');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ranking has 3 posts, so links[0] exists
       expect(links[0]!.getAttribute('aria-label')).toMatch(/Carrusel/);
     });
   });

@@ -4,7 +4,7 @@ import { apiFetchWithInterceptors } from '@/lib/api/interceptors'
 
 export type QuestionType = 'multiple_choice' | 'true_false'
 
-export type AdminQuestionOption = {
+export interface AdminQuestionOption {
   id: string
   questionId: string
   text: string
@@ -13,7 +13,7 @@ export type AdminQuestionOption = {
   createdAt: string
 }
 
-export type AdminQuestion = {
+export interface AdminQuestion {
   id: string
   quizId: string
   text: string
@@ -24,7 +24,7 @@ export type AdminQuestion = {
   options?: AdminQuestionOption[] | undefined
 }
 
-export type AdminQuiz = {
+export interface AdminQuiz {
   id: string
   moduleId: string | null
   title: string
@@ -37,11 +37,11 @@ export type AdminQuiz = {
   questions?: AdminQuestion[] | undefined
 }
 
-export type QuizListResponse = {
+export interface QuizListResponse {
   quizzes: AdminQuiz[]
 }
 
-export type CreateQuizParams = {
+export interface CreateQuizParams {
   title: string
   description?: string | undefined
   passingScore: number
@@ -49,7 +49,7 @@ export type CreateQuizParams = {
   moduleId?: string | undefined
 }
 
-export type UpdateQuizParams = {
+export interface UpdateQuizParams {
   title?: string | undefined
   description?: string | undefined
   passingScore?: number | undefined
@@ -58,26 +58,26 @@ export type UpdateQuizParams = {
   moduleId?: string | null | undefined
 }
 
-export type CreateQuestionParams = {
+export interface CreateQuestionParams {
   text: string
   type: QuestionType
 }
 
-export type UpdateQuestionParams = {
+export interface UpdateQuestionParams {
   text?: string | undefined
   type?: QuestionType | undefined
 }
 
-export type ReorderQuestionsParams = {
+export interface ReorderQuestionsParams {
   orderedIds: string[]
 }
 
-export type CreateOptionParams = {
+export interface CreateOptionParams {
   text: string
   isCorrect?: boolean | undefined
 }
 
-export type UpdateOptionParams = {
+export interface UpdateOptionParams {
   text?: string | undefined
   isCorrect?: boolean | undefined
 }

@@ -151,6 +151,7 @@ describe('refreshSession — failure', () => {
     // while the refresh is awaiting. When the refresh fails it must NOT clear the new token.
     const newToken = { raw: VALID_JWT, expiresAt: FUTURE_EXP * 1000 };
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- mock must return a Promise to match the fetch signature awaited under test
     const mockFetch = vi.fn().mockImplementation(async () => {
       // While the fetch is "in flight", simulate submitDraft setting a token
       setAccessToken(newToken);

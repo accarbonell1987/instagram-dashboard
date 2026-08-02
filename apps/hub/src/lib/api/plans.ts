@@ -1,13 +1,13 @@
-import type { components } from '@/lib/api/types';
 import { apiFetchWithInterceptors } from '@/lib/api/interceptors';
+import type { components } from '@/lib/api/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type Plan = components['schemas']['Plan'];
 
-export type ListPlansResult = {
+export interface ListPlansResult {
   plans: Plan[];
-};
+}
 
 // ─── Service functions ────────────────────────────────────────────────────────
 

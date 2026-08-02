@@ -125,6 +125,7 @@ describe('StepRepresentativeEmail', () => {
       'draft-test-001',
       'representative',
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         representative: expect.objectContaining({ phone: '+59521123456' }),
       })
     );
@@ -178,7 +179,8 @@ describe('StepRepresentativeEmail', () => {
 
     // Radix Select renders a hidden native <select> for form integration (aria-hidden="true").
     // Use it to trigger the onValueChange callback in jsdom.
-    const hiddenSelect = document.querySelector('select[aria-hidden="true"]') as HTMLSelectElement;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const hiddenSelect = document.querySelector('select[aria-hidden="true"]')!;
     expect(hiddenSelect).not.toBeNull();
     fireEvent.change(hiddenSelect, { target: { value: '+54' } });
 
@@ -192,6 +194,7 @@ describe('StepRepresentativeEmail', () => {
         'draft-test-001',
         'representative',
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           representative: expect.objectContaining({ phone: '+541123456789' }),
         })
       );

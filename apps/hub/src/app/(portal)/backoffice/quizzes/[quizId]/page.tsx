@@ -224,7 +224,7 @@ function ResultsPanel({ quizId }: { quizId: string }) {
                 <td className="px-3 py-2 font-mono text-xs">{attempt.tenantId}</td>
                 <td className="px-3 py-2 font-mono text-xs">{attempt.userId}</td>
                 <td className="px-3 py-2">
-                  {attempt.score !== null ? `${attempt.score}%` : '—'}
+                  {attempt.score !== null ? `${String(attempt.score)}%` : '—'}
                 </td>
                 <td className="px-3 py-2">
                   {attempt.passed === true ? (
@@ -283,7 +283,7 @@ function OptionEditor({
   quizId,
   questionId,
   options,
-  questionType,
+  questionType: _questionType,
   onOptionsChanged,
 }: {
   quizId: string;
@@ -407,7 +407,7 @@ function OptionEditor({
               <Checkbox
                 checked={addForm.watch('isCorrect')}
                 onCheckedChange={(checked) =>
-                  addForm.setValue('isCorrect', checked === true)
+                  { addForm.setValue('isCorrect', checked === true); }
                 }
                 id={`new-option-correct-${questionId}`}
               />
@@ -421,7 +421,7 @@ function OptionEditor({
               variant="ghost"
               size="sm"
               className="h-7 text-xs"
-              onClick={() => setIsAdding(false)}
+              onClick={() => { setIsAdding(false); }}
               disabled={savingOptionId !== null}
             >
               Cancelar
@@ -456,7 +456,7 @@ function OptionEditor({
                     <Checkbox
                       checked={editForm.watch('isCorrect')}
                       onCheckedChange={(checked) =>
-                        editForm.setValue('isCorrect', checked === true)
+                        { editForm.setValue('isCorrect', checked === true); }
                       }
                     />
                     Correcta
@@ -469,7 +469,7 @@ function OptionEditor({
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs"
-                    onClick={() => setEditingOptionId(null)}
+                    onClick={() => { setEditingOptionId(null); }}
                     disabled={savingOptionId !== null}
                   >
                     Cancelar
@@ -504,7 +504,7 @@ function OptionEditor({
                     variant="ghost"
                     size="icon-sm"
                     className="h-6 w-6"
-                    onClick={() => startEdit(option)}
+                    onClick={() => { startEdit(option); }}
                     aria-label="Editar opción"
                   >
                     <Pencil className="h-3 w-3" />
@@ -513,7 +513,7 @@ function OptionEditor({
                     variant="ghost"
                     size="icon-sm"
                     className="h-6 w-6"
-                    onClick={() => setDeletingOption(option)}
+                    onClick={() => { setDeletingOption(option); }}
                     aria-label="Eliminar opción"
                   >
                     <Trash2 className="h-3 w-3 text-red-600" />
@@ -529,7 +529,7 @@ function OptionEditor({
         open={deletingOption !== null}
         itemName={deletingOption?.text ?? ''}
         onConfirm={handleDelete}
-        onOpenChange={() => setDeletingOption(null)}
+        onOpenChange={() => { setDeletingOption(null); }}
       />
     </div>
   );
@@ -595,20 +595,6 @@ function QuestionCard({
     }
   }
 
-  async function handleTypeChange(newType: QuestionType): Promise<void> {
-    setIsSaving(true);
-    try {
-      await updateQuestion(quizId, question.id, { type: newType });
-      onQuestionChanged();
-    } catch (err: unknown) {
-      const message =
-        err instanceof ApiError ? err.message : 'Error al cambiar tipo';
-      toast.error(message);
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   const typeLabel: Record<QuestionType, string> = {
     multiple_choice: 'Multiple choice',
     true_false: 'Verdadero / Falso',
@@ -646,7 +632,7 @@ function QuestionCard({
                 <Select
                   value={editForm.watch('type')}
                   onValueChange={(value) =>
-                    editForm.setValue('type', value as QuestionType)
+                    { editForm.setValue('type', value as QuestionType); }
                   }
                   disabled={isSaving}
                 >
@@ -666,7 +652,7 @@ function QuestionCard({
                   variant="ghost"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => { setIsEditing(false); }}
                   disabled={isSaving}
                 >
                   Cancelar
@@ -693,7 +679,7 @@ function QuestionCard({
                 variant="ghost"
                 size="icon-sm"
                 className="h-7 w-7"
-                onClick={() => void setExpanded(!expanded)}
+                onClick={() => { setExpanded(!expanded); }}
                 aria-label={expanded ? 'Colapsar opciones' : 'Ver opciones'}
               >
                 <Eye className="h-3.5 w-3.5" />
@@ -713,7 +699,7 @@ function QuestionCard({
             variant="ghost"
             size="icon-sm"
             className="h-7 w-7"
-            onClick={() => void onMoveUp()}
+            onClick={() => { onMoveUp(); }}
             disabled={index === 0}
             aria-label="Subir pregunta"
           >
@@ -723,7 +709,7 @@ function QuestionCard({
             variant="ghost"
             size="icon-sm"
             className="h-7 w-7"
-            onClick={() => void onMoveDown()}
+            onClick={() => { onMoveDown(); }}
             disabled={index === total - 1}
             aria-label="Bajar pregunta"
           >
@@ -733,7 +719,7 @@ function QuestionCard({
             variant="ghost"
             size="icon-sm"
             className="h-7 w-7"
-            onClick={() => setDeletingQuestion(true)}
+            onClick={() => { setDeletingQuestion(true); }}
             aria-label="Eliminar pregunta"
           >
             <Trash2 className="h-3.5 w-3.5 text-red-600" />
@@ -756,7 +742,7 @@ function QuestionCard({
         open={deletingQuestion}
         itemName={question.text.length > 40 ? `${question.text.slice(0, 40)}...` : question.text}
         onConfirm={handleDelete}
-        onOpenChange={() => setDeletingQuestion(false)}
+        onOpenChange={() => { setDeletingQuestion(false); }}
       />
     </div>
   );
@@ -928,7 +914,7 @@ export default function QuestionEditorPage(): JSX.Element {
             key={tab}
             variant={activeTab === tab ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => { setActiveTab(tab); }}
           >
             {tab === 'questions' ? 'Preguntas' : 'Resultados'}
           </Button>
@@ -964,7 +950,7 @@ export default function QuestionEditorPage(): JSX.Element {
                     <Select
                       value={addForm.watch('type')}
                       onValueChange={(value) =>
-                        addForm.setValue('type', value as QuestionType)
+                        { addForm.setValue('type', value as QuestionType); }
                       }
                     >
                       <SelectTrigger id="new-question-type" className="w-44">
@@ -985,7 +971,7 @@ export default function QuestionEditorPage(): JSX.Element {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsAdding(false)}
+                      onClick={() => { setIsAdding(false); }}
                     >
                       Cancelar
                     </Button>

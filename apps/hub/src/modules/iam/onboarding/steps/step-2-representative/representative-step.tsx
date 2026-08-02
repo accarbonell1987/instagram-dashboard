@@ -75,7 +75,7 @@ export function StepRepresentativeEmail({ draftId }: StepRepresentativeEmailProp
       });
 
       // Refresh draft state (version bumped by patchDraft) then navigate
-      await refresh();
+      refresh();
       router.push(`/signup/${draftId}/otp?otpId=${otpId}`);
     } catch (err) {
       if (err instanceof ConflictError && err.backendCode === 'onboarding.email_already_exists') {
@@ -84,7 +84,7 @@ export function StepRepresentativeEmail({ draftId }: StepRepresentativeEmailProp
         );
       } else if (err instanceof RateLimitError) {
         setSubmitError(
-          `Demasiados intentos. Esperá ${String(err.retryAfterSeconds ?? 30)} segundos e intentá de nuevo.`
+          `Demasiados intentos. Esperá ${String(err.retryAfterSeconds)} segundos e intentá de nuevo.`
         );
       } else {
         setSubmitError('No se pudo guardar la información. Intenta de nuevo.');
