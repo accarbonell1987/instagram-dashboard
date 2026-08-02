@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 
+import type { AgentConfig } from '../../domain/account.js';
 import { NotFoundError } from '../../errors.js';
 import { encryptToken } from '../../lib/crypto.js';
 import type { InstagramRepository } from '../../repositories/instagram/index.js';
@@ -12,13 +13,14 @@ export function createAgentRoutes(
   repos: InstagramRepository,
   usageTracker: UsageTracker,
   usageTrackingEnabled: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Hono<any> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const routes = new Hono<any>();
 
   // GET /settings — Get agent config + hasFalApiKey flag
   routes.get('/settings', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const { tenantId, userId } = tenant;
 
     const [agentConfig, hasFalApiKey] = await Promise.all([
@@ -34,7 +36,7 @@ export function createAgentRoutes(
 
   // PUT /settings — Save agent config + optional FAL API key (write-only)
   routes.put('/settings', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const { tenantId, userId } = tenant;
 
     let body: ReturnType<typeof SaveAgentSettingsBodySchema.parse>;
@@ -71,7 +73,7 @@ export function createAgentRoutes(
           // Store imageGen and limits inside agentConfig JSON
           ...(body.imageGen !== undefined ? { imageGen: body.imageGen } : {}),
           ...(body.limits !== undefined ? { limits: body.limits } : {}),
-        } as any),
+        } as AgentConfig),
       ];
 
       // Encrypt and persist FAL API key if provided (write-only — never returned)
@@ -99,7 +101,7 @@ export function createAgentRoutes(
 
   // GET /usage — Get AI usage quotas for the authenticated tenant
   routes.get('/usage', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const { tenantId } = tenant;
 
     // Period boundaries: first day of current month → first day of next month

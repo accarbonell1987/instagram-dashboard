@@ -87,7 +87,7 @@ describe('GET /api/dashboard/growth', () => {
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.data).toHaveLength(2);
-    expect(body.data[0]!.value).toBe(1000);
+    expect(body.data[0]?.value).toBe(1000);
 
     expect(mockDashboardService.getGrowthData).toHaveBeenCalledWith(
       MOCK_TENANT.tenantId,

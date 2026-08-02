@@ -68,7 +68,7 @@ export class RateLimitError extends AppError {
     super(
       429,
       'RATE_LIMITED',
-      `Rate limit reached. Retry after ${retryAfterSeconds} seconds.`,
+      `Rate limit reached. Retry after ${String(retryAfterSeconds)} seconds.`,
       { retryAfterSeconds },
     );
   }
@@ -99,7 +99,7 @@ export class QuotaExceededError extends AppError {
     super(
       429,
       'QUOTA_EXCEEDED',
-      `Quota exceeded for ${resourceType}. Used: exceeded, limit: ${limit}. Resets at ${resetsAt}.`,
+      `Quota exceeded for ${resourceType}. Used: exceeded, limit: ${String(limit)}. Resets at ${resetsAt}.`,
       { resourceType, used: limit, limit, resetsAt },
     );
   }

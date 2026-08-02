@@ -152,20 +152,21 @@ export class UsageTracker {
     return {
       tokens: {
         used: tokenCount,
-        limit: tokensQuota?.period !== 'unlimited' ? (tokensQuota?.limit ?? 0) : tokensQuota?.limit ?? 0,
+        limit: tokensQuota?.limit ?? 0,
       },
       images: {
         used: imageCount,
-        limit: imagesQuota?.period !== 'unlimited' ? (imagesQuota?.limit ?? 0) : imagesQuota?.limit ?? 0,
+        limit: imagesQuota?.limit ?? 0,
       },
       sessions: {
         used: 0,
-        limit: sessionsQuota?.period !== 'unlimited' ? (sessionsQuota?.limit ?? 0) : sessionsQuota?.limit ?? 0,
+        limit: sessionsQuota?.limit ?? 0,
       },
       period: 'month',
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface contract is () => Promise<void>; callers await it
   async purgeCache(planId?: string): Promise<void> {
     if (!this.enabled) return;
 

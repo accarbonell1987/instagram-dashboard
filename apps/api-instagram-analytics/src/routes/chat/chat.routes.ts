@@ -40,7 +40,7 @@ export function createChatRoutes(
 
   // POST / — Send a chat message
   routes.post('/', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const { tenantId, userId } = tenant;
 
     // Rate limit check
@@ -117,7 +117,7 @@ export function createChatRoutes(
 
   // GET /history — Get chat history for a session
   routes.get('/history', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string };
+    const tenant = c.get('tenant');
     const { tenantId } = tenant;
 
     const sessionId = c.req.query('sessionId');
@@ -143,7 +143,7 @@ export function createChatRoutes(
 
   // DELETE /messages/:id — Delete a single message
   routes.delete('/messages/:id', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string };
+    const tenant = c.get('tenant');
     const { tenantId } = tenant;
 
     const parseResult = DeleteMessageParamsSchema.safeParse({ id: c.req.param('id') });
@@ -164,7 +164,7 @@ export function createChatRoutes(
 
   // DELETE /history — Delete all messages in a session
   routes.delete('/history', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string };
+    const tenant = c.get('tenant');
     const { tenantId } = tenant;
 
     const parseResult = DeleteHistoryQuerySchema.safeParse({ sessionId: c.req.query('sessionId') });

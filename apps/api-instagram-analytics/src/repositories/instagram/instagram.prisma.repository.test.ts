@@ -12,8 +12,8 @@ import { PrismaInstagramRepository } from './instagram.prisma.repository.js';
 const describeIf = describe;
 
 describeIf('PrismaInstagramRepository (integration)', () => {
-  let prisma: PrismaClient;
-  let repo: PrismaInstagramRepository;
+  let prisma: PrismaClient | undefined;
+  let repo: PrismaInstagramRepository | undefined;
   const tenantA = '11111111-1111-1111-1111-111111111111';
   const tenantB = '22222222-2222-2222-2222-222222222222';
   const userA = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -134,7 +134,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
       await expect(repo.disconnectAccount(tenantC, userC)).rejects.toThrow(NotFoundError);
     } finally {
       // Cleanup
-      await prisma.instagramAccount.deleteMany({ where: { tenantId: tenantC } }).catch(() => {});
+      await prisma?.instagramAccount.deleteMany({ where: { tenantId: tenantC } }).catch(() => undefined);
     }
   });
 
@@ -143,13 +143,14 @@ describeIf('PrismaInstagramRepository (integration)', () => {
 
     const account = await repo.findAccountByTenantAndUserId(tenantA, userA);
     expect(account).not.toBeNull();
+    if (!account) return;
 
-    const logId = await repo.createSyncLog(account!.id, tenantA);
+    const logId = await repo.createSyncLog(account.id, tenantA);
     expect(logId).toBeTruthy();
 
     await repo.updateSyncLog(logId, 'completed', 5);
 
-    const lastLog = await repo.getLatestSyncLog(account!.id);
+    const lastLog = await repo.getLatestSyncLog(account.id);
     expect(lastLog).not.toBeNull();
     expect(lastLog?.status).toBe('completed');
     expect(lastLog?.mediaSynced).toBe(5);
@@ -172,7 +173,8 @@ describeIf('PrismaInstagramRepository (integration)', () => {
 
     // Verify tenant A's latest log is unchanged
     const accountA = await repo.findAccountByTenantAndUserId(tenantA, userA);
-    const lastLogA = await repo.getLatestSyncLog(accountA!.id);
+    if (!accountA) return;
+    const lastLogA = await repo.getLatestSyncLog(accountA.id);
     expect(lastLogA).not.toBeNull();
     // Should still be the "completed" log with 5 mediaSynced from previous test
     expect(lastLogA?.status).toBe('completed');
@@ -285,6 +287,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
       const sinceRecent = new Date(now.getTime() - 60_000);
       const snapshots = await repo.getAccountInsightHistory(account.id, sinceRecent);
       expect(snapshots.length).toBeGreaterThanOrEqual(2);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length asserted >= 2 above
       expect(snapshots[0]!.syncedAt <= snapshots[1]!.syncedAt).toBe(true); // asc order
 
       // Query from 1 hour in the future → should get none
@@ -315,6 +318,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
       // Verify ascending order
       for (let i = 1; i < snapshots.length; i++) {
         expect(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- i and i-1 are within array bounds
           snapshots[i]!.syncedAt.getTime() >= snapshots[i - 1]!.syncedAt.getTime(),
         ).toBe(true);
       }

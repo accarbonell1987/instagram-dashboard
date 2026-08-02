@@ -1,4 +1,4 @@
-import type { DashboardData, DemographicsData, NorthStarMetrics } from '../domain/insight.js';
+import type { DashboardData, DemographicsData } from '../domain/insight.js';
 import type { MediaWithMetrics, PaginatedMedia } from '../domain/media.js';
 import { AccountNotConnectedError, NotFoundError } from '../errors.js';
 import { getCached, setCache } from '../lib/cache.js';
@@ -16,7 +16,7 @@ export interface GrowthDataPoint {
 export class DashboardService {
   constructor(private readonly repos: Repositories) {}
 
-  async getDashboardData(tenantId: string, userId: string): Promise<DashboardData> {
+  async getDashboardData(tenantId: string, _userId: string): Promise<DashboardData> {
     const account = await this.repos.instagram.findAccountByTenantId(tenantId);
     if (!account) throw new AccountNotConnectedError();
 
@@ -72,7 +72,7 @@ export class DashboardService {
     }));
   }
 
-  async getDemographicsData(tenantId: string, userId: string): Promise<DemographicsData> {
+  async getDemographicsData(tenantId: string, _userId: string): Promise<DemographicsData> {
     const account = await this.repos.instagram.findAccountByTenantId(tenantId);
     if (!account) throw new AccountNotConnectedError();
 

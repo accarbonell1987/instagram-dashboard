@@ -67,6 +67,7 @@ export class SuggestionService {
     if (this.usageTracker) {
       const check = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
       if (!check.allowed) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', check.limit!, check.resetsAt!);
       }
     }
@@ -130,7 +131,7 @@ export class SuggestionService {
       if (!account) {
         // No baseline data — default to met
         await this.repos.suggestion.update(tenantId, id, {
-          outcome: 'met' as any,
+          outcome: 'met',
           baselineJson: { format, period: '90d', sampleCount: 0, medianEngagementRate: 0 },
           metricsJson: { engagementRate: 0 },
           measuredAt: new Date(),
@@ -141,12 +142,12 @@ export class SuggestionService {
       const dashboardData = await this.repos.instagram.getDashboardData(account.id);
 
       // Find the linked media in ranking
-      const linkedMedia = dashboardData.ranking?.find(
+      const linkedMedia = dashboardData.ranking.find(
         (r: { igMediaId: string }) => r.igMediaId === linkedMediaId,
       );
 
       if (linkedMedia) {
-        format = linkedMedia.mediaType ?? 'unknown';
+        format = linkedMedia.mediaType;
         // DashboardData ranking: saves, shares, totalEngagement (no reach field)
         const saves = linkedMedia.saves;
         const shares = linkedMedia.shares;
@@ -157,7 +158,7 @@ export class SuggestionService {
 
       // Compute rolling median from format breakdown
       // FormatBreakdown: format, postCount, avgSaves, avgShares, avgLikes, avgComments
-      const formatBreakdown = dashboardData.formatBreakdown ?? [];
+      const formatBreakdown = dashboardData.formatBreakdown;
       const formatStats = formatBreakdown.find((f) => f.format === format);
 
       if (formatStats) {
@@ -184,7 +185,7 @@ export class SuggestionService {
     }
 
     await this.repos.suggestion.update(tenantId, id, {
-      outcome: outcome as any,
+      outcome,
       baselineJson: { format, period: '90d', sampleCount, medianEngagementRate },
       metricsJson: { engagementRate: actualEngagementRate },
       measuredAt: new Date(),

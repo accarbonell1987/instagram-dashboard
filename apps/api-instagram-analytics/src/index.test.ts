@@ -10,6 +10,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 
+import type { Repositories } from './lib/create-repositories.js';
+
 // Mock @hono/node-server's serve to prevent actual server startup during tests
 vi.mock('@hono/node-server', () => ({
   serve: vi.fn((_opts, callback?: (info: { port: number }) => void) => {
@@ -70,7 +72,12 @@ describe('Bootstrap (index.ts) — Composition Root', () => {
     const { DashboardService } = await import('./services/dashboard.service.js');
     const { InsightService } = await import('./services/insight.service.js');
 
-    const mockRepos = { instagram: {} as any, chatMessage: {} as any, suggestion: {} as any, carousel: {} as any };
+    const mockRepos = {
+      instagram: {},
+      chatMessage: {},
+      suggestion: {},
+      carousel: {},
+    } as unknown as Repositories;
 
     // Constructors should accept repos parameter
     expect(() => new OAuthService(mockRepos)).not.toThrow();

@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import type { Repositories } from '../lib/create-repositories.js';
 import type { InstagramRepository } from '../repositories/instagram/index.js';
 
 import { OAuthService } from './oauth.service.js';
+
+interface OAuthState {
+  tid: string;
+  uid: string;
+  exp: number;
+}
 
 function createMockRepo(): {
   instagram: Record<keyof InstagramRepository, ReturnType<typeof vi.fn>>;
@@ -49,7 +56,7 @@ describe('OAuthService', () => {
 
   beforeEach(() => {
     repo = createMockRepo();
-    service = new OAuthService(repo as any);
+    service = new OAuthService(repo as unknown as Repositories);
   });
 
   describe('getAuthorizationUrl', () => {
@@ -80,8 +87,8 @@ describe('OAuthService', () => {
       const state = urlObj.searchParams.get('state');
       expect(state).toBeTruthy();
       const decoded = JSON.parse(
-        Buffer.from(state!, 'base64url').toString(),
-      );
+        Buffer.from(state ?? '', 'base64url').toString(),
+      ) as OAuthState;
       expect(decoded).toHaveProperty('tid', 'tenant-uuid-123');
       expect(decoded).toHaveProperty('uid', 'user-uuid-456');
       expect(decoded).toHaveProperty('exp');
@@ -94,8 +101,8 @@ describe('OAuthService', () => {
       const urlObj = new URL(url);
       const state = urlObj.searchParams.get('state');
       const decoded = JSON.parse(
-        Buffer.from(state!, 'base64url').toString(),
-      );
+        Buffer.from(state ?? '', 'base64url').toString(),
+      ) as OAuthState;
       const after = Date.now();
       // Expiry should be roughly 10 min from now (within a few seconds of tolerance)
       expect(decoded.exp).toBeGreaterThanOrEqual(before + 9 * 60 * 1000);

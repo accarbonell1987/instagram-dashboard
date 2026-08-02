@@ -64,6 +64,7 @@ ${SUGGESTIONS_FORMAT}`;
 export function buildSystemPrompt(config: AgentConfig | null): string {
   if (!config) return DEFAULT_SYSTEM_PROMPT;
 
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty strings must fall through to the fallback, so || is intentional
   const niche = config.niche || config.tags[0] || 'tu cuenta';
   const tagsStr = config.tags.join(', ');
 
@@ -96,8 +97,10 @@ ${SUGGESTIONS_FORMAT}`;
 }
 
 export function buildSuggestionPrompt(config: AgentConfig | null): string {
-  const niche = config?.niche || config?.tags?.[0] || 'tu cuenta';
-  const tagsStr = config?.tags?.join(', ') || niche;
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty strings must fall through to the fallback, so || is intentional
+  const niche = config?.niche || config?.tags[0] || 'tu cuenta';
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty strings must fall through to the fallback, so || is intentional
+  const tagsStr = config?.tags.join(', ') || niche;
 
   return `Generá exactamente 3 ideas de contenido creativas para ${niche} en Instagram.
 Contexto del nicho: ${tagsStr}.

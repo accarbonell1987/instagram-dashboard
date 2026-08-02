@@ -30,9 +30,7 @@ interface AccessTokenClaims extends JWTPayload {
 let _jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
 function getJWKS() {
-  if (!_jwks) {
-    _jwks = createRemoteJWKSet(new URL(`${config.IAM_JWKS_URL}/.well-known/jwks.json`));
-  }
+  _jwks ??= createRemoteJWKSet(new URL(`${config.IAM_JWKS_URL}/.well-known/jwks.json`));
   return _jwks;
 }
 

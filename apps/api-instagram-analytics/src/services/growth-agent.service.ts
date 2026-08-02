@@ -1,11 +1,12 @@
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
+import type {
+  ChatCompletionMessageFunctionToolCall,
+  ChatCompletionMessageParam,
+} from 'openai/resources/chat/completions.js';
 
 import {
-  DEFAULT_SYSTEM_PROMPT,
   buildSystemPrompt,
   buildSuggestionPrompt,
 } from '../config/prompts.js';
-import type { AgentConfig } from '../domain/account.js';
 import type {
   DashboardContext,
   PostSummary,
@@ -85,6 +86,7 @@ export class GrowthAgentService {
     if (this.usageTracker) {
       const check = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
       if (!check.allowed) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', check.limit!, check.resetsAt!);
       }
     }
@@ -199,14 +201,14 @@ export class GrowthAgentService {
           role: 'assistant',
           content: response.content,
            
-          tool_calls: response.toolCalls.map((tc) => ({
+          tool_calls: response.toolCalls.map((tc): ChatCompletionMessageFunctionToolCall => ({
             id: tc.id,
             type: 'function' as const,
             function: {
               name: tc.name,
               arguments: JSON.stringify(tc.arguments),
             },
-          })) as any,
+          })),
         });
 
         // Dispatch each tool call
@@ -263,7 +265,7 @@ export class GrowthAgentService {
         return this.getTopPosts(
           tenantId,
           userId,
-          (args['by'] as 'saves_shares' | 'reach' | 'engagement_rate') ?? 'saves_shares',
+          (args['by'] as 'saves_shares' | 'reach' | 'engagement_rate' | undefined) ?? 'saves_shares',
           typeof args['n'] === 'number' ? args['n'] : 5,
         );
       case 'getFormatBreakdown':
@@ -306,7 +308,7 @@ export class GrowthAgentService {
     n: number,
   ): Promise<PostSummary[]> {
     const data = await this.dashboardService.getDashboardData(tenantId, userId);
-    const ranking = data.ranking ?? [];
+    const ranking = data.ranking;
 
     // Sort ranking by the requested metric (ranking type has saves, shares, totalEngagement)
     const sorted = [...ranking].sort((a, b) => {
@@ -320,7 +322,7 @@ export class GrowthAgentService {
       const engagementRate = reach > 0 ? (r.saves + r.shares) / reach : 0;
       return {
         mediaId: r.igMediaId,
-        mediaType: r.mediaType ?? 'unknown',
+        mediaType: r.mediaType,
         caption: r.caption ?? null,
         postedAt: r.postedAt,
         saves: r.saves,
@@ -334,7 +336,7 @@ export class GrowthAgentService {
   async getFormatBreakdown(tenantId: string, userId: string): Promise<FormatStats[]> {
     const data = await this.dashboardService.getDashboardData(tenantId, userId);
     // FormatBreakdown type: format, postCount, avgSaves, avgShares, avgLikes, avgComments
-    return (data.formatBreakdown ?? []).map((f) => ({
+    return data.formatBreakdown.map((f) => ({
       format: f.format,
       avgEngagementRate: f.postCount > 0 ? (f.avgSaves + f.avgShares) / f.postCount : 0,
       avgReach: 0, // not available in FormatBreakdown type
@@ -347,7 +349,7 @@ export class GrowthAgentService {
   async getPostingHeatmap(tenantId: string, userId: string): Promise<HeatmapData[]> {
     const data = await this.dashboardService.getDashboardData(tenantId, userId);
     // HeatmapCell has: day, slot, totalSavesShares, postCount
-    return (data.heatmap ?? []).map((h) => ({
+    return data.heatmap.map((h) => ({
       dayOfWeek: this.dayNameToNumber(h.day),
       hour: this.slotToHour(h.slot),
       avgSavesShares: h.postCount > 0 ? h.totalSavesShares / h.postCount : 0,
@@ -355,7 +357,7 @@ export class GrowthAgentService {
   }
 
   async getSuggestionOutcomes(tenantId: string): Promise<SuggestionOutcomeResult[]> {
-    const suggestions = await this.repos.suggestion.findByTenant(tenantId, 'used' as any);
+    const suggestions = await this.repos.suggestion.findByTenant(tenantId, 'used');
     return suggestions.slice(0, 20).map((s) => ({
       id: s.id,
       category: s.category,
@@ -384,6 +386,7 @@ export class GrowthAgentService {
 
     const created: ContentSuggestion[] = [];
     for (const item of parsed) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- parsed from untrusted JSON; fields may be absent at runtime despite the type
       if (item.category && item.content) {
         const suggestion = await this.suggestionService.createSuggestion(
           tenantId,

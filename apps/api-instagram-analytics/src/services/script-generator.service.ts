@@ -54,6 +54,7 @@ export class ScriptGeneratorService {
     if (tenantId && this.usageTracker) {
       const check = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
       if (!check.allowed) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', check.limit!, check.resetsAt!);
       }
     }

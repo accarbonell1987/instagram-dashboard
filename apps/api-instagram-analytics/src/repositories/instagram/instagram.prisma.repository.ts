@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 
 import type { InstagramAccount, ConnectAccountInput, AgentConfig } from '../../domain/account.js';
 import type { AccountInsight, DashboardData, FormatBreakdown, HeatmapCell, InsightResult, InsightSnapshot, NorthStarMetric, NorthStarMetrics } from '../../domain/insight.js';
@@ -189,7 +189,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
   async saveAgentConfig(tenantId: string, userId: string, config: AgentConfig): Promise<void> {
     await this.prisma.instagramAccount.update({
       where: { tenantId },
-      data: { agentConfig: config as any },
+      data: { agentConfig: config as unknown as Prisma.InputJsonValue },
     });
   }
 
@@ -475,8 +475,11 @@ export class PrismaInstagramRepository implements InstagramRepository {
     if (snapshots.length === 0) return 0;
 
     const sorted = [...snapshots].sort((a, b) => a.date.getTime() - b.date.getTime());
-    const minDate = sorted[0]!.date;
-    const maxDate = sorted[sorted.length - 1]!.date;
+    const first = sorted[0];
+    const last = sorted.at(-1);
+    if (!first || !last) return 0;
+    const minDate = first.date;
+    const maxDate = last.date;
 
     const existing = await this.prisma.instagramAccountInsight.findMany({
       where: { accountId, syncedAt: { gte: minDate, lte: maxDate } },
@@ -635,7 +638,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
     for (const m of latestMetrics) {
       const dayIndex = m.day_of_week; // 0 = Sunday in EXTRACT(DOW)
       const slotIndex = Math.floor(Math.min(m.hour_of_day, 23) / 6); // 0-3
-      const key = `${dayIndex}:${slotIndex}`;
+      const key = `${String(dayIndex)}:${String(slotIndex)}`;
 
       const cell = heatmapGrid.get(key) ?? { savesShares: 0, count: 0 };
       cell.savesShares += m.saves + m.shares;
@@ -646,7 +649,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
     const heatmap: HeatmapCell[] = [];
     for (let day = 0; day < 7; day++) {
       for (let slot = 0; slot < 4; slot++) {
-        const cell = heatmapGrid.get(`${day}:${slot}`);
+        const cell = heatmapGrid.get(`${String(day)}:${String(slot)}`);
         heatmap.push({
           day: DAY_NAMES[day] ?? `Day ${String(day)}`,
           dayIndex: day,

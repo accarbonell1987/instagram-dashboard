@@ -13,21 +13,20 @@ import { config } from './config.js';
 import { ConflictError } from './errors.js';
 import { createRepositories } from './lib/create-repositories.js';
 import { DeepSeekClient } from './lib/deepseek-client.js';
-import { FalAiImageProvider } from './lib/image/fal-ai-image-provider.js';
 import { DiskImageStorage } from './lib/image/disk-image-storage.js';
-import { UsageTracker } from './services/usage-tracker.service.js';
+import { FalAiImageProvider } from './lib/image/fal-ai-image-provider.js';
 import { authGuard } from './middleware/auth-guard.js';
 import { errorHandler } from './middleware/error-handler.js';
-import { createHealthRoutes } from './routes/health/health.routes.js';
-import { createAuthRoutes } from './routes/auth/auth.routes.js';
-import { createDashboardRoutes } from './routes/dashboard/dashboard.routes.js';
-import { createMediaRoutes } from './routes/media/media.routes.js';
-import { createSyncRoutes } from './routes/sync/sync.routes.js';
-import { createChatRoutes } from './routes/chat/chat.routes.js';
-import { createSuggestionsRoutes } from './routes/suggestions/suggestions.routes.js';
 import { createAgentRoutes } from './routes/agent/agent.routes.js';
+import { createAuthRoutes } from './routes/auth/auth.routes.js';
 import { createCarouselRoutes } from './routes/carousels/carousels.routes.js';
+import { createChatRoutes } from './routes/chat/chat.routes.js';
+import { createDashboardRoutes } from './routes/dashboard/dashboard.routes.js';
+import { createHealthRoutes } from './routes/health/health.routes.js';
 import { createInternalRoutes } from './routes/internal/internal.routes.js';
+import { createMediaRoutes } from './routes/media/media.routes.js';
+import { createSuggestionsRoutes } from './routes/suggestions/suggestions.routes.js';
+import { createSyncRoutes } from './routes/sync/sync.routes.js';
 import { CarouselService } from './services/carousel.service.js';
 import { DashboardService } from './services/dashboard.service.js';
 import { GrowthAgentService } from './services/growth-agent.service.js';
@@ -36,7 +35,9 @@ import { OAuthService } from './services/oauth.service.js';
 import { ScriptGeneratorService } from './services/script-generator.service.js';
 import { SuggestionService } from './services/suggestion.service.js';
 import { SyncService } from './services/sync.service.js';
+import { UsageTracker } from './services/usage-tracker.service.js';
 
+// eslint-disable-next-line @typescript-eslint/require-await -- callers use bootstrap().catch(); must return a Promise
 async function bootstrap() {
   // Initialize Prisma
   const prisma = new PrismaClient({

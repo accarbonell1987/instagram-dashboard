@@ -5,8 +5,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { InternalError, QuotaExceededError } from '../errors.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import type { DeepSeekClient } from '../lib/deepseek-client.js';
 
+import type { DashboardService } from './dashboard.service.js';
 import { GrowthAgentService } from './growth-agent.service.js';
+import type { SuggestionService } from './suggestion.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
@@ -61,12 +65,12 @@ const mockSuggestionCreate = vi.fn();
 const mockSuggestionUpdate = vi.fn();
 const mockFindById = vi.fn().mockResolvedValue(null);
 
-function createMockRepos() {
+function createMockRepos(): Repositories {
   return {
     instagram: {
       findAccountByTenantId: vi.fn().mockResolvedValue({ id: 'acc-1' }),
       getAgentConfig: vi.fn().mockResolvedValue(null),
-    } as any,
+    },
     chatMessage: {
       save: mockSave,
       findBySession: mockFindBySession,
@@ -78,7 +82,7 @@ function createMockRepos() {
       update: mockSuggestionUpdate,
       findEligibleForMeasurement: mockFindEligibleForMeasurement,
     },
-  };
+  } as unknown as Repositories;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -102,6 +106,16 @@ describe('GrowthAgentService', () => {
   let service: GrowthAgentService;
   let repos: ReturnType<typeof createMockRepos>;
 
+  function createGrowthAgentService(tracker?: UsageTracker): GrowthAgentService {
+    return new GrowthAgentService(
+      repos,
+      mockDashboardService as unknown as DashboardService,
+      mockDeepseekClient as unknown as DeepSeekClient,
+      mockSuggestionService as unknown as SuggestionService,
+      tracker,
+    );
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     repos = createMockRepos();
@@ -122,12 +136,7 @@ describe('GrowthAgentService', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    service = new GrowthAgentService(
-      repos as any,
-      mockDashboardService as any,
-      mockDeepseekClient as any,
-      mockSuggestionService as any,
-    );
+    service = createGrowthAgentService();
   });
 
   describe('chat()', () => {
@@ -242,7 +251,7 @@ describe('GrowthAgentService', () => {
     it('generates sessionId if not provided (empty string → UUID)', async () => {
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola'));
 
-      const result = await service.chat({
+      await service.chat({
         tenantId: 'tenant-1',
         userId: 'user-1',
         sessionId: 'provided-session-id',
@@ -268,8 +277,12 @@ describe('GrowthAgentService', () => {
         userMessage: 'hola',
         history: [],
       })
+      // Attach the rejection handler before advancing timers, so the rejection
+      // (which fires during advanceTimersByTimeAsync) is never momentarily
+      // unhandled — otherwise vitest reports an unhandled rejection.
+      const assertion = expect(promise).rejects.toThrow('AGENT_TIMEOUT')
       await vi.advanceTimersByTimeAsync(61_000)
-      await expect(promise).rejects.toThrow('AGENT_TIMEOUT')
+      await assertion
       vi.useRealTimers()
     });
   });
@@ -334,7 +347,7 @@ describe('GrowthAgentService', () => {
       repos.instagram = {
         getAgentConfig: mockGetAgentConfig,
         findAccountByTenantId: mockFindAccount,
-      } as any;
+      } as unknown as Repositories['instagram'];
 
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola desde el agente genérico'));
 
@@ -349,7 +362,9 @@ describe('GrowthAgentService', () => {
       expect(result.reply).toBe('Hola desde el agente genérico');
       expect(mockGetAgentConfig).toHaveBeenCalledWith('tenant-1', 'user-1');
       // Verify system prompt is generic (no hardcoded niche)
-      const systemMsg = mockChat.mock.calls[0]?.[0]?.messages?.[0]?.content as string | undefined;
+      const systemMsg = (
+        mockChat.mock.calls[0]?.[0] as { messages?: { content?: string }[] } | undefined
+      )?.messages?.[0]?.content;
       expect(systemMsg).toContain('estratega de contenido');
       expect(systemMsg).not.toContain('ferretería');
     });
@@ -363,7 +378,7 @@ describe('GrowthAgentService', () => {
       repos.instagram = {
         getAgentConfig: mockGetAgentConfig,
         findAccountByTenantId: mockFindAccount,
-      } as any;
+      } as unknown as Repositories['instagram'];
 
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola desde moda'));
 
@@ -375,7 +390,9 @@ describe('GrowthAgentService', () => {
         history: [],
       });
 
-      const systemMsg = mockChat.mock.calls[0]?.[0]?.messages?.[0]?.content as string | undefined;
+      const systemMsg = (
+        mockChat.mock.calls[0]?.[0] as { messages?: { content?: string }[] } | undefined
+      )?.messages?.[0]?.content;
       expect(systemMsg).toContain('Moda');
       expect(systemMsg).toContain('Ropa, Tendencias');
       expect(systemMsg).not.toContain('ferretería');
@@ -391,7 +408,7 @@ describe('GrowthAgentService', () => {
       repos.instagram = {
         getAgentConfig: mockGetAgentConfig,
         findAccountByTenantId: mockFindAccount,
-      } as any;
+      } as unknown as Repositories['instagram'];
 
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola'));
 
@@ -403,7 +420,9 @@ describe('GrowthAgentService', () => {
         history: [],
       });
 
-      const systemMsg = mockChat.mock.calls[0]?.[0]?.messages?.[0]?.content as string | undefined;
+      const systemMsg = (
+        mockChat.mock.calls[0]?.[0] as { messages?: { content?: string }[] } | undefined
+      )?.messages?.[0]?.content;
       expect(systemMsg).toContain('Sé breve y usa emojis');
       expect(systemMsg).toContain('INSTRUCCIONES ADICIONALES DEL USUARIO');
     });
@@ -417,7 +436,7 @@ describe('GrowthAgentService', () => {
       repos.instagram = {
         getAgentConfig: mockGetAgentConfig,
         findAccountByTenantId: mockFindAccount,
-      } as any;
+      } as unknown as Repositories['instagram'];
 
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola'));
 
@@ -429,7 +448,9 @@ describe('GrowthAgentService', () => {
         history: [],
       });
 
-      const systemMsg = mockChat.mock.calls[0]?.[0]?.messages?.[0]?.content as string | undefined;
+      const systemMsg = (
+        mockChat.mock.calls[0]?.[0] as { messages?: { content?: string }[] } | undefined
+      )?.messages?.[0]?.content;
       expect(systemMsg).not.toContain('INSTRUCCIONES ADICIONALES DEL USUARIO');
     });
   });
@@ -448,13 +469,7 @@ describe('GrowthAgentService', () => {
     }
 
     function createServiceWithTracker(tracker: UsageTracker) {
-      return new GrowthAgentService(
-        repos as any,
-        mockDashboardService as any,
-        mockDeepseekClient as any,
-        mockSuggestionService as any,
-        tracker,
-      );
+      return createGrowthAgentService(tracker);
     }
 
     beforeEach(() => {
@@ -475,7 +490,9 @@ describe('GrowthAgentService', () => {
 
       await svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'Hola', history: [] });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledBefore(mockChat);
     });
 
@@ -492,6 +509,7 @@ describe('GrowthAgentService', () => {
       // DeepSeek should NOT be called
       expect(mockChat).not.toHaveBeenCalled();
       // No log should be written
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.log).not.toHaveBeenCalled();
     });
 
@@ -506,6 +524,7 @@ describe('GrowthAgentService', () => {
 
       // Two iterations: tool_call (promptTokens:10, completionTokens:5) + stop (promptTokens:10, completionTokens:20)
       // Total: promptTokens=20, completionTokens=25
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.log).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: 'tenant-1',
@@ -546,6 +565,7 @@ describe('GrowthAgentService', () => {
       // Let me just test the happy path — that the service calls log and doesn't crash.
       await svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'test', history: [] });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.log).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: 'tenant-1',
@@ -566,17 +586,13 @@ describe('GrowthAgentService', () => {
         svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'Hola', history: [] }),
       ).rejects.toThrow(QuotaExceededError);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.log).not.toHaveBeenCalled();
     });
 
     it('works without usageTracker (backward compat)', async () => {
       // Service without usageTracker (no constructor change needed for old code — usageTracker is optional)
-      const svc = new GrowthAgentService(
-        repos as any,
-        mockDashboardService as any,
-        mockDeepseekClient as any,
-        mockSuggestionService as any,
-      );
+      const svc = createGrowthAgentService();
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola'));
 
       const result = await svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'Hola', history: [] });

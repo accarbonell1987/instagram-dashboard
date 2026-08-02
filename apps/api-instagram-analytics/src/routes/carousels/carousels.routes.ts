@@ -20,7 +20,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // POST /preview-script — Generate a script preview without persisting (for user review)
   routes.post('/preview-script', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
 
     const raw = await c.req.json() as unknown;
     const parsed = PreviewScriptBodySchema.safeParse(raw);
@@ -37,7 +37,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // GET / — List carousels with pagination
   routes.get('/', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const page = Math.max(1, Number(c.req.query('page') ?? '1'));
     const limit = Math.min(50, Math.max(1, Number(c.req.query('limit') ?? '20')));
     const result = await carouselService.listCarousels(tenant.tenantId, page, limit);
@@ -46,7 +46,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // POST / — Create carousel (fire-and-forget generation)
   routes.post('/', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
 
     const raw = await c.req.json() as unknown;
     const parsed = CreateCarouselBodySchema.safeParse(raw);
@@ -69,7 +69,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // GET /:id — Poll carousel status + slides
   routes.get('/:id', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const id = c.req.param('id');
 
     const carousel = await carouselService.getCarousel(id, tenant.tenantId);
@@ -78,7 +78,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // PATCH /:id/slides/:slideId — Edit slide text or visualPrompt
   routes.patch('/:id/slides/:slideId', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const carouselId = c.req.param('id');
     const slideId = c.req.param('slideId');
 
@@ -109,7 +109,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // POST /:id/slides/:slideId/regenerate — Trigger slide image regeneration
   routes.post('/:id/slides/:slideId/regenerate', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const carouselId = c.req.param('id');
     const slideId = c.req.param('slideId');
 
@@ -119,7 +119,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // PATCH /:id/reorder — Reorder slides
   routes.patch('/:id/reorder', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const carouselId = c.req.param('id');
 
     const raw = await c.req.json() as unknown;
@@ -137,7 +137,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // DELETE /:id — Delete a carousel
   routes.delete('/:id', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const carouselId = c.req.param('id');
     try {
       await carouselService.deleteCarousel(carouselId, tenant.tenantId);
@@ -146,7 +146,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
       if (error instanceof AppError) {
         return c.json(
           { success: false, error: { code: error.code, message: error.message } },
-          error.statusCode as any,
+          error.statusCode as Parameters<typeof c.json>[1],
         );
       }
       throw error;
@@ -155,7 +155,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // POST /:id/regenerate — Reset and re-run full generation pipeline
   routes.post('/:id/regenerate', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const carouselId = c.req.param('id');
 
     let body: { topic?: string } = {};
@@ -177,7 +177,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
       if (error instanceof AppError) {
         return c.json(
           { success: false, error: { code: error.code, message: error.message } },
-          error.statusCode as any,
+          error.statusCode as Parameters<typeof c.json>[1],
         );
       }
       throw error;
@@ -186,7 +186,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // POST /upload — Create upload carousel (no image files, JSON only — images uploaded per slide)
   routes.post('/upload', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
 
     const raw = await c.req.json() as unknown;
     const parsed = CreateUploadCarouselBodySchema.safeParse(raw);
@@ -215,7 +215,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // PUT /:id/slides/:slideId/image — Upload image for a specific slide (multipart)
   routes.put('/:id/slides/:slideId/image', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const carouselId = c.req.param('id');
     const slideId = c.req.param('slideId');
 
@@ -262,7 +262,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
       if (error instanceof AppError) {
         return c.json(
           { success: false, error: { code: error.code, message: error.message, details: error.details } },
-          error.statusCode as any,
+          error.statusCode as Parameters<typeof c.json>[1],
         );
       }
       throw error;
@@ -273,7 +273,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
 
   // POST /:id/publish — Publish carousel to Instagram
   routes.post('/:id/publish', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string; userId: string };
+    const tenant = c.get('tenant');
     const carouselId = c.req.param('id');
 
     let body: { caption?: string } = {};
@@ -301,7 +301,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
       if (error instanceof AppError) {
         return c.json(
           { success: false, error: { code: error.code, message: error.message, details: error.details } },
-          error.statusCode as any,
+          error.statusCode as Parameters<typeof c.json>[1],
         );
       }
       throw error;

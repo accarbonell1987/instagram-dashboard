@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma, type MessageRole   } from '@prisma/client';
+import { Prisma, type PrismaClient, type MessageRole } from '@prisma/client';
 
 export type { MessageRole };
 

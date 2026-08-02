@@ -36,14 +36,14 @@ export class FalAiImageProvider implements ImageProvider {
       const falError = error as { status?: number; body?: unknown; requestId?: string; message?: string };
       const detail = JSON.stringify({ status: falError.status, body: falError.body, requestId: falError.requestId });
       console.error(`[fal.ai] text-to-image error — ${falError.message ?? 'unknown'} | detail: ${detail}`);
-      throw new Error(`fal.ai API error ${falError.status ?? '?'}: ${falError.message ?? 'unknown'} — ${detail}`);
+      throw new Error(`fal.ai API error ${String(falError.status ?? '?')}: ${falError.message ?? 'unknown'} — ${detail}`);
     }
 
-    console.log(`[fal.ai] raw result keys: ${Object.keys(result ?? {}).join(', ')}`);
+    console.log(`[fal.ai] raw result keys: ${Object.keys(result).join(', ')}`);
 
-    const imageUrl = result?.data?.images?.[0]?.url;
+    const imageUrl = result.data.images?.[0]?.url;
     if (!imageUrl) {
-      const dataStr = JSON.stringify(result?.data);
+      const dataStr = JSON.stringify(result.data);
       console.error(`[fal.ai] no image URL in response. data: ${dataStr}`);
       throw new Error(`fal.ai returned no image URL. Response data: ${dataStr}`);
     }
@@ -74,12 +74,12 @@ export class FalAiImageProvider implements ImageProvider {
       const falError = error as { status?: number; body?: unknown; requestId?: string; message?: string };
       const detail = JSON.stringify({ status: falError.status, body: falError.body, requestId: falError.requestId });
       console.error(`[fal.ai] image-to-image error — ${falError.message ?? 'unknown'} | detail: ${detail}`);
-      throw new Error(`fal.ai img2img error ${falError.status ?? '?'}: ${falError.message ?? 'unknown'} — ${detail}`);
+      throw new Error(`fal.ai img2img error ${String(falError.status ?? '?')}: ${falError.message ?? 'unknown'} — ${detail}`);
     }
 
-    const imageUrl = result?.data?.images?.[0]?.url;
+    const imageUrl = result.data.images?.[0]?.url;
     if (!imageUrl) {
-      const dataStr = JSON.stringify(result?.data);
+      const dataStr = JSON.stringify(result.data);
       console.error(`[fal.ai] no image URL in img2img response. data: ${dataStr}`);
       throw new Error(`fal.ai img2img returned no image URL. Response data: ${dataStr}`);
     }
@@ -91,7 +91,7 @@ export class FalAiImageProvider implements ImageProvider {
     console.log(`[fal.ai] downloading image from ${imageUrl.slice(0, 80)}...`);
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      throw new Error(`Failed to download image from fal.ai: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to download image from fal.ai: ${String(response.status)} ${response.statusText}`);
     }
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);

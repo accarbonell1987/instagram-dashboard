@@ -7,8 +7,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { NotFoundError } from '../../errors.js';
 import { errorHandler } from '../../middleware/error-handler.js';
+import type { InstagramRepository } from '../../repositories/instagram/index.js';
+import type { UsageTracker } from '../../services/usage-tracker.service.js';
 
 import { createAgentRoutes } from './agent.routes.js';
+
+// ─── Response body types ───────────────────────────────────────────────────────
+
+interface Quota {
+  used: number;
+  limit: number;
+  period: string;
+  resetsAt: string;
+}
+
+interface UsageData {
+  quotas: { deepseek_tokens: Quota; fal_images: Quota };
+  periodStart: string;
+  periodEnd: string;
+}
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -36,12 +53,15 @@ function makeApp(usageTrackingEnabled = true) {
 
   // Mock auth middleware
   app.use('*', async (c, next) => {
-    c.set('tenant' as any, { tenantId: TENANT_ID, userId: USER_ID, tenantSlug: 'test', role: 'User' });
+    c.set('tenant', { tenantId: TENANT_ID, userId: USER_ID, tenantSlug: 'test', role: 'User' });
     await next();
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const routes = createAgentRoutes(mockRepos as any, mockUsageTracker as any, usageTrackingEnabled);
+  const routes = createAgentRoutes(
+    mockRepos as unknown as InstagramRepository,
+    mockUsageTracker as unknown as UsageTracker,
+    usageTrackingEnabled,
+  );
   app.route('/agent', routes);
   app.onError(errorHandler);
   return app;
@@ -63,7 +83,7 @@ describe('Agent routes', () => {
       const res = await app.request('/agent/settings', { method: 'GET' });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { agentConfig: unknown; hasFalApiKey: boolean } };
       expect(body.success).toBe(true);
       expect(body.data.agentConfig).toBeNull();
       expect(body.data.hasFalApiKey).toBe(false);
@@ -78,7 +98,7 @@ describe('Agent routes', () => {
       const res = await app.request('/agent/settings', { method: 'GET' });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { agentConfig: unknown; hasFalApiKey: boolean } };
       expect(body.success).toBe(true);
       expect(body.data.agentConfig).toEqual(config);
       expect(body.data.hasFalApiKey).toBe(true);
@@ -100,7 +120,7 @@ describe('Agent routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { saved: boolean } };
       expect(body.success).toBe(true);
       expect(body.data.saved).toBe(true);
       expect(mockSaveAgentConfig).toHaveBeenCalledWith(TENANT_ID, USER_ID, {
@@ -140,7 +160,7 @@ describe('Agent routes', () => {
       });
 
       expect(res.status).toBe(400);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; error: { code: string } };
       expect(body.success).toBe(false);
       expect(body.error.code).toBe('VALIDATION_ERROR');
     });
@@ -159,7 +179,7 @@ describe('Agent routes', () => {
 
     it('returns 400 on tags exceeding max (30)', async () => {
       const app = makeApp();
-      const tooManyTags = Array.from({ length: 31 }, (_, i) => `Tag${i}`);
+      const tooManyTags = Array.from({ length: 31 }, (_, i) => `Tag${String(i)}`);
       const res = await app.request('/agent/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -203,7 +223,7 @@ describe('Agent routes', () => {
       });
 
       expect(res.status).toBe(404);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; error: { code: string } };
       expect(body.success).toBe(false);
       expect(body.error.code).toBe('NOT_FOUND');
     });
@@ -224,7 +244,7 @@ describe('Agent routes', () => {
       const res = await app.request('/agent/usage', { method: 'GET' });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: UsageData };
       expect(body.success).toBe(true);
       expect(body.data.quotas.deepseek_tokens.used).toBe(12450);
       expect(body.data.quotas.deepseek_tokens.limit).toBe(100000);
@@ -251,7 +271,7 @@ describe('Agent routes', () => {
       const res = await app.request('/agent/usage', { method: 'GET' });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: UsageData };
       expect(body.success).toBe(true);
       expect(body.data.quotas.deepseek_tokens.used).toBe(0);
       expect(body.data.quotas.deepseek_tokens.limit).toBe(100000);
@@ -264,7 +284,7 @@ describe('Agent routes', () => {
       const res = await app.request('/agent/usage', { method: 'GET' });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: UsageData };
       expect(body.success).toBe(true);
       expect(body.data.quotas.deepseek_tokens.used).toBe(0);
       expect(body.data.quotas.deepseek_tokens.limit).toBe(-1);
@@ -290,11 +310,14 @@ describe('Agent routes', () => {
       // Create app with tenant A
       const appA = new OpenAPIHono();
       appA.use('*', async (c, next) => {
-        c.set('tenant' as any, { tenantId: TENANT_A, userId: 'user-a', tenantSlug: 'a', role: 'User' });
+        c.set('tenant', { tenantId: TENANT_A, userId: 'user-a', tenantSlug: 'a', role: 'User' });
         await next();
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const routesA = createAgentRoutes(mockRepos as any, mockUsageTracker as any, true);
+      const routesA = createAgentRoutes(
+        mockRepos as unknown as InstagramRepository,
+        mockUsageTracker as unknown as UsageTracker,
+        true,
+      );
       appA.route('/agent', routesA);
       appA.onError(errorHandler);
 
@@ -313,11 +336,14 @@ describe('Agent routes', () => {
       // Create app with tenant B
       const appB = new OpenAPIHono();
       appB.use('*', async (c, next) => {
-        c.set('tenant' as any, { tenantId: TENANT_B, userId: 'user-b', tenantSlug: 'b', role: 'User' });
+        c.set('tenant', { tenantId: TENANT_B, userId: 'user-b', tenantSlug: 'b', role: 'User' });
         await next();
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const routesB = createAgentRoutes(mockRepos as any, mockUsageTracker as any, true);
+      const routesB = createAgentRoutes(
+        mockRepos as unknown as InstagramRepository,
+        mockUsageTracker as unknown as UsageTracker,
+        true,
+      );
       appB.route('/agent', routesB);
       appB.onError(errorHandler);
 
@@ -337,7 +363,7 @@ describe('Agent routes', () => {
       const res = await app.request('/agent/usage', { method: 'GET' });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: UsageData };
       const now = new Date();
       const expectedStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const expectedEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
@@ -354,7 +380,7 @@ describe('Agent routes', () => {
       const res = await app.request('/agent/usage', { method: 'GET' });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: UsageData };
       const now = new Date();
       const expectedStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const expectedEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
@@ -375,7 +401,7 @@ describe('Agent routes', () => {
       const res = await app.request('/agent/usage', { method: 'GET' });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: UsageData };
       expect(body.data.quotas.deepseek_tokens.used).toBe(0);
       expect(body.data.quotas.deepseek_tokens.limit).toBe(100000);
       expect(body.data.quotas.fal_images.used).toBe(0);

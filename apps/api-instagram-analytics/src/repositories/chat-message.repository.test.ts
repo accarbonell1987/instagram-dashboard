@@ -2,7 +2,7 @@
  * Unit tests for ChatMessage repository
  */
 import type { PrismaClient } from '@prisma/client';
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { PrismaChatMessageRepository } from './chat-message.repository.js';
 import type { IChatMessageRepository } from './chat-message.repository.js';
@@ -16,8 +16,6 @@ const mockPrisma = {
     delete: vi.fn(),
     deleteMany: vi.fn(),
   },
-} as unknown as PrismaClient & {
-  chatMessage: Record<'create' | 'findMany' | 'delete' | 'deleteMany', Mock>;
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -26,7 +24,7 @@ const TENANT_ID = 'b3e4c5d6-e7f8-4a9b-a0c1-d2e3f4a5b6c7';
 const SESSION_ID = 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5';
 
 function makeRepo(): IChatMessageRepository {
-  return new PrismaChatMessageRepository(mockPrisma);
+  return new PrismaChatMessageRepository(mockPrisma as unknown as PrismaClient);
 }
 
 function makePrismaMessage(overrides: Record<string, unknown> = {}) {
@@ -65,8 +63,8 @@ describe('PrismaChatMessageRepository', () => {
 
     it('throws if message not found (Prisma rejects with P2025)', async () => {
       const repo = makeRepo();
-      const prismaError = new Error('Record to delete does not exist.');
-      (prismaError as any).code = 'P2025';
+      const prismaError = new Error('Record to delete does not exist.') as Error & { code: string };
+      prismaError.code = 'P2025';
       mockPrisma.chatMessage.delete.mockRejectedValueOnce(prismaError);
 
       await expect(
@@ -76,8 +74,8 @@ describe('PrismaChatMessageRepository', () => {
 
     it('throws if tenantId mismatch (message belongs to different tenant)', async () => {
       const repo = makeRepo();
-      const prismaError = new Error('Record to delete does not exist.');
-      (prismaError as any).code = 'P2025';
+      const prismaError = new Error('Record to delete does not exist.') as Error & { code: string };
+      prismaError.code = 'P2025';
       mockPrisma.chatMessage.delete.mockRejectedValueOnce(prismaError);
 
       await expect(

@@ -25,7 +25,9 @@ const mockUsageTracker = {
 function makeApp() {
   const app = new OpenAPIHono();
 
-  const routes = createInternalRoutes(mockUsageTracker as any);
+  const routes = createInternalRoutes(
+    mockUsageTracker as unknown as Parameters<typeof createInternalRoutes>[0],
+  );
   app.route('/internal', routes);
   app.onError(errorHandler);
   return app;
@@ -50,7 +52,7 @@ describe('Internal routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { purged: boolean } };
       expect(body.success).toBe(true);
       expect(body.data).toEqual({ purged: true });
       expect(mockPurgeCache).toHaveBeenCalledWith('plan-pro');
@@ -67,7 +69,7 @@ describe('Internal routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { purged: boolean } };
       expect(body.success).toBe(true);
       expect(body.data).toEqual({ purged: true });
       expect(mockPurgeCache).toHaveBeenCalledWith(undefined);
@@ -83,7 +85,7 @@ describe('Internal routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { purged: boolean } };
       expect(body.success).toBe(true);
       expect(body.data).toEqual({ purged: true });
       expect(mockPurgeCache).toHaveBeenCalled();

@@ -21,6 +21,16 @@ import type { InstagramRepository } from '../repositories/instagram/index.js';
 import type { ScriptGeneratorService } from './script-generator.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
 
+// The agent config persists an untyped `imageGen` block (role prompts, model
+// overrides) that AgentConfig does not model — read it through this shape.
+interface ImageGenConfig {
+  imageGen?: {
+    basePrompt?: string;
+    t2iModel?: string;
+    i2iModel?: string;
+    [key: string]: string | undefined;
+  };
+}
 
 export class CarouselService {
   constructor(
@@ -37,8 +47,7 @@ export class CarouselService {
     const agentConfig = account
       ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
       : null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const basePrompt = (agentConfig as any)?.imageGen?.basePrompt as string | undefined;
+    const basePrompt = (agentConfig as ImageGenConfig | null)?.imageGen?.basePrompt;
     return this.scriptGenerator.generateScript(topic, basePrompt, tenantId);
   }
 
@@ -52,10 +61,12 @@ export class CarouselService {
     if (this.usageTracker) {
       const tokenCheck = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
       if (!tokenCheck.allowed) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', tokenCheck.limit!, tokenCheck.resetsAt!);
       }
       const imageCheck = await this.usageTracker.checkQuota(tenantId, 'fal_images');
       if (!imageCheck.allowed) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('fal_images', imageCheck.limit!, imageCheck.resetsAt!);
       }
     }
@@ -74,12 +85,11 @@ export class CarouselService {
     const agentConfig = account
       ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
       : null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const basePrompt = (agentConfig as any)?.imageGen?.basePrompt as string | undefined;
+    const basePrompt = (agentConfig as ImageGenConfig | null)?.imageGen?.basePrompt;
 
     // Fire-and-forget background generation — background rejections must be
     // caught here or they surface as unhandled process-level rejections.
-    this._generateAsync(carousel.id, tenantId, topic, basePrompt, approvedSlides).catch((error) => {
+    this._generateAsync(carousel.id, tenantId, topic, basePrompt, approvedSlides).catch((error: unknown) => {
       console.error(`[carousel:${carousel.id}] background generation failed:`, error);
     });
 
@@ -131,6 +141,7 @@ export class CarouselService {
     if (this.usageTracker) {
       const imageCheck = await this.usageTracker.checkQuota(tenantId, 'fal_images');
       if (!imageCheck.allowed) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('fal_images', imageCheck.limit!, imageCheck.resetsAt!);
       }
     }
@@ -142,12 +153,9 @@ export class CarouselService {
     const agentConfig = account
       ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
       : null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const imageGenConfig = (agentConfig as any)?.imageGen as Record<string, string> | undefined;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const basePrompt = (agentConfig as any)?.imageGen?.basePrompt as string | undefined;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const t2iModel = (agentConfig as any)?.imageGen?.t2iModel as string | undefined;
+    const imageGenConfig = (agentConfig as ImageGenConfig | null)?.imageGen;
+    const basePrompt = imageGenConfig?.basePrompt;
+    const t2iModel = imageGenConfig?.t2iModel;
 
     const rolePrompt = imageGenConfig?.[`${slide.role}Prompt`];
     const stylePrefix = rolePrompt ?? basePrompt ?? '';
@@ -159,11 +167,11 @@ export class CarouselService {
 
     void (async () => {
       try {
-        console.log(`[carousel:${carouselId}] regenerating slide ${slideId} (promptLen=${fullPrompt.length})`);
+        console.log(`[carousel:${carouselId}] regenerating slide ${slideId} (promptLen=${String(fullPrompt.length)})`);
         const rawBuffer = await this.imageProvider.generateImage(fullPrompt, falApiKey, {
           ...(t2iModel !== undefined && { t2iModel }),
         });
-        console.log(`[carousel:${carouselId}] slide ${slideId} image fetched (${rawBuffer.length} bytes), compositing...`);
+        console.log(`[carousel:${carouselId}] slide ${slideId} image fetched (${String(rawBuffer.length)} bytes), compositing...`);
         const imageBuffer = await compositeTextOnImage(rawBuffer, slide.text);
         const imageUrl = await this.imageStorage.saveImage(carouselId, slideId, imageBuffer);
         await this.carouselRepo.updateSlideStatus(slideId, 'ready', imageUrl);
@@ -184,7 +192,7 @@ export class CarouselService {
         if (stack) console.error(stack);
         await this.carouselRepo.updateSlideStatus(slideId, 'failed');
       }
-    })().catch((error) => {
+    })().catch((error: unknown) => {
       console.error(`[carousel:${carouselId}] slide ${slideId} regeneration task failed:`, error);
     });
   }
@@ -216,6 +224,7 @@ export class CarouselService {
     if (this.usageTracker) {
       const tokenCheck = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
       if (!tokenCheck.allowed) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', tokenCheck.limit!, tokenCheck.resetsAt!);
       }
     }
@@ -225,13 +234,12 @@ export class CarouselService {
     const agentConfig = account
       ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
       : null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const basePrompt = (agentConfig as any)?.imageGen?.basePrompt as string | undefined;
+    const basePrompt = (agentConfig as ImageGenConfig | null)?.imageGen?.basePrompt;
 
     await this.carouselRepo.resetForRegeneration(carouselId, input.topic);
 
     const topic = input.topic ?? carousel.topic;
-    this._generateAsync(carouselId, tenantId, topic, basePrompt).catch((error) => {
+    this._generateAsync(carouselId, tenantId, topic, basePrompt).catch((error: unknown) => {
       console.error(`[carousel:${carouselId}] background generation failed:`, error);
     });
 
@@ -259,7 +267,7 @@ export class CarouselService {
       throw new AppError(
         422,
         'CAROUSEL_SLIDES_INCOMPLETE',
-        `${slidesWithoutImage.length} slide(s) are missing generated images`,
+        `${String(slidesWithoutImage.length)} slide(s) are missing generated images`,
         { missingCount: slidesWithoutImage.length },
       );
     }
@@ -281,6 +289,7 @@ export class CarouselService {
 
     // Build absolute image URLs
     const sortedSlides = [...carousel.slides].sort((a, b) => a.order - b.order);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- slidesWithoutImage guard above rejects any slide missing imageUrl
     const absoluteUrls = sortedSlides.map((s) => this.resolvePublicUrl(s.imageUrl!));
 
     try {
@@ -402,7 +411,8 @@ export class CarouselService {
       if (this.usageTracker) {
         const imageCheck = await this.usageTracker.checkQuota(tenantId, 'fal_images');
         if (!imageCheck.allowed) {
-          throw new QuotaExceededError('fal_images', imageCheck.limit!, imageCheck.resetsAt!);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
+        throw new QuotaExceededError('fal_images', imageCheck.limit!, imageCheck.resetsAt!);
         }
       }
 
@@ -413,10 +423,9 @@ export class CarouselService {
           const i2iConfig = i2iAccount
             ? await this.instagramRepo.getAgentConfig(tenantId, i2iAccount.userId)
             : null;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const i2iModel = (i2iConfig as any)?.imageGen?.i2iModel as string | undefined;
+          const i2iModel = (i2iConfig as ImageGenConfig | null)?.imageGen?.i2iModel;
           const visualPrompt = slide.visualPrompt || slide.text;
-          console.log(`[carousel:${carouselId}] img2img slide ${slideId} (promptLen=${visualPrompt.length})`);
+          console.log(`[carousel:${carouselId}] img2img slide ${slideId} (promptLen=${String(visualPrompt.length)})`);
           const rawBuffer = await this.imageProvider.generateImage(visualPrompt, falApiKey, {
             baseImageBuffer: imageBuffer,
             ...(i2iModel !== undefined && { i2iModel }),
@@ -433,7 +442,7 @@ export class CarouselService {
           await this.carouselRepo.updateSlideStatus(slideId, 'failed');
         }
         await this.finalizeCarouselIfComplete(carouselId, tenantId);
-      })().catch((error) => {
+      })().catch((error: unknown) => {
         console.error(`[carousel:${carouselId}] img2img slide ${slideId} task failed:`, error);
       });
       return;
@@ -523,10 +532,8 @@ export class CarouselService {
       const agentConfig = account
         ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
         : null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const imageGenConfig = (agentConfig as any)?.imageGen as Record<string, string> | undefined;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const t2iModel = (agentConfig as any)?.imageGen?.t2iModel as string | undefined;
+      const imageGenConfig = (agentConfig as ImageGenConfig | null)?.imageGen;
+      const t2iModel = imageGenConfig?.t2iModel;
 
       let successCount = 0;
       let firstSlideError: string | undefined;
@@ -540,15 +547,15 @@ export class CarouselService {
             ? `${stylePrefix}. ${slide.visualPrompt}`
             : slide.visualPrompt;
 
-          console.log(`[carousel:${carouselId}] generating slide ${slide.id} (role=${slide.role}, promptLen=${fullPrompt.length})`);
+          console.log(`[carousel:${carouselId}] generating slide ${slide.id} (role=${slide.role}, promptLen=${String(fullPrompt.length)})`);
 
           const rawBuffer = await this.imageProvider.generateImage(fullPrompt, falApiKey, {
             ...(t2iModel !== undefined && { t2iModel }),
           });
-          console.log(`[carousel:${carouselId}] slide ${slide.id} image fetched (${rawBuffer.length} bytes), compositing text...`);
+          console.log(`[carousel:${carouselId}] slide ${slide.id} image fetched (${String(rawBuffer.length)} bytes), compositing text...`);
 
           const imageBuffer = await compositeTextOnImage(rawBuffer, slide.text);
-          console.log(`[carousel:${carouselId}] slide ${slide.id} composite done (${imageBuffer.length} bytes), saving...`);
+          console.log(`[carousel:${carouselId}] slide ${slide.id} composite done (${String(imageBuffer.length)} bytes), saving...`);
 
           const imageUrl = await this.imageStorage.saveImage(carouselId, slide.id, imageBuffer);
           await this.carouselRepo.updateSlideStatus(slide.id, 'ready', imageUrl);

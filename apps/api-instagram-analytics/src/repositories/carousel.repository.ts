@@ -1,4 +1,4 @@
-import type { PrismaClient, CarouselStatus, SlideStatus, type SlideRole  } from '@prisma/client';
+import { CarouselStatus, SlideStatus, type PrismaClient, type SlideRole } from '@prisma/client';
 
 import type { Carousel, CarouselSlide, CarouselStatus as DomainCarouselStatus, SlideStatus as DomainSlideStatus, SlideRole as DomainSlideRole, ImageMode, CarouselType, PublishStatus } from '../domain/carousel.js';
 import { NotFoundError } from '../errors.js';
@@ -114,7 +114,8 @@ export class PrismaCarouselRepository implements ICarouselRepository {
   }
 
   async createSlides(slides: CreateSlideInput[]): Promise<CarouselSlide[]> {
-    if (slides.length === 0) return [];
+    const [firstSlide] = slides;
+    if (!firstSlide) return [];
     await this.prisma.carouselSlide.createMany({ data: slides.map((s) => ({
       carouselId: s.carouselId,
       order: s.order,
@@ -125,7 +126,7 @@ export class PrismaCarouselRepository implements ICarouselRepository {
       status: SlideStatus.pending,
     })) });
     const records = await this.prisma.carouselSlide.findMany({
-      where: { carouselId: slides[0]!.carouselId },
+      where: { carouselId: firstSlide.carouselId },
       orderBy: { order: 'asc' },
     });
     return records.map((r) => this.toSlideDomain(r));
@@ -257,7 +258,7 @@ export class PrismaCarouselRepository implements ICarouselRepository {
       igPermalink: (record['igPermalink'] as string | null) ?? null,
       createdAt: record['createdAt'] as Date,
       updatedAt: record['updatedAt'] as Date,
-      slides: (record['slides'] as PrismaRow[] ?? []).map((s) => this.toSlideDomain(s)),
+      slides: ((record['slides'] as PrismaRow[] | undefined) ?? []).map((s) => this.toSlideDomain(s)),
     };
   }
 

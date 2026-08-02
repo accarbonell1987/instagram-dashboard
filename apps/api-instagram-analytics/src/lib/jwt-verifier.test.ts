@@ -1,19 +1,18 @@
+import { jwtVerify } from 'jose';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { UnauthorizedError } from '../errors.js';
 
+import { verifyAccessToken } from './jwt-verifier.js';
+
 // c2 (8.2/8.3, PR9): optional product_roles claim parsing — see design
 // "Per-Product Roles / JWT" and owner decision #1679/2. Mock jose so
 // verifyAccessToken's own claim-mapping logic is exercised directly,
-// without a real network JWKS fetch.
+// without a real network JWKS fetch. vi.mock is hoisted above imports at runtime.
 vi.mock('jose', () => ({
   createRemoteJWKSet: vi.fn(() => vi.fn()),
   jwtVerify: vi.fn(),
 }));
-
-import { jwtVerify } from 'jose';
-
-import { verifyAccessToken } from './jwt-verifier.js';
 
 function mockPayload(overrides: Record<string, unknown> = {}) {
   return {
