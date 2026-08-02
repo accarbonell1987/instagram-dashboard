@@ -156,6 +156,10 @@ describe('CarouselService (UsageTracker enforcement)', () => {
     mockInstagramRepo.getAgentConfig.mockResolvedValue(null);
     mockInstagramRepo.getFalApiKeyEncrypted.mockResolvedValue('encrypted-key');
     mockScriptGenerator.generateScript.mockResolvedValue(makeGeneratedSlides());
+    // Default the image pipeline to succeed so fire-and-forget background
+    // generation settles cleanly; failure-path tests override these explicitly.
+    mockImageProvider.generateImage.mockResolvedValue(Buffer.from('img'));
+    mockImageStorage.saveImage.mockResolvedValue('http://localhost:3003/img.png');
 
     service = createCarouselService(mockTracker);
   });

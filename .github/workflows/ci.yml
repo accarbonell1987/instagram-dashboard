@@ -32,8 +32,14 @@ jobs:
 
     # Prisma 7 resolves env("DATABASE_URL") when loading prisma.config.ts —
     # even `prisma generate` fails without it. A single URL serves every package.
+    # The JWT/Bancard vars are required by the api-iam config the e2e test loads
+    # (keys are generated in a step below; the secret is a throwaway CI value).
     env:
       DATABASE_URL: postgresql://corehub:corehub_dev_password@localhost:5432/corehub_iam
+      JWT_PRIVATE_KEY_PATH: ./keys/private.pem
+      JWT_PUBLIC_KEY_PATH: ./keys/public.pem
+      JWT_ACTIVE_KID: ci-key
+      BANCARD_WEBHOOK_SECRET: ci-webhook-secret-0123456789
 
     steps:
       - name: Checkout
@@ -53,6 +59,11 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm db:generate
+
+      # The api-iam e2e test loads the real config, which requires JWT signing
+      # keys at JWT_PRIVATE_KEY_PATH/JWT_PUBLIC_KEY_PATH (relative to apps/api-iam).
+      - name: Generate JWT dev keys for api-iam
+        run: pnpm --filter @corehub/api-iam exec tsx src/scripts/generate-dev-keys.ts
 
       # Apply the IAM schema so database-backed tests have their tables.
       - name: Apply database migrations
