@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { cn } from "@core/ui/lib";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { XIcon, SunIcon, MoonIcon } from "@/components/icons";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
+import { useMounted } from "@/hooks/use-mounted";
 import type { Locale } from "@/lib/types";
 
 interface MobileNavProps {
@@ -36,9 +37,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const router = useRouter();
   const pathname = usePathname();
   const firstLinkRef = useRef<HTMLButtonElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
 
   // Focus first link when opened
   useEffect(() => {

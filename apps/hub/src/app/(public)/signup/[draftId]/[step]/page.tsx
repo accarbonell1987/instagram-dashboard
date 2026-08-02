@@ -2,11 +2,11 @@
 
 import { use, type JSX } from 'react';
 
-import { StepCompanyData } from '@/modules/iam/onboarding/steps/step-4-company';
-import { StepOtpVerification } from '@/modules/iam/onboarding/steps/step-3-otp';
-import { StepPayment } from '@/modules/iam/onboarding/steps/step-5-payment';
 import { StepPlanSelection } from '@/modules/iam/onboarding/steps/step-1-plan-selection';
 import { StepRepresentativeEmail } from '@/modules/iam/onboarding/steps/step-2-representative';
+import { StepOtpVerification } from '@/modules/iam/onboarding/steps/step-3-otp';
+import { StepCompanyData } from '@/modules/iam/onboarding/steps/step-4-company';
+import { StepPayment } from '@/modules/iam/onboarding/steps/step-5-payment';
 import { StepSummary } from '@/modules/iam/onboarding/steps/step-6-summary';
 
 export default function WizardStepPage({

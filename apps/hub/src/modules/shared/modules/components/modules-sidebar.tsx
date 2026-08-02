@@ -1,13 +1,14 @@
 'use client';
 
-import type { JSX } from 'react';
-
+import { cn } from '@core/ui/lib';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@core/ui/lib';
+import type { JSX } from 'react';
+
+
+import { useModules } from '../hooks/use-modules';
 
 import { moduleVisuals, isLocalModule } from '@/lib/apps-config';
-import { useModules } from '../hooks/use-modules';
 
 function SidebarSkeleton(): JSX.Element {
   return (

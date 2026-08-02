@@ -1,10 +1,10 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, type JSX } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@core/ui';
 import { Mail, AlertTriangle, Check } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, type JSX } from 'react';
 
 import { FirstLoginForm } from '@/modules/iam/authentication/components/first-login-form';
 import { validateFirstLoginToken } from '@/modules/iam/authentication/services/auth.service';

@@ -5,6 +5,7 @@ import { createApiRouter } from '../../lib/create-openapi-router.js';
 import { ErrorResponseSchema } from '../../lib/shared-schemas.js';
 import type { DashboardService } from '../../services/dashboard.service.js';
 import type { InsightService } from '../../services/insight.service.js';
+
 import {
   DashboardResponseSchema,
   DashboardQuerySchema,

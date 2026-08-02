@@ -1,12 +1,12 @@
-import type { Repositories } from '../lib/create-repositories.js';
-import { InstagramClient, extractInsightValue } from '../lib/instagram-client.js';
-import { decryptToken } from '../lib/crypto.js';
-import { invalidateCache } from '../lib/cache.js';
 import {
   AccountNotConnectedError,
   InstagramAPIError,
   RateLimitError,
 } from '../errors.js';
+import { invalidateCache } from '../lib/cache.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import { decryptToken } from '../lib/crypto.js';
+import { InstagramClient, extractInsightValue } from '../lib/instagram-client.js';
 
 // Media-level metrics (v25.0, graph.instagram.com). NOTE: correct names are
 // `saved` (not `saves`) and `views` (not `video_views`). `impressions` is still
@@ -48,7 +48,7 @@ const MEDIA_METRICS_STORY = [
  */
 function metricsForMedia(mediaType: string, productType?: string): string[] {
   const pt = (productType ?? '').toUpperCase();
-  const mt = (mediaType ?? '').toUpperCase();
+  const mt = mediaType.toUpperCase();
   if (pt === 'REELS') return MEDIA_METRICS_REELS;
   if (pt === 'STORY' || mt === 'STORY') return MEDIA_METRICS_STORY;
   return MEDIA_METRICS_DEFAULT;
@@ -88,17 +88,18 @@ async function withRetry<T>(
 
       // Only retry recoverable errors (rate limit, network, API timeout)
       if (error instanceof RateLimitError) {
+        const details = error.details as { retryAfterSeconds?: number } | undefined;
         const delay =
-          (error as any).details?.retryAfterSeconds * 1000 ||
+          (details?.retryAfterSeconds ?? 0) * 1000 ||
           baseDelay * Math.pow(2, attempt);
         console.warn(
-          `Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`,
+          `Rate limited, retrying in ${String(delay)}ms (attempt ${String(attempt + 1)}/${String(maxRetries)})`,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
       } else if (error instanceof InstagramAPIError) {
         const delay = baseDelay * Math.pow(2, attempt);
         console.warn(
-          `Instagram API error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}):`,
+          `Instagram API error, retrying in ${String(delay)}ms (attempt ${String(attempt + 1)}/${String(maxRetries)}):`,
           error.message,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -130,7 +131,7 @@ export class SyncService {
     if (counter) counter.count++;
   }
 
-  async triggerSync(tenantId: string, userId: string): Promise<{ syncId: string; status: string }> {
+  async triggerSync(tenantId: string, _userId: string): Promise<{ syncId: string; status: string }> {
     const account = await this.repos.instagram.findAccountByTenantId(tenantId);
     if (!account) throw new AccountNotConnectedError();
 
@@ -157,7 +158,7 @@ export class SyncService {
     try {
       // Get account with encrypted token
       const tokenRecord = await this.repos.instagram.findAccountWithToken(accountId);
-      if (!tokenRecord || !tokenRecord.tokenEncrypted) {
+      if (!tokenRecord?.tokenEncrypted) {
         await this.repos.instagram.updateSyncLog(logId, 'failed', 0, {
           error: 'No encrypted token found',
         });
@@ -465,7 +466,7 @@ export class SyncService {
 
   async backfillFollowerHistory(
     tenantId: string,
-    userId: string,
+    _userId: string,
   ): Promise<{ inserted: number }> {
     const account = await this.repos.instagram.findAccountByTenantId(tenantId);
     if (!account) throw new AccountNotConnectedError();
@@ -489,7 +490,7 @@ export class SyncService {
     return { inserted };
   }
 
-  async getSyncStatus(tenantId: string, userId: string): Promise<{
+  async getSyncStatus(tenantId: string, _userId: string): Promise<{
     status: string;
     lastSyncAt: string | null;
     mediaCount: number;

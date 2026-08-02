@@ -7,12 +7,12 @@ const CONSISTENT_MIN = 5;
 // Ratio mínimo para que el hallazgo valga la pena mostrar (30% mejor)
 const MIN_LIFT = 1.3;
 
-type RankingItem = {
+interface RankingItem {
   mediaType: string;
   saves: number;
   shares: number;
   caption: string | null;
-};
+}
 
 const DAY_LABELS: Record<number, string> = {
   0: 'domingos', 1: 'lunes', 2: 'martes', 3: 'miércoles',
@@ -70,7 +70,9 @@ function findFormatPattern(breakdown: FormatBreakdown[]): ContentFinding | null 
   }));
 
   scored.sort((a, b) => b.score - a.score);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- eligible.length >= 2 guarantees scored[0..1]
   const best = scored[0]!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- eligible.length >= 2 guarantees scored[0..1]
   const second = scored[1]!;
 
   if (second.score === 0 || best.score / second.score < MIN_LIFT) return null;
@@ -101,6 +103,7 @@ function findPostingTimePattern(heatmap: HeatmapCell[]): ContentFinding | null {
   }));
 
   cells.sort((a, b) => b.avgScore - a.avgScore);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- withPosts.length >= 2 guarantees cells[0]
   const best = cells[0]!;
   const overallAvg = cells.reduce((s, c) => s + c.avgScore, 0) / cells.length;
 
@@ -137,7 +140,7 @@ function findTopCommonality(ranking: RankingItem[]): ContentFinding | null {
   if (!dominant || dominant[1] < 2) return null;
 
   const pct = Math.round((dominant[1] / top.length) * 100);
-  const keyNumber = `${pct}%`;
+  const keyNumber = `${String(pct)}%`;
   const label = toFormatLabel(dominant[0]);
 
   return {
@@ -178,6 +181,7 @@ function findCaptionLengthPattern(ranking: RankingItem[]): ContentFinding | null
 
   const grouped = new Map<CaptionBucket, { total: number; count: number }>();
   for (const p of withCaption) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- withCaption filter guarantees caption is a non-empty string
     const bucket = bucketCaption(p.caption!);
     const entry = grouped.get(bucket) ?? { total: 0, count: 0 };
     entry.total += p.saves + p.shares;
@@ -192,7 +196,9 @@ function findCaptionLengthPattern(ranking: RankingItem[]): ContentFinding | null
 
   if (eligible.length < 2) return null;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- eligible.length >= 2 guarantees eligible[0..1]
   const best = eligible[0]!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- eligible.length >= 2 guarantees eligible[0..1]
   const second = eligible[1]!;
   if (second.avg === 0 || best.avg / second.avg < MIN_LIFT) return null;
 

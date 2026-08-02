@@ -24,7 +24,9 @@ const useThemeProviderFunctions = () => {
     [document.documentElement, document.body].forEach((target) => {
       Array.from(target.classList)
         .filter((cls) => cls.startsWith('theme-'))
-        .forEach((cls) => target.classList.remove(cls));
+        .forEach((cls) => {
+          target.classList.remove(cls);
+        });
       target.classList.add(`theme-${theme}`);
     });
   };

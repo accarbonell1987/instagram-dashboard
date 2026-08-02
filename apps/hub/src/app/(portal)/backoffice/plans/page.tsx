@@ -29,6 +29,12 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { ApiError } from '@/lib/api/errors';
+import {
+  listModules,
+  getPlanModules,
+  setPlanModules,
+  type AdminModule,
+} from '@/modules/backoffice/modulo-admin/services/module-admin.service';
 import { planFormSchema, type PlanFormData } from '@/modules/backoffice/planes/lib/plan-schema';
 import {
   listPlans,
@@ -41,12 +47,6 @@ import {
   type CreatePlanParams,
   type UpdatePlanParams,
 } from '@/modules/backoffice/planes/services/plan-admin.service';
-import {
-  listModules,
-  getPlanModules,
-  setPlanModules,
-  type AdminModule,
-} from '@/modules/backoffice/modulo-admin/services/module-admin.service';
 
 // ─── Plan Form Dialog ──────────────────────────────────────────────────────────
 
@@ -147,7 +147,7 @@ function PlanFormDialog({
       const planId = await onSave(params);
 
       // Build quotas array from form fields (skip empty/zero = unlimited)
-      const quotas: Array<{ resourceType: string; limit: number; period: string }> = [];
+      const quotas: { resourceType: string; limit: number; period: string }[] = [];
       if (data.deepseekTokensLimit != null && data.deepseekTokensLimit > 0) {
         quotas.push({ resourceType: 'deepseek_tokens', limit: data.deepseekTokensLimit, period: 'month' });
       }
@@ -551,7 +551,7 @@ function ModuleAssignmentDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="bg-muted h-5 w-24 animate-pulse rounded" />
-                {[...Array(3)].map((_, i) => (
+                {Array.from({ length: 3 }).map((_, i) => (
                   <div
                     key={i}
                     className="bg-muted h-[52px] animate-pulse rounded-md"
@@ -560,7 +560,7 @@ function ModuleAssignmentDialog({
               </div>
               <div className="space-y-2">
                 <div className="bg-muted h-5 w-24 animate-pulse rounded" />
-                {[...Array(3)].map((_, i) => (
+                {Array.from({ length: 3 }).map((_, i) => (
                   <div
                     key={i}
                     className="bg-muted h-[52px] animate-pulse rounded-md"
@@ -958,6 +958,7 @@ export default function PlansPage(): JSX.Element {
             .slice(0, 3);
           setPlanModulesMap((prev) => {
             const next = new Map(prev);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- onSaved only fires while the dialog is open, so moduleDialogPlan is non-null
             next.set(moduleDialogPlan!.id, { count: moduleIds.length, names });
             return next;
           });

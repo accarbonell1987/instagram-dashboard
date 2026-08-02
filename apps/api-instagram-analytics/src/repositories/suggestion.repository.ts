@@ -1,5 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
-import { SuggestionCategory, SuggestionStatus, SuggestionOutcome } from '@prisma/client';
+import { SuggestionStatus, type PrismaClient, type SuggestionCategory, type SuggestionOutcome } from '@prisma/client';
 
 export type { SuggestionCategory, SuggestionStatus, SuggestionOutcome };
 

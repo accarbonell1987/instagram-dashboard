@@ -34,6 +34,7 @@ describe('InvitePage', () => {
   it('muestra "ya fue usada" cuando la API retorna 409', async () => {
     applyScenario('invitation-used');
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- async act relies on a returned Promise to flush effects
     await act(async () => {
       renderWithProviders(
         <InvitePage params={Promise.resolve({ token: 'test-token' })} />
@@ -46,7 +47,7 @@ describe('InvitePage', () => {
     });
 
     // Assert the "already used" view is shown
-    expect(screen.getByText(/ya fue usada/i)).toBeInTheDocument();
+    expect(screen.getByText(/ya utilizada/i)).toBeInTheDocument();
 
     // Assert the "Aceptar invitación" button is NOT shown
     expect(screen.queryByRole('button', { name: /Aceptar invitación/i })).not.toBeInTheDocument();

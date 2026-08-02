@@ -3,9 +3,16 @@
  * TDD: RED phase — tests written before implementation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CarouselService } from './carousel.service.js';
-import type { UsageTracker } from './usage-tracker.service.js';
+
 import { QuotaExceededError } from '../errors.js';
+import type { ImageProvider } from '../lib/image/image-provider.js';
+import type { ImageStorage } from '../lib/image/image-storage.js';
+import type { ICarouselRepository } from '../repositories/carousel.repository.js';
+import type { InstagramRepository } from '../repositories/instagram/index.js';
+
+import { CarouselService } from './carousel.service.js';
+import type { ScriptGeneratorService } from './script-generator.service.js';
+import type { UsageTracker } from './usage-tracker.service.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -52,6 +59,17 @@ const mockImageProvider = {
 const mockImageStorage = {
   saveImage: vi.fn(),
 };
+
+function createCarouselService(tracker?: UsageTracker): CarouselService {
+  return new CarouselService(
+    mockCarouselRepo as unknown as ICarouselRepository,
+    mockInstagramRepo as unknown as InstagramRepository,
+    mockScriptGenerator as unknown as ScriptGeneratorService,
+    mockImageProvider as unknown as ImageProvider,
+    mockImageStorage as unknown as ImageStorage,
+    tracker,
+  );
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -138,28 +156,27 @@ describe('CarouselService (UsageTracker enforcement)', () => {
     mockInstagramRepo.getAgentConfig.mockResolvedValue(null);
     mockInstagramRepo.getFalApiKeyEncrypted.mockResolvedValue('encrypted-key');
     mockScriptGenerator.generateScript.mockResolvedValue(makeGeneratedSlides());
+    // Default the image pipeline to succeed so fire-and-forget background
+    // generation settles cleanly; failure-path tests override these explicitly.
+    mockImageProvider.generateImage.mockResolvedValue(Buffer.from('img'));
+    mockImageStorage.saveImage.mockResolvedValue('http://localhost:3003/img.png');
 
-    service = new CarouselService(
-      mockCarouselRepo as any,
-      mockInstagramRepo as any,
-      mockScriptGenerator as any,
-      mockImageProvider as any,
-      mockImageStorage as any,
-      mockTracker,
-    );
+    service = createCarouselService(mockTracker);
   });
 
   describe('createCarousel()', () => {
     it('calls checkQuota before fire-and-forget', async () => {
       await service.createCarousel('tenant-1', 'Test topic');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'fal_images');
-      
+
       // Verify checkQuota was called before carousel.create
       const checkCalls = (mockTracker.checkQuota as ReturnType<typeof vi.fn>).mock.invocationCallOrder;
       const createCall = mockCarouselRepo.create.mock.invocationCallOrder[0];
-      expect(checkCalls[0]).toBeLessThan(createCall!);
+      expect(checkCalls[0]).toBeLessThan(createCall ?? 0);
     });
 
     it('throws QuotaExceededError when token quota exceeded', async () => {
@@ -195,6 +212,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       await service._generateAsync('car-1', 'tenant-1', 'Test topic');
 
       // Should log image_gen with success count (2 slides generated)
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.log).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: 'tenant-1',
@@ -216,7 +234,8 @@ describe('CarouselService (UsageTracker enforcement)', () => {
 
       // log should NOT be called if successCount is 0
       const imageLogCalls = (mockTracker.log as ReturnType<typeof vi.fn>).mock.calls.filter(
-        (call: any[]) => call[0]?.operation === 'image_gen',
+        (call: unknown[]) =>
+          (call[0] as { operation?: string } | undefined)?.operation === 'image_gen',
       );
       expect(imageLogCalls).toHaveLength(0);
     });
@@ -231,6 +250,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
 
       await service.regenerateCarousel('car-1', 'tenant-1', { topic: 'New topic' });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
     });
 
@@ -260,6 +280,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       // regenerateSlide fires-and-forgets, but checkQuota runs synchronously before
       await service.regenerateSlide('car-1', 'slide-1', 'tenant-1');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'fal_images');
     });
 
@@ -312,14 +333,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
 
   describe('constructor', () => {
     it('accepts UsageTracker as 6th constructor param', () => {
-      const svc = new CarouselService(
-        mockCarouselRepo as any,
-        mockInstagramRepo as any,
-        mockScriptGenerator as any,
-        mockImageProvider as any,
-        mockImageStorage as any,
-        mockTracker,
-      );
+      const svc = createCarouselService(mockTracker);
       expect(svc).toBeInstanceOf(CarouselService);
     });
   });
@@ -376,13 +390,7 @@ describe('CarouselService — upload carousel flow', () => {
     mockInstagramRepo.getFalApiKeyEncrypted.mockResolvedValue('encrypted-key');
     mockImageStorage.saveImage.mockResolvedValue('/carousels/car-1/slide-1.jpg');
 
-    service = new CarouselService(
-      mockCarouselRepo as any,
-      mockInstagramRepo as any,
-      mockScriptGenerator as any,
-      mockImageProvider as any,
-      mockImageStorage as any,
-    );
+    service = createCarouselService();
   });
 
   describe('createUploadCarousel()', () => {
@@ -487,14 +495,7 @@ describe('CarouselService — upload carousel flow', () => {
         uploadCarousel({ slides: [uploadSlide({ imageMode: 'img2img', visualPrompt: 'Prompt' })] }),
       );
 
-      const svcWithTracker = new CarouselService(
-        mockCarouselRepo as any,
-        mockInstagramRepo as any,
-        mockScriptGenerator as any,
-        mockImageProvider as any,
-        mockImageStorage as any,
-        tracker,
-      );
+      const svcWithTracker = createCarouselService(tracker);
 
       await expect(
         svcWithTracker.uploadSlideImage('car-1', 'slide-1', 'tenant-1', Buffer.from('img')),

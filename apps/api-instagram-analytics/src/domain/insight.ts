@@ -112,7 +112,7 @@ export interface DashboardData {
     totalReach: number;
   };
   northStar?: NorthStarMetrics;
-  ranking: Array<{
+  ranking: {
     id: string;
     igMediaId: string;
     mediaType: string;
@@ -126,7 +126,7 @@ export interface DashboardData {
     comments: number;
     reach: number;
     totalEngagement: number;
-  }>;
+  }[];
   formatBreakdown: FormatBreakdown[];
   heatmap: HeatmapCell[];
   insight: InsightResult;

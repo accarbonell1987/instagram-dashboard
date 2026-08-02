@@ -2,7 +2,7 @@ import { apiFetchWithInterceptors } from '@/lib/api/interceptors'
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
-export type AdminModule = {
+export interface AdminModule {
   id: string
   name: string
   description?: string
@@ -10,18 +10,18 @@ export type AdminModule = {
   active: boolean
 }
 
-export type ListModulesResponse = {
+export interface ListModulesResponse {
   modules: AdminModule[]
 }
 
-export type CreateModuleParams = {
+export interface CreateModuleParams {
   id: string
   name: string
   description?: string | undefined
   defaultUrl: string
 }
 
-export type UpdateModuleParams = {
+export interface UpdateModuleParams {
   name?: string | undefined
   description?: string | undefined
   defaultUrl?: string | undefined

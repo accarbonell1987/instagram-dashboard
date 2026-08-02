@@ -1,14 +1,15 @@
 'use client'
 
+import { Button } from '@core/ui'
+import { Trash2, Sparkles } from 'lucide-react'
 import type { JSX } from 'react'
 import { useState } from 'react'
 
-import { Button } from '@core/ui'
-import { Trash2, Sparkles } from 'lucide-react'
 
 import type { ContentSuggestion, SuggestionBatch } from '../types/instagram.types'
-import { SuggestionCard } from './suggestion-card'
+
 import { GenerateSuggestionModal } from './generate-suggestion-modal'
+import { SuggestionCard } from './suggestion-card'
 
 function relativeTime(dateStr: string): string {
   const date = new Date(dateStr)
@@ -16,11 +17,11 @@ function relativeTime(dateStr: string): string {
   const diffMs = now.getTime() - date.getTime()
   const mins = Math.floor(diffMs / 60000)
   if (mins < 1) return 'ahora'
-  if (mins < 60) return `hace ${mins} min`
+  if (mins < 60) return `hace ${String(mins)} min`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `hace ${hours} h`
+  if (hours < 24) return `hace ${String(hours)} h`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `hace ${days} día${days !== 1 ? 's' : ''}`
+  if (days < 7) return `hace ${String(days)} día${days !== 1 ? 's' : ''}`
   return date.toLocaleDateString('es-AR')
 }
 
@@ -65,7 +66,7 @@ export function SuggestionsPanel({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => { setIsModalOpen(true); }}
               className="text-violet-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 shrink-0"
               title="Generar idea con IA"
               aria-label="Generar idea de contenido con IA"
@@ -97,7 +98,7 @@ export function SuggestionsPanel({
         ) : hasBatches ? (
           /* Grouped by batch */
           <div className="space-y-5">
-            {suggestionBatches!.map((batch) => (
+            {suggestionBatches.map((batch) => (
               <div key={batch.id}>
                 {/* Batch header */}
                 <div className="mb-2">
@@ -145,7 +146,7 @@ export function SuggestionsPanel({
 
     {isModalOpen && onRefreshSuggestions && (
       <GenerateSuggestionModal
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => { setIsModalOpen(false); }}
         onGenerated={onRefreshSuggestions}
       />
     )}

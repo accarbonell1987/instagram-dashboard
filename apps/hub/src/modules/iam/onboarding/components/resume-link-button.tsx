@@ -1,8 +1,8 @@
 'use client';
 
+import { Button } from '@core/ui';
 import { useState, type JSX } from 'react';
 
-import { Button } from '@core/ui';
 import { requestResumeLink } from '../services/draft.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

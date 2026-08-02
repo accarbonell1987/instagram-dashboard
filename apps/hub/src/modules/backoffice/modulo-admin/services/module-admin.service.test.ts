@@ -1,7 +1,6 @@
-import { describe, it, expect } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { AuthError, ForbiddenError, ConflictError } from '@/lib/api/errors'
-import { server } from '@/lib/mocks/server'
+import { describe, it, expect } from 'vitest'
+
 import {
   listModules,
   getModule,
@@ -9,6 +8,10 @@ import {
   updateModule,
   deleteModule,
 } from './module-admin.service'
+
+import { AuthError, ForbiddenError } from '@/lib/api/errors'
+import { server } from '@/lib/mocks/server'
+
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080'
 
@@ -25,7 +28,8 @@ describe('module-admin.service — listModules', () => {
     )
     const result = await listModules()
     expect(result.modules).toHaveLength(2)
-    expect(result.modules[0]!['id']).toBe('billing')
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result.modules[0]!.id).toBe('billing')
   })
 
   it('throws AuthError on 401', async () => {
@@ -57,7 +61,7 @@ describe('module-admin.service — getModule', () => {
       })
     )
     const result = await getModule('billing')
-    expect(result['id']).toBe('billing')
+    expect(result.id).toBe('billing')
     expect(result.name).toBe('Billing')
   })
 })
@@ -65,34 +69,34 @@ describe('module-admin.service — getModule', () => {
 describe('module-admin.service — createModule', () => {
   it('creates a module via POST /admin/modules', async () => {
     const mockModule = { id: 'new-mod', name: 'New Module', description: 'desc', defaultUrl: '/new', active: true }
-    let capturedBody: any = null
+    let capturedBody: Record<string, unknown> = {}
     server.use(
       http.post(`${BASE}/admin/modules`, async ({ request }) => {
-        capturedBody = await request.json()
+        capturedBody = (await request.json()) as Record<string, unknown>
         return HttpResponse.json(mockModule, { status: 201 })
       })
     )
     const result = await createModule({ id: 'new-mod', name: 'New Module', defaultUrl: '/new' })
-    expect(result['id']).toBe('new-mod')
+    expect(result.id).toBe('new-mod')
     expect(capturedBody['id']).toBe('new-mod')
-    expect(capturedBody.name).toBe('New Module')
+    expect(capturedBody['name']).toBe('New Module')
   })
 })
 
 describe('module-admin.service — updateModule', () => {
   it('updates a module via PATCH /admin/modules/:id', async () => {
     const mockModule = { id: 'billing', name: 'Updated', description: undefined, defaultUrl: '/billing', active: true }
-    let capturedBody: any = null
+    let capturedBody: Record<string, unknown> = {}
     server.use(
       http.patch(`${BASE}/admin/modules/:id`, async ({ request, params }) => {
-        capturedBody = await request.json()
+        capturedBody = (await request.json()) as Record<string, unknown>
         expect(params['id']).toBe('billing')
         return HttpResponse.json(mockModule, { status: 200 })
       })
     )
     const result = await updateModule('billing', { name: 'Updated' })
     expect(result.name).toBe('Updated')
-    expect(capturedBody.name).toBe('Updated')
+    expect(capturedBody['name']).toBe('Updated')
   })
 })
 

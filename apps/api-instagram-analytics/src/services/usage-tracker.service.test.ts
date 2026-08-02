@@ -1,6 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { UsageTracker } from './usage-tracker.service.js';
 import type { PrismaClient } from '@prisma/client';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+
+import { UsageTracker } from './usage-tracker.service.js';
+
+// Access to UsageTracker private members overridden/inspected in tests
+interface UsageTrackerInternals {
+  cache: Map<string, { quotas: unknown[]; fetchedAt: number }>;
+  getPlanQuotas: Mock;
+}
+
+function internals(tracker: UsageTracker): UsageTrackerInternals {
+  return tracker as unknown as UsageTrackerInternals;
+}
 
 // Helper to create a basic mock PrismaClient
 function makeMockPrisma(overrides: Record<string, unknown> = {}) {
@@ -12,21 +23,16 @@ function makeMockPrisma(overrides: Record<string, unknown> = {}) {
       count: vi.fn(),
     },
     ...overrides,
-  } as unknown as PrismaClient;
-}
-
-// Helper to create a mock fetch
-function makeMockFetch() {
-  return vi.fn();
+  } as unknown as PrismaClient & {
+    aiUsageLog: Record<'create' | 'aggregate' | 'groupBy' | 'count', Mock>;
+  };
 }
 
 describe('UsageTracker', () => {
   let mockPrisma: ReturnType<typeof makeMockPrisma>;
-  let mockFetch: ReturnType<typeof makeMockFetch>;
 
   beforeEach(() => {
     mockPrisma = makeMockPrisma();
-    mockFetch = makeMockFetch();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-15T12:00:00.000Z'));
   });
@@ -53,6 +59,7 @@ describe('UsageTracker', () => {
         promptTokens: 100,
         completionTokens: 200,
       });
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockPrisma.aiUsageLog.create).not.toHaveBeenCalled();
     });
 
@@ -88,6 +95,7 @@ describe('UsageTracker', () => {
         completionTokens: 350,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockPrisma.aiUsageLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           tenantId: 'tenant-1',
@@ -96,7 +104,7 @@ describe('UsageTracker', () => {
           promptTokens: 150,
           completionTokens: 350,
           imageCount: 0,
-        }),
+        }) as object,
       });
     });
 
@@ -110,6 +118,7 @@ describe('UsageTracker', () => {
         imageCount: 3,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockPrisma.aiUsageLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           tenantId: 'tenant-1',
@@ -117,7 +126,7 @@ describe('UsageTracker', () => {
           imageCount: 3,
           promptTokens: 0,
           completionTokens: 0,
-        }),
+        }) as object,
       });
     });
   });
@@ -138,7 +147,7 @@ describe('UsageTracker', () => {
       });
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
-      (tracker as any).getPlanQuotas = vi.fn().mockResolvedValue(mockQuotasResponse);
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(mockQuotasResponse);
 
       const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
       expect(result.allowed).toBe(true);
@@ -152,7 +161,7 @@ describe('UsageTracker', () => {
       });
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
-      (tracker as any).getPlanQuotas = vi.fn().mockResolvedValue(mockQuotasResponse);
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(mockQuotasResponse);
 
       const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
       expect(result.allowed).toBe(false);
@@ -166,7 +175,7 @@ describe('UsageTracker', () => {
       ];
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
-      (tracker as any).getPlanQuotas = vi.fn().mockResolvedValue(unlimitedQuotas);
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(unlimitedQuotas);
 
       const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
       expect(result.allowed).toBe(true);
@@ -180,7 +189,7 @@ describe('UsageTracker', () => {
       ];
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
-      (tracker as any).getPlanQuotas = vi.fn().mockResolvedValue(partialQuotas);
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(partialQuotas);
 
       const result = await tracker.checkQuota('tenant-1', 'fal_images');
       expect(result.allowed).toBe(true);
@@ -202,7 +211,7 @@ describe('UsageTracker', () => {
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
       // Override getPlanQuotas to return quotas
-      (tracker as any).getPlanQuotas = vi.fn().mockResolvedValue([
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue([
         { resourceType: 'deepseek_tokens', limit: 100000, period: 'month' },
         { resourceType: 'fal_images', limit: 50, period: 'month' },
         { resourceType: 'chat_sessions', limit: 30, period: 'month' },
@@ -224,21 +233,21 @@ describe('UsageTracker', () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
 
       // Warm the cache
-      (tracker as any).cache.set('plan-pro', { quotas: [], fetchedAt: Date.now() });
+      internals(tracker).cache.set('plan-pro', { quotas: [], fetchedAt: Date.now() });
 
       await tracker.purgeCache();
-      expect((tracker as any).cache.size).toBe(0);
+      expect(internals(tracker).cache.size).toBe(0);
     });
 
     it('clears only specific planId when provided', async () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
 
-      (tracker as any).cache.set('plan-pro', { quotas: [], fetchedAt: Date.now() });
-      (tracker as any).cache.set('plan-starter', { quotas: [], fetchedAt: Date.now() });
+      internals(tracker).cache.set('plan-pro', { quotas: [], fetchedAt: Date.now() });
+      internals(tracker).cache.set('plan-starter', { quotas: [], fetchedAt: Date.now() });
 
       await tracker.purgeCache('plan-pro');
-      expect((tracker as any).cache.has('plan-pro')).toBe(false);
-      expect((tracker as any).cache.has('plan-starter')).toBe(true);
+      expect(internals(tracker).cache.has('plan-pro')).toBe(false);
+      expect(internals(tracker).cache.has('plan-starter')).toBe(true);
     });
   });
 
@@ -250,7 +259,7 @@ describe('UsageTracker', () => {
       const quotas = [{ resourceType: 'deepseek_tokens', limit: 5000, period: 'month' }];
 
       // Pre-populate cache
-      (tracker as any).cache.set('plan-pro', {
+      internals(tracker).cache.set('plan-pro', {
         quotas,
         fetchedAt: Date.now() - 30_000, // 30s ago — within TTL
       });
@@ -261,7 +270,7 @@ describe('UsageTracker', () => {
 
       // Mock getPlanQuotas to verify it's NOT called (cache hit)
       const getPlanQuotasSpy = vi.fn().mockResolvedValue(quotas);
-      (tracker as any).getPlanQuotas = getPlanQuotasSpy;
+      internals(tracker).getPlanQuotas = getPlanQuotasSpy;
 
       const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
       expect(result.allowed).toBe(true);
@@ -272,7 +281,7 @@ describe('UsageTracker', () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
 
       // Pre-populate expired cache
-      (tracker as any).cache.set('plan-pro', {
+      internals(tracker).cache.set('plan-pro', {
         quotas: [{ resourceType: 'deepseek_tokens', limit: 1000, period: 'month' }],
         fetchedAt: Date.now() - 120_000, // 120s ago — expired
       });
@@ -284,7 +293,7 @@ describe('UsageTracker', () => {
       // fetchFn will fail because we didn't set up real mocks — but cache is expired so it tries to fetch
       // Instead, mock getPlanQuotas to return different quotas
       const newQuotas = [{ resourceType: 'deepseek_tokens', limit: 500000, period: 'month' }];
-      (tracker as any).getPlanQuotas = vi.fn().mockResolvedValue(newQuotas);
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(newQuotas);
 
       const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
       // Should use the newly fetched (mocked) quotas
@@ -301,7 +310,7 @@ describe('UsageTracker', () => {
       });
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
-      (tracker as any).getPlanQuotas = vi.fn().mockResolvedValue([
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue([
         { resourceType: 'fal_images', limit: 50, period: 'month' },
       ]);
 
@@ -317,7 +326,7 @@ describe('UsageTracker', () => {
       });
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
-      (tracker as any).getPlanQuotas = vi.fn().mockResolvedValue([
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue([
         { resourceType: 'fal_images', limit: 50, period: 'month' },
       ]);
 

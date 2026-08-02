@@ -11,10 +11,12 @@ import {
 } from '@core/ui';
 import { useState, type JSX } from 'react';
 
-import type { components } from '@/lib/api/types';
-import { ConflictError } from '@/lib/api/errors';
 import { requestPlanChange } from '../services/plan-change.service';
+
 import { PlanCatalog } from './plan-catalog';
+
+import { ConflictError } from '@/lib/api/errors';
+import type { components } from '@/lib/api/types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -106,7 +108,7 @@ export function PlanChangeRequestDialog({
           {success ? (
             <Button
               type="button"
-              onClick={() => handleOpenChange(false)}
+              onClick={() => { handleOpenChange(false); }}
             >
               Cerrar
             </Button>
@@ -115,7 +117,7 @@ export function PlanChangeRequestDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => handleOpenChange(false)}
+                onClick={() => { handleOpenChange(false); }}
                 disabled={isLoading}
               >
                 Cancelar

@@ -1,7 +1,10 @@
-import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { UsageMeter } from './usage-meter'
+import { describe, it, expect } from 'vitest'
+
 import type { UsageResponse } from '../types/instagram.types'
+
+import { UsageMeter } from './usage-meter'
+
 
 // ── Helpers ──
 

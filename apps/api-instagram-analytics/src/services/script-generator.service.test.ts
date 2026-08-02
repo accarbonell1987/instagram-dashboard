@@ -3,9 +3,12 @@
  * TDD: RED phase — tests written before implementation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { QuotaExceededError } from '../errors.js';
+import type { DeepSeekClient } from '../lib/deepseek-client.js';
+
 import { ScriptGeneratorService } from './script-generator.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
-import { QuotaExceededError } from '../errors.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -63,12 +66,12 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
   describe('constructor', () => {
     it('accepts UsageTracker as optional 2nd param', () => {
       const tracker = createMockUsageTracker();
-      const svc = new ScriptGeneratorService(mockDeepseekClient as any, tracker);
+      const svc = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient, tracker);
       expect(svc).toBeInstanceOf(ScriptGeneratorService);
     });
 
     it('works without UsageTracker (backward compat)', () => {
-      const svc = new ScriptGeneratorService(mockDeepseekClient as any);
+      const svc = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient);
       expect(svc).toBeInstanceOf(ScriptGeneratorService);
     });
   });
@@ -77,7 +80,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(mockDeepseekClient as any, mockTracker);
+      service = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient, mockTracker);
     });
 
     it('calls checkQuota before DeepSeek when tenantId is provided', async () => {
@@ -85,7 +88,9 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
 
       await service.generateScript('Cómo crecer en Instagram', undefined, 'tenant-1');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledBefore(mockDeepSeekChat);
     });
 
@@ -109,6 +114,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
 
       await service.generateScript('Tema de prueba', 'Contexto base', 'tenant-1');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.log).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
         operation: 'script',
@@ -125,6 +131,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
         service.generateScript('Tema inválido', undefined, 'tenant-1'),
       ).rejects.toThrow('API error');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.log).not.toHaveBeenCalled();
     });
   });
@@ -133,7 +140,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(mockDeepseekClient as any, mockTracker);
+      service = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient, mockTracker);
     });
 
     it('does NOT call checkQuota when tenantId is NOT provided', async () => {
@@ -141,7 +148,9 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
 
       await service.generateScript('Tema sin tenant');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).not.toHaveBeenCalled();
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.log).not.toHaveBeenCalled();
     });
 
@@ -151,14 +160,14 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
       const result = await service.generateScript('Tema sin tenant');
 
       expect(result).toHaveLength(3);
-      expect(result[0]!.text).toBe('¿Querés más seguidores?');
+      expect(result[0]?.text).toBe('¿Querés más seguidores?');
     });
   });
 
   describe('generateScript() with usageTracker undefined', () => {
     beforeEach(() => {
       vi.clearAllMocks();
-      service = new ScriptGeneratorService(mockDeepseekClient as any);
+      service = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient);
     });
 
     it('generates script normally without usageTracker and tenantId', async () => {
@@ -175,7 +184,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(mockDeepseekClient as any, mockTracker);
+      service = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient, mockTracker);
     });
 
     it('passes deepseek_tokens as resourceType to checkQuota', async () => {
@@ -183,8 +192,8 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
 
       await service.generateScript('topic', undefined, 'tenant-1');
 
-      const callArgs = (mockTracker.checkQuota as ReturnType<typeof vi.fn>).mock.calls[0]!;
-      expect(callArgs[1]).toBe('deepseek_tokens');
+      const callArgs = (mockTracker.checkQuota as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(callArgs?.[1]).toBe('deepseek_tokens');
     });
   });
 });

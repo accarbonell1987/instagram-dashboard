@@ -1,7 +1,9 @@
 'use client'
 
 import { Skeleton } from '@core/ui'
+
 import type { ContentFinding, FormatBreakdown, HeatmapCell, TopPost } from '../types/instagram.types'
+
 import { FindingCard } from './finding-card'
 import { FormatBreakdownChart } from './format-breakdown-chart'
 import { PostingHeatmap } from './posting-heatmap'
@@ -105,7 +107,7 @@ export function ContentIntelligenceSection({
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {findings.map((finding, i) => (
-              <FindingCard key={`${finding.type}-${i}`} finding={finding} />
+              <FindingCard key={`${finding.type}-${String(i)}`} finding={finding} />
             ))}
           </div>
         )}

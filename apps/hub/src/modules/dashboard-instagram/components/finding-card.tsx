@@ -1,6 +1,7 @@
 'use client'
 
 import type { JSX } from 'react'
+
 import type { ContentFinding } from '../types/instagram.types'
 
 // ── Icons (inline SVG) ────────────────────────────────────────────────────────

@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DashboardService } from './dashboard.service.js';
-import type { InstagramRepository } from '../repositories/instagram/index.js';
+
 import { AccountNotConnectedError, NotFoundError } from '../errors.js';
 import { clearAllCache } from '../lib/cache.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import type { InstagramRepository } from '../repositories/instagram/index.js';
+
+import { DashboardService } from './dashboard.service.js';
 
 function createMockRepo(): {
   instagram: Record<keyof InstagramRepository, ReturnType<typeof vi.fn>>;
@@ -71,7 +74,7 @@ describe('DashboardService', () => {
 
   beforeEach(() => {
     repo = createMockRepo();
-    service = new DashboardService(repo as any);
+    service = new DashboardService(repo as unknown as Repositories);
     clearAllCache();
   });
 
@@ -334,9 +337,9 @@ describe('DashboardService', () => {
       const result = await service.getGrowthData('tenant-1', 'user-1', 'followers', '7d');
 
       expect(result).toHaveLength(2);
-      expect(result[0]!.date).toBe('2026-06-15T10:00:00.000Z');
-      expect(result[0]!.value).toBe(1000);
-      expect(result[1]!.value).toBe(1050);
+      expect(result[0]?.date).toBe('2026-06-15T10:00:00.000Z');
+      expect(result[0]?.value).toBe(1000);
+      expect(result[1]?.value).toBe(1050);
     });
 
     it('computes engagement rate correctly', async () => {
@@ -349,7 +352,7 @@ describe('DashboardService', () => {
       const result = await service.getGrowthData('tenant-1', 'user-1', 'engagement', '7d');
 
       expect(result).toHaveLength(1);
-      expect(result[0]!.value).toBe(17);
+      expect(result[0]?.value).toBe(17);
     });
 
     it('returns 0 for engagement when impressions ≤ 0', async () => {
@@ -362,7 +365,7 @@ describe('DashboardService', () => {
 
       const result = await service.getGrowthData('tenant-1', 'user-1', 'engagement', '7d');
 
-      expect(result[0]!.value).toBe(0);
+      expect(result[0]?.value).toBe(0);
     });
 
     it('returns empty array when no snapshots in period', async () => {
@@ -385,7 +388,7 @@ describe('DashboardService', () => {
 
       await service.getGrowthData('tenant-1', 'user-1', 'impressions', '7d');
 
-      const sinceArg = repo.instagram.getAccountInsightHistory.mock.calls[0]![1] as Date;
+      const sinceArg = repo.instagram.getAccountInsightHistory.mock.calls[0]?.[1] as Date;
       const diffDays = (now - sinceArg.getTime()) / (24 * 60 * 60 * 1000);
       expect(diffDays).toBeCloseTo(7, 0);
     });
@@ -400,7 +403,7 @@ describe('DashboardService', () => {
 
       const result = await service.getGrowthData('tenant-1', 'user-1', 'profileViews', '7d');
 
-      expect(result[0]!.value).toBe(42);
+      expect(result[0]?.value).toBe(42);
     });
   });
 });

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
 
 import { Button } from '@core/ui'
 import { Eye, Bookmark, Share2, MessageCircle, Play, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
 
 import type { ReelMedia } from '../types/instagram.types'
 
@@ -182,7 +182,7 @@ export function ReelsList({ reels, onSelectReel }: ReelsListProps) {
                 key={key}
                 variant={sortKey === key ? 'default' : 'secondary'}
                 size="sm"
-                onClick={() => handleSortChange(key)}
+                onClick={() => { handleSortChange(key); }}
               >
                 {label}
               </Button>
@@ -204,7 +204,7 @@ export function ReelsList({ reels, onSelectReel }: ReelsListProps) {
       >
         {pageReels.map((reel) => (
           <div key={reel.id} role="listitem">
-            <ReelThumbnail reel={reel} onClick={() => onSelectReel(reel.id)} />
+            <ReelThumbnail reel={reel} onClick={() => { onSelectReel(reel.id); }} />
           </div>
         ))}
       </div>
@@ -215,7 +215,7 @@ export function ReelsList({ reels, onSelectReel }: ReelsListProps) {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => { setPage((p) => Math.max(1, p - 1)); }}
             disabled={page === 1}
             aria-label="Página anterior"
           >
@@ -229,8 +229,8 @@ export function ReelsList({ reels, onSelectReel }: ReelsListProps) {
                 key={p}
                 variant={p === page ? 'default' : 'secondary'}
                 size="sm"
-                onClick={() => setPage(p)}
-                aria-label={`Ir a página ${p}`}
+                onClick={() => { setPage(p); }}
+                aria-label={`Ir a página ${String(p)}`}
                 aria-current={p === page ? 'page' : undefined}
               >
                 {p}
@@ -241,7 +241,7 @@ export function ReelsList({ reels, onSelectReel }: ReelsListProps) {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); }}
             disabled={page === totalPages}
             aria-label="Página siguiente"
           >

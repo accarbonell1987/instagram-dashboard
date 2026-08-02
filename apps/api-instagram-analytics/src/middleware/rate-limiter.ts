@@ -1,4 +1,5 @@
 import { createMiddleware } from 'hono/factory';
+
 import { RateLimitError } from '../errors.js';
 
 const counters = new Map<string, { count: number; windowStart: number }>();

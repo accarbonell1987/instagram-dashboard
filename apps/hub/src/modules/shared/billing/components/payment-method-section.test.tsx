@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { describe, it, expect } from 'vitest';
+
+import { PaymentMethodSection } from './payment-method-section';
 
 import { seedDb } from '@/lib/mocks/seed';
 import { server } from '@/lib/mocks/server';
-import { http, HttpResponse } from 'msw';
-
-import { PaymentMethodSection } from './payment-method-section';
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080';
 
@@ -72,7 +72,7 @@ describe('PaymentMethodSection', () => {
       // Intercept to delay response
       server.use(
         http.post(`${BASE}/billing/payment-method`, async () => {
-          await new Promise(() => {}); // never resolves
+          await new Promise(() => { /* never resolves */ });
         })
       );
 

@@ -133,9 +133,10 @@ describe('instagram MSW handlers', () => {
 
       expect(body.success).toBe(true);
       expect(body.data.data).toBeInstanceOf(Array);
-      expect(body.data.total).toBe(24);
+      expect(body.data.data).toHaveLength(6);
+      expect(body.data.total).toBe(6);
       expect(body.data.page).toBe(1);
-      expect(body.data.pageSize).toBe(10);
+      expect(body.data.pageSize).toBe(50);
     });
   });
 

@@ -1,8 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
-import { PrismaInstagramRepository } from '../repositories/instagram/index.js';
-import { PrismaChatMessageRepository } from '../repositories/chat-message.repository.js';
-import { PrismaSuggestionRepository } from '../repositories/suggestion.repository.js';
+
 import { PrismaCarouselRepository } from '../repositories/carousel.repository.js';
+import { PrismaChatMessageRepository } from '../repositories/chat-message.repository.js';
+import { PrismaInstagramRepository } from '../repositories/instagram/index.js';
+import { PrismaSuggestionRepository } from '../repositories/suggestion.repository.js';
 
 export type { IChatMessageRepository } from '../repositories/chat-message.repository.js';
 export type { ISuggestionRepository } from '../repositories/suggestion.repository.js';

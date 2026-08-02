@@ -1,7 +1,8 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { JWTPayload } from 'jose';
-import { UnauthorizedError, ForbiddenError } from '../errors.js';
+
 import { config } from '../config.js';
+import { UnauthorizedError, ForbiddenError } from '../errors.js';
 
 export interface TenantContext {
   userId: string;
@@ -29,9 +30,7 @@ interface AccessTokenClaims extends JWTPayload {
 let _jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
 function getJWKS() {
-  if (!_jwks) {
-    _jwks = createRemoteJWKSet(new URL(`${config.IAM_JWKS_URL}/.well-known/jwks.json`));
-  }
+  _jwks ??= createRemoteJWKSet(new URL(`${config.IAM_JWKS_URL}/.well-known/jwks.json`));
   return _jwks;
 }
 

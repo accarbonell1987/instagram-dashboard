@@ -1,8 +1,8 @@
 'use client';
 
+import { Button, Checkbox, Label } from '@core/ui';
 import { useState } from 'react';
 
-import { Button, Checkbox, Label } from '@core/ui';
 import { getOAuthUrl } from '../services/instagram.service';
 
 export function ConnectAccount() {
@@ -69,7 +69,7 @@ export function ConnectAccount() {
           <Checkbox
             id="permanent-binding"
             checked={confirmed}
-            onCheckedChange={(checked) => setConfirmed(checked === true)}
+            onCheckedChange={(checked) => { setConfirmed(checked === true); }}
             className="mt-0.5"
           />
           <Label htmlFor="permanent-binding" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">

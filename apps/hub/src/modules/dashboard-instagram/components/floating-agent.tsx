@@ -1,21 +1,23 @@
 'use client'
 
+import { Button } from '@core/ui'
+import { MessageCircle, X, Bot, Maximize2, Minimize2, Settings } from 'lucide-react'
 import type { JSX } from 'react'
 import { useState, useEffect } from 'react'
 
-import { Button } from '@core/ui'
-import { MessageCircle, X, Bot, Maximize2, Minimize2, Settings } from 'lucide-react'
 
-import type { UseGrowthAgentResult } from './chat-panel.types'
-import type { ContentSuggestion, UsageResponse } from '../types/instagram.types'
-import { ChatPanel } from './chat-panel'
-import { SuggestionsPanel } from './suggestions-panel'
-import { CarouselsSection } from './carousels-section'
-import { CarouselPreviewPanel } from './carousel-preview-panel'
-import { ScriptPreviewModal } from './script-preview-modal'
-import { AgentSettingsModal } from './agent-settings'
-import { UsageMeter } from './usage-meter'
 import { getUsage } from '../services/instagram.service'
+import type { ContentSuggestion, UsageResponse } from '../types/instagram.types'
+
+import { AgentSettingsModal } from './agent-settings'
+import { CarouselPreviewPanel } from './carousel-preview-panel'
+import { CarouselsSection } from './carousels-section'
+import { ChatPanel } from './chat-panel'
+import type { UseGrowthAgentResult } from './chat-panel.types'
+import { ScriptPreviewModal } from './script-preview-modal'
+import { SuggestionsPanel } from './suggestions-panel'
+import { UsageMeter } from './usage-meter'
+
 
 type ActiveTab = 'chat' | 'suggestions' | 'carousels'
 
@@ -106,7 +108,7 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsExpanded((prev) => !prev)}
+              onClick={() => { setIsExpanded((prev) => !prev); }}
               className="text-zinc-400 hover:bg-zinc-700 hover:text-white"
               aria-label={isExpanded ? 'Colapsar agente' : 'Expandir agente'}
             >
@@ -133,7 +135,7 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setActiveTab('chat')}
+            onClick={() => { setActiveTab('chat'); }}
             className={`flex-1 rounded-none ${
               activeTab === 'chat'
                 ? 'border-b-2 border-zinc-900 bg-background text-foreground'
@@ -147,7 +149,7 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setActiveTab('suggestions')}
+            onClick={() => { setActiveTab('suggestions'); }}
             className={`flex-1 rounded-none ${
               activeTab === 'suggestions'
                 ? 'border-b-2 border-zinc-900 bg-background text-foreground'
@@ -166,7 +168,7 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setActiveTab('carousels')}
+            onClick={() => { setActiveTab('carousels'); }}
             className={`flex-1 rounded-none ${
               activeTab === 'carousels'
                 ? 'border-b-2 border-zinc-900 bg-background text-foreground'
@@ -191,7 +193,7 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
                 onMarkUsed={(id) => void hook.markUsed(id, '')}
                 onDismiss={(id) => void hook.dismiss(id)}
                 onClearAll={() => void hook.clearSuggestions()}
-                onStartCarousel={(suggestion) => void handleStartCarousel(suggestion)}
+                onStartCarousel={(suggestion) => { handleStartCarousel(suggestion); }}
                 onRefreshSuggestions={hook.refreshSuggestions}
               />
             </div>
@@ -199,7 +201,7 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
             <div className="h-full overflow-y-auto p-3">
               <CarouselsSection
                 activeCarouselId={activeCarouselId}
-                onOpenCarousel={(id) => setActiveCarouselId(id)}
+                onOpenCarousel={(id) => { setActiveCarouselId(id); }}
                 refreshTrigger={carouselRefreshTrigger}
                 isExpanded={isExpanded}
                 limits={hook.agentConfig?.limits}
@@ -251,7 +253,7 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
           topic={scriptPreview.topic}
           {...(scriptPreview.suggestionId !== undefined && { suggestionId: scriptPreview.suggestionId })}
           {...(hook.agentConfig?.limits !== undefined && { limits: hook.agentConfig.limits })}
-          onClose={() => setScriptPreview(null)}
+          onClose={() => { setScriptPreview(null); }}
           onCreated={(id) => {
             setScriptPreview(null)
             setActiveCarouselId(id)

@@ -1,9 +1,5 @@
-import { describe, it, expect } from 'vitest';
-
-import { seedDb, SEED } from '@/lib/mocks/seed';
-import { ConflictError, AuthError, ForbiddenError } from '@/lib/api/errors';
-import { server } from '@/lib/mocks/server';
 import { http, HttpResponse } from 'msw';
+import { describe, it, expect } from 'vitest';
 
 import {
   getPaymentMethod,
@@ -11,6 +7,11 @@ import {
   listInvoices,
   getInvoiceSignedUrl,
 } from './billing.service';
+
+import { ConflictError, AuthError, ForbiddenError } from '@/lib/api/errors';
+import { seedDb, SEED } from '@/lib/mocks/seed';
+import { server } from '@/lib/mocks/server';
+
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080';
 

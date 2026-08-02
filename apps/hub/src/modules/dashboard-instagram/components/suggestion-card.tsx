@@ -1,10 +1,12 @@
 'use client'
 
-import type { JSX } from 'react'
-import type { LucideIcon } from 'lucide-react'
 import { Button } from '@core/ui'
+import type { LucideIcon } from 'lucide-react'
 import { Check, X, Clock, Hash, Lightbulb, Zap, PenLine, Layers, Sparkles } from 'lucide-react'
+import type { JSX } from 'react'
+
 import type { ContentSuggestion, SuggestionCategory } from '../types/instagram.types'
+
 import { MarkdownRenderer } from './markdown-renderer'
 
 const categoryMeta: Record<SuggestionCategory, { label: string; icon: LucideIcon; colors: string }> = {
@@ -52,7 +54,7 @@ export function SuggestionCard({
             <Button
               variant="default"
               size="sm"
-              onClick={() => onStartCarousel(suggestion)}
+              onClick={() => { onStartCarousel(suggestion); }}
               disabled={isActing}
               className="h-7 px-2.5 text-xs gap-1.5"
               aria-label="Crear carrusel con esta idea"
@@ -64,7 +66,7 @@ export function SuggestionCard({
             <Button
               variant="default"
               size="sm"
-              onClick={() => onMarkUsed(suggestion.id)}
+              onClick={() => { onMarkUsed(suggestion.id); }}
               disabled={isActing}
               className="h-7 px-2.5 text-xs gap-1.5"
               aria-label="Marcar como usada"
@@ -78,7 +80,7 @@ export function SuggestionCard({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => onDismiss(suggestion.id)}
+          onClick={() => { onDismiss(suggestion.id); }}
           disabled={isActing}
           className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
           aria-label="Descartar sugerencia"

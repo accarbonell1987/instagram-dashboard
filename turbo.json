@@ -1,6 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["packages/**"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "JWT_PRIVATE_KEY_PATH",
+    "JWT_PUBLIC_KEY_PATH",
+    "JWT_ACTIVE_KID",
+    "BANCARD_WEBHOOK_SECRET"
+  ],
   "tasks": {
     "tokens:build": {
       "inputs": ["tokens/**/*.tokens.json", "tokens/build.js"],

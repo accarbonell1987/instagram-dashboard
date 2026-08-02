@@ -26,6 +26,7 @@ function renderWithProviders(element: React.ReactElement) {
 
 /** Returns the actual password <input> (not the toggle button whose aria-label also contains "contraseña"). */
 function getPasswordInput(): HTMLElement {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return screen.getAllByLabelText(/Contraseña/i).find(
     (el) => el.tagName.toLowerCase() === 'input',
   )!;

@@ -1,12 +1,15 @@
-import { describe, it, expect } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { AuthError, ForbiddenError } from '@/lib/api/errors'
-import { server } from '@/lib/mocks/server'
+import { describe, it, expect } from 'vitest'
+
 import {
   listTenants,
   getTenant,
   changeTenantStatus,
 } from './tenant-admin.service'
+
+import { AuthError, ForbiddenError } from '@/lib/api/errors'
+import { server } from '@/lib/mocks/server'
+
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080'
 
@@ -113,16 +116,16 @@ describe('tenant-admin.service — getTenant', () => {
 
 describe('tenant-admin.service — changeTenantStatus', () => {
   it('changes tenant status via PATCH /admin/tenants/:id/status', async () => {
-    let capturedBody: any = null
+    let capturedBody: Record<string, unknown> = {}
     server.use(
       http.patch(`${BASE}/admin/tenants/:id/status`, async ({ request, params }) => {
-        capturedBody = await request.json()
+        capturedBody = (await request.json()) as Record<string, unknown>
         expect(params['id']).toBe('tenant-1')
         return HttpResponse.json({ id: 'tenant-1', status: 'suspended' }, { status: 200 })
       })
     )
     const result = await changeTenantStatus('tenant-1', 'suspended')
     expect(result.status).toBe('suspended')
-    expect(capturedBody.status).toBe('suspended')
+    expect(capturedBody['status']).toBe('suspended')
   })
 })

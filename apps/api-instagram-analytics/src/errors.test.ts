@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { QuotaExceededError } from './errors.js';
-import { AppError } from './errors.js';
+
+import { QuotaExceededError, AppError  } from './errors.js';
 
 describe('QuotaExceededError', () => {
   it('extends AppError', () => {

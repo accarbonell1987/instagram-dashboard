@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { config as loadEnv } from 'dotenv';
+import { z } from 'zod';
 
 // Load .env file before parsing — tsx does NOT auto-load it
 loadEnv();

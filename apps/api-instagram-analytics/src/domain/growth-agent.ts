@@ -1,10 +1,10 @@
 // Growth Agent domain types — pure TypeScript, no runtime code
 
-export type ToolCallResult = { name: string; result: unknown }
+export interface ToolCallResult { name: string; result: unknown }
 
-export type ToolCall = { name: string; arguments: Record<string, unknown>; result?: unknown }
+export interface ToolCall { name: string; arguments: Record<string, unknown>; result?: unknown }
 
-export type DashboardContext = {
+export interface DashboardContext {
   followersCount: number;
   mediaCount: number;
   recentPostCount: number;
@@ -12,7 +12,7 @@ export type DashboardContext = {
   topFormat: string;
 }
 
-export type PostSummary = {
+export interface PostSummary {
   mediaId: string;
   mediaType: string;
   caption: string | null;
@@ -23,7 +23,7 @@ export type PostSummary = {
   engagementRate: number;
 }
 
-export type FormatStats = {
+export interface FormatStats {
   format: string;
   avgEngagementRate: number;
   avgReach: number;
@@ -32,13 +32,13 @@ export type FormatStats = {
   count: number;
 }
 
-export type HeatmapData = {
+export interface HeatmapData {
   dayOfWeek: number;
   hour: number;
   avgSavesShares: number;
 }
 
-export type SuggestionOutcomeResult = {
+export interface SuggestionOutcomeResult {
   id: string;
   category: string;
   content: string;

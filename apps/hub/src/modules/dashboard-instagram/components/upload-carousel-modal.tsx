@@ -1,12 +1,13 @@
 'use client'
 
+import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@core/ui'
+import { X, Upload, ImagePlus, Trash2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react'
 import type { JSX, ChangeEvent } from 'react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@core/ui'
-import { X, Upload, ImagePlus, Trash2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react'
-import type { SlideRole, UploadSlideInput } from '../types/instagram.types'
+
 import { createUploadCarousel, uploadSlideImage } from '../services/instagram.service'
+import type { SlideRole, UploadSlideInput } from '../types/instagram.types'
 
 interface UploadSlide {
   file: File | null
@@ -21,7 +22,7 @@ function makeSlide(): UploadSlide {
   return { file: null, preview: null, text: '', imageMode: 'uploaded', visualPrompt: '', role: 'default' }
 }
 
-const ROLE_OPTIONS: Array<{ value: SlideRole; label: string }> = [
+const ROLE_OPTIONS: { value: SlideRole; label: string }[] = [
   { value: 'hook', label: 'Hook' },
   { value: 'development', label: 'Desarrollo' },
   { value: 'cta', label: 'CTA' },
@@ -61,7 +62,7 @@ function SlideEditor({ slide, index, total, onChange, onRemove, onMove }: SlideE
             size="icon"
             className="h-6 w-6"
             disabled={index === 0}
-            onClick={() => onMove('up')}
+            onClick={() => { onMove('up'); }}
             aria-label="Mover arriba"
           >
             <ChevronUp className="h-3 w-3" />
@@ -72,12 +73,12 @@ function SlideEditor({ slide, index, total, onChange, onRemove, onMove }: SlideE
             size="icon"
             className="h-6 w-6"
             disabled={index === total - 1}
-            onClick={() => onMove('down')}
+            onClick={() => { onMove('down'); }}
             aria-label="Mover abajo"
           >
             <ChevronDown className="h-3 w-3" />
           </Button>
-          <Select value={slide.role} onValueChange={(v) => onChange({ role: v as SlideRole })}>
+          <Select value={slide.role} onValueChange={(v) => { onChange({ role: v as SlideRole }); }}>
             <SelectTrigger className="h-6 rounded border bg-background px-1 text-[10px] text-muted-foreground focus:outline-none [&_svg]:hidden" aria-label="Rol del slide">
               <SelectValue />
             </SelectTrigger>
@@ -133,7 +134,7 @@ function SlideEditor({ slide, index, total, onChange, onRemove, onMove }: SlideE
         <div className="flex-1 space-y-2">
           <Textarea
             value={slide.text}
-            onChange={(e) => onChange({ text: e.target.value })}
+            onChange={(e) => { onChange({ text: e.target.value }); }}
             placeholder="Texto del slide (overlay)"
             rows={2}
             maxLength={150}
@@ -144,7 +145,7 @@ function SlideEditor({ slide, index, total, onChange, onRemove, onMove }: SlideE
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onChange({ imageMode: 'uploaded' })}
+              onClick={() => { onChange({ imageMode: 'uploaded' }); }}
               className={`flex-1 h-7 rounded-md border text-[11px] font-medium transition-colors ${
                 slide.imageMode === 'uploaded'
                   ? 'border-primary bg-primary/10 text-primary'
@@ -156,7 +157,7 @@ function SlideEditor({ slide, index, total, onChange, onRemove, onMove }: SlideE
             </button>
             <button
               type="button"
-              onClick={() => onChange({ imageMode: 'img2img' })}
+              onClick={() => { onChange({ imageMode: 'img2img' }); }}
               className={`flex-1 h-7 rounded-md border text-[11px] font-medium transition-colors ${
                 slide.imageMode === 'img2img'
                   ? 'border-primary bg-primary/10 text-primary'
@@ -172,7 +173,7 @@ function SlideEditor({ slide, index, total, onChange, onRemove, onMove }: SlideE
             <Input
               type="text"
               value={slide.visualPrompt}
-              onChange={(e) => onChange({ visualPrompt: e.target.value })}
+              onChange={(e) => { onChange({ visualPrompt: e.target.value }); }}
               placeholder="Prompt de transformación…"
               maxLength={300}
               className="rounded-lg px-2.5 py-1.5 text-xs"
@@ -213,8 +214,10 @@ export function UploadCarouselModal({ onClose, onCreated }: UploadCarouselModalP
       const next = [...prev]
       const target = direction === 'up' ? index - 1 : index + 1
       if (target < 0 || target >= next.length) return prev
-      const swapVal = next[target]!
-      next[target] = next[index]!
+      const current = next[index]
+      const swapVal = next[target]
+      if (!current || !swapVal) return prev
+      next[target] = current
       next[index] = swapVal
       return next
     })
@@ -238,7 +241,7 @@ export function UploadCarouselModal({ onClose, onCreated }: UploadCarouselModalP
       ...(s.imageMode === 'img2img' && { visualPrompt: s.visualPrompt.trim() }),
     }))
 
-    let carouselResult: { id: string; slides: Array<{ id: string; order: number }> }
+    let carouselResult: { id: string; slides: { id: string; order: number }[] }
     try {
       carouselResult = await createUploadCarousel(topic.trim(), slideInputs)
     } catch {
@@ -251,9 +254,9 @@ export function UploadCarouselModal({ onClose, onCreated }: UploadCarouselModalP
     setUploadProgress({ done: 0, total: slides.length })
 
     for (let i = 0; i < slides.length; i++) {
-      const slide = slides[i]!
+      const slide = slides[i]
       const slideRecord = carouselResult.slides.find((s) => s.order === i + 1)
-      if (!slideRecord || !slide.file) continue
+      if (!slide || !slideRecord || !slide.file) continue
 
       try {
         await uploadSlideImage(carouselResult.id, slideRecord.id, slide.file)
@@ -292,7 +295,7 @@ export function UploadCarouselModal({ onClose, onCreated }: UploadCarouselModalP
               id="carousel-topic"
               type="text"
               value={topic}
-              onChange={(e) => setTopic(e.target.value)}
+              onChange={(e) => { setTopic(e.target.value); }}
               placeholder="Ej: Los beneficios de nuestro producto estrella"
               maxLength={200}
               className="rounded-lg px-3 py-2 text-sm"
@@ -309,7 +312,7 @@ export function UploadCarouselModal({ onClose, onCreated }: UploadCarouselModalP
                   variant="outline"
                   size="sm"
                   className="h-7 gap-1.5 text-xs"
-                  onClick={() => setSlides((prev) => [...prev, makeSlide()])}
+                  onClick={() => { setSlides((prev) => [...prev, makeSlide()]); }}
                 >
                   <ImagePlus className="h-3 w-3" aria-hidden="true" />
                   Agregar slide
@@ -323,9 +326,9 @@ export function UploadCarouselModal({ onClose, onCreated }: UploadCarouselModalP
                 slide={slide}
                 index={i}
                 total={slides.length}
-                onChange={(patch) => updateSlide(i, patch)}
-                onRemove={() => removeSlide(i)}
-                onMove={(dir) => moveSlide(i, dir)}
+                onChange={(patch) => { updateSlide(i, patch); }}
+                onRemove={() => { removeSlide(i); }}
+                onMove={(dir) => { moveSlide(i, dir); }}
               />
             ))}
           </div>

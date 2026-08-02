@@ -75,7 +75,7 @@ export function DeleteMemberDialog({
           <Input
             type="email"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => { setInputValue(e.target.value); }}
             placeholder={memberEmail ?? 'email del miembro'}
             disabled={isLoading}
             aria-label="Confirmar email del miembro"

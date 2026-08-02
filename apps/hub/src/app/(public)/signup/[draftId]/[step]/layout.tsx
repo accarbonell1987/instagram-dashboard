@@ -1,10 +1,10 @@
 'use client';
 
+import { Button } from '@core/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, type ReactNode, type JSX } from 'react';
 
-import { Button } from '@core/ui';
 import { PlanChip } from '@/modules/iam/onboarding/components/plan-chip';
 import { ResumeLinkButton } from '@/modules/iam/onboarding/components/resume-link-button';
 import { Stepper } from '@/modules/iam/onboarding/components/stepper';

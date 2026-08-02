@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { InsightService } from './insight.service.js';
+
 import type { DashboardData } from '../domain/insight.js';
+
+import { InsightService } from './insight.service.js';
 
 function createMockDashboard(overrides: Partial<DashboardData> = {}): DashboardData {
   return {
@@ -156,8 +158,8 @@ describe('InsightService', () => {
       // and heatmap not trigger Rule 2 (less than 2 posts)
       // so Rule 3 (concentration) fires on the ranking
       const ranking = Array.from({ length: 25 }, (_, i) => ({
-        id: `uuid-${i}`,
-        igMediaId: `${i}`,
+        id: `uuid-${String(i)}`,
+        igMediaId: String(i),
         mediaType: 'IMAGE' as const,
         permalink: null,
         caption: null,

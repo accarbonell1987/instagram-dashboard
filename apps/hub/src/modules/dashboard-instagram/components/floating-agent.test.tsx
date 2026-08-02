@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { FloatingAgent } from './floating-agent'
+import { describe, it, expect, vi } from 'vitest'
+
 import type { UseGrowthAgentResult } from './chat-panel.types'
+import { FloatingAgent } from './floating-agent'
 
 // Build a mock hook result
 function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgentResult {
@@ -22,6 +23,13 @@ function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgent
     deleteSelected: vi.fn().mockResolvedValue(undefined),
     clearSelection: vi.fn(),
     clearSuggestions: vi.fn().mockResolvedValue(undefined),
+    refreshSuggestions: vi.fn().mockResolvedValue(undefined),
+    agentConfig: null,
+    hasFalApiKey: false,
+    isSettingsOpen: false,
+    openSettings: vi.fn(),
+    closeSettings: vi.fn(),
+    saveAgentConfig: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   }
 }
@@ -147,5 +155,28 @@ describe('FloatingAgent', () => {
     // MSW resolves synchronously, so the skeleton may be gone already
     // But the meter labels should eventually appear
     expect(screen.getByRole('dialog', { name: /Agente de Crecimiento/i })).toBeInTheDocument()
+  })
+
+  // ── Agent Settings (gear icon) ──
+
+  it('gear icon button is visible in the panel header', () => {
+    render(<FloatingAgent hook={makeHook()} />)
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente de crecimiento/i }))
+    expect(screen.getByRole('button', { name: /Configurar agente/i })).toBeInTheDocument()
+  })
+
+  it('clicking gear icon calls openSettings', () => {
+    const openSettings = vi.fn()
+    render(<FloatingAgent hook={makeHook({ openSettings })} />)
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente de crecimiento/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Configurar agente/i }))
+    expect(openSettings).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders AgentSettingsModal when isSettingsOpen is true', () => {
+    render(<FloatingAgent hook={makeHook({ isSettingsOpen: true })} />)
+    // The floating panel dialog is aria-hidden while closed, so the only
+    // active dialog is the settings modal.
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })

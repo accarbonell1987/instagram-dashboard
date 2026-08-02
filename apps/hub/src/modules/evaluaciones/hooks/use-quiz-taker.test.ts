@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+
+import type { Question } from '../types/quiz.types'
 
 import { useQuizTaker } from './use-quiz-taker'
-import type { Question } from '../types/quiz.types'
 
 function makeQuestion(overrides: Partial<Question> = {}): Question {
   return {
@@ -24,12 +25,12 @@ function makeQuestion(overrides: Partial<Question> = {}): Question {
 function makeQuestions(count: number): Question[] {
   return Array.from({ length: count }, (_, i) =>
     makeQuestion({
-      id: `q-${i + 1}`,
-      text: `Question ${i + 1}`,
+      id: `q-${String(i + 1)}`,
+      text: `Question ${String(i + 1)}`,
       order: i,
       options: [
-        { id: `q${i + 1}-opt-1`, questionId: `q-${i + 1}`, text: 'Correct', isCorrect: true, order: 0, createdAt: '2026-01-01T00:00:00.000Z' },
-        { id: `q${i + 1}-opt-2`, questionId: `q-${i + 1}`, text: 'Wrong', isCorrect: false, order: 1, createdAt: '2026-01-01T00:00:00.000Z' },
+        { id: `q${String(i + 1)}-opt-1`, questionId: `q-${String(i + 1)}`, text: 'Correct', isCorrect: true, order: 0, createdAt: '2026-01-01T00:00:00.000Z' },
+        { id: `q${String(i + 1)}-opt-2`, questionId: `q-${String(i + 1)}`, text: 'Wrong', isCorrect: false, order: 1, createdAt: '2026-01-01T00:00:00.000Z' },
       ],
     }),
   )

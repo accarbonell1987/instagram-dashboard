@@ -3,8 +3,8 @@
  *
  * GET /api/dashboard/growth?metric=X&period=Y
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../lib/jwt-verifier.js', () => ({
   verifyAccessToken: vi.fn(),
@@ -15,6 +15,7 @@ import { authGuard } from '../../middleware/auth-guard.js';
 import { errorHandler } from '../../middleware/error-handler.js';
 import type { DashboardService } from '../../services/dashboard.service.js';
 import type { InsightService } from '../../services/insight.service.js';
+
 import { createDashboardRoutes } from './dashboard.routes.js';
 
 const MOCK_TENANT = {
@@ -86,7 +87,7 @@ describe('GET /api/dashboard/growth', () => {
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.data).toHaveLength(2);
-    expect(body.data[0]!.value).toBe(1000);
+    expect(body.data[0]?.value).toBe(1000);
 
     expect(mockDashboardService.getGrowthData).toHaveBeenCalledWith(
       MOCK_TENANT.tenantId,

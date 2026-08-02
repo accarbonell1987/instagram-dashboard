@@ -8,8 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@core/ui';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use, type JSX } from 'react';
 

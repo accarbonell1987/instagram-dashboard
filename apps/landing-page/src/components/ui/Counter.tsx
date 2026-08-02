@@ -33,7 +33,7 @@ export function Counter({
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-50px' });
   const reducedMotion = useReducedMotion();
-  const [hasAnimated, setHasAnimated] = useState(false);
+  const hasAnimatedRef = useRef(false);
   const [displayValue, setDisplayValue] = useState<string>(formatValue(from, decimals));
 
   const startAnimation = useCallback(() => {
@@ -48,23 +48,18 @@ export function Counter({
   }, [from, to, duration, decimals]);
 
   useEffect(() => {
-    if (isInView && !hasAnimated && !reducedMotion) {
-      const stop = startAnimation();
-      setHasAnimated(true);
-      return stop;
+    if (isInView && !hasAnimatedRef.current && !reducedMotion) {
+      hasAnimatedRef.current = true;
+      return startAnimation();
     }
-  }, [isInView, hasAnimated, reducedMotion, startAnimation]);
+  }, [isInView, reducedMotion, startAnimation]);
 
   const shouldAnimate = isInView && !reducedMotion;
 
   return (
     <span ref={ref} className={className}>
       {prefix}
-      {shouldAnimate && hasAnimated
-        ? displayValue
-        : shouldAnimate && !hasAnimated
-          ? formatValue(from, decimals)
-          : formatValue(to, decimals)}
+      {shouldAnimate ? displayValue : formatValue(to, decimals)}
       {suffix}
     </span>
   );

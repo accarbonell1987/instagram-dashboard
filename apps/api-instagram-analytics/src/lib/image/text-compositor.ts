@@ -49,7 +49,7 @@ export async function compositeTextOnImage(
   if (!text.trim()) return imageBuffer;
 
   const image = sharp(imageBuffer);
-  const { width = 1080, height = 1350 } = await image.metadata();
+  const { width, height } = await image.metadata();
 
   const layout = getLayout(text.length);
   const lines = wrapText(text.trim(), layout.charsPerLine);
@@ -65,11 +65,11 @@ export async function compositeTextOnImage(
   const textElements = lines
     .map(
       (line, i) => `<text
-      x="${textX}"
-      y="${firstLineY + i * layout.lineHeight}"
+      x="${String(textX)}"
+      y="${String(firstLineY + i * layout.lineHeight)}"
       text-anchor="middle"
       font-family="Arial, Helvetica, sans-serif"
-      font-size="${layout.fontSize}"
+      font-size="${String(layout.fontSize)}"
       font-weight="bold"
       fill="white"
       filter="url(#shadow)"
@@ -77,17 +77,17 @@ export async function compositeTextOnImage(
     )
     .join('\n');
 
-  const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  const svg = `<svg width="${String(width)}" height="${String(height)}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <filter id="shadow">
         <feDropShadow dx="2" dy="2" stdDeviation="4" flood-color="black" flood-opacity="0.85"/>
       </filter>
     </defs>
     <rect
-      x="${SIDE_MARGIN}"
-      y="${boxY}"
-      width="${boxWidth}"
-      height="${boxHeight}"
+      x="${String(SIDE_MARGIN)}"
+      y="${String(boxY)}"
+      width="${String(boxWidth)}"
+      height="${String(boxHeight)}"
       rx="16"
       fill="black"
       fill-opacity="0.55"

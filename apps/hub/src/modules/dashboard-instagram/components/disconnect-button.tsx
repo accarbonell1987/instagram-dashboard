@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 
 import { Button } from '@core/ui';
 import { Unplug } from 'lucide-react';
+import { useState } from 'react';
+
 import { disconnectAccount } from '../services/instagram.service';
 
 interface DisconnectButtonProps {

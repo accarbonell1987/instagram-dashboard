@@ -2,11 +2,15 @@
  * Unit tests for suggestions routes
  * TDD: RED phase — written before implementation
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { createSuggestionsRoutes } from './suggestions.routes.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+
 import { NotFoundError } from '../../errors.js';
 import { errorHandler } from '../../middleware/error-handler.js';
+import type { SuggestionService } from '../../services/suggestion.service.js';
+
+import { createSuggestionsRoutes } from './suggestions.routes.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -54,11 +58,11 @@ function makeApp() {
 
   // Mock auth middleware
   app.use('*', async (c, next) => {
-    c.set('tenant' as any, { tenantId: TENANT_ID, userId: 'user-1', tenantSlug: 'test', role: 'User' });
+    c.set('tenant', { tenantId: TENANT_ID, userId: 'user-1', tenantSlug: 'test', role: 'User' });
     await next();
   });
 
-  const routes = createSuggestionsRoutes(mockSuggestionService as any);
+  const routes = createSuggestionsRoutes(mockSuggestionService as unknown as SuggestionService);
   app.route('/suggestions', routes);
   app.onError(errorHandler);
   return app;
@@ -82,7 +86,7 @@ describe('Suggestions routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: unknown[] };
       expect(body.success).toBe(true);
       expect(body.data).toHaveLength(2);
       expect(mockGetSuggestions).toHaveBeenCalledWith(TENANT_ID, undefined);
@@ -113,7 +117,7 @@ describe('Suggestions routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean };
       expect(body.success).toBe(true);
       expect(mockMarkUsed).toHaveBeenCalledWith(TENANT_ID, SUGGESTION_ID, MEDIA_ID);
     });
@@ -152,7 +156,7 @@ describe('Suggestions routes', () => {
       });
 
       expect(res.status).toBe(404);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; error: { code: string } };
       expect(body.success).toBe(false);
       expect(body.error.code).toBe('NOT_FOUND');
     });
@@ -170,7 +174,7 @@ describe('Suggestions routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean };
       expect(body.success).toBe(true);
       expect(mockDismiss).toHaveBeenCalledWith(TENANT_ID, SUGGESTION_ID);
     });
@@ -186,7 +190,7 @@ describe('Suggestions routes', () => {
       });
 
       expect(res.status).toBe(404);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; error: { code: string } };
       expect(body.error.code).toBe('NOT_FOUND');
     });
   });

@@ -11,18 +11,18 @@
  *   api.use('*', authGuard) → api.post('/auth/instagram/disconnect', ...)
  * to test it in isolation without starting the full server.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock jwt-verifier so authGuard works without a real JWKS endpoint
 vi.mock('../../lib/jwt-verifier.js', () => ({
   verifyAccessToken: vi.fn(),
 }));
 
+import { NotFoundError } from '../../errors.js';
 import { verifyAccessToken } from '../../lib/jwt-verifier.js';
 import { authGuard } from '../../middleware/auth-guard.js';
 import { errorHandler } from '../../middleware/error-handler.js';
-import { NotFoundError } from '../../errors.js';
 import type { OAuthService } from '../../services/oauth.service.js';
 
 const MOCK_TENANT = {

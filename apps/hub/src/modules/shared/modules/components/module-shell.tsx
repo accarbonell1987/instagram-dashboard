@@ -2,15 +2,17 @@
 
 import { useEffect, useRef, useState, type JSX } from 'react';
 
+import { useModules } from '../hooks/use-modules';
+import { ModuleToHubSchema } from '../lib/post-message-protocol';
+import { resolveModuleUrl } from '../lib/resolve-url';
+
+import { ModuleNotAvailable } from './module-not-available';
+
 import {
   getAccessToken,
   subscribeToToken,
 } from '@/modules/iam/identity/session/token';
 
-import { ModuleNotAvailable } from './module-not-available';
-import { ModuleToHubSchema } from '../lib/post-message-protocol';
-import { resolveModuleUrl } from '../lib/resolve-url';
-import { useModules } from '../hooks/use-modules';
 
 interface ModuleShellProps {
   moduleId: string;
@@ -21,8 +23,8 @@ export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
   const [isReady, setIsReady] = useState(false);
   const { modules, isLoading } = useModules();
 
-  const module = modules.find((m) => m.id === moduleId);
-  const moduleUrl = module !== undefined ? resolveModuleUrl(moduleId, module.defaultUrl) : null;
+  const moduleItem = modules.find((m) => m.id === moduleId);
+  const moduleUrl = moduleItem !== undefined ? resolveModuleUrl(moduleId, moduleItem.defaultUrl) : null;
 
   // Send token to the iframe
   function sendToken(token: string | null): void {
@@ -94,7 +96,7 @@ export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
     );
   }
 
-  if (module === undefined || moduleUrl === null) {
+  if (moduleItem === undefined || moduleUrl === null) {
     return <ModuleNotAvailable moduleId={moduleId} />;
   }
 

@@ -3,9 +3,13 @@
  * TDD: RED phase — written before implementation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { QuotaExceededError } from '../errors.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import type { DeepSeekClient } from '../lib/deepseek-client.js';
+
 import { SuggestionService } from './suggestion.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
-import { QuotaExceededError } from '../errors.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -44,12 +48,12 @@ const mockInstagramRepo = {
   getLatestMetrics: vi.fn(),
 };
 
-function createMockRepos() {
+function createMockRepos(): Repositories {
   return {
-    instagram: mockInstagramRepo as any,
-    chatMessage: {} as any,
-    suggestion: mockSuggestionRepo as any,
-  };
+    instagram: mockInstagramRepo,
+    chatMessage: {},
+    suggestion: mockSuggestionRepo,
+  } as unknown as Repositories;
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -59,7 +63,7 @@ describe('SuggestionService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new SuggestionService(createMockRepos() as any);
+    service = new SuggestionService(createMockRepos());
   });
 
   describe('getSuggestions()', () => {
@@ -113,7 +117,7 @@ describe('SuggestionService', () => {
         expect.objectContaining({
           status: 'used',
           linkedMediaId: 'media-123',
-          linkedAt: expect.any(Date),
+          linkedAt: expect.any(Date) as unknown,
         }),
       );
     });
@@ -174,17 +178,17 @@ describe('SuggestionService', () => {
         'tenant-1',
         'sugg-eligible',
         expect.objectContaining({
-          outcome: expect.stringMatching(/exceeded|met|below/),
-          measuredAt: expect.any(Date),
+          outcome: expect.stringMatching(/exceeded|met|below/) as unknown,
+          measuredAt: expect.any(Date) as unknown,
           baselineJson: expect.objectContaining({
             format: 'REEL',
             period: '90d',
-            sampleCount: expect.any(Number),
-            medianEngagementRate: expect.any(Number),
-          }),
+            sampleCount: expect.any(Number) as unknown,
+            medianEngagementRate: expect.any(Number) as unknown,
+          }) as unknown,
           metricsJson: expect.objectContaining({
-            engagementRate: expect.any(Number),
-          }),
+            engagementRate: expect.any(Number) as unknown,
+          }) as unknown,
         }),
       );
     });
@@ -227,11 +231,11 @@ describe('SuggestionService', () => {
           baselineJson: expect.objectContaining({
             sampleCount: 0,
             medianEngagementRate: 0,
-          }),
+          }) as unknown,
           metricsJson: expect.objectContaining({
             engagementRate: 0,
-          }),
-          measuredAt: expect.any(Date),
+          }) as unknown,
+          measuredAt: expect.any(Date) as unknown,
         }),
       );
     });
@@ -288,14 +292,6 @@ describe('SuggestionService', () => {
       mockUsageTracker = createMockUsageTracker();
     });
 
-    function createServiceWithTracker() {
-      const mockDeepseekClient = { chat: mockDeepSeekChat };
-      // Setup repos with createBatch/createSuggestion mocks
-      const repos = createMockRepos();
-      mockSuggestionRepo.findByTenant.mockResolvedValue([]);
-      return new SuggestionService(repos as any, mockDeepseekClient as any, mockUsageTracker);
-    }
-
     it('calls checkQuota before DeepSeek call', async () => {
       mockDeepSeekChat.mockResolvedValueOnce({
         content: 'Una idea genial para Instagram',
@@ -307,11 +303,13 @@ describe('SuggestionService', () => {
       // Need to mock findEligibleForMeasurement and findByTenant on the suggestion repo
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos as any, mockDeepseekClient as any, mockUsageTracker);
+      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
 
       await svc.generateContentIdea('tenant-1', 'Dame ideas');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledBefore(mockDeepSeekChat);
     });
 
@@ -324,7 +322,7 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos as any, mockDeepseekClient as any, mockUsageTracker);
+      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
 
       await expect(
         svc.generateContentIdea('tenant-1', 'Dame ideas'),
@@ -343,10 +341,11 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos as any, mockDeepseekClient as any, mockUsageTracker);
+      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
 
       await svc.generateContentIdea('tenant-1', 'Dame ideas');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.log).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
         operation: 'suggestion',
@@ -361,12 +360,13 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos as any, mockDeepseekClient as any, mockUsageTracker);
+      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
 
       await expect(
         svc.generateContentIdea('tenant-1', 'Dame ideas'),
       ).rejects.toThrow('API error');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.log).not.toHaveBeenCalled();
     });
 
@@ -380,7 +380,7 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos as any, mockDeepseekClient as any);
+      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient);
 
       await expect(
         svc.generateContentIdea('tenant-1', 'Dame ideas'),

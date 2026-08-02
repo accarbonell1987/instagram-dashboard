@@ -1,7 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { GrowthChart } from './growth-chart';
+import { describe, it, expect, vi } from 'vitest';
+
 import type { GrowthDataPoint } from '../types/instagram.types';
+
+import { GrowthChart } from './growth-chart';
+
 
 // Recharts renders SVG; ResponsiveContainer needs a width/height in JSDOM
 // so we wrap in a fixed-size container.

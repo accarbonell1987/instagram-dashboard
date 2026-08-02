@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
+
 import type { SuggestionService } from '../../services/suggestion.service.js';
+
 import { SuggestionsQuerySchema, MarkUsedRequestSchema, GenerateIdeaBodySchema } from './suggestions.schemas.js';
-import type { SuggestionStatus } from '../../repositories/suggestion.repository.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createSuggestionsRoutes(suggestionService: SuggestionService): Hono<any> {
@@ -10,7 +11,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
 
   // POST /generate — Generate a content_idea suggestion via AI
   routes.post('/generate', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string };
+    const tenant = c.get('tenant');
     const parsed = GenerateIdeaBodySchema.safeParse(await c.req.json().catch(() => ({})));
     if (!parsed.success) {
       return c.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details: parsed.error.issues } }, 400);
@@ -34,7 +35,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
 
   // GET / — List suggestions (optionally filtered by status)
   routes.get('/', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string };
+    const tenant = c.get('tenant');
     const { tenantId } = tenant;
 
     const query = SuggestionsQuerySchema.safeParse({
@@ -42,7 +43,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
     });
 
     const status = query.success ? query.data.status : undefined;
-    const suggestions = await suggestionService.getSuggestions(tenantId, status as SuggestionStatus | undefined);
+    const suggestions = await suggestionService.getSuggestions(tenantId, status);
 
     return c.json(
       {
@@ -63,7 +64,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
 
   // POST /:id/mark-used — Mark a suggestion as used
   routes.post('/:id/mark-used', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string };
+    const tenant = c.get('tenant');
     const { tenantId } = tenant;
     const { id } = c.req.param();
 
@@ -99,7 +100,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
 
   // POST /:id/dismiss — Dismiss a suggestion
   routes.post('/:id/dismiss', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string };
+    const tenant = c.get('tenant');
     const { tenantId } = tenant;
     const { id } = c.req.param();
 
@@ -110,7 +111,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
 
   // GET /batches — List suggestion batches with their suggestions (paginated)
   routes.get('/batches', async (c) => {
-    const tenant = c.get('tenant' as any) as { tenantId: string };
+    const tenant = c.get('tenant');
     const page = parseInt(c.req.query('page') ?? '1', 10);
     const limit = Math.min(parseInt(c.req.query('limit') ?? '10', 10), 50);
 

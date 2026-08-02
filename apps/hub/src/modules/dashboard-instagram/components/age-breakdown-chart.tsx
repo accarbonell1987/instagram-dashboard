@@ -37,7 +37,7 @@ export function AgeBreakdownChart({ data }: { data: DemographicItem[] }) {
             key={item.label}
             className="flex items-center gap-3"
             role="listitem"
-            aria-label={`${item.label}: ${item.percentage}%`}
+            aria-label={`${item.label}: ${String(item.percentage)}%`}
           >
             <span
               className={`w-12 shrink-0 text-right font-mono text-xs tabular-nums ${
@@ -51,7 +51,7 @@ export function AgeBreakdownChart({ data }: { data: DemographicItem[] }) {
                 className={`h-5 rounded-sm transition-all ${
                   isDominant ? 'bg-primary' : 'bg-primary/30'
                 }`}
-                style={{ width: `${barWidth}%` }}
+                style={{ width: `${String(barWidth)}%` }}
                 aria-hidden="true"
               />
               {isDominant && (

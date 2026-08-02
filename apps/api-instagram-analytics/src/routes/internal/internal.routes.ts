@@ -13,7 +13,7 @@ export function createInternalRoutes(usageTracker: {
   const internal = new OpenAPIHono();
 
   internal.post('/quotas/purge', async (c) => {
-    const body = await c.req.json().catch(() => ({}));
+    const body: unknown = await c.req.json().catch(() => ({}));
     const planId =
       typeof body === 'object' && body && 'planId' in body
         ? (body as { planId?: string }).planId

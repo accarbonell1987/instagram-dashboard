@@ -1,22 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { authGuard } from './auth-guard.js';
-import { UnauthorizedError } from '../errors.js';
 
-// Mock jwt-verifier
+import { UnauthorizedError } from '../errors.js';
+import { verifyAccessToken } from '../lib/jwt-verifier.js';
+
+import { authGuard } from './auth-guard.js';
+
+// Mock jwt-verifier (vi.mock is hoisted above the imports at runtime)
 vi.mock('../lib/jwt-verifier.js', () => ({
   verifyAccessToken: vi.fn(),
 }));
 
-import { verifyAccessToken } from '../lib/jwt-verifier.js';
+type AuthGuardContext = Parameters<typeof authGuard>[0];
 
-function createMockContext(header?: string) {
-  const c = {
+function createMockContext(header?: string): AuthGuardContext {
+  return {
     req: { header: vi.fn(() => header) },
     set: vi.fn(),
     get: vi.fn(),
     var: {},
-  } as any;
-  return c;
+  } as unknown as AuthGuardContext;
 }
 
 describe('authGuard', () => {

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
 
 // Mock next/link and next/navigation
 vi.mock('next/link', () => ({
@@ -15,6 +15,7 @@ vi.mock('next/navigation', () => ({
 // Mock useSession to control role
 const mockUseSession = vi.fn()
 vi.mock('@/modules/iam/identity/hooks/use-session', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock returns the vi.fn() result, typed any
   useSession: () => mockUseSession(),
 }))
 

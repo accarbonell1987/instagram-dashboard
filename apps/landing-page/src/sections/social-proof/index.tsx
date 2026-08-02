@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server';
-import { Card } from '@core/ui';
 import { SOCIAL_PROOF_STATS } from '@/lib/constants';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { AnimatedSection, AnimatedItem } from '@/components/layout';

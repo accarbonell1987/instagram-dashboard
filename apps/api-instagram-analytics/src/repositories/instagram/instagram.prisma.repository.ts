@@ -1,10 +1,12 @@
-import type { PrismaClient } from '@prisma/client';
-import type { InstagramRepository } from './index.js';
+import type { Prisma, PrismaClient } from '@prisma/client';
+
 import type { InstagramAccount, ConnectAccountInput, AgentConfig } from '../../domain/account.js';
-import type { InstagramMedia, MediaMetrics, MediaWithMetrics, PaginatedMedia } from '../../domain/media.js';
 import type { AccountInsight, DashboardData, FormatBreakdown, HeatmapCell, InsightResult, InsightSnapshot, NorthStarMetric, NorthStarMetrics } from '../../domain/insight.js';
-import type { FilterParams } from '../repository.interface.js';
+import type { InstagramMedia, MediaMetrics, MediaWithMetrics, PaginatedMedia } from '../../domain/media.js';
 import { NotFoundError } from '../../errors.js';
+import type { FilterParams } from '../repository.interface.js';
+
+import type { InstagramRepository } from './index.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PrismaAccount = Record<string, any>;
@@ -129,7 +131,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
 
   async findAccountsExpiringSoon(
     daysThreshold: number,
-  ): Promise<Array<{ id: string; tenantId: string; igUserId: string; tokenEncrypted: string }>> {
+  ): Promise<{ id: string; tenantId: string; igUserId: string; tokenEncrypted: string }[]> {
     const threshold = new Date(Date.now() + daysThreshold * 24 * 60 * 60 * 1000);
     const records = await this.prisma.instagramAccount.findMany({
       where: {
@@ -139,12 +141,12 @@ export class PrismaInstagramRepository implements InstagramRepository {
       },
       select: { id: true, tenantId: true, igUserId: true, tokenEncrypted: true },
     });
-    return records.filter((r) => r.tokenEncrypted !== null) as Array<{
+    return records.filter((r) => r.tokenEncrypted !== null) as {
       id: string;
       tenantId: string;
       igUserId: string;
       tokenEncrypted: string;
-    }>;
+    }[];
   }
 
   async updateToken(
@@ -187,7 +189,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
   async saveAgentConfig(tenantId: string, userId: string, config: AgentConfig): Promise<void> {
     await this.prisma.instagramAccount.update({
       where: { tenantId },
-      data: { agentConfig: config as any },
+      data: { agentConfig: config as unknown as Prisma.InputJsonValue },
     });
   }
 
@@ -353,8 +355,8 @@ export class PrismaInstagramRepository implements InstagramRepository {
       impressions: record.impressions,
       totalInteractions: record.totalInteractions,
       videoViews: record.videoViews,
-      avgWatchTime: (record.avgWatchTime as number | null) ?? null,
-      videoViewTotalTime: (record.videoViewTotalTime as number | null) ?? null,
+      avgWatchTime: (record.avgWatchTime) ?? null,
+      videoViewTotalTime: (record.videoViewTotalTime) ?? null,
       syncedAt: record.syncedAt,
     };
   }
@@ -468,13 +470,16 @@ export class PrismaInstagramRepository implements InstagramRepository {
 
   async bulkCreateFollowerSnapshots(
     accountId: string,
-    snapshots: Array<{ date: Date; followerCount: number; reach: number }>,
+    snapshots: { date: Date; followerCount: number; reach: number }[],
   ): Promise<number> {
     if (snapshots.length === 0) return 0;
 
     const sorted = [...snapshots].sort((a, b) => a.date.getTime() - b.date.getTime());
-    const minDate = sorted[0]!.date;
-    const maxDate = sorted[sorted.length - 1]!.date;
+    const first = sorted[0];
+    const last = sorted.at(-1);
+    if (!first || !last) return 0;
+    const minDate = first.date;
+    const maxDate = last.date;
 
     const existing = await this.prisma.instagramAccountInsight.findMany({
       where: { accountId, syncedAt: { gte: minDate, lte: maxDate } },
@@ -524,7 +529,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
     // Get latest metrics for all media via raw SQL (subquery for max syncedAt per media)
     // The raw query returns rows with all needed fields including day_of_week and hour_of_day
     const latestMetrics = await this.prisma.$queryRawUnsafe<
-      Array<{
+      {
         id: string;
         ig_media_id: string;
         media_type: string;
@@ -541,7 +546,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
         total_interactions: number;
         day_of_week: number;
         hour_of_day: number;
-      }>
+      }[]
     >(
       `SELECT
         m.id, m.ig_media_id, m.media_type, m.permalink, m.caption, m.thumbnail_url, m.posted_at,
@@ -633,7 +638,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
     for (const m of latestMetrics) {
       const dayIndex = m.day_of_week; // 0 = Sunday in EXTRACT(DOW)
       const slotIndex = Math.floor(Math.min(m.hour_of_day, 23) / 6); // 0-3
-      const key = `${dayIndex}:${slotIndex}`;
+      const key = `${String(dayIndex)}:${String(slotIndex)}`;
 
       const cell = heatmapGrid.get(key) ?? { savesShares: 0, count: 0 };
       cell.savesShares += m.saves + m.shares;
@@ -644,7 +649,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
     const heatmap: HeatmapCell[] = [];
     for (let day = 0; day < 7; day++) {
       for (let slot = 0; slot < 4; slot++) {
-        const cell = heatmapGrid.get(`${day}:${slot}`);
+        const cell = heatmapGrid.get(`${String(day)}:${String(slot)}`);
         heatmap.push({
           day: DAY_NAMES[day] ?? `Day ${String(day)}`,
           dayIndex: day,

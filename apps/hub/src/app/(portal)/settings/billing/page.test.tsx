@@ -1,7 +1,5 @@
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-
-import { seedDb } from '@/lib/mocks/seed';
 
 // Mock the heavy section components to focus on page-level concerns
 vi.mock('@/modules/shared/billing/components/billing-plan-section', () => ({
@@ -17,6 +15,7 @@ vi.mock('@/modules/shared/billing/components/invoices-section', () => ({
 // Mock useSession to control role
 const mockUseSession = vi.fn();
 vi.mock('@/modules/iam/identity/hooks/use-session', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock returns the vi.fn() result, typed any
   useSession: () => mockUseSession(),
 }));
 

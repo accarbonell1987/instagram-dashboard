@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SyncService } from './sync.service.js';
-import type { InstagramRepository } from '../repositories/instagram/index.js';
+
 import { AccountNotConnectedError } from '../errors.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import type { InstagramRepository } from '../repositories/instagram/index.js';
+
+import { SyncService } from './sync.service.js';
+
+type RateCounters = Map<string, { count: number; windowStart: number }>;
 
 vi.mock('../lib/crypto.js', () => ({ decryptToken: vi.fn(() => 'mock-token') }));
 vi.mock('../lib/instagram-client.js', () => ({
@@ -78,7 +83,7 @@ describe('SyncService', () => {
 
   beforeEach(() => {
     repo = createMockRepo();
-    service = new SyncService(repo as any);
+    service = new SyncService(repo as unknown as Repositories);
   });
 
   describe('triggerSync', () => {
@@ -135,7 +140,7 @@ describe('SyncService', () => {
       );
 
       // Manually exhaust the rate counter
-      const svc = service as any;
+      const svc = service as unknown as { rateCounters: RateCounters };
       svc.rateCounters.set('acc-1', {
         count: 200,
         windowStart: Date.now(),
@@ -154,7 +159,7 @@ describe('SyncService', () => {
       repo.instagram.createSyncLog.mockResolvedValue('log-reset');
 
       // Set exhausted counter with expired window (> 1 hour ago)
-      const svc = service as any;
+      const svc = service as unknown as { rateCounters: RateCounters };
       svc.rateCounters.set('acc-1', {
         count: 200,
         windowStart: Date.now() - 4_000_000,
@@ -202,7 +207,7 @@ describe('SyncService', () => {
       );
 
       // Exhaust rate counter
-      const svc = service as any;
+      const svc = service as unknown as { rateCounters: RateCounters };
       svc.rateCounters.set('acc-1', {
         count: 200,
         windowStart: Date.now(),
@@ -212,7 +217,7 @@ describe('SyncService', () => {
 
       // Rate limited → nextSyncAvailableAt is ~1 hour from now
       expect(status.nextSyncAvailableAt).toBeTruthy();
-      const nextAvailable = new Date(status.nextSyncAvailableAt!).getTime();
+      const nextAvailable = new Date(status.nextSyncAvailableAt ?? '').getTime();
       expect(nextAvailable).toBeGreaterThan(Date.now());
       expect(nextAvailable).toBeLessThan(Date.now() + 3_700_000);
     });

@@ -2,11 +2,16 @@
  * Unit tests for chat routes
  * TDD: RED phase — written before implementation
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { createChatRoutes } from './chat.routes.js';
-import { InternalError, RateLimitError } from '../../errors.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+
+import { InternalError } from '../../errors.js';
+import type { IChatMessageRepository } from '../../lib/create-repositories.js';
 import { errorHandler } from '../../middleware/error-handler.js';
+import type { GrowthAgentService } from '../../services/growth-agent.service.js';
+
+import { createChatRoutes } from './chat.routes.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -42,11 +47,14 @@ function makeApp() {
 
   // Mock auth middleware — sets tenant context
   app.use('*', async (c, next) => {
-    c.set('tenant' as any, { tenantId: TENANT_ID, userId: 'user-1', tenantSlug: 'test', role: 'User' });
+    c.set('tenant', { tenantId: TENANT_ID, userId: 'user-1', tenantSlug: 'test', role: 'User' });
     await next();
   });
 
-  const chatRoutes = createChatRoutes(mockGrowthAgentService as any, mockChatMessageRepo as any);
+  const chatRoutes = createChatRoutes(
+    mockGrowthAgentService as unknown as GrowthAgentService,
+    mockChatMessageRepo as unknown as IChatMessageRepository,
+  );
   app.route('/chat', chatRoutes);
   app.onError(errorHandler);
   return app;
@@ -79,7 +87,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { reply: string; sessionId: string; suggestions: unknown[]; toolCallsTrace: unknown[] } };
       expect(body.success).toBe(true);
       expect(body.data.reply).toBe('Tus Reels funcionan muy bien.');
       expect(body.data.sessionId).toBe(SESSION_ID);
@@ -100,7 +108,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(400);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean };
       expect(body.success).toBe(false);
     });
 
@@ -121,7 +129,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { sessionId: string } };
       // sessionId should be a UUID even if not provided
       expect(body.data.sessionId).toMatch(/^[0-9a-f-]{36}$/);
     });
@@ -142,7 +150,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(504);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; error: { code: string } };
       expect(body.success).toBe(false);
       expect(body.error.code).toBe('AGENT_TIMEOUT');
     });
@@ -160,10 +168,13 @@ describe('Chat routes', () => {
       const RATE_TEST_TENANT = 'aaaabbbb-cccc-dddd-eeee-ffffaaaabbbb';
       const app = new OpenAPIHono();
       app.use('*', async (c, next) => {
-        c.set('tenant' as any, { tenantId: RATE_TEST_TENANT, userId: 'user-1', tenantSlug: 'test', role: 'User' });
+        c.set('tenant', { tenantId: RATE_TEST_TENANT, userId: 'user-1', tenantSlug: 'test', role: 'User' });
         await next();
       });
-      const chatRoutes = createChatRoutes(mockGrowthAgentService as any, mockChatMessageRepo as any);
+      const chatRoutes = createChatRoutes(
+        mockGrowthAgentService as unknown as GrowthAgentService,
+        mockChatMessageRepo as unknown as IChatMessageRepository,
+      );
       app.route('/chat', chatRoutes);
       app.onError(errorHandler);
 
@@ -184,7 +195,7 @@ describe('Chat routes', () => {
       });
 
       expect(lastRes.status).toBe(429);
-      const body = await lastRes.json() as any;
+      const body = await lastRes.json() as { success: boolean; error: { code: string } };
       expect(body.success).toBe(false);
       expect(body.error.code).toBe('RATE_LIMITED');
     });
@@ -204,7 +215,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: unknown[] };
       expect(body.success).toBe(true);
       expect(body.data).toHaveLength(2);
     });
@@ -218,7 +229,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { deleted: boolean } };
       expect(body.success).toBe(true);
       expect(body.data.deleted).toBe(true);
       expect(mockDeleteById).toHaveBeenCalledWith(TENANT_ID, SESSION_ID);
@@ -234,7 +245,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean };
       expect(body.success).toBe(true);
     });
   });
@@ -249,7 +260,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { deletedCount: number } };
       expect(body.success).toBe(true);
       expect(body.data.deletedCount).toBe(5);
       expect(mockDeleteBySessionId).toHaveBeenCalledWith(TENANT_ID, SESSION_ID);
@@ -265,7 +276,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean; data: { deletedCount: number } };
       expect(body.success).toBe(true);
       expect(body.data.deletedCount).toBe(0);
     });
@@ -277,7 +288,7 @@ describe('Chat routes', () => {
       });
 
       expect(res.status).toBe(400);
-      const body = await res.json() as any;
+      const body = await res.json() as { success: boolean };
       expect(body.success).toBe(false);
     });
   });

@@ -6,6 +6,7 @@ import { useState, type JSX } from 'react';
 
 import { roleLabel } from '../lib/role-label';
 import { acceptInvitation } from '../services/invitation.service';
+
 import { CompleteProfileStep } from './complete-profile-step';
 
 import { SetPasswordForm } from '@/modules/iam/authentication/components/set-password-form';

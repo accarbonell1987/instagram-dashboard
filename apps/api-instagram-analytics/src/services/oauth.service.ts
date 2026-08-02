@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
-import type { Repositories } from '../lib/create-repositories.js';
-import { InstagramClient } from '../lib/instagram-client.js';
-import { encryptToken, decryptToken } from '../lib/crypto.js';
+
 import { config } from '../config.js';
-import { AccountNotConnectedError, NotFoundError, ValidationError } from '../errors.js';
-import type { ConnectionStatus } from '../domain/account.js';
+import type { ConnectAccountInput, ConnectionStatus } from '../domain/account.js';
+import { NotFoundError, ValidationError } from '../errors.js';
+import type { Repositories } from '../lib/create-repositories.js';
+import { encryptToken, decryptToken } from '../lib/crypto.js';
+import { InstagramClient } from '../lib/instagram-client.js';
 
 export class OAuthService {
   constructor(private readonly repos: Repositories) {}
@@ -77,7 +78,7 @@ export class OAuthService {
     const me = await client.getMe();
 
     // Upsert account with full profile data
-    const connectInput: import('../domain/account.js').ConnectAccountInput = {
+    const connectInput: ConnectAccountInput = {
       userId,
       igUserId: me.id,
       username: me.username,

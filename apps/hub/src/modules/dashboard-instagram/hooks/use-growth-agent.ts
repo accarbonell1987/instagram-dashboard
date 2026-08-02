@@ -190,7 +190,7 @@ export function useGrowthAgent(): UseGrowthAgentResult {
       } catch {
         // On failure, re-fetch suggestions to restore correct state
         getSuggestions('pending')
-          .then((data) => setSuggestions(data))
+          .then((data) => { setSuggestions(data); })
           .catch(() => {/* silently fail */})
       }
     },
@@ -213,7 +213,7 @@ export function useGrowthAgent(): UseGrowthAgentResult {
       } catch {
         // Revert: re-fetch history to restore correct state
         getChatHistory(sessionId)
-          .then((msgs) => setMessages(msgs))
+          .then((msgs) => { setMessages(msgs); })
           .catch(() => {/* silently fail */})
       }
     },
@@ -264,7 +264,7 @@ export function useGrowthAgent(): UseGrowthAgentResult {
       } catch {
         // Revert: re-fetch history to restore correct state
         getChatHistory(sessionId)
-          .then((msgs) => setMessages(msgs))
+          .then((msgs) => { setMessages(msgs); })
           .catch(() => {/* silently fail */})
         // Restore selection
         setSelectedIds(new Set(ids))
@@ -285,7 +285,7 @@ export function useGrowthAgent(): UseGrowthAgentResult {
         await Promise.all(ids.map((id) => dismissSuggestion(id)))
       } catch {
         getSuggestions('pending')
-          .then((data) => setSuggestions(data))
+          .then((data) => { setSuggestions(data); })
           .catch(() => {/* silently fail */})
       }
     },
@@ -294,8 +294,8 @@ export function useGrowthAgent(): UseGrowthAgentResult {
 
   const refreshSuggestions = loadBatches
 
-  const openSettings = useCallback(() => setIsSettingsOpen(true), [])
-  const closeSettings = useCallback(() => setIsSettingsOpen(false), [])
+  const openSettings = useCallback(() => { setIsSettingsOpen(true); }, [])
+  const closeSettings = useCallback(() => { setIsSettingsOpen(false); }, [])
 
   const saveAgentConfig = useCallback(
     async (config: AgentConfig, falApiKey?: string) => {

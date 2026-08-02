@@ -1,11 +1,12 @@
 'use client'
 
-import type { JSX } from 'react'
-import { useState } from 'react'
 import { Button, Label, Textarea } from '@core/ui'
 import { X } from 'lucide-react'
-import type { Carousel } from '../types/instagram.types'
+import type { JSX } from 'react'
+import { useState } from 'react'
+
 import { updateCarouselSlide, regenerateCarousel } from '../services/instagram.service'
+import type { Carousel } from '../types/instagram.types'
 
 interface RedoPromptPanelProps {
   carousel: Carousel
@@ -67,7 +68,7 @@ export function RedoPromptPanel({ carousel, onClose, onRegenerated }: RedoPrompt
             <Textarea
               id="redo-topic"
               value={topic}
-              onChange={(e) => setTopic(e.target.value)}
+              onChange={(e) => { setTopic(e.target.value); }}
               rows={2}
               maxLength={500}
               disabled={isSubmitting}
@@ -90,7 +91,7 @@ export function RedoPromptPanel({ carousel, onClose, onRegenerated }: RedoPrompt
                 id={`redo-prompt-${slide.id}`}
                 value={slidePrompts[slide.id] ?? slide.visualPrompt}
                 onChange={(e) =>
-                  setSlidePrompts((prev) => ({ ...prev, [slide.id]: e.target.value }))
+                  { setSlidePrompts((prev) => ({ ...prev, [slide.id]: e.target.value })); }
                 }
                 rows={2}
                 maxLength={300}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import type { TopPost } from '../types/instagram.types';
 
 interface TopPostsRankingProps {
@@ -56,7 +57,7 @@ function computeCommonality(top3: TopPost[]): string | null {
   const [dominantType, dominantCount] = sorted[0] ?? ['', 0];
 
   if (dominantCount === top3.length) {
-    return `Tus ${top3.length} mejores son ${dominantType.toLowerCase()} → repetí ese formato para maximizar guardados y compartidos.`;
+    return `Tus ${String(top3.length)} mejores son ${dominantType.toLowerCase()} → repetí ese formato para maximizar guardados y compartidos.`;
   }
   if (dominantCount >= 2) {
     return `La mayoría de tus mejores posts son ${dominantType.toLowerCase()} → apostá a ese formato.`;
@@ -105,12 +106,14 @@ function EmptyState() {
 export function TopPostsRanking({ ranking, onPostClick }: TopPostsRankingProps) {
   const [mode, setMode] = useState<SortMode>('absolute');
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ranking can be undefined at runtime (see top-posts-ranking.test.tsx undefined case)
   if (!ranking || ranking.length === 0) return <EmptyState />;
 
   const sorted = [...ranking].sort((a, b) => computeValue(b, mode) - computeValue(a, mode));
   const maxValue = Math.max(...sorted.map((p) => computeValue(p, mode)), 1);
   const top3 = sorted.slice(0, 3);
   const commonality = computeCommonality(top3);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- mode is always one of the SORT_MODES keys, so find always matches
   const currentMode = SORT_MODES.find((m) => m.key === mode)!;
 
   return (
@@ -131,7 +134,7 @@ export function TopPostsRanking({ ranking, onPostClick }: TopPostsRankingProps) 
         {SORT_MODES.map(({ key, label, sublabel }) => (
           <button
             key={key}
-            onClick={() => setMode(key)}
+            onClick={() => { setMode(key); }}
             title={sublabel}
             aria-pressed={mode === key}
             className={[
@@ -180,13 +183,13 @@ export function TopPostsRanking({ ranking, onPostClick }: TopPostsRankingProps) 
                 <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-amber-400/70 transition-[width] duration-300"
-                    style={{ width: `${barWidth}%` }}
+                    style={{ width: `${String(barWidth)}%` }}
                     aria-hidden="true"
                   />
                 </div>
                 <p className="text-[10px] text-muted-foreground/50 leading-none">
                   {formatMediaType(post.mediaType)}
-                  {mode === 'absolute' && ` · ${post.saves} saves · ${post.shares} shares`}
+                  {mode === 'absolute' && ` · ${String(post.saves)} saves · ${String(post.shares)} shares`}
                   {mode === 'efficiency' && post.reach > 0 && ` · ${post.reach.toLocaleString()} reach`}
                 </p>
               </div>
@@ -201,9 +204,9 @@ export function TopPostsRanking({ ranking, onPostClick }: TopPostsRankingProps) 
               {onPostClick ? (
                 <button
                   type="button"
-                  onClick={() => onPostClick(post.id)}
+                  onClick={() => { onPostClick(post.id); }}
                   className={interactiveClass}
-                  aria-label={`Post ${index + 1}: ${label} (${displayValue})`}
+                  aria-label={`Post ${String(index + 1)}: ${label} (${displayValue})`}
                 >
                   {itemContent}
                 </button>
@@ -213,7 +216,7 @@ export function TopPostsRanking({ ranking, onPostClick }: TopPostsRankingProps) 
                   target="_blank"
                   rel="noopener noreferrer"
                   className={interactiveClass}
-                  aria-label={`Post ${index + 1}: ${label} (${displayValue})`}
+                  aria-label={`Post ${String(index + 1)}: ${label} (${displayValue})`}
                 >
                   {itemContent}
                 </a>

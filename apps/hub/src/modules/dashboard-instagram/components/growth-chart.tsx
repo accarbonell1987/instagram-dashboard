@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
+
 import type { GrowthDataPoint, GrowthMetric, GrowthPeriod } from '../types/instagram.types';
 
 // ── Formatters ──
@@ -71,7 +72,7 @@ function ZoomSelector({
           key={key}
           variant={current === key ? 'default' : 'secondary'}
           size="sm"
-          onClick={() => onChange(key)}
+          onClick={() => { onChange(key); }}
         >
           {label}
         </Button>
@@ -118,6 +119,7 @@ export function GrowthChart({ data, metric, period, onPeriodChange, isLoading }:
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- data can be undefined at runtime (see growth-chart.test.tsx undefined case)
   if (!data || data.length === 0) {
     return (
       <div className="bg-card border-border rounded-xl border p-5">
@@ -135,13 +137,15 @@ export function GrowthChart({ data, metric, period, onPeriodChange, isLoading }:
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by the data.length === 0 early return above
   const first = new Date(data[0]!.date).getTime();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by the data.length === 0 early return above
   const last = new Date(data[data.length - 1]!.date).getTime();
   const rangeMs = last - first;
 
   const tickFormatter = buildTickFormatter(rangeMs);
   const tickInterval = buildTickInterval(data.length, rangeMs);
-  const color = METRIC_COLOR[metric] ?? '#f59e0b';
+  const color = METRIC_COLOR[metric];
   const gradientId = `gradient-${metric}`;
 
   const chartData = data.map((d) => ({ ...d, label: tickFormatter(d.date) }));
@@ -154,6 +158,7 @@ export function GrowthChart({ data, metric, period, onPeriodChange, isLoading }:
           {(period === 'all' || period === '1y') && data.length > 0 && (
             <p className="text-muted-foreground mt-0.5 text-xs">
               Desde{' '}
+              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by data.length > 0 in the enclosing condition */}
               {new Date(data[0]!.date).toLocaleDateString('es-AR', {
                 day: 'numeric',
                 month: 'long',

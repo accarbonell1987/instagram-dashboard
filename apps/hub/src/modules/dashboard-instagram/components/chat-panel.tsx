@@ -1,13 +1,13 @@
 'use client'
 
+import { Button, Textarea } from '@core/ui'
+import { SendHorizonal, Trash2, CheckSquare } from 'lucide-react'
 import type { JSX } from 'react'
 import { useState, useRef, useEffect } from 'react'
 
-import { Button, Textarea } from '@core/ui'
 
-import type { UseGrowthAgentResult } from './chat-panel.types'
 import { ChatMessageBubble } from './chat-message'
-import { SendHorizonal, Trash2, CheckSquare } from 'lucide-react'
+import type { UseGrowthAgentResult } from './chat-panel.types'
 
 interface ChatPanelProps {
   hook: UseGrowthAgentResult
@@ -169,7 +169,7 @@ export function ChatPanel({ hook }: ChatPanelProps): JSX.Element {
       <div className="px-4 py-3 border-t flex gap-2">
         <Textarea
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => { setInputValue(e.target.value); }}
           onKeyDown={handleKeyDown}
           disabled={isLoading}
           placeholder="Escribí tu pregunta..."

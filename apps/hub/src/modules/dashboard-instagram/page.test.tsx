@@ -1,6 +1,5 @@
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 // Mock Recharts to avoid ResponsiveContainer dimension issues in jsdom
 vi.mock('recharts', async () => {
@@ -21,6 +20,13 @@ vi.mock('./hooks/use-instagram-dashboard', () => ({
     data: [],
     isLoading: false,
     error: null,
+    refetch: vi.fn(),
+  })),
+  usePublications: vi.fn(() => ({
+    data: null,
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   })),
   useReels: vi.fn(() => ({
     data: null,
@@ -84,24 +90,29 @@ vi.mock('./components/sync-status-badge', () => ({
   SyncStatusBadge: () => <div data-testid="sync-status-badge" />,
 }));
 
-import { DashboardInstagramPage } from './page';
 import {
   useInstagramDashboard,
   useConnectionStatus,
   useSyncStatus,
 } from './hooks/use-instagram-dashboard';
-import { useModules } from '@/modules/shared/modules';
-import type { AccessibleModule } from '@/modules/shared/modules/services/modules.service';
+import { DashboardInstagramPage } from './page';
 import type {
   DashboardData,
+  InstagramPeriod,
   SyncState,
 } from './types/instagram.types';
+
+import { useModules } from '@/modules/shared/modules';
+import type { AccessibleModule } from '@/modules/shared/modules/services/modules.service';
+
 
 function mockDashboardHook(overrides: Partial<ReturnType<typeof useInstagramDashboard>> = {}) {
   const defaults = {
     data: null as DashboardData | null,
     isLoading: false,
     error: null as string | null,
+    period: '7d' as InstagramPeriod,
+    setPeriod: vi.fn(),
     refetch: vi.fn(),
   };
   const mock = { ...defaults, ...overrides };
@@ -153,7 +164,18 @@ function mockModulesHook(overrides: Partial<ReturnType<typeof useModules>> = {})
   return mock;
 }
 
-const mockDashboardData: DashboardData = {
+// The page maps its view model from the backend response shape (`account`,
+// `overview`, `ranking`…), casting `data` internally. The fixture mirrors that
+// shape; the legacy `profile`/`overview` fields are kept for the type.
+const mockDashboardData = {
+  account: {
+    username: 'testuser',
+    displayName: 'Test User',
+    profilePictureUrl: 'https://example.com/avatar.jpg',
+    accountType: 'BUSINESS',
+    followerCount: 1000,
+    mediaCount: 50,
+  },
   profile: {
     username: 'testuser',
     fullName: 'Test User',
@@ -184,7 +206,7 @@ const mockDashboardData: DashboardData = {
   },
   period: '7d',
   lastUpdated: '2026-06-10T10:00:00Z',
-};
+} as unknown as DashboardData;
 
 describe('DashboardInstagramPage — state machine', () => {
   beforeEach(() => {

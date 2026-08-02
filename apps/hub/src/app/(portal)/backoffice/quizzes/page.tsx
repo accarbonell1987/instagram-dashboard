@@ -105,6 +105,7 @@ function QuizFormDialog({
       if (editingQuiz) {
         await onSave({
           title: data.title.trim(),
+          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty string must fall through to undefined, which ?? would not do
           description: data.description?.trim() || undefined,
           passingScore: data.passingScore,
           timeLimitMinutes: timeLimitMinutes ?? null,
@@ -113,6 +114,7 @@ function QuizFormDialog({
       } else {
         await onSave({
           title: data.title.trim(),
+          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty string must fall through to undefined, which ?? would not do
           description: data.description?.trim() || undefined,
           passingScore: data.passingScore,
           timeLimitMinutes,
@@ -235,7 +237,7 @@ function QuizFormDialog({
                 id="quiz-active"
                 checked={form.watch('active')}
                 onCheckedChange={(checked) =>
-                  form.setValue('active', checked === true, { shouldValidate: true })
+                  { form.setValue('active', checked === true, { shouldValidate: true }); }
                 }
                 disabled={isLoading}
               />

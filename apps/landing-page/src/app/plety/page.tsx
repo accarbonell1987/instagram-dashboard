@@ -567,7 +567,7 @@ export default function PletyPage() {
                   {/* Waveform visualization */}
                   <div className="flex items-end gap-0.5 h-10">
                     {Array.from({ length: 36 }).map((_, i) => {
-                      const h = Math.sin(i * 0.6) * 30 + 35 + Math.random() * 15;
+                      const h = Math.sin(i * 0.6) * 30 + 35 + (Math.sin(i * 2.3) + 1) * 7.5;
                       return (
                         <div
                           key={i}

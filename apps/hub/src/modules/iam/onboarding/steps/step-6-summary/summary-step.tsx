@@ -40,7 +40,7 @@ export function StepSummary({
       // company === null). Full representative recovery will be added when backend supports it.
       const recoverStep = targetStep === 'company' ? 'company' : 'company';
       await recoverDraft(draftId, recoverStep);
-      await refresh();
+      refresh();
     } finally {
       setIsRecovering(false);
     }
@@ -165,7 +165,10 @@ export function StepSummary({
           seguí las instrucciones para configurar tu contraseña.
         </p>
         <CopyButton
-          url={`${globalThis.location?.origin ?? ''}/login`}
+          url={
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- globalThis.location is undefined during SSR
+            `${globalThis.location?.origin ?? ''}/login`
+          }
           label="Copiar enlace de acceso"
         />
       </div>

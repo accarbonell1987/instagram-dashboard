@@ -399,9 +399,10 @@ export const instagramHandlers = [
 
   // Upload carousel — create
   http.post(`${API_BASE}/api/carousels/upload`, async ({ request }) => {
-    const body = await request.json() as { topic: string; slides: Array<{ order: number; imageMode: string }> }
+    const body = await request.json() as { topic: string; slides: { order: number; imageMode: string }[] }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- request body is untrusted; guard against a missing slides array
     const slides = (body.slides ?? []).map((s, i) => ({
-      id: `upload-slide-${i + 1}`,
+      id: `upload-slide-${String(i + 1)}`,
       order: s.order,
       status: 'pending',
     }))

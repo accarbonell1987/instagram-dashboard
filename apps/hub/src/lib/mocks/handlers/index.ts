@@ -2,12 +2,12 @@ import { adminHandlers } from './admin';
 import { authHandlers } from './auth';
 import { billingHandlers } from './billing';
 import { identityHandlers } from './identity';
+import { instagramHandlers } from './instagram';
 import { invitationsHandlers } from './invitations';
 import { modulesHandlers } from './modules';
 import { onboardingHandlers } from './onboarding';
 import { plansHandlers } from './plans';
 import { quizHandlers } from './quizzes';
-import { instagramHandlers } from './instagram';
 
 export const handlers = [
   ...authHandlers,

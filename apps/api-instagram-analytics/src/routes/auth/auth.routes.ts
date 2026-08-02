@@ -4,6 +4,7 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { createApiRouter } from '../../lib/create-openapi-router.js';
 import { ErrorResponseSchema } from '../../lib/shared-schemas.js';
 import type { OAuthService } from '../../services/oauth.service.js';
+
 import { OAuthCallbackQuerySchema } from './auth.schemas.js';
 
 const loginRoute = createRoute({

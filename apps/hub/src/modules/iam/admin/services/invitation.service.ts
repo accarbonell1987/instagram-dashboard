@@ -22,5 +22,5 @@ export async function listAdminInvitations(
 }
 
 export async function revokeAdminInvitation(id: string): Promise<void> {
-  await apiFetchWithInterceptors<void>(`/invitations/${id}`, { method: 'DELETE' });
+  await apiFetchWithInterceptors<undefined>(`/invitations/${id}`, { method: 'DELETE' });
 }

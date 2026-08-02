@@ -12,9 +12,9 @@ import {
 } from './auth.service';
 
 import { ValidationError, AuthError } from '@/lib/api/errors';
+import { applyScenario } from '@/lib/mocks/seed';
 import { mintFakeJwt } from '@/lib/mocks/seed-utils';
 import { server } from '@/lib/mocks/server';
-import { applyScenario } from '@/lib/mocks/seed';
 import { getSessionState, setSessionState } from '@/modules/iam/identity/session/store';
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080';

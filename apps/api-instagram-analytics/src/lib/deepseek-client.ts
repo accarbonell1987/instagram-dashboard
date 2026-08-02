@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions.js';
+
 import { config } from '../config.js';
 
 export type DeepSeekModel = 'deepseek-v4-flash' | 'deepseek-v4-pro';
@@ -44,7 +45,7 @@ export class DeepSeekClient {
         ...(params.tools !== undefined && { tools: params.tools }),
       },
       // extra_body merges into the request body — passes DeepSeek-specific fields through
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       { extra_body: { reasoning_effort: reasoningEffort } } as any,
     );
     const choice = response.choices[0];
@@ -65,7 +66,7 @@ export class DeepSeekClient {
         promptTokens: response.usage?.prompt_tokens ?? 0,
         completionTokens: response.usage?.completion_tokens ?? 0,
       },
-      finishReason: (choice.finish_reason ?? 'stop') as DeepSeekResponse['finishReason'],
+      finishReason: choice.finish_reason as DeepSeekResponse['finishReason'],
     };
   }
 }

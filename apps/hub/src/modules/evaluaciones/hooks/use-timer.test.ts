@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { useTimer } from './use-timer'
 
@@ -42,7 +42,7 @@ describe('useTimer', () => {
     })
 
     expect(result.current.isExpired).toBe(true)
-    expect(result.current.remaining).toBeUndefined
+    expect(result.current.formatted).toBe('00:00')
   })
 
   it('counts down over time', () => {

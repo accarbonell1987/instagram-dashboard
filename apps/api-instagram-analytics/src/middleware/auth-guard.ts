@@ -1,7 +1,8 @@
 import { createMiddleware } from 'hono/factory';
+
+import { UnauthorizedError } from '../errors.js';
 import type { TenantContext } from '../lib/jwt-verifier.js';
 import { verifyAccessToken } from '../lib/jwt-verifier.js';
-import { UnauthorizedError } from '../errors.js';
 
 // Extend Hono's ContextVariableMap
 declare module 'hono' {

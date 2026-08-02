@@ -18,7 +18,7 @@ const GENDER_COLORS: Record<string, string> = {
 
 interface CustomTooltipProps {
   active?: boolean
-  payload?: Array<{ name: string; value: number; payload: { label: string; percentage: number } }>
+  payload?: { name: string; value: number; payload: { label: string; percentage: number } }[]
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {

@@ -7,7 +7,7 @@ interface InsightCardProps {
 }
 
 export function InsightCard({ insight }: InsightCardProps) {
-  if (!insight || !insight.insight) {
+  if (!insight?.insight) {
     return (
       <div className="bg-card border rounded-xl p-6">
         <p className="text-sm text-muted-foreground">

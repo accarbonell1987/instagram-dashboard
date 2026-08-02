@@ -151,7 +151,7 @@ export function useSyncStatus(options?: { enabled?: boolean }): UseSyncStatusRes
       }
     }, 10_000)
 
-    return () => clearInterval(interval)
+    return () => { clearInterval(interval); }
   }, [fetchSyncStatus, syncState?.status])
 
   const handleTriggerSync = useCallback(async () => {
@@ -207,6 +207,7 @@ export function useGrowthData(
     }
   }, [metric, period, enabled])
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- refetch is part of the hook's Promise<void> contract and awaited by consumers
   const refetch = useCallback(async () => {
     setFetchTick((t) => t + 1)
   }, [])

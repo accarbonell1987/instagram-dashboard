@@ -1,7 +1,9 @@
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
 import type { GeneratedSlide, SlideRole } from '../domain/carousel.js';
-import type { UsageTracker } from './usage-tracker.service.js';
 import { QuotaExceededError } from '../errors.js';
+import type { DeepSeekClient } from '../lib/deepseek-client.js';
+
+import type { UsageTracker } from './usage-tracker.service.js';
+
 
 const SYSTEM_PROMPT = `You are a professional Instagram carousel scriptwriter for Spanish-speaking audiences.
 Given a topic, generate a carousel script as a JSON array of slides.
@@ -52,6 +54,7 @@ export class ScriptGeneratorService {
     if (tenantId && this.usageTracker) {
       const check = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
       if (!check.allowed) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', check.limit!, check.resetsAt!);
       }
     }
@@ -114,7 +117,7 @@ export class ScriptGeneratorService {
 
 function extractJson(text: string): string {
   // Strip markdown code fences if present
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const fenceMatch = /```(?:json)?\s*([\s\S]*?)```/.exec(text);
   if (fenceMatch?.[1]) return fenceMatch[1].trim();
 
   // Find first '[' to last ']'

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
 
 // Mock next/link and next/navigation
 vi.mock('next/link', () => ({
@@ -17,10 +17,12 @@ const mockUseSession = vi.fn()
 const mockUseAuth = vi.fn()
 
 vi.mock('@/modules/iam/identity/hooks/use-session', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock returns the vi.fn() result, typed any
   useSession: () => mockUseSession(),
 }))
 
 vi.mock('@/providers', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock returns the vi.fn() result, typed any
   useAuth: () => mockUseAuth(),
 }))
 
@@ -43,8 +45,8 @@ vi.mock('@core/shared/components', () => ({
 }))
 
 vi.mock('@core/shared/providers', () => ({
-  ThemeProvider: ({ children }: any) => children,
-  ColorThemeProvider: ({ children }: any) => children,
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
+  ColorThemeProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 
 // Mock @core/ui avatar (depends on Radix context)
@@ -52,9 +54,9 @@ vi.mock('@core/ui', async () => {
   const actual = await vi.importActual('@core/ui')
   return {
     ...(actual as object),
-    Avatar: ({ children }: any) => <div>{children}</div>,
+    Avatar: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     AvatarImage: () => null,
-    AvatarFallback: ({ children }: any) => <span>{children}</span>,
+    AvatarFallback: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   }
 })
 

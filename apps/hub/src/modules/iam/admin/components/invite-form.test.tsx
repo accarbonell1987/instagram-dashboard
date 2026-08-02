@@ -5,8 +5,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { InviteForm } from './invite-form';
 
-import { server } from '@/lib/mocks/server';
 import { applyScenario } from '@/lib/mocks/seed';
+import { server } from '@/lib/mocks/server';
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080';
 

@@ -5,9 +5,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { LoginForm } from './login-form';
 
-import { server } from '@/lib/mocks/server';
 import { applyScenario } from '@/lib/mocks/seed';
 import { mintFakeJwt } from '@/lib/mocks/seed-utils';
+import { server } from '@/lib/mocks/server';
 import { setSessionState } from '@/modules/iam/identity/session/store';
 
 const mockPush = vi.fn();
@@ -23,6 +23,7 @@ function renderLoginForm() {
 function getPasswordInput(): HTMLElement {
   // getAllByLabelText returns multiple elements because the PasswordInput toggle button
   // also has aria-label="Mostrar contraseña". We want only the real <input>.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return screen.getAllByLabelText(/Contraseña/i).find(
     (el) => el.tagName.toLowerCase() === 'input',
   )!;

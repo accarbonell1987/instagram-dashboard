@@ -39,7 +39,9 @@ interface MetricCardProps {
 
 function sparklineColor(points: number[]): string {
   if (points.length < 2) return '#6b7280' // gray
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by points.length < 2 early return above
   const first = points[0]!
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by points.length < 2 early return above
   const last = points[points.length - 1]!
   if (last > first) return '#22c55e' // green up
   if (last < first) return '#ef4444' // red down

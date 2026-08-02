@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+
 import { ChatPanel } from './chat-panel'
 import type { UseGrowthAgentResult } from './chat-panel.types'
 
@@ -8,6 +9,7 @@ function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgent
   return {
     messages: [],
     suggestions: [],
+    suggestionBatches: [],
     isLoading: false,
     sessionId: 'test-session',
     error: null,
@@ -21,7 +23,9 @@ function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgent
     deleteSelected: vi.fn().mockResolvedValue(undefined),
     clearSelection: vi.fn(),
     clearSuggestions: vi.fn().mockResolvedValue(undefined),
+    refreshSuggestions: vi.fn().mockResolvedValue(undefined),
     agentConfig: null,
+    hasFalApiKey: false,
     isSettingsOpen: false,
     openSettings: vi.fn(),
     closeSettings: vi.fn(),
@@ -101,7 +105,7 @@ describe('ChatPanel', () => {
   })
 
   // T-19: Clear conversation button
-  it('"Limpiar conversación" button renders and calls clearConversation', async () => {
+  it('"Limpiar conversación" button renders and calls clearConversation', () => {
     const clearConversation = vi.fn().mockResolvedValue(undefined)
     render(<ChatPanel hook={makeHook({ clearConversation })} />)
 
@@ -186,23 +190,6 @@ describe('ChatPanel', () => {
     expect(deleteBtn).toBeInTheDocument()
   })
 
-  // T-22: Gear icon button for agent settings
-  it('gear icon button is visible in header', () => {
-    render(<ChatPanel hook={makeHook()} />)
-    const gearBtn = screen.getByRole('button', { name: /Configurar agente/i })
-    expect(gearBtn).toBeInTheDocument()
-  })
-
-  it('clicking gear icon calls openSettings', () => {
-    const openSettings = vi.fn()
-    render(<ChatPanel hook={makeHook({ openSettings })} />)
-    const gearBtn = screen.getByRole('button', { name: /Configurar agente/i })
-    fireEvent.click(gearBtn)
-    expect(openSettings).toHaveBeenCalledTimes(1)
-  })
-
-  it('renders AgentSettingsModal when isSettingsOpen is true', () => {
-    render(<ChatPanel hook={makeHook({ isSettingsOpen: true })} />)
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-  })
+  // Agent settings (gear icon + modal) moved to the FloatingAgent header/shell;
+  // that behavior is covered in floating-agent.test.tsx.
 })

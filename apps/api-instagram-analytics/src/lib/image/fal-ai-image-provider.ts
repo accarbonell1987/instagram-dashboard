@@ -1,4 +1,5 @@
 import { createFalClient } from '@fal-ai/client';
+
 import type { ImageProvider, ImageGenerateOptions } from './image-provider.js';
 
 const DEFAULT_T2I_MODEL = 'fal-ai/ideogram/v3';
@@ -20,7 +21,7 @@ export class FalAiImageProvider implements ImageProvider {
     const client = createFalClient({ credentials: apiKey });
     const resolvedModel = model ?? DEFAULT_T2I_MODEL;
 
-    let result: { data: { images?: Array<{ url: string }> } };
+    let result: { data: { images?: { url: string }[] } };
     try {
       result = await client.subscribe(resolvedModel, {
         input: {
@@ -30,19 +31,19 @@ export class FalAiImageProvider implements ImageProvider {
           image_size: IMAGE_SIZE,
           rendering_speed: 'BALANCED',
         },
-      }) as { data: { images?: Array<{ url: string }> } };
+      }) as { data: { images?: { url: string }[] } };
     } catch (error) {
       const falError = error as { status?: number; body?: unknown; requestId?: string; message?: string };
       const detail = JSON.stringify({ status: falError.status, body: falError.body, requestId: falError.requestId });
       console.error(`[fal.ai] text-to-image error — ${falError.message ?? 'unknown'} | detail: ${detail}`);
-      throw new Error(`fal.ai API error ${falError.status ?? '?'}: ${falError.message ?? 'unknown'} — ${detail}`);
+      throw new Error(`fal.ai API error ${String(falError.status ?? '?')}: ${falError.message ?? 'unknown'} — ${detail}`);
     }
 
-    console.log(`[fal.ai] raw result keys: ${Object.keys(result ?? {}).join(', ')}`);
+    console.log(`[fal.ai] raw result keys: ${Object.keys(result).join(', ')}`);
 
-    const imageUrl = result?.data?.images?.[0]?.url;
+    const imageUrl = result.data.images?.[0]?.url;
     if (!imageUrl) {
-      const dataStr = JSON.stringify(result?.data);
+      const dataStr = JSON.stringify(result.data);
       console.error(`[fal.ai] no image URL in response. data: ${dataStr}`);
       throw new Error(`fal.ai returned no image URL. Response data: ${dataStr}`);
     }
@@ -59,7 +60,7 @@ export class FalAiImageProvider implements ImageProvider {
     const uploadedUrl = await client.storage.upload(imageFile);
     console.log(`[fal.ai] uploaded base image to fal storage: ${uploadedUrl.slice(0, 80)}...`);
 
-    let result: { data: { images?: Array<{ url: string }> } };
+    let result: { data: { images?: { url: string }[] } };
     try {
       result = await client.subscribe(resolvedModel, {
         input: {
@@ -68,17 +69,17 @@ export class FalAiImageProvider implements ImageProvider {
           strength: IMG2IMG_STRENGTH,
           num_images: 1,
         },
-      }) as { data: { images?: Array<{ url: string }> } };
+      }) as { data: { images?: { url: string }[] } };
     } catch (error) {
       const falError = error as { status?: number; body?: unknown; requestId?: string; message?: string };
       const detail = JSON.stringify({ status: falError.status, body: falError.body, requestId: falError.requestId });
       console.error(`[fal.ai] image-to-image error — ${falError.message ?? 'unknown'} | detail: ${detail}`);
-      throw new Error(`fal.ai img2img error ${falError.status ?? '?'}: ${falError.message ?? 'unknown'} — ${detail}`);
+      throw new Error(`fal.ai img2img error ${String(falError.status ?? '?')}: ${falError.message ?? 'unknown'} — ${detail}`);
     }
 
-    const imageUrl = result?.data?.images?.[0]?.url;
+    const imageUrl = result.data.images?.[0]?.url;
     if (!imageUrl) {
-      const dataStr = JSON.stringify(result?.data);
+      const dataStr = JSON.stringify(result.data);
       console.error(`[fal.ai] no image URL in img2img response. data: ${dataStr}`);
       throw new Error(`fal.ai img2img returned no image URL. Response data: ${dataStr}`);
     }
@@ -90,7 +91,7 @@ export class FalAiImageProvider implements ImageProvider {
     console.log(`[fal.ai] downloading image from ${imageUrl.slice(0, 80)}...`);
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      throw new Error(`Failed to download image from fal.ai: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to download image from fal.ai: ${String(response.status)} ${response.statusText}`);
     }
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);
