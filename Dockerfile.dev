@@ -22,6 +22,7 @@ COPY packages/database/package.json      packages/database/
 COPY packages/cli/package.json           packages/cli/
 COPY apps/api-iam/package.json           apps/api-iam/
 COPY products/instagram-dashboard/api/package.json products/instagram-dashboard/api/
+COPY products/instagram-dashboard/web/package.json products/instagram-dashboard/web/
 COPY apps/hub/package.json               apps/hub/
 COPY apps/landing-page/package.json      apps/landing-page/
 COPY internal/docs/package.json          internal/docs/

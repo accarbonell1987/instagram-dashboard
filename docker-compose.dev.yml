@@ -78,6 +78,10 @@ services:
     env_file:
       - apps/api-iam/.env
       - apps/api-iam/.env.docker
+    environment:
+      # Seed points the dashboard-instagram module at the standalone web app so
+      # hub routes it through the iframe ModuleShell (browser-reachable URL).
+      INSTAGRAM_DASHBOARD_WEB_URL: http://localhost:3010
     depends_on:
       postgres:
         condition: service_healthy
@@ -125,6 +129,64 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    networks:
+      - corehub-dev
+
+  # ─── Instagram product (products/instagram-dashboard) ─────────────────────
+
+  instagram-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: corehub-instagram-api
+    command: ["sh", "/app/scripts/docker-entrypoint-instagram-api.sh"]
+    ports:
+      - "3003:3003"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      PORT: "3003"
+      DATABASE_URL: postgresql://corehub:corehub_dev_password@postgres:5432/corehub_instagram
+      # Server-to-server URLs use the docker service name (not localhost).
+      IAM_JWKS_URL: http://api-iam:8080
+      IAM_INTERNAL_URL: http://api-iam:8080
+      CORS_ORIGIN: http://localhost:3010
+      PUBLIC_BASE_URL: http://localhost:3003
+      # Dev placeholders — replace with real Meta/DeepSeek credentials to
+      # connect a real Instagram account or use the growth agent.
+      IG_APP_ID: dev_ig_app_id
+      IG_APP_SECRET: dev_ig_app_secret
+      IG_REDIRECT_URI: http://localhost:3003/api/auth/instagram/callback
+      ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
+      DEEPSEEK_API_KEY: dev_deepseek_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api-iam:
+        condition: service_healthy
+    networks:
+      - corehub-dev
+
+  instagram-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: corehub-instagram-web
+    command: pnpm --filter @corehub/web-instagram-dashboard dev
+    environment:
+      HOSTNAME: "0.0.0.0"
+      # NEXT_PUBLIC_* run in the browser, so they must be localhost, not service names.
+      NEXT_PUBLIC_INSTAGRAM_API_URL: http://localhost:3003
+      NEXT_PUBLIC_HUB_ORIGIN: http://localhost:3001
+    ports:
+      - "3010:3010"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - instagram-api
     networks:
       - corehub-dev
 
