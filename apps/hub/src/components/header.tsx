@@ -18,6 +18,7 @@ import { useState } from 'react';
 
 import { ThemeSelector } from '@/components/theme-selector';
 import { useSession } from '@/modules/iam/identity/hooks/use-session';
+import { ModulesMenu } from '@/modules/shared/modules/index';
 import { useAuth } from '@/providers';
 
 export function Header() {
@@ -71,6 +72,7 @@ export function Header() {
 
             {isAuthenticated ? (
               <>
+                <ModulesMenu />
                 {canAccessSettings && (
                   <Button asChild variant="ghost-border" size="icon-sm" aria-label="Configuración">
                     <Link href="/settings">

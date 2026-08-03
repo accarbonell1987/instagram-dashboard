@@ -11,10 +11,10 @@ export function ConnectAccount() {
 
   const handleConnect = async () => {
     if (!confirmed) return;
-    setIsConnecting(true);
+      setIsConnecting(true);
     try {
       const url = await getOAuthUrl();
-      window.location.href = url;
+      window.top!.location.href = url;
     } catch {
       setIsConnecting(false);
     }

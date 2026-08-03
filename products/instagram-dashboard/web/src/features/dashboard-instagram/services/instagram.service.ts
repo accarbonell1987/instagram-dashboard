@@ -89,10 +89,12 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (response.status === 401) {
-    // Stale/absent token. This app runs inside the hub's iframe and can't
-    // refresh on its own — drop the token and surface the error. The hub owns
-    // re-authentication and will push a fresh token via postMessage.
-    clearHubToken();
+    // Only clear the token if this request actually carried one — otherwise
+    // we may race with a concurrent postMessage delivery that arrived between
+    // this request's dispatch (without token) and the 401 response.
+    if (token !== null) {
+      clearHubToken();
+    }
     throw new Error('Session expired. Please log in again.');
   }
 

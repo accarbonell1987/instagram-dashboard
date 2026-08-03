@@ -1,5 +1,5 @@
 export { ModuleShell } from './components/module-shell';
-export { ModulesSidebar } from './components/modules-sidebar';
+export { ModulesMenu } from './components/modules-menu';
 export { ModuleNotAvailable } from './components/module-not-available';
 export { useModules } from './hooks/use-modules';
 export { getAccessibleModules } from './services/modules.service';

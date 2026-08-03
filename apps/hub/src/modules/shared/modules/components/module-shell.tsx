@@ -77,16 +77,24 @@ export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
     };
   }, [moduleUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Subscribe to token changes and forward them to the iframe when ready
+  // Forward token changes to the iframe. Subscribing unconditionally (not
+  // gated on isReady) covers the case where the hub's session refresh resolves
+  // after the iframe mounted: the new token is pushed as soon as it lands.
   useEffect(() => {
-    if (!isReady) return;
-
     const unsubscribe = subscribeToToken((token) => {
       sendToken(token);
     });
 
     return unsubscribe;
-  }, [isReady, moduleUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [moduleUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Push the current token once the iframe finishes loading. The `ready`/
+  // `requestToken` handshake can be lost if the iframe posts it before this
+  // component registers its message listener; onLoad fires after the iframe's
+  // own listener is in place, so this is the reliable delivery path.
+  function handleIframeLoad(): void {
+    sendToken(getAccessToken()?.raw ?? null);
+  }
 
   if (isLoading) {
     return (
@@ -104,8 +112,9 @@ export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
     <iframe
       ref={iframeRef}
       src={moduleUrl}
+      onLoad={handleIframeLoad}
       className="h-full w-full border-0"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
       title={moduleId}
     />
   );

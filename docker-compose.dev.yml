@@ -153,14 +153,10 @@ services:
       IAM_JWKS_URL: http://api-iam:8080
       IAM_INTERNAL_URL: http://api-iam:8080
       CORS_ORIGIN: http://localhost:3010
-      PUBLIC_BASE_URL: http://localhost:3003
-      # Dev placeholders — replace with real Meta/DeepSeek credentials to
-      # connect a real Instagram account or use the growth agent.
-      IG_APP_ID: dev_ig_app_id
-      IG_APP_SECRET: dev_ig_app_secret
-      IG_REDIRECT_URI: http://localhost:3003/api/auth/instagram/callback
-      ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
-      DEEPSEEK_API_KEY: dev_deepseek_key
+      PUBLIC_BASE_URL: https://stammer-underpaid-unmoral.ngrok-free.dev
+      IG_REDIRECT_URI: https://stammer-underpaid-unmoral.ngrok-free.dev/api/auth/instagram/callback
+    env_file:
+      - products/instagram-dashboard/api/.env
     depends_on:
       postgres:
         condition: service_healthy

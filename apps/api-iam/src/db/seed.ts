@@ -287,6 +287,46 @@ async function seedModules() {
   console.log(`${totalAssignments} plan-module assignments seeded.`);
 }
 
+// The instagram-dashboard product API (products/instagram-dashboard/api) gates
+// every request with an entitlement guard that resolves access via
+// TenantProductSubscription → Plan → PlanModule. Without a Product row, the
+// dashboard-instagram module's product_id, and a subscription for the system
+// tenant, that guard fails closed (403) even though the module shows in the hub.
+async function seedInstagramProduct() {
+  await prisma.product.upsert({
+    where: { id: 'instagram-dashboard' },
+    update: {},
+    create: {
+      id: 'instagram-dashboard',
+      name: 'Dashboard Instagram',
+      description: 'Panel de análisis y métricas de Instagram',
+    },
+  });
+
+  // Link the module to its product so product-scoped resolution works.
+  await prisma.module.update({
+    where: { id: 'dashboard-instagram' },
+    data: { productId: 'instagram-dashboard' },
+  });
+
+  // Give the system tenant (enterprise plan, which includes dashboard-instagram)
+  // an active subscription to the product so the entitlement guard resolves.
+  const systemTenant = await prisma.tenant.findUnique({ where: { slug: '__system__' } });
+  if (systemTenant) {
+    await prisma.tenantProductSubscription.upsert({
+      where: { tenantId_productId: { tenantId: systemTenant.id, productId: 'instagram-dashboard' } },
+      update: { status: 'active' },
+      create: {
+        tenantId: systemTenant.id,
+        productId: 'instagram-dashboard',
+        planId: systemTenant.planId,
+        status: 'active',
+      },
+    });
+  }
+  console.log('Instagram product + system-tenant subscription seeded.');
+}
+
 async function main() {
   const existingPlans = await prisma.plan.count();
   if (existingPlans === PLANS.length) {
@@ -302,6 +342,7 @@ async function main() {
   await seedSystemTenant();
   await seedSuperAdmin();
   await seedModules();
+  await seedInstagramProduct();
   await seedDevFixtures();
 }
 

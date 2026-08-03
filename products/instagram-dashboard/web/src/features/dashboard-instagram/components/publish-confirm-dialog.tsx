@@ -52,7 +52,7 @@ export function PublishConfirmDialog({
     setIsLoadingReconnect(true)
     try {
       const url = await getOAuthUrl()
-      window.location.href = url
+      window.top!.location.href = url
     } catch {
       setIsLoadingReconnect(false)
     }

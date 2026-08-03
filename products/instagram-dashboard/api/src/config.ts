@@ -26,6 +26,9 @@ const ConfigSchema = z.object({
     .pipe(z.boolean())
     .default('true'),
   IAM_INTERNAL_URL: z.string().url().default('http://localhost:8080'),
+  // Where the browser lands after Instagram OAuth completes.
+  // Must be a URL the user's browser can reach (not a docker service name).
+  POST_AUTH_REDIRECT_URL: z.string().url().default('http://localhost:3001'),
 });
 
 export const config = ConfigSchema.parse(process.env);

@@ -25,6 +25,13 @@ const HUB_ORIGIN = process.env['NEXT_PUBLIC_HUB_ORIGIN'] ?? 'http://localhost:30
 
 let currentToken: string | null = null;
 
+type TokenSubscriber = (token: string | null) => void;
+const subscribers = new Set<TokenSubscriber>();
+
+function notifySubscribers(token: string | null): void {
+  for (const callback of subscribers) callback(token);
+}
+
 /** The JWT last received from the hub, or null if none has arrived yet. */
 export function getHubToken(): string | null {
   return currentToken;
@@ -33,6 +40,20 @@ export function getHubToken(): string | null {
 /** Drop the stored token (e.g. after a 401). The hub re-sends on next sign-in. */
 export function clearHubToken(): void {
   currentToken = null;
+  notifySubscribers(null);
+}
+
+/**
+ * Subscribe to token changes. The callback fires immediately with the current
+ * value (non-null if a token was already stored), then again on every change.
+ * Returns an unsubscribe function.
+ */
+export function subscribeToToken(callback: TokenSubscriber): () => void {
+  subscribers.add(callback);
+  // Fire immediately so late subscribers (effects that mount after initHubToken
+  // already stored the token) don't miss it.
+  callback(currentToken);
+  return () => { subscribers.delete(callback); };
 }
 
 function isTrustedOrigin(origin: string): boolean {
@@ -51,8 +72,10 @@ function handleMessage(event: MessageEvent): void {
 
   if (data.type === HUB_TO_MODULE.token && typeof data.token === 'string') {
     currentToken = data.token;
+    notifySubscribers(currentToken);
   } else if (data.type === HUB_TO_MODULE.signOut) {
     currentToken = null;
+    notifySubscribers(null);
   }
 }
 

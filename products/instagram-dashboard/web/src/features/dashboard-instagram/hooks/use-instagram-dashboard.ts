@@ -13,6 +13,7 @@ import {
   getReelDetail,
   getDemographics,
 } from '../services/instagram.service'
+import { subscribeToToken } from '../lib/hub-token'
 import type {
   ConnectionStatus,
   DashboardData,
@@ -103,6 +104,15 @@ export function useConnectionStatus(): UseConnectionStatusResult {
 
   useEffect(() => {
     void fetchStatus()
+  }, [fetchStatus])
+
+  // Refetch status when the hub delivers a token (or clears it). Covers the
+  // race where the initial fetchStatus ran before postMessage delivered the JWT.
+  useEffect(() => {
+    const unsubscribe = subscribeToToken((token) => {
+      if (token !== null) void fetchStatus()
+    })
+    return unsubscribe
   }, [fetchStatus])
 
   return {

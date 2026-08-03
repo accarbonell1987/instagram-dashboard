@@ -98,7 +98,7 @@ export class OAuthService {
     );
 
     return {
-      redirectUrl: `${config.CORS_ORIGIN}/dashboard-instagram?connected=true`,
+      redirectUrl: `${config.POST_AUTH_REDIRECT_URL}/apps/dashboard-instagram?connected=true`,
       accountId: account.id,
     };
   }

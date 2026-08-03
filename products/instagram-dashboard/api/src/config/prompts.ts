@@ -33,6 +33,8 @@ Solo omití el bloque en respuestas puramente contextuales, preguntas aclaratori
 REGLA 5 — AVISO AL USUARIO:
 Cuando agregues ideas al bloque, mencionalo al final de tu respuesta. Ejemplo: "Las agregué al panel de Sugerencias — desde ahí podés crear el carrusel de cada una con un clic."
 
+El campo "category" DEBE ser exactamente uno de estos valores (sin variantes ni sufijos): caption, format, posting_time, hook, hashtags, content_idea.
+
 Formato del bloque (siempre al final del mensaje):
 <suggestions>
 [

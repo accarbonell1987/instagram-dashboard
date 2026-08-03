@@ -9,9 +9,26 @@ import type { Repositories } from '../lib/create-repositories.js';
 import type { DeepSeekClient } from '../lib/deepseek-client.js';
 
 import type { DashboardService } from './dashboard.service.js';
-import { GrowthAgentService } from './growth-agent.service.js';
+import { GrowthAgentService, normalizeCategory } from './growth-agent.service.js';
 import type { SuggestionService } from './suggestion.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
+
+describe('normalizeCategory', () => {
+  it('passes valid enum values through', () => {
+    expect(normalizeCategory('caption')).toBe('caption');
+    expect(normalizeCategory('content_idea')).toBe('content_idea');
+  });
+
+  it('coerces LLM drift onto the closed enum set', () => {
+    expect(normalizeCategory('caption_tip')).toBe('caption');
+    expect(normalizeCategory('CAPTION')).toBe('caption');
+    expect(normalizeCategory('posting_time_advice')).toBe('posting_time');
+  });
+
+  it('falls back to content_idea for unknown values', () => {
+    expect(normalizeCategory('random_nonsense')).toBe('content_idea');
+  });
+});
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 

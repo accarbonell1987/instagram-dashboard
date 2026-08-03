@@ -47,7 +47,15 @@ const MAX_ITERATIONS = 5;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SuggestionCategory = 'caption' | 'format' | 'posting_time' | 'hook' | 'hashtags' | 'content_idea';
+const VALID_CATEGORIES = ['caption', 'format', 'posting_time', 'hook', 'hashtags', 'content_idea'] as const;
+type SuggestionCategory = (typeof VALID_CATEGORIES)[number];
+
+// LLM output is a trust boundary: it drifts to invalid enum values (e.g. "caption_tip").
+// Coerce onto the known set — prefix match catches the common drift, else fall back to content_idea.
+export function normalizeCategory(raw: string): SuggestionCategory {
+  const value = raw.trim().toLowerCase();
+  return VALID_CATEGORIES.find((valid) => value === valid || value.startsWith(valid)) ?? 'content_idea';
+}
 
 interface ParsedSuggestion {
   category: SuggestionCategory;
@@ -390,7 +398,7 @@ export class GrowthAgentService {
       if (item.category && item.content) {
         const suggestion = await this.suggestionService.createSuggestion(
           tenantId,
-          item.category,
+          normalizeCategory(item.category),
           item.content,
           batchId,
         );
