@@ -34,18 +34,17 @@ export type DraftUpdateInput = {
 
 // Valid step transitions per server-authoritative state machine (spec domain 2)
 const ALLOWED_TRANSITIONS: ReadonlyMap<DraftStep, ReadonlySet<DraftStep>> = new Map([
+  ['product', new Set<DraftStep>(['product', 'plan'])],
   ['plan', new Set<DraftStep>(['plan', 'representative'])],
   ['representative', new Set<DraftStep>(['representative', 'otp'])],
-  // otp_verified status enables moving forward to company or payment from the otp step
   ['otp', new Set<DraftStep>(['otp', 'company', 'payment'])],
   ['company', new Set<DraftStep>(['company', 'payment'])],
   ['payment', new Set<DraftStep>(['payment', 'summary'])],
   ['summary', new Set<DraftStep>(['summary'])],
 ]);
 
-// Mapping from draft status to the allowed "incoming" step transitions
 const STATUS_ALLOWED_STEPS: ReadonlyMap<DraftStatus, ReadonlySet<DraftStep>> = new Map([
-  ['draft', new Set<DraftStep>(['plan', 'representative'])],
+  ['draft', new Set<DraftStep>(['product', 'plan', 'representative'])],
   ['otp_pending', new Set<DraftStep>(['otp', 'representative'])],
   ['otp_verified', new Set<DraftStep>(['company', 'payment'])],
   ['payment_pending', new Set<DraftStep>(['payment', 'company'])],
@@ -66,17 +65,17 @@ export function createDraftService(deps: DraftServiceDeps) {
 
   async function createDraft(params: {
     planId?: string | undefined;
+    productId?: string | undefined;
     ipAddress: string;
   }): Promise<OnboardingDraft> {
-    const { planId, ipAddress: _ipAddress } = params;
+    const { planId, productId, ipAddress: _ipAddress } = params;
 
     if (planId !== undefined) {
-      // Validates plan exists — throws NotFoundError if not
       await planRepo.findById(planId);
     }
 
     const expiresAt = new Date(Date.now() + config.DRAFT_TTL_SECONDS * 1000);
-    return draftRepo.create({ planId, expiresAt });
+    return draftRepo.create({ planId, productId, expiresAt });
   }
 
   async function getDraft(draftId: string): Promise<OnboardingDraft> {

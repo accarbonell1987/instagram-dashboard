@@ -1103,6 +1103,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tenants/current/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar productos disponibles para el tenant autenticado
+         * @description **Propósito**: Retorna los productos que el tenant puede usar, cada uno con
+         *     los módulos efectivos que otorga. Es la fuente del landing del portal.
+         *
+         *     **Regla de resolución**:
+         *     1. Productos con suscripción activa (`TenantProductSubscription.status = active`)
+         *     2. Más productos con un Entitlement de tipo `grant` vigente (trial/admin/override)
+         *     3. Los módulos de cada producto se resuelven con la misma regla que
+         *        `/tenants/current/modules`, pero acotada a ese producto
+         *     4. Un producto sin módulos alcanzables no se devuelve
+         *     5. SuperAdmin recibe todos los productos activos con todos sus módulos activos
+         *
+         *     **Precondiciones**: Sesión activa (cualquier rol).
+         */
+        get: operations["getAvailableProducts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/modules": {
         parameters: {
             query?: never;
@@ -1227,7 +1258,7 @@ export interface paths {
         patch: operations["adminChangeTenantStatus"];
         trace?: never;
     };
-    "/admin/plans/{planId}/modules": {
+    "/admin/plans/reorder": {
         parameters: {
             query?: never;
             header?: never;
@@ -1235,6 +1266,29 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /**
+         * Reordenar planes (SuperAdmin)
+         * @description Recibe la lista completa de planes en su nuevo orden; el índice de cada id
+         *     pasa a ser su `displayOrder`. Es lo que persiste el drag and drop del
+         *     backoffice, y define el orden en que se muestran los planes en el wizard.
+         */
+        put: operations["reorderPlans"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plans/{planId}/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get modules assigned to a plan (SuperAdmin) */
+        get: operations["getPlanModules"];
         /** Asignar módulos a un plan (atómico, reemplaza la lista completa) (SuperAdmin) */
         put: operations["adminSetPlanModules"];
         post?: never;
@@ -1589,6 +1643,14 @@ export interface components {
          *         "IVR avanzado",
          *         "Soporte 24/5"
          *       ],
+         *       "modules": [
+         *         {
+         *           "id": "ig-basic-metrics",
+         *           "name": "Métricas Básicas",
+         *           "description": "Panel de métricas, crecimiento y demografía de tu cuenta",
+         *           "subModules": []
+         *         }
+         *       ],
          *       "popular": true
          *     }
          */
@@ -1602,6 +1664,23 @@ export interface components {
             /** @enum {string} */
             billingCycle: "monthly" | "yearly";
             features: string[];
+            /**
+             * @description Modules the plan grants, resolved live from the plan-module
+             *     association. Sub-modules (the functionalities of a module) are
+             *     nested one level deep.
+             */
+            modules?: {
+                id: string;
+                name: string;
+                description?: string;
+                subModules: {
+                    id: string;
+                    name: string;
+                    description?: string;
+                }[];
+            }[];
+            /** @description Plan predeterminado del producto — el wizard lo preselecciona. */
+            isDefault?: boolean;
             /** @default false */
             popular: boolean;
         };
@@ -2016,13 +2095,26 @@ export interface components {
             /** @description Ruta relativa del módulo en el Hub (ej. "/lab", "/billing") */
             defaultUrl: string;
             /**
-             * @description Origen del acceso — "plan" si viene del plan base, "override" si fue otorgado manualmente
+             * @description Origen del acceso — "plan" si viene del plan base, "override" si fue otorgado manualmente, "admin" si es SuperAdmin
              * @enum {string}
              */
             source: "plan" | "override" | "admin";
         };
         AccessibleModuleList: {
             modules: components["schemas"]["AccessibleModule"][];
+        };
+        ProductModule: components["schemas"]["AccessibleModule"] & {
+            /** @description Functionalities of the module (1 nesting level). */
+            subModules: components["schemas"]["AccessibleModule"][];
+        };
+        AvailableProduct: {
+            id: string;
+            name: string;
+            description?: string;
+            modules: components["schemas"]["ProductModule"][];
+        };
+        AvailableProductList: {
+            products: components["schemas"]["AvailableProduct"][];
         };
         ModuleList: {
             modules: components["schemas"]["Module"][];
@@ -2034,6 +2126,17 @@ export interface components {
             description?: string;
             /** @description Ruta relativa del módulo en el Hub (ej. "/lab", "/billing") */
             defaultUrl: string;
+            /**
+             * @description Producto al que pertenece el módulo. Un módulo pertenece a
+             *     exactamente un producto y solo puede asignarse a planes de ese
+             *     mismo producto — no existen módulos sin producto.
+             */
+            productId: string;
+            /**
+             * @description Módulo padre, para sub-módulos (funcionalidades). Debe pertenecer al
+             *     mismo producto y no ser a su vez un sub-módulo (1 nivel máximo).
+             */
+            parentId?: string;
         };
         UpdateModuleRequest: {
             name?: string;
@@ -2052,6 +2155,13 @@ export interface components {
             /** @description Motivo del override (opcional, para auditoría) */
             reason?: string;
         };
+        PlanModulesResponse: {
+            modules: {
+                moduleId: string;
+                planId: string;
+            }[];
+            moduleIds: string[];
+        };
         AdminPlan: {
             id: string;
             name: string;
@@ -2061,6 +2171,15 @@ export interface components {
             /** @enum {string} */
             billingInterval: "month" | "year";
             active: boolean;
+            /**
+             * @description Producto que vende el plan. Solo se le pueden asignar módulos de
+             *     este mismo producto.
+             */
+            productId?: string | null;
+            /** @description Orden de la lista, definido por drag and drop en el backoffice. */
+            displayOrder?: number;
+            /** @description Plan predeterminado del producto (uno solo por producto). */
+            isDefault?: boolean;
             tenantCount: number;
             /** Format: date-time */
             createdAt: string;
@@ -2153,7 +2272,9 @@ export interface components {
     responses: {
         /** @description Access token ausente, inválido o expirado */
         Unauthorized: {
-            headers: Record<string, unknown>;
+            headers: {
+                [name: string]: unknown;
+            };
             content: {
                 /**
                  * @example {
@@ -2168,35 +2289,45 @@ export interface components {
         };
         /** @description Autenticado pero no autorizado (rol o tenant no coinciden) */
         Forbidden: {
-            headers: Record<string, unknown>;
+            headers: {
+                [name: string]: unknown;
+            };
             content: {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
         /** @description Recurso no encontrado */
         NotFound: {
-            headers: Record<string, unknown>;
+            headers: {
+                [name: string]: unknown;
+            };
             content: {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
         /** @description Conflicto de estado (ya utilizado, versión no coincide, duplicado) */
         Conflict: {
-            headers: Record<string, unknown>;
+            headers: {
+                [name: string]: unknown;
+            };
             content: {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
         /** @description El recurso expiró y no está disponible permanentemente */
         Gone: {
-            headers: Record<string, unknown>;
+            headers: {
+                [name: string]: unknown;
+            };
             content: {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
         /** @description Error de validación de negocio (errores a nivel de campo) */
         UnprocessableEntity: {
-            headers: Record<string, unknown>;
+            headers: {
+                [name: string]: unknown;
+            };
             content: {
                 /**
                  * @example {
@@ -2218,7 +2349,9 @@ export interface components {
         };
         /** @description Rate limit / bloqueo de cuenta */
         TooManyRequests: {
-            headers: Record<string, unknown>;
+            headers: {
+                [name: string]: unknown;
+            };
             content: {
                 "application/problem+json": components["schemas"]["ProblemDetails"] & {
                     /** @description Segundos hasta que se permita reintentar */
@@ -2230,7 +2363,9 @@ export interface components {
         };
         /** @description Error de servidor no controlado */
         InternalError: {
-            headers: Record<string, unknown>;
+            headers: {
+                [name: string]: unknown;
+            };
             content: {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
@@ -2322,11 +2457,15 @@ export type SchemaPlanChangeResponse = components['schemas']['PlanChangeResponse
 export type SchemaModule = components['schemas']['Module'];
 export type SchemaAccessibleModule = components['schemas']['AccessibleModule'];
 export type SchemaAccessibleModuleList = components['schemas']['AccessibleModuleList'];
+export type SchemaProductModule = components['schemas']['ProductModule'];
+export type SchemaAvailableProduct = components['schemas']['AvailableProduct'];
+export type SchemaAvailableProductList = components['schemas']['AvailableProductList'];
 export type SchemaModuleList = components['schemas']['ModuleList'];
 export type SchemaCreateModuleRequest = components['schemas']['CreateModuleRequest'];
 export type SchemaUpdateModuleRequest = components['schemas']['UpdateModuleRequest'];
 export type SchemaSetPlanModulesRequest = components['schemas']['SetPlanModulesRequest'];
 export type SchemaUpsertModuleOverrideRequest = components['schemas']['UpsertModuleOverrideRequest'];
+export type SchemaPlanModulesResponse = components['schemas']['PlanModulesResponse'];
 export type SchemaAdminPlan = components['schemas']['AdminPlan'];
 export type SchemaAdminPlanListResponse = components['schemas']['AdminPlanListResponse'];
 export type SchemaAdminCreatePlanRequest = components['schemas']['AdminCreatePlanRequest'];
@@ -2374,7 +2513,9 @@ export interface operations {
         responses: {
             /** @description OTP emitido */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     /**
                      * @example {
@@ -2416,14 +2557,18 @@ export interface operations {
         responses: {
             /** @description OTP verificado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["OtpVerificationToken"];
                 };
             };
             /** @description Código inválido o expirado */
             422: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"] & {
                         attemptsRemaining?: number;
@@ -2451,7 +2596,9 @@ export interface operations {
         responses: {
             /** @description OTP reenviado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["OtpId"];
                 };
@@ -2481,21 +2628,27 @@ export interface operations {
         responses: {
             /** @description Credenciales válidas; OTP requerido (o sesión si el dispositivo es de confianza) */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["LoginResponse"];
                 };
             };
             /** @description Credenciales inválidas (sin enumeración — mismo cuerpo para email desconocido) */
             401: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Cuenta suspendida o pendiente de activación (first-login requerido) */
             403: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
@@ -2564,7 +2717,9 @@ export interface operations {
             };
             /** @description Refresh token expirado, inválido o ya utilizado */
             401: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
@@ -2625,7 +2780,9 @@ export interface operations {
         responses: {
             /** @description OTP emitido para el primer login */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["OtpId"];
                 };
@@ -2633,7 +2790,9 @@ export interface operations {
             404: components["responses"]["NotFound"];
             /** @description Cuenta ya activada */
             409: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -2661,7 +2820,9 @@ export interface operations {
         responses: {
             /** @description Contraseña establecida, sesión iniciada */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["Session"];
                 };
@@ -2683,7 +2844,9 @@ export interface operations {
         responses: {
             /** @description Token válido — datos del usuario para pre-rellenar la pantalla de bienvenida */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": {
                         /** Format: email */
@@ -2695,14 +2858,18 @@ export interface operations {
             };
             /** @description Token no encontrado o inválido */
             404: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Token expirado o ya utilizado */
             410: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
@@ -2720,7 +2887,9 @@ export interface operations {
         responses: {
             /** @description Política de contraseñas */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["PasswordPolicy"];
                 };
@@ -2755,7 +2924,9 @@ export interface operations {
         responses: {
             /** @description Siempre 202 — sin enumeración */
             202: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             429: components["responses"]["TooManyRequests"];
@@ -2784,7 +2955,9 @@ export interface operations {
         responses: {
             /** @description Contraseña actualizada, redirigir al login */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             410: components["responses"]["Gone"];
@@ -2802,7 +2975,9 @@ export interface operations {
         responses: {
             /** @description Información de la sesión actual */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": {
                         user: components["schemas"]["User"];
@@ -2825,7 +3000,9 @@ export interface operations {
         responses: {
             /** @description Planes */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": {
                         plans: components["schemas"]["Plan"][];
@@ -2847,7 +3024,9 @@ export interface operations {
         responses: {
             /** @description Plan */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["Plan"];
                 };
@@ -2883,7 +3062,9 @@ export interface operations {
         responses: {
             /** @description Borrador creado */
             201: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["DraftState"];
                 };
@@ -2903,7 +3084,9 @@ export interface operations {
         responses: {
             /** @description draftId resuelto */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["ResumeTokenResolution"];
                 };
@@ -2924,7 +3107,9 @@ export interface operations {
         responses: {
             /** @description Estado del borrador */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["DraftState"];
                 };
@@ -2958,14 +3143,18 @@ export interface operations {
         responses: {
             /** @description Borrador actualizado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["DraftState"];
                 };
             };
             /** @description Conflicto de versión — recargar el borrador */
             409: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["DraftState"];
                 };
@@ -2999,7 +3188,9 @@ export interface operations {
         responses: {
             /** @description Email en cola */
             202: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["ResumeLinkResponse"];
                 };
@@ -3034,7 +3225,9 @@ export interface operations {
         responses: {
             /** @description Pago iniciado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     /**
                      * @example {
@@ -3048,7 +3241,9 @@ export interface operations {
             };
             /** @description Pago ya pendiente o aprobado para este borrador */
             409: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             422: components["responses"]["UnprocessableEntity"];
@@ -3067,7 +3262,9 @@ export interface operations {
         responses: {
             /** @description Estado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["PaymentStatus"];
                 };
@@ -3121,7 +3318,9 @@ export interface operations {
         responses: {
             /** @description Vista previa de la invitación */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["InvitationPreview"];
                 };
@@ -3156,7 +3355,9 @@ export interface operations {
         responses: {
             /** @description Aceptada */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["Session"];
                 };
@@ -3179,7 +3380,9 @@ export interface operations {
         responses: {
             /** @description List of invitations */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["InvitationListResponse"];
                 };
@@ -3210,7 +3413,9 @@ export interface operations {
         responses: {
             /** @description Invitation created */
             201: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["CreateInvitationResponse"];
                 };
@@ -3233,7 +3438,9 @@ export interface operations {
         responses: {
             /** @description Invitation revoked */
             204: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             403: components["responses"]["Forbidden"];
@@ -3252,7 +3459,9 @@ export interface operations {
         responses: {
             /** @description Tenant */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["Tenant"];
                 };
@@ -3283,7 +3492,9 @@ export interface operations {
         responses: {
             /** @description Tenant updated */
             204: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
@@ -3302,7 +3513,9 @@ export interface operations {
         responses: {
             /** @description List of members */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["MemberListResponse"];
                 };
@@ -3327,7 +3540,9 @@ export interface operations {
         responses: {
             /** @description Member status updated */
             204: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
@@ -3349,7 +3564,9 @@ export interface operations {
         responses: {
             /** @description Member deleted */
             204: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
@@ -3381,7 +3598,9 @@ export interface operations {
         responses: {
             /** @description Plan change request received */
             201: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["PlanChangeResponse"];
                 };
@@ -3403,9 +3622,32 @@ export interface operations {
         responses: {
             /** @description Lista de módulos accesibles */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["AccessibleModuleList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getAvailableProducts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de productos disponibles con sus módulos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailableProductList"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -3422,7 +3664,9 @@ export interface operations {
         responses: {
             /** @description Lista completa de módulos */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["ModuleList"];
                 };
@@ -3454,7 +3698,9 @@ export interface operations {
         responses: {
             /** @description Módulo creado */
             201: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["Module"];
                 };
@@ -3478,7 +3724,9 @@ export interface operations {
         responses: {
             /** @description Módulo encontrado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["Module"];
                 };
@@ -3509,7 +3757,9 @@ export interface operations {
         responses: {
             /** @description Módulo eliminado */
             204: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
@@ -3542,7 +3792,9 @@ export interface operations {
         responses: {
             /** @description Módulo actualizado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["Module"];
                 };
@@ -3567,7 +3819,9 @@ export interface operations {
         responses: {
             /** @description Lista de planes */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["AdminPlanListResponse"];
                 };
@@ -3599,7 +3853,9 @@ export interface operations {
         responses: {
             /** @description Plan creado */
             201: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["AdminPlan"];
                 };
@@ -3631,7 +3887,9 @@ export interface operations {
         responses: {
             /** @description Plan archivado */
             204: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
@@ -3664,7 +3922,9 @@ export interface operations {
         responses: {
             /** @description Plan actualizado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["AdminPlan"];
                 };
@@ -3692,7 +3952,9 @@ export interface operations {
         responses: {
             /** @description Lista paginada de tenants */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["AdminTenantListResponse"];
                 };
@@ -3714,7 +3976,9 @@ export interface operations {
         responses: {
             /** @description Detalle del tenant */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["AdminTenantDetail"];
                 };
@@ -3749,7 +4013,9 @@ export interface operations {
         responses: {
             /** @description Estado actualizado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": {
                         /** Format: uuid */
@@ -3763,6 +4029,66 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["UnprocessableEntity"];
+        };
+    };
+    reorderPlans: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description UUID v4. Requerido en todos los endpoints de mutación que no sean GET. El backend almacena
+                 *     (key, request_hash, response_body, status_code, created_at) durante 24 h.
+                 *     Misma key → respuesta cacheada. Cuerpo de request diferente con la misma key → 422.
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKeyHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    planIds: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Orden actualizado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+        };
+    };
+    getPlanModules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plan modules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanModulesResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     adminSetPlanModules: {
@@ -3790,7 +4116,9 @@ export interface operations {
         responses: {
             /** @description Módulos del plan actualizados */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": {
                         moduleIds: string[];
@@ -3829,7 +4157,9 @@ export interface operations {
         responses: {
             /** @description Override actualizado */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
@@ -3860,7 +4190,9 @@ export interface operations {
         responses: {
             /** @description Override eliminado */
             204: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
@@ -3897,7 +4229,9 @@ export interface operations {
         responses: {
             /** @description Profile updated, new access token issued */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     /**
                      * @example {
@@ -3930,7 +4264,9 @@ export interface operations {
         responses: {
             /** @description URL firmada */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["SignedUrlResponse"];
                 };
@@ -3949,7 +4285,9 @@ export interface operations {
         responses: {
             /** @description Método de pago (puede ser null) */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["PaymentMethodResponse"];
                 };
@@ -3977,7 +4315,9 @@ export interface operations {
         responses: {
             /** @description Solicitud aceptada */
             202: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["PaymentMethodChangeRequestResponse"];
                 };
@@ -4001,7 +4341,9 @@ export interface operations {
         responses: {
             /** @description Lista de facturas */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["InvoiceListResponse"];
                 };
@@ -4023,7 +4365,9 @@ export interface operations {
         responses: {
             /** @description URL firmada */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["SignedUrlResponse"];
                 };
@@ -4087,7 +4431,9 @@ export interface operations {
         responses: {
             /** @description Webhook recibido (incluso si el procesamiento interno falla) */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": {
                         /** @enum {boolean} */
@@ -4097,14 +4443,18 @@ export interface operations {
             };
             /** @description Body inparseable */
             400: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Firma HMAC inválida */
             401: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };

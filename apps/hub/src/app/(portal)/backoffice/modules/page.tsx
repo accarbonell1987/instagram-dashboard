@@ -16,10 +16,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState, type JSX } from 'react';
+import { useCallback, useEffect, useState, useMemo, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ApiError } from '@/lib/api/errors';
@@ -127,20 +132,13 @@ function ModuleFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Editar Módulo' : 'Crear Módulo'}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Módulo' : 'Crear Módulo'}</DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? 'Modificá los datos del módulo.'
-              : 'Completá los datos del nuevo módulo.'}
+            {isEditing ? 'Modificá los datos del módulo.' : 'Completá los datos del nuevo módulo.'}
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          onSubmit={(e) => void form.handleSubmit(handleSubmit)(e)}
-          noValidate
-        >
+        <form onSubmit={(e) => void form.handleSubmit(handleSubmit)(e)} noValidate>
           <div className="space-y-4">
             {!isEditing && (
               <div className="flex flex-col gap-1.5">
@@ -169,9 +167,7 @@ function ModuleFormDialog({
                 placeholder="Nombre del módulo"
                 disabled={isLoading}
                 aria-describedby={
-                  form.formState.errors.name !== undefined
-                    ? 'module-name-error'
-                    : undefined
+                  form.formState.errors.name !== undefined ? 'module-name-error' : undefined
                 }
                 {...form.register('name')}
               />
@@ -229,7 +225,9 @@ function ModuleFormDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => { handleOpenChange(false); }}
+              onClick={() => {
+                handleOpenChange(false);
+              }}
               disabled={isLoading}
             >
               Cancelar
@@ -290,8 +288,8 @@ function DeleteConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Eliminar Módulo</AlertDialogTitle>
           <AlertDialogDescription>
-            ¿Estás seguro de que deseas eliminar <strong>{moduleName}</strong>? Esta
-            acción no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar <strong>{moduleName}</strong>? Esta acción no se
+            puede deshacer.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -305,7 +303,9 @@ function DeleteConfirmDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => { handleOpenChange(false); }}
+            onClick={() => {
+              handleOpenChange(false);
+            }}
             disabled={deleting}
           >
             Cancelar
@@ -333,12 +333,15 @@ export default function ModulesPage(): JSX.Element {
   const [formOpen, setFormOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<AdminModule | null>(null);
   const [deletingModule, setDeletingModule] = useState<AdminModule | null>(null);
+  const [productFilter, setProductFilter] = useState('instagram-dashboard');
+
+  const PRODUCTS = useMemo(() => [{ id: 'instagram-dashboard', name: 'Dashboard Instagram' }], []);
 
   const loadModules = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const result = await listModules();
+      const result = await listModules(productFilter);
       setModules(result.modules);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -349,7 +352,7 @@ export default function ModulesPage(): JSX.Element {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [productFilter]);
 
   useEffect(() => {
     void loadModules();
@@ -369,7 +372,9 @@ export default function ModulesPage(): JSX.Element {
     if (editingModule) {
       await updateModule(editingModule.id, data as UpdateModuleParams);
     } else {
-      await createModule(data as CreateModuleParams);
+      // The module is created inside the product currently being browsed —
+      // there is no such thing as a product-less module.
+      await createModule({ ...(data as CreateModuleParams), productId: productFilter });
     }
     await loadModules();
   };
@@ -388,7 +393,21 @@ export default function ModulesPage(): JSX.Element {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Módulos</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">Producto:</h2>
+          <Select value={productFilter} onValueChange={setProductFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRODUCTS.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button size="sm" onClick={handleCreate}>
           <Plus className="mr-1 h-4 w-4" />
           Crear Módulo
@@ -411,46 +430,59 @@ export default function ModulesPage(): JSX.Element {
               <tr>
                 <th className="px-4 py-3 font-medium">ID</th>
                 <th className="px-4 py-3 font-medium">Nombre</th>
+                <th className="px-4 py-3 font-medium">Jerarquía</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
                 <th className="px-4 py-3 text-right font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {modules.map((mod) => (
-                <tr key={mod.id} className="border-border border-t">
-                  <td className="px-4 py-3 font-mono text-xs">{mod.id}</td>
-                  <td className="px-4 py-3">{mod.name}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        mod.active
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {mod.active ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => { handleEdit(mod); }}
-                      aria-label={`Editar ${mod.name}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => { setDeletingModule(mod); }}
-                      aria-label={`Eliminar ${mod.name}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {modules.map((mod) => {
+                const isChild = mod.parentId !== null;
+                const parent = isChild ? modules.find((m) => m.id === mod.parentId) : null;
+                return (
+                  <tr key={mod.id} className="border-border border-t">
+                    <td className="px-4 py-3 font-mono text-xs">{mod.id}</td>
+                    <td className={`px-4 py-3 ${isChild ? 'text-muted-foreground pl-8' : ''}`}>
+                      {isChild ? '└ ' : ''}
+                      {mod.name}
+                    </td>
+                    <td className="text-muted-foreground px-4 py-3 text-xs">
+                      {isChild && parent ? `hijo de ${parent.name}` : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          mod.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {mod.active ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => {
+                          handleEdit(mod);
+                        }}
+                        aria-label={`Editar ${mod.name}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => {
+                          setDeletingModule(mod);
+                        }}
+                        aria-label={`Eliminar ${mod.name}`}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -467,7 +499,9 @@ export default function ModulesPage(): JSX.Element {
         open={deletingModule !== null}
         moduleName={deletingModule?.name ?? ''}
         onConfirm={handleDelete}
-        onOpenChange={() => { setDeletingModule(null); }}
+        onOpenChange={() => {
+          setDeletingModule(null);
+        }}
       />
     </div>
   );

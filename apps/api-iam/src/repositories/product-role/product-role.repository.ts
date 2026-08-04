@@ -14,6 +14,8 @@ export type ProductRoleRepository = {
   // c2 (8.1, PR9): (productId, roleKey) pairs for the JWT `product_roles`
   // claim — productId doubles as the product key (Product.id is the slug).
   listRoleKeysByUser(userId: string): Promise<{ productId: string; roleKey: string }[]>
+  getRoleModules(roleId: string): Promise<string[]>
+  setRoleModules(roleId: string, moduleIds: string[]): Promise<void>
 }
 
 export function createProductRoleRepository(prisma: PrismaClient): ProductRoleRepository {
@@ -75,6 +77,23 @@ export function createProductRoleRepository(prisma: PrismaClient): ProductRoleRe
         include: { productRole: true },
       })
       return rows.map((row) => ({ productId: row.productRole.productId, roleKey: row.productRole.key }))
+    },
+
+    async getRoleModules(roleId) {
+      const rows = await prisma.roleModuleAccess.findMany({
+        where: { productRoleId: roleId },
+        select: { moduleId: true },
+      })
+      return rows.map((r) => r.moduleId)
+    },
+
+    async setRoleModules(roleId, moduleIds) {
+      await prisma.$transaction([
+        prisma.roleModuleAccess.deleteMany({ where: { productRoleId: roleId } }),
+        ...moduleIds.map((moduleId) =>
+          prisma.roleModuleAccess.create({ data: { productRoleId: roleId, moduleId } })
+        ),
+      ])
     },
   }
 }

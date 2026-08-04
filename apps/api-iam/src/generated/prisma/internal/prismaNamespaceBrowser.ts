@@ -74,11 +74,7 @@ export const ModelName = {
   Entitlement: 'Entitlement',
   ProductRole: 'ProductRole',
   UserProductRole: 'UserProductRole',
-  Quiz: 'Quiz',
-  Question: 'Question',
-  QuestionOption: 'QuestionOption',
-  QuizAttempt: 'QuizAttempt',
-  QuizAttemptAnswer: 'QuizAttemptAnswer'
+  RoleModuleAccess: 'RoleModuleAccess'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -103,6 +99,8 @@ export const ProductScalarFieldEnum = {
   description: 'description',
   active: 'active',
   billingRef: 'billingRef',
+  trialEnabled: 'trialEnabled',
+  trialDurationDays: 'trialDurationDays',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -121,6 +119,8 @@ export const PlanScalarFieldEnum = {
   features: 'features',
   popular: 'popular',
   active: 'active',
+  displayOrder: 'displayOrder',
+  isDefault: 'isDefault',
   productId: 'productId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -244,6 +244,7 @@ export const OnboardingDraftScalarFieldEnum = {
   currentStep: 'currentStep',
   version: 'version',
   planId: 'planId',
+  productId: 'productId',
   data: 'data',
   representativeEmail: 'representativeEmail',
   resumeTokenHash: 'resumeTokenHash',
@@ -352,6 +353,7 @@ export const ModuleScalarFieldEnum = {
   defaultUrl: 'defaultUrl',
   active: 'active',
   productId: 'productId',
+  parentId: 'parentId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -433,72 +435,13 @@ export const UserProductRoleScalarFieldEnum = {
 export type UserProductRoleScalarFieldEnum = (typeof UserProductRoleScalarFieldEnum)[keyof typeof UserProductRoleScalarFieldEnum]
 
 
-export const QuizScalarFieldEnum = {
-  id: 'id',
+export const RoleModuleAccessScalarFieldEnum = {
+  productRoleId: 'productRoleId',
   moduleId: 'moduleId',
-  title: 'title',
-  description: 'description',
-  passingScore: 'passingScore',
-  timeLimitMinutes: 'timeLimitMinutes',
-  active: 'active',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type QuizScalarFieldEnum = (typeof QuizScalarFieldEnum)[keyof typeof QuizScalarFieldEnum]
-
-
-export const QuestionScalarFieldEnum = {
-  id: 'id',
-  quizId: 'quizId',
-  text: 'text',
-  type: 'type',
-  order: 'order',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type QuestionScalarFieldEnum = (typeof QuestionScalarFieldEnum)[keyof typeof QuestionScalarFieldEnum]
-
-
-export const QuestionOptionScalarFieldEnum = {
-  id: 'id',
-  questionId: 'questionId',
-  text: 'text',
-  isCorrect: 'isCorrect',
-  order: 'order',
   createdAt: 'createdAt'
 } as const
 
-export type QuestionOptionScalarFieldEnum = (typeof QuestionOptionScalarFieldEnum)[keyof typeof QuestionOptionScalarFieldEnum]
-
-
-export const QuizAttemptScalarFieldEnum = {
-  id: 'id',
-  quizId: 'quizId',
-  tenantId: 'tenantId',
-  userId: 'userId',
-  score: 'score',
-  passed: 'passed',
-  status: 'status',
-  startedAt: 'startedAt',
-  completedAt: 'completedAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type QuizAttemptScalarFieldEnum = (typeof QuizAttemptScalarFieldEnum)[keyof typeof QuizAttemptScalarFieldEnum]
-
-
-export const QuizAttemptAnswerScalarFieldEnum = {
-  id: 'id',
-  attemptId: 'attemptId',
-  questionId: 'questionId',
-  selectedOptionId: 'selectedOptionId',
-  createdAt: 'createdAt'
-} as const
-
-export type QuizAttemptAnswerScalarFieldEnum = (typeof QuizAttemptAnswerScalarFieldEnum)[keyof typeof QuizAttemptAnswerScalarFieldEnum]
+export type RoleModuleAccessScalarFieldEnum = (typeof RoleModuleAccessScalarFieldEnum)[keyof typeof RoleModuleAccessScalarFieldEnum]
 
 
 export const SortOrder = {

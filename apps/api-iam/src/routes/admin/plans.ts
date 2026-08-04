@@ -9,6 +9,7 @@ import {
   AdminCreatePlanSchema,
   AdminUpdatePlanSchema,
   AdminPlanParamsSchema,
+  ReorderPlansSchema,
   PlanQuotaItemSchema,
   PlanQuotaListResponseSchema,
   UpsertPlanQuotasRequestSchema,
@@ -33,6 +34,7 @@ export function createAdminPlansRouter(
   router.use('/admin/plans', authGuard)
   router.use('/admin/plans/:planId', authGuard)
   router.use('/admin/plans/:planId/quotas', authGuard)
+  router.use('/admin/plans/reorder', authGuard)
 
   // ── GET /admin/plans ─────────────────────────────────────────────────────
 
@@ -76,6 +78,9 @@ export function createAdminPlansRouter(
           currency: p.currency,
           billingInterval: p.billingInterval,
           active: p.active,
+          productId: p.productId,
+          displayOrder: p.displayOrder,
+          isDefault: p.isDefault,
           tenantCount: p.tenantCount,
           createdAt: p.createdAt.toISOString(),
           updatedAt: p.updatedAt.toISOString(),
@@ -83,6 +88,35 @@ export function createAdminPlansRouter(
       },
       200,
     )
+  })
+
+  // ── PUT /admin/plans/reorder ─────────────────────────────────────────────
+  // Declared before /admin/plans/:planId so 'reorder' is never read as an id.
+
+  router.on('PUT', '/admin/plans/reorder', idempotency)
+
+  const reorderPlansRoute = createRoute({
+    method: 'put',
+    path: '/admin/plans/reorder',
+    operationId: 'reorderPlans',
+    tags: ['admin', 'plans'],
+    request: {
+      body: { content: { 'application/json': { schema: ReorderPlansSchema } } },
+    },
+    responses: {
+      204: { description: 'Plan order updated' },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+      404: commonErrorResponses[404],
+      422: commonErrorResponses[422],
+    },
+  })
+
+  router.openapi(reorderPlansRoute, async (c) => {
+    assertSuperAdmin(c.var.user.role)
+    const { planIds } = c.req.valid('json')
+    await planService.reorderPlans(planIds)
+    return c.body(null, 204)
   })
 
   // ── POST /admin/plans ────────────────────────────────────────────────────
@@ -132,6 +166,9 @@ export function createAdminPlansRouter(
         currency: plan.currency,
         billingInterval: plan.billingInterval,
         active: plan.active,
+        productId: plan.productId,
+        displayOrder: plan.displayOrder,
+        isDefault: plan.isDefault,
         tenantCount: 0,
         createdAt: plan.createdAt.toISOString(),
         updatedAt: plan.updatedAt.toISOString(),
@@ -179,6 +216,7 @@ export function createAdminPlansRouter(
     if (body.currency !== undefined) updateData['currency'] = body.currency
     if (body.billingInterval !== undefined) updateData['billingInterval'] = body.billingInterval
     if (body.active !== undefined) updateData['active'] = body.active
+    if (body.isDefault !== undefined) updateData['isDefault'] = body.isDefault
 
     const plan = await planService.updatePlan(planId, updateData as any)
 
@@ -191,6 +229,9 @@ export function createAdminPlansRouter(
         currency: plan.currency,
         billingInterval: plan.billingInterval,
         active: plan.active,
+        productId: plan.productId,
+        displayOrder: plan.displayOrder,
+        isDefault: plan.isDefault,
         tenantCount: 0,
         createdAt: plan.createdAt.toISOString(),
         updatedAt: plan.updatedAt.toISOString(),
@@ -237,6 +278,9 @@ export function createAdminPlansRouter(
         currency: plan.currency,
         billingInterval: plan.billingInterval,
         active: plan.active,
+        productId: plan.productId,
+        displayOrder: plan.displayOrder,
+        isDefault: plan.isDefault,
         tenantCount: 0,
         createdAt: plan.createdAt.toISOString(),
         updatedAt: plan.updatedAt.toISOString(),

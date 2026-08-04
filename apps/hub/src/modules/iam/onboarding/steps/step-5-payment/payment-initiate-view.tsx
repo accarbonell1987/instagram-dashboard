@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useState, type JSX } from 'react';
 
 import { StepHeader } from '../../components/step-header';
-import { WizardNav } from '../../components/wizard-nav';
 import { initiatePayment } from '../../services/draft.service';
 import type { DraftState } from '../../services/draft.service';
 import type { Plan } from '../../services/plans.service';
@@ -63,17 +62,23 @@ export function PaymentInitiateView({
   const priceFormatted = plan !== null ? new Intl.NumberFormat('es-PY').format(plan.price) : '—';
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-8">
+    <div className="flex flex-col gap-8">
       <StepHeader
         icon={DollarSign}
         title="Pago"
         description="Completa tu pago para activar tu cuenta."
+        currentStep="payment"
+        draftId={draftId}
+        onContinue={() => void handleInitiatePayment()}
+        isSubmitting={isInitiating}
+        continueLabel="Pagar con Bancard"
+        continueLoadingLabel="Redirigiendo..."
       />
 
-      <StepErrorBanner message={initError} />
+      <StepErrorBanner message={initError} className="mx-auto w-full max-w-lg" />
 
       {/* Summary panel */}
-      <div className="border-border bg-muted/30 rounded-xl border p-6">
+      <div className="border-border bg-muted/30 mx-auto w-full max-w-lg rounded-xl border p-6">
         <h2 className="text-foreground text-base font-semibold">Resumen del pedido</h2>
         <div className="border-border mt-4 flex items-center justify-between border-t pt-4">
           <span className="text-muted-foreground text-sm">
@@ -88,15 +93,6 @@ export function PaymentInitiateView({
           Empresa: {draft.company?.legalName}
         </div>
       </div>
-
-      <WizardNav
-        currentStep="payment"
-        draftId={draftId}
-        onContinue={() => void handleInitiatePayment()}
-        isSubmitting={isInitiating}
-        continueLabel="Pagar con Bancard"
-        continueLoadingLabel="Redirigiendo..."
-      />
 
       <p className="text-muted-foreground text-center text-xs">
         Serás redirigido al portal de pago seguro de Bancard.

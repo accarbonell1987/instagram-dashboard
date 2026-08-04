@@ -262,7 +262,6 @@ export type TenantWhereInput = {
   drafts?: Prisma.OnboardingDraftListRelationFilter
   planChangeRequests?: Prisma.PlanChangeRequestListRelationFilter
   moduleOverrides?: Prisma.TenantModuleOverrideListRelationFilter
-  quizAttempts?: Prisma.QuizAttemptListRelationFilter
   productSubscriptions?: Prisma.TenantProductSubscriptionListRelationFilter
   entitlements?: Prisma.EntitlementListRelationFilter
 }
@@ -290,7 +289,6 @@ export type TenantOrderByWithRelationInput = {
   drafts?: Prisma.OnboardingDraftOrderByRelationAggregateInput
   planChangeRequests?: Prisma.PlanChangeRequestOrderByRelationAggregateInput
   moduleOverrides?: Prisma.TenantModuleOverrideOrderByRelationAggregateInput
-  quizAttempts?: Prisma.QuizAttemptOrderByRelationAggregateInput
   productSubscriptions?: Prisma.TenantProductSubscriptionOrderByRelationAggregateInput
   entitlements?: Prisma.EntitlementOrderByRelationAggregateInput
 }
@@ -321,7 +319,6 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   drafts?: Prisma.OnboardingDraftListRelationFilter
   planChangeRequests?: Prisma.PlanChangeRequestListRelationFilter
   moduleOverrides?: Prisma.TenantModuleOverrideListRelationFilter
-  quizAttempts?: Prisma.QuizAttemptListRelationFilter
   productSubscriptions?: Prisma.TenantProductSubscriptionListRelationFilter
   entitlements?: Prisma.EntitlementListRelationFilter
 }, "id" | "slug" | "schemaName">
@@ -388,7 +385,6 @@ export type TenantCreateInput = {
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -415,7 +411,6 @@ export type TenantUncheckedCreateInput = {
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -442,7 +437,6 @@ export type TenantUpdateInput = {
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -469,7 +463,6 @@ export type TenantUncheckedUpdateInput = {
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -771,20 +764,6 @@ export type TenantUpdateOneRequiredWithoutEntitlementsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutEntitlementsInput, Prisma.TenantUpdateWithoutEntitlementsInput>, Prisma.TenantUncheckedUpdateWithoutEntitlementsInput>
 }
 
-export type TenantCreateNestedOneWithoutQuizAttemptsInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutQuizAttemptsInput, Prisma.TenantUncheckedCreateWithoutQuizAttemptsInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutQuizAttemptsInput
-  connect?: Prisma.TenantWhereUniqueInput
-}
-
-export type TenantUpdateOneRequiredWithoutQuizAttemptsNestedInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutQuizAttemptsInput, Prisma.TenantUncheckedCreateWithoutQuizAttemptsInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutQuizAttemptsInput
-  upsert?: Prisma.TenantUpsertWithoutQuizAttemptsInput
-  connect?: Prisma.TenantWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutQuizAttemptsInput, Prisma.TenantUpdateWithoutQuizAttemptsInput>, Prisma.TenantUncheckedUpdateWithoutQuizAttemptsInput>
-}
-
 export type TenantCreateWithoutPlanInput = {
   id?: string
   slug: string
@@ -806,7 +785,6 @@ export type TenantCreateWithoutPlanInput = {
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -832,7 +810,6 @@ export type TenantUncheckedCreateWithoutPlanInput = {
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -904,7 +881,6 @@ export type TenantCreateWithoutUsersInput = {
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -930,7 +906,6 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -972,7 +947,6 @@ export type TenantUpdateWithoutUsersInput = {
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -998,7 +972,6 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -1024,7 +997,6 @@ export type TenantCreateWithoutDraftsInput = {
   invitations?: Prisma.InvitationCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -1050,7 +1022,6 @@ export type TenantUncheckedCreateWithoutDraftsInput = {
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -1092,7 +1063,6 @@ export type TenantUpdateWithoutDraftsInput = {
   invitations?: Prisma.InvitationUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -1118,7 +1088,6 @@ export type TenantUncheckedUpdateWithoutDraftsInput = {
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -1144,7 +1113,6 @@ export type TenantCreateWithoutPaymentsInput = {
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -1170,7 +1138,6 @@ export type TenantUncheckedCreateWithoutPaymentsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -1212,7 +1179,6 @@ export type TenantUpdateWithoutPaymentsInput = {
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -1238,7 +1204,6 @@ export type TenantUncheckedUpdateWithoutPaymentsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -1264,7 +1229,6 @@ export type TenantCreateWithoutInvitationsInput = {
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -1290,7 +1254,6 @@ export type TenantUncheckedCreateWithoutInvitationsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -1332,7 +1295,6 @@ export type TenantUpdateWithoutInvitationsInput = {
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -1358,7 +1320,6 @@ export type TenantUncheckedUpdateWithoutInvitationsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -1384,7 +1345,6 @@ export type TenantCreateWithoutDocumentsInput = {
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -1410,7 +1370,6 @@ export type TenantUncheckedCreateWithoutDocumentsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -1452,7 +1411,6 @@ export type TenantUpdateWithoutDocumentsInput = {
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -1478,7 +1436,6 @@ export type TenantUncheckedUpdateWithoutDocumentsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -1504,7 +1461,6 @@ export type TenantCreateWithoutPlanChangeRequestsInput = {
   invitations?: Prisma.InvitationCreateNestedManyWithoutTenantInput
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -1530,7 +1486,6 @@ export type TenantUncheckedCreateWithoutPlanChangeRequestsInput = {
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTenantInput
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -1572,7 +1527,6 @@ export type TenantUpdateWithoutPlanChangeRequestsInput = {
   invitations?: Prisma.InvitationUpdateManyWithoutTenantNestedInput
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -1598,7 +1552,6 @@ export type TenantUncheckedUpdateWithoutPlanChangeRequestsInput = {
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTenantNestedInput
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -1624,7 +1577,6 @@ export type TenantCreateWithoutModuleOverridesInput = {
   invitations?: Prisma.InvitationCreateNestedManyWithoutTenantInput
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
@@ -1650,7 +1602,6 @@ export type TenantUncheckedCreateWithoutModuleOverridesInput = {
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTenantInput
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -1692,7 +1643,6 @@ export type TenantUpdateWithoutModuleOverridesInput = {
   invitations?: Prisma.InvitationUpdateManyWithoutTenantNestedInput
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -1718,7 +1668,6 @@ export type TenantUncheckedUpdateWithoutModuleOverridesInput = {
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTenantNestedInput
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -1745,7 +1694,6 @@ export type TenantCreateWithoutProductSubscriptionsInput = {
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
 }
 
@@ -1771,7 +1719,6 @@ export type TenantUncheckedCreateWithoutProductSubscriptionsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
 }
 
@@ -1813,7 +1760,6 @@ export type TenantUpdateWithoutProductSubscriptionsInput = {
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
 
@@ -1839,7 +1785,6 @@ export type TenantUncheckedUpdateWithoutProductSubscriptionsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
 
@@ -1865,7 +1810,6 @@ export type TenantCreateWithoutEntitlementsInput = {
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
 }
 
@@ -1891,7 +1835,6 @@ export type TenantUncheckedCreateWithoutEntitlementsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutTenantInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
 }
 
@@ -1933,7 +1876,6 @@ export type TenantUpdateWithoutEntitlementsInput = {
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
 }
 
@@ -1959,128 +1901,7 @@ export type TenantUncheckedUpdateWithoutEntitlementsInput = {
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantCreateWithoutQuizAttemptsInput = {
-  id?: string
-  slug: string
-  name: string
-  legalName?: string | null
-  ruc?: string | null
-  address?: string | null
-  city?: string | null
-  country?: string | null
-  phone?: string | null
-  schemaName: string
-  status?: $Enums.TenantStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  payments?: Prisma.PaymentCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  invitations?: Prisma.InvitationCreateNestedManyWithoutTenantInput
-  drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutTenantInput
-  planChangeRequests?: Prisma.PlanChangeRequestCreateNestedManyWithoutTenantInput
-  moduleOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutTenantInput
-  productSubscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutTenantInput
-  entitlements?: Prisma.EntitlementCreateNestedManyWithoutTenantInput
-}
-
-export type TenantUncheckedCreateWithoutQuizAttemptsInput = {
-  id?: string
-  slug: string
-  name: string
-  legalName?: string | null
-  ruc?: string | null
-  address?: string | null
-  city?: string | null
-  country?: string | null
-  phone?: string | null
-  schemaName: string
-  planId: string
-  status?: $Enums.TenantStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTenantInput
-  drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutTenantInput
-  planChangeRequests?: Prisma.PlanChangeRequestUncheckedCreateNestedManyWithoutTenantInput
-  moduleOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutTenantInput
-  productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutTenantInput
-  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutTenantInput
-}
-
-export type TenantCreateOrConnectWithoutQuizAttemptsInput = {
-  where: Prisma.TenantWhereUniqueInput
-  create: Prisma.XOR<Prisma.TenantCreateWithoutQuizAttemptsInput, Prisma.TenantUncheckedCreateWithoutQuizAttemptsInput>
-}
-
-export type TenantUpsertWithoutQuizAttemptsInput = {
-  update: Prisma.XOR<Prisma.TenantUpdateWithoutQuizAttemptsInput, Prisma.TenantUncheckedUpdateWithoutQuizAttemptsInput>
-  create: Prisma.XOR<Prisma.TenantCreateWithoutQuizAttemptsInput, Prisma.TenantUncheckedCreateWithoutQuizAttemptsInput>
-  where?: Prisma.TenantWhereInput
-}
-
-export type TenantUpdateToOneWithWhereWithoutQuizAttemptsInput = {
-  where?: Prisma.TenantWhereInput
-  data: Prisma.XOR<Prisma.TenantUpdateWithoutQuizAttemptsInput, Prisma.TenantUncheckedUpdateWithoutQuizAttemptsInput>
-}
-
-export type TenantUpdateWithoutQuizAttemptsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ruc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  schemaName?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  payments?: Prisma.PaymentUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  invitations?: Prisma.InvitationUpdateManyWithoutTenantNestedInput
-  drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
-  planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
-  moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
-  entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantUncheckedUpdateWithoutQuizAttemptsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ruc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  schemaName?: Prisma.StringFieldUpdateOperationsInput | string
-  planId?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  payments?: Prisma.PaymentUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTenantNestedInput
-  drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
-  planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
-  moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
-  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateManyPlanInput = {
@@ -2120,7 +1941,6 @@ export type TenantUpdateWithoutPlanInput = {
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutTenantNestedInput
 }
@@ -2146,7 +1966,6 @@ export type TenantUncheckedUpdateWithoutPlanInput = {
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutTenantNestedInput
   planChangeRequests?: Prisma.PlanChangeRequestUncheckedUpdateManyWithoutTenantNestedInput
   moduleOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutTenantNestedInput
-  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutTenantNestedInput
   productSubscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -2180,7 +1999,6 @@ export type TenantCountOutputType = {
   drafts: number
   planChangeRequests: number
   moduleOverrides: number
-  quizAttempts: number
   productSubscriptions: number
   entitlements: number
 }
@@ -2193,7 +2011,6 @@ export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   drafts?: boolean | TenantCountOutputTypeCountDraftsArgs
   planChangeRequests?: boolean | TenantCountOutputTypeCountPlanChangeRequestsArgs
   moduleOverrides?: boolean | TenantCountOutputTypeCountModuleOverridesArgs
-  quizAttempts?: boolean | TenantCountOutputTypeCountQuizAttemptsArgs
   productSubscriptions?: boolean | TenantCountOutputTypeCountProductSubscriptionsArgs
   entitlements?: boolean | TenantCountOutputTypeCountEntitlementsArgs
 }
@@ -2260,13 +2077,6 @@ export type TenantCountOutputTypeCountModuleOverridesArgs<ExtArgs extends runtim
 /**
  * TenantCountOutputType without action
  */
-export type TenantCountOutputTypeCountQuizAttemptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.QuizAttemptWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
 export type TenantCountOutputTypeCountProductSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.TenantProductSubscriptionWhereInput
 }
@@ -2302,7 +2112,6 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   drafts?: boolean | Prisma.Tenant$draftsArgs<ExtArgs>
   planChangeRequests?: boolean | Prisma.Tenant$planChangeRequestsArgs<ExtArgs>
   moduleOverrides?: boolean | Prisma.Tenant$moduleOverridesArgs<ExtArgs>
-  quizAttempts?: boolean | Prisma.Tenant$quizAttemptsArgs<ExtArgs>
   productSubscriptions?: boolean | Prisma.Tenant$productSubscriptionsArgs<ExtArgs>
   entitlements?: boolean | Prisma.Tenant$entitlementsArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
@@ -2371,7 +2180,6 @@ export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   drafts?: boolean | Prisma.Tenant$draftsArgs<ExtArgs>
   planChangeRequests?: boolean | Prisma.Tenant$planChangeRequestsArgs<ExtArgs>
   moduleOverrides?: boolean | Prisma.Tenant$moduleOverridesArgs<ExtArgs>
-  quizAttempts?: boolean | Prisma.Tenant$quizAttemptsArgs<ExtArgs>
   productSubscriptions?: boolean | Prisma.Tenant$productSubscriptionsArgs<ExtArgs>
   entitlements?: boolean | Prisma.Tenant$entitlementsArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
@@ -2394,7 +2202,6 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     drafts: Prisma.$OnboardingDraftPayload<ExtArgs>[]
     planChangeRequests: Prisma.$PlanChangeRequestPayload<ExtArgs>[]
     moduleOverrides: Prisma.$TenantModuleOverridePayload<ExtArgs>[]
-    quizAttempts: Prisma.$QuizAttemptPayload<ExtArgs>[]
     productSubscriptions: Prisma.$TenantProductSubscriptionPayload<ExtArgs>[]
     entitlements: Prisma.$EntitlementPayload<ExtArgs>[]
   }
@@ -2815,7 +2622,6 @@ export interface Prisma__TenantClient<T, Null = never, ExtArgs extends runtime.T
   drafts<T extends Prisma.Tenant$draftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$draftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OnboardingDraftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   planChangeRequests<T extends Prisma.Tenant$planChangeRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$planChangeRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlanChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   moduleOverrides<T extends Prisma.Tenant$moduleOverridesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$moduleOverridesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantModuleOverridePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  quizAttempts<T extends Prisma.Tenant$quizAttemptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$quizAttemptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuizAttemptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   productSubscriptions<T extends Prisma.Tenant$productSubscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$productSubscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantProductSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   entitlements<T extends Prisma.Tenant$entitlementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$entitlementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntitlementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -3427,30 +3233,6 @@ export type Tenant$moduleOverridesArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.TenantModuleOverrideScalarFieldEnum | Prisma.TenantModuleOverrideScalarFieldEnum[]
-}
-
-/**
- * Tenant.quizAttempts
- */
-export type Tenant$quizAttemptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the QuizAttempt
-   */
-  select?: Prisma.QuizAttemptSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the QuizAttempt
-   */
-  omit?: Prisma.QuizAttemptOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.QuizAttemptInclude<ExtArgs> | null
-  where?: Prisma.QuizAttemptWhereInput
-  orderBy?: Prisma.QuizAttemptOrderByWithRelationInput | Prisma.QuizAttemptOrderByWithRelationInput[]
-  cursor?: Prisma.QuizAttemptWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.QuizAttemptScalarFieldEnum | Prisma.QuizAttemptScalarFieldEnum[]
 }
 
 /**

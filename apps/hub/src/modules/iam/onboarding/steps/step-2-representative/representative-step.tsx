@@ -7,7 +7,6 @@ import { type JSX, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { StepHeader } from '../../components/step-header';
-import { WizardNav } from '../../components/wizard-nav';
 import { useDraftContext } from '../../context/draft-context';
 import { patchDraft } from '../../services/draft.service';
 import { StepErrorBanner } from '../shared/step-error-banner';
@@ -95,37 +94,38 @@ export function StepRepresentativeEmail({ draftId }: StepRepresentativeEmailProp
   const hasErrors = Object.keys(errors).length > 0 || submitError !== null;
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-8">
+    <div className="flex flex-col gap-8">
       <StepHeader
         icon={User}
         title="Datos del representante"
         description="Ingresa los datos de contacto del representante legal de la empresa."
+        currentStep="representative"
+        draftId={draftId}
+        onContinue={handleSubmit(onSubmit)}
+        isSubmitting={isSubmitting}
+        continueLoadingLabel="Enviando código..."
       />
 
-      <StepErrorBanner
-        message={
-          hasErrors ? (submitError ?? 'Por favor, corrige los errores en el formulario.') : null
-        }
-      />
-
-      <form
-        role="form"
-        aria-labelledby="step-heading"
-        onSubmit={(e) => void handleSubmit(onSubmit)(e)}
-        className="flex flex-col gap-6"
-        noValidate
-      >
-        <RepresentativeFormFields register={register} control={control} errors={errors} />
-
-        <WizardNav
-          currentStep="representative"
-          draftId={draftId}
-          onContinue={handleSubmit(onSubmit)}
-          isSubmitting={isSubmitting}
-          continueLabel="Continuar"
-          continueLoadingLabel="Enviando código..."
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
+        <StepErrorBanner
+          message={
+            hasErrors ? (submitError ?? 'Por favor, corrige los errores en el formulario.') : null
+          }
         />
-      </form>
+
+        <form
+          role="form"
+          aria-labelledby="step-heading"
+          onSubmit={(e) => void handleSubmit(onSubmit)(e)}
+          className="flex flex-col gap-6"
+          noValidate
+        >
+          <RepresentativeFormFields register={register} control={control} errors={errors} />
+
+          {/* Keeps Enter-to-submit alive now that the continue button lives in the header */}
+          <button type="submit" className="hidden" tabIndex={-1} aria-hidden="true" />
+        </form>
+      </div>
     </div>
   );
 }

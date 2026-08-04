@@ -26,27 +26,22 @@ export function PlanChip({ plan, onChange, variant = 'top' }: PlanChipProps): JS
     <div
       className={
         variant === 'bottom'
-          ? 'fixed bottom-0 left-0 right-0 z-30 flex items-center justify-between border-t border-border bg-background px-4 py-3 shadow-lg md:hidden'
-          : 'hidden rounded-xl border border-border bg-muted/50 px-4 py-3 md:flex md:items-center md:justify-between'
+          ? 'border-border bg-background fixed bottom-0 left-0 right-0 z-30 flex items-center justify-between border-t px-4 py-3 shadow-lg md:hidden'
+          : 'border-border bg-muted/50 hidden rounded-xl border px-4 py-3 md:flex md:items-center md:justify-between'
       }
       aria-label={`Plan seleccionado: ${plan.name}`}
     >
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
           Plan
         </span>
-        <span className="font-semibold text-foreground">{plan.name}</span>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-foreground font-semibold">{plan.name}</span>
+        <span className="text-muted-foreground text-sm">
           {priceFormatted} {plan.currency}/{cycleLabel}
         </span>
       </div>
 
-      <Button
-        type="button"
-        variant="link"
-        onClick={onChange}
-        className="ml-4 text-sm font-medium"
-      >
+      <Button type="button" variant="link" onClick={onChange} className="ml-4 text-sm font-medium">
         Cambiar
       </Button>
     </div>

@@ -8,6 +8,8 @@ export interface AdminModule {
   description?: string
   defaultUrl: string
   active: boolean
+  productId: string | null
+  parentId: string | null
 }
 
 export interface ListModulesResponse {
@@ -19,6 +21,10 @@ export interface CreateModuleParams {
   name: string
   description?: string | undefined
   defaultUrl: string
+  // Required by the API: a module always belongs to exactly one product and
+  // can only be attached to plans of that same product.
+  productId: string
+  parentId?: string | undefined
 }
 
 export interface UpdateModuleParams {
@@ -30,8 +36,9 @@ export interface UpdateModuleParams {
 
 // ─── Service functions ──────────────────────────────────────────────────────────
 
-export async function listModules(): Promise<ListModulesResponse> {
-  return apiFetchWithInterceptors<ListModulesResponse>('/admin/modules', {
+export async function listModules(productId?: string): Promise<ListModulesResponse> {
+  const qs = productId !== undefined ? `?productId=${encodeURIComponent(productId)}` : '';
+  return apiFetchWithInterceptors<ListModulesResponse>(`/admin/modules${qs}`, {
     method: 'GET',
   })
 }

@@ -192,6 +192,7 @@ export type ProductRoleWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"ProductRole"> | Date | string
   product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
   assignments?: Prisma.UserProductRoleListRelationFilter
+  moduleAccess?: Prisma.RoleModuleAccessListRelationFilter
 }
 
 export type ProductRoleOrderByWithRelationInput = {
@@ -203,6 +204,7 @@ export type ProductRoleOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   product?: Prisma.ProductOrderByWithRelationInput
   assignments?: Prisma.UserProductRoleOrderByRelationAggregateInput
+  moduleAccess?: Prisma.RoleModuleAccessOrderByRelationAggregateInput
 }
 
 export type ProductRoleWhereUniqueInput = Prisma.AtLeast<{
@@ -218,6 +220,7 @@ export type ProductRoleWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"ProductRole"> | Date | string
   product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
   assignments?: Prisma.UserProductRoleListRelationFilter
+  moduleAccess?: Prisma.RoleModuleAccessListRelationFilter
 }, "id" | "productId_key">
 
 export type ProductRoleOrderByWithAggregationInput = {
@@ -252,6 +255,7 @@ export type ProductRoleCreateInput = {
   updatedAt?: Date | string
   product: Prisma.ProductCreateNestedOneWithoutProductRolesInput
   assignments?: Prisma.UserProductRoleCreateNestedManyWithoutProductRoleInput
+  moduleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutProductRoleInput
 }
 
 export type ProductRoleUncheckedCreateInput = {
@@ -262,6 +266,7 @@ export type ProductRoleUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   assignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutProductRoleInput
+  moduleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutProductRoleInput
 }
 
 export type ProductRoleUpdateInput = {
@@ -272,6 +277,7 @@ export type ProductRoleUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   product?: Prisma.ProductUpdateOneRequiredWithoutProductRolesNestedInput
   assignments?: Prisma.UserProductRoleUpdateManyWithoutProductRoleNestedInput
+  moduleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutProductRoleNestedInput
 }
 
 export type ProductRoleUncheckedUpdateInput = {
@@ -282,6 +288,7 @@ export type ProductRoleUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   assignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutProductRoleNestedInput
+  moduleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutProductRoleNestedInput
 }
 
 export type ProductRoleCreateManyInput = {
@@ -413,6 +420,20 @@ export type ProductRoleUpdateOneRequiredWithoutAssignmentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProductRoleUpdateToOneWithWhereWithoutAssignmentsInput, Prisma.ProductRoleUpdateWithoutAssignmentsInput>, Prisma.ProductRoleUncheckedUpdateWithoutAssignmentsInput>
 }
 
+export type ProductRoleCreateNestedOneWithoutModuleAccessInput = {
+  create?: Prisma.XOR<Prisma.ProductRoleCreateWithoutModuleAccessInput, Prisma.ProductRoleUncheckedCreateWithoutModuleAccessInput>
+  connectOrCreate?: Prisma.ProductRoleCreateOrConnectWithoutModuleAccessInput
+  connect?: Prisma.ProductRoleWhereUniqueInput
+}
+
+export type ProductRoleUpdateOneRequiredWithoutModuleAccessNestedInput = {
+  create?: Prisma.XOR<Prisma.ProductRoleCreateWithoutModuleAccessInput, Prisma.ProductRoleUncheckedCreateWithoutModuleAccessInput>
+  connectOrCreate?: Prisma.ProductRoleCreateOrConnectWithoutModuleAccessInput
+  upsert?: Prisma.ProductRoleUpsertWithoutModuleAccessInput
+  connect?: Prisma.ProductRoleWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProductRoleUpdateToOneWithWhereWithoutModuleAccessInput, Prisma.ProductRoleUpdateWithoutModuleAccessInput>, Prisma.ProductRoleUncheckedUpdateWithoutModuleAccessInput>
+}
+
 export type ProductRoleCreateWithoutProductInput = {
   id?: string
   key: string
@@ -420,6 +441,7 @@ export type ProductRoleCreateWithoutProductInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   assignments?: Prisma.UserProductRoleCreateNestedManyWithoutProductRoleInput
+  moduleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutProductRoleInput
 }
 
 export type ProductRoleUncheckedCreateWithoutProductInput = {
@@ -429,6 +451,7 @@ export type ProductRoleUncheckedCreateWithoutProductInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   assignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutProductRoleInput
+  moduleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutProductRoleInput
 }
 
 export type ProductRoleCreateOrConnectWithoutProductInput = {
@@ -476,6 +499,7 @@ export type ProductRoleCreateWithoutAssignmentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   product: Prisma.ProductCreateNestedOneWithoutProductRolesInput
+  moduleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutProductRoleInput
 }
 
 export type ProductRoleUncheckedCreateWithoutAssignmentsInput = {
@@ -485,6 +509,7 @@ export type ProductRoleUncheckedCreateWithoutAssignmentsInput = {
   name: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  moduleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutProductRoleInput
 }
 
 export type ProductRoleCreateOrConnectWithoutAssignmentsInput = {
@@ -510,6 +535,7 @@ export type ProductRoleUpdateWithoutAssignmentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   product?: Prisma.ProductUpdateOneRequiredWithoutProductRolesNestedInput
+  moduleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutProductRoleNestedInput
 }
 
 export type ProductRoleUncheckedUpdateWithoutAssignmentsInput = {
@@ -519,6 +545,63 @@ export type ProductRoleUncheckedUpdateWithoutAssignmentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  moduleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutProductRoleNestedInput
+}
+
+export type ProductRoleCreateWithoutModuleAccessInput = {
+  id?: string
+  key: string
+  name: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  product: Prisma.ProductCreateNestedOneWithoutProductRolesInput
+  assignments?: Prisma.UserProductRoleCreateNestedManyWithoutProductRoleInput
+}
+
+export type ProductRoleUncheckedCreateWithoutModuleAccessInput = {
+  id?: string
+  productId: string
+  key: string
+  name: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  assignments?: Prisma.UserProductRoleUncheckedCreateNestedManyWithoutProductRoleInput
+}
+
+export type ProductRoleCreateOrConnectWithoutModuleAccessInput = {
+  where: Prisma.ProductRoleWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProductRoleCreateWithoutModuleAccessInput, Prisma.ProductRoleUncheckedCreateWithoutModuleAccessInput>
+}
+
+export type ProductRoleUpsertWithoutModuleAccessInput = {
+  update: Prisma.XOR<Prisma.ProductRoleUpdateWithoutModuleAccessInput, Prisma.ProductRoleUncheckedUpdateWithoutModuleAccessInput>
+  create: Prisma.XOR<Prisma.ProductRoleCreateWithoutModuleAccessInput, Prisma.ProductRoleUncheckedCreateWithoutModuleAccessInput>
+  where?: Prisma.ProductRoleWhereInput
+}
+
+export type ProductRoleUpdateToOneWithWhereWithoutModuleAccessInput = {
+  where?: Prisma.ProductRoleWhereInput
+  data: Prisma.XOR<Prisma.ProductRoleUpdateWithoutModuleAccessInput, Prisma.ProductRoleUncheckedUpdateWithoutModuleAccessInput>
+}
+
+export type ProductRoleUpdateWithoutModuleAccessInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneRequiredWithoutProductRolesNestedInput
+  assignments?: Prisma.UserProductRoleUpdateManyWithoutProductRoleNestedInput
+}
+
+export type ProductRoleUncheckedUpdateWithoutModuleAccessInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  productId?: Prisma.StringFieldUpdateOperationsInput | string
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  assignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutProductRoleNestedInput
 }
 
 export type ProductRoleCreateManyProductInput = {
@@ -536,6 +619,7 @@ export type ProductRoleUpdateWithoutProductInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   assignments?: Prisma.UserProductRoleUpdateManyWithoutProductRoleNestedInput
+  moduleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutProductRoleNestedInput
 }
 
 export type ProductRoleUncheckedUpdateWithoutProductInput = {
@@ -545,6 +629,7 @@ export type ProductRoleUncheckedUpdateWithoutProductInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   assignments?: Prisma.UserProductRoleUncheckedUpdateManyWithoutProductRoleNestedInput
+  moduleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutProductRoleNestedInput
 }
 
 export type ProductRoleUncheckedUpdateManyWithoutProductInput = {
@@ -562,10 +647,12 @@ export type ProductRoleUncheckedUpdateManyWithoutProductInput = {
 
 export type ProductRoleCountOutputType = {
   assignments: number
+  moduleAccess: number
 }
 
 export type ProductRoleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   assignments?: boolean | ProductRoleCountOutputTypeCountAssignmentsArgs
+  moduleAccess?: boolean | ProductRoleCountOutputTypeCountModuleAccessArgs
 }
 
 /**
@@ -585,6 +672,13 @@ export type ProductRoleCountOutputTypeCountAssignmentsArgs<ExtArgs extends runti
   where?: Prisma.UserProductRoleWhereInput
 }
 
+/**
+ * ProductRoleCountOutputType without action
+ */
+export type ProductRoleCountOutputTypeCountModuleAccessArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RoleModuleAccessWhereInput
+}
+
 
 export type ProductRoleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -595,6 +689,7 @@ export type ProductRoleSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   updatedAt?: boolean
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
   assignments?: boolean | Prisma.ProductRole$assignmentsArgs<ExtArgs>
+  moduleAccess?: boolean | Prisma.ProductRole$moduleAccessArgs<ExtArgs>
   _count?: boolean | Prisma.ProductRoleCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["productRole"]>
 
@@ -631,6 +726,7 @@ export type ProductRoleOmit<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type ProductRoleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
   assignments?: boolean | Prisma.ProductRole$assignmentsArgs<ExtArgs>
+  moduleAccess?: boolean | Prisma.ProductRole$moduleAccessArgs<ExtArgs>
   _count?: boolean | Prisma.ProductRoleCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProductRoleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -645,6 +741,7 @@ export type $ProductRolePayload<ExtArgs extends runtime.Types.Extensions.Interna
   objects: {
     product: Prisma.$ProductPayload<ExtArgs>
     assignments: Prisma.$UserProductRolePayload<ExtArgs>[]
+    moduleAccess: Prisma.$RoleModuleAccessPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1049,6 +1146,7 @@ export interface Prisma__ProductRoleClient<T, Null = never, ExtArgs extends runt
   readonly [Symbol.toStringTag]: "PrismaPromise"
   product<T extends Prisma.ProductDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProductDefaultArgs<ExtArgs>>): Prisma.Prisma__ProductClient<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   assignments<T extends Prisma.ProductRole$assignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProductRole$assignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserProductRolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  moduleAccess<T extends Prisma.ProductRole$moduleAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProductRole$moduleAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoleModuleAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1506,6 +1604,30 @@ export type ProductRole$assignmentsArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.UserProductRoleScalarFieldEnum | Prisma.UserProductRoleScalarFieldEnum[]
+}
+
+/**
+ * ProductRole.moduleAccess
+ */
+export type ProductRole$moduleAccessArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RoleModuleAccess
+   */
+  select?: Prisma.RoleModuleAccessSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RoleModuleAccess
+   */
+  omit?: Prisma.RoleModuleAccessOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RoleModuleAccessInclude<ExtArgs> | null
+  where?: Prisma.RoleModuleAccessWhereInput
+  orderBy?: Prisma.RoleModuleAccessOrderByWithRelationInput | Prisma.RoleModuleAccessOrderByWithRelationInput[]
+  cursor?: Prisma.RoleModuleAccessWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RoleModuleAccessScalarFieldEnum | Prisma.RoleModuleAccessScalarFieldEnum[]
 }
 
 /**

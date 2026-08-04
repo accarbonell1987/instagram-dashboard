@@ -7,7 +7,6 @@ import { invitationsHandlers } from './invitations';
 import { modulesHandlers } from './modules';
 import { onboardingHandlers } from './onboarding';
 import { plansHandlers } from './plans';
-import { quizHandlers } from './quizzes';
 
 export const handlers = [
   ...authHandlers,
@@ -18,6 +17,5 @@ export const handlers = [
   ...identityHandlers,
   ...billingHandlers,
   ...modulesHandlers,
-  ...quizHandlers,
   ...instagramHandlers,
 ];

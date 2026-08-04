@@ -14,13 +14,24 @@ export interface PlanCardProps {
   isSelected: boolean;
   isSubmitting: boolean;
   onSelect: (plan: Plan) => void;
+  onShowDetails: (plan: Plan) => void;
+  /** Sizing owned by the collection (flex track), not by the card itself. */
+  className?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function PlanCard({ plan, isSelected, isSubmitting, onSelect }: PlanCardProps): JSX.Element {
+export function PlanCard({
+  plan,
+  isSelected,
+  isSubmitting,
+  onSelect,
+  onShowDetails,
+  className = '',
+}: PlanCardProps): JSX.Element {
   const priceFormatted = new Intl.NumberFormat('es-PY').format(plan.price);
   const cycleLabel = plan.billingCycle === 'monthly' ? '/mes' : '/año';
+  const modules = plan.modules ?? [];
 
   return (
     <GradientBorderCard
@@ -30,7 +41,9 @@ export function PlanCard({ plan, isSelected, isSubmitting, onSelect }: PlanCardP
       onClick={() => {
         onSelect(plan);
       }}
-      className={isSelected ? '' : plan.popular ? 'scale-[1.02] shadow-xl' : ''}
+      className={[className, isSelected ? '' : plan.popular ? 'scale-[1.02] shadow-xl' : '']
+        .filter(Boolean)
+        .join(' ')}
     >
       <article
         role="article"
@@ -86,18 +99,43 @@ export function PlanCard({ plan, isSelected, isSubmitting, onSelect }: PlanCardP
         {/* Visual separator between price and features */}
         <div className="border-border border-t" />
 
-        {/* Feature list */}
-        <ul className="flex flex-col gap-3">
-          {plan.features.map((feature) => (
-            <li
-              key={feature}
-              className="text-muted-foreground flex items-start gap-2 text-sm leading-snug"
-            >
-              <CheckIcon className="text-primary mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              {feature}
-            </li>
-          ))}
-        </ul>
+        {/* Module summary — the full tree with descriptions lives in the
+            details dialog so the cards stay the same height and comparable. */}
+        {modules.length > 0 && (
+          <ul className="flex flex-col gap-3">
+            {modules.map((module) => (
+              <li
+                key={module.id}
+                className="text-foreground flex items-start gap-2 text-sm font-medium leading-snug"
+              >
+                <CheckIcon className="text-primary mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>
+                  {module.name}
+                  {module.subModules.length > 0 && (
+                    <span className="text-muted-foreground font-normal">
+                      {' '}
+                      · {module.subModules.length}{' '}
+                      {module.subModules.length === 1 ? 'funcionalidad' : 'funcionalidades'}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* mt-auto pins the action to the bottom whatever the module count */}
+        <button
+          type="button"
+          className="text-primary mt-auto self-start text-sm font-medium underline-offset-4 hover:underline"
+          onClick={(event) => {
+            // The card itself selects the plan — opening details must not.
+            event.stopPropagation();
+            onShowDetails(plan);
+          }}
+        >
+          Ver detalles
+        </button>
       </article>
     </GradientBorderCard>
   );

@@ -47,9 +47,9 @@ function setupDefaultHandlers() {
     http.get(`${BASE}/admin/modules`, () => {
       return HttpResponse.json({
         modules: [
-          { id: 'buscador-app', name: 'Buscador de Clientes', description: 'Consulta de clientes', defaultUrl: '/', active: true },
-          { id: 'facturacion-app', name: 'Facturación Electrónica', description: 'Facturación', defaultUrl: '/', active: true },
-          { id: 'rrhh-app', name: 'Recursos Humanos', description: 'RRHH', defaultUrl: '/', active: true },
+          { id: 'ig-basic-metrics', name: 'Métricas Básicas', description: 'Métricas', defaultUrl: '/', active: true },
+          { id: 'ig-publications', name: 'Publicaciones', description: 'Posts', defaultUrl: '/', active: true },
+          { id: 'ig-ai-agent', name: 'Agente IA', description: 'IA', defaultUrl: '/', active: true },
         ],
       }, { status: 200 })
     }),
@@ -57,7 +57,7 @@ function setupDefaultHandlers() {
     http.get(`${BASE}/admin/plans/:planId/modules`, ({ params }) => {
       const { planId } = params as { planId: string }
       if (planId === 'plan-1') {
-        return HttpResponse.json({ moduleIds: ['buscador-app', 'facturacion-app'] }, { status: 200 })
+        return HttpResponse.json({ moduleIds: ['ig-basic-metrics', 'ig-publications'] }, { status: 200 })
       }
       return HttpResponse.json({ moduleIds: [] }, { status: 200 })
     }),
@@ -96,8 +96,11 @@ async function openModuleDialog(planName: string) {
   const row = screen.getByText(planName).closest('tr')
   if (!row) throw new Error(`Row not found for plan: ${planName}`)
 
-  const badgeBtn = row.querySelector('button')
-  if (!badgeBtn) throw new Error(`Module badge button not found for plan: ${planName}`)
+  // By accessible name, not "first button in the row" — the row starts with the
+  // drag handle used to reorder plans.
+  const badgeBtn = within(row as HTMLElement).getByRole('button', {
+    name: `Módulos de ${planName}`,
+  })
   await user.click(badgeBtn)
 
   // Wait for dialog to appear
@@ -153,8 +156,9 @@ describe('PlansPage — Module Assignment', () => {
     // Click badge for Plan Básico
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- row exists; the plan was rendered above
     const row = screen.getByText('Plan Básico').closest('tr')!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- badge button exists in the rendered row
-    const badgeBtn = row.querySelector('button')!
+    // By accessible name, not "first button in the row" — the row starts with the
+    // drag handle used to reorder plans.
+    const badgeBtn = within(row).getByRole('button', { name: 'Módulos de Plan Básico' })
     await user.click(badgeBtn)
 
     // Skeleton placeholders should appear while loading (animate-pulse divs)
@@ -300,8 +304,9 @@ describe('PlansPage — Module Assignment', () => {
     // Click badge for Plan Básico
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- row exists; the plan was rendered above
     const row = screen.getByText('Plan Básico').closest('tr')!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- badge button exists in the rendered row
-    const badgeBtn = row.querySelector('button')!
+    // By accessible name, not "first button in the row" — the row starts with the
+    // drag handle used to reorder plans.
+    const badgeBtn = within(row).getByRole('button', { name: 'Módulos de Plan Básico' })
     await user.click(badgeBtn)
 
     await waitFor(() => {

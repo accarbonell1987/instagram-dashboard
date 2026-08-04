@@ -137,6 +137,7 @@ function draftToJson(
     currentStep: draft.currentStep,
     status: draft.status,
     version: draft.version,
+    productId: draft.productId ?? null,
     plan: planJson,
     representative,
     otpVerified,
@@ -188,10 +189,9 @@ export function createOnboardingRouter(
   });
 
   router.openapi(createDraftRoute, async (c) => {
-    const { planId } = c.req.valid('json');
+    const { planId, productId } = c.req.valid('json');
     const ipAddress = c.req.header('X-Forwarded-For') ?? c.req.header('X-Real-IP') ?? 'unknown';
-    const draft = await draftService.createDraft({ planId: planId ?? undefined, ipAddress });
-    // createDraft already validates plan existence; fetch it for the response
+    const draft = await draftService.createDraft({ planId: planId ?? undefined, productId: productId ?? undefined, ipAddress });
     const plan = draft.planId ? await planRepo.findById(draft.planId).catch(() => null) : null;
     return c.json(draftToJson(draft, plan, null), 201);
   });

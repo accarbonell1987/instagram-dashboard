@@ -76,10 +76,17 @@ describe('module-admin.service — createModule', () => {
         return HttpResponse.json(mockModule, { status: 201 })
       })
     )
-    const result = await createModule({ id: 'new-mod', name: 'New Module', defaultUrl: '/new' })
+    const result = await createModule({
+      id: 'new-mod',
+      name: 'New Module',
+      defaultUrl: '/new',
+      productId: 'instagram-dashboard',
+    })
     expect(result.id).toBe('new-mod')
     expect(capturedBody['id']).toBe('new-mod')
     expect(capturedBody['name']).toBe('New Module')
+    // A module is always created inside a product — the API rejects it otherwise.
+    expect(capturedBody['productId']).toBe('instagram-dashboard')
   })
 })
 

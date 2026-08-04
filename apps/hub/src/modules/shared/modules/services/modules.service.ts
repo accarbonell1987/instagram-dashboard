@@ -6,6 +6,7 @@ export interface AccessibleModule {
   description: string | undefined;
   defaultUrl: string;
   source: 'plan' | 'override' | 'admin';
+  parentId: string | null;
 }
 
 export async function getAccessibleModules(): Promise<AccessibleModule[]> {

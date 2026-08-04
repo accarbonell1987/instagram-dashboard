@@ -5,7 +5,6 @@ import type { Plan } from '../services/plans.service';
 
 import { PlanChip } from './plan-chip';
 
-
 const mockPlan: Plan = {
   id: 'professional',
   name: 'Profesional',

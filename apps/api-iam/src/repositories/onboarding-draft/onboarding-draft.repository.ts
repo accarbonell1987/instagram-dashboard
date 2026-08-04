@@ -9,6 +9,7 @@ function mapDraft(raw: {
   currentStep: string;
   version: number;
   planId: string | null;
+  productId: string | null;
   data: unknown;
   representativeEmail: string | null;
   resumeTokenHash: string | null;
@@ -25,6 +26,7 @@ function mapDraft(raw: {
     currentStep: raw.currentStep as OnboardingDraft['currentStep'],
     version: raw.version,
     planId: raw.planId ?? undefined,
+    productId: raw.productId ?? undefined,
     data: raw.data as Record<string, unknown>,
     representativeEmail: raw.representativeEmail ?? undefined,
     resumeTokenHash: raw.resumeTokenHash ?? undefined,
@@ -44,6 +46,7 @@ export class PrismaOnboardingDraftRepository implements OnboardingDraftRepositor
     const raw = await this.prisma.onboardingDraft.create({
       data: {
         planId: data.planId ?? null,
+        productId: data.productId ?? null,
         expiresAt: data.expiresAt,
       },
     });
@@ -127,6 +130,7 @@ export class PrismaOnboardingDraftRepository implements OnboardingDraftRepositor
     if (data.status !== undefined) updateData.status = data.status;
     if (data.version !== undefined) updateData.version = data.version;
     if (data.planId !== undefined) updateData.planId = data.planId;
+    if (data.productId !== undefined) updateData.productId = data.productId;
     if (data.representativeEmail !== undefined)
       updateData.representativeEmail = data.representativeEmail;
     if (data.tenantId !== undefined) updateData.tenantId = data.tenantId;
@@ -161,7 +165,7 @@ export class PrismaOnboardingDraftRepository implements OnboardingDraftRepositor
   async findByRuc(ruc: string, excludeDraftId?: string): Promise<OnboardingDraft | null> {
     const excludeClause = excludeDraftId ? `AND id != '${excludeDraftId}'` : '';
     const sql = `
-      SELECT id, status, current_step, version, plan_id, data, representative_email,
+      SELECT id, status, current_step, version, plan_id, product_id, data, representative_email,
              resume_token_hash, resume_token_expires_at, resume_token_used,
              tenant_id, expires_at, created_at, updated_at
       FROM onboarding_drafts
@@ -177,6 +181,7 @@ export class PrismaOnboardingDraftRepository implements OnboardingDraftRepositor
         current_step: string;
         version: number;
         plan_id: string | null;
+        product_id: string | null;
         data: unknown;
         representative_email: string | null;
         resume_token_hash: string | null;
@@ -196,6 +201,7 @@ export class PrismaOnboardingDraftRepository implements OnboardingDraftRepositor
       currentStep: row.current_step,
       version: row.version,
       planId: row.plan_id,
+      productId: row.product_id,
       data: row.data,
       representativeEmail: row.representative_email,
       resumeTokenHash: row.resume_token_hash,

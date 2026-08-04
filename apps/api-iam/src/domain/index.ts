@@ -24,7 +24,7 @@ export type DraftStatus =
   | 'expired'
   | 'abandoned';
 
-export type DraftStep = 'plan' | 'representative' | 'otp' | 'company' | 'payment' | 'summary';
+export type DraftStep = 'product' | 'plan' | 'representative' | 'otp' | 'company' | 'payment' | 'summary';
 
 export type PaymentStatus = 'pending' | 'approved' | 'declined' | 'cancelled' | 'reversed';
 
@@ -36,6 +36,15 @@ export type DocumentStatus = 'pending' | 'ready' | 'failed';
 // DOMAIN INTERFACES
 // ============================================================
 
+// The modules a plan grants, resolved live from PlanModule — this is what the
+// public plan listing advertises, instead of the hand-written `features` copy.
+export interface PlanModuleSummary {
+  id: string;
+  name: string;
+  description: string | undefined;
+  parentId: string | null;
+}
+
 export interface Plan {
   id: string;
   name: string;
@@ -45,6 +54,13 @@ export interface Plan {
   billingInterval: string;
   maxUsers: number;
   features: Record<string, unknown>;
+  // The product this plan sells. Only modules of the same product can be
+  // attached to it (enforced in ModuleRepository.setPlanModules).
+  productId: string | null;
+  modules: PlanModuleSummary[];
+  // Backoffice ordering (drag and drop) and the product's default plan.
+  displayOrder: number;
+  isDefault: boolean;
   popular: boolean;
   active: boolean;
   createdAt: Date;
@@ -129,6 +145,7 @@ export interface OnboardingDraft {
   currentStep: DraftStep;
   version: number;
   planId: string | undefined;
+  productId?: string | undefined;
   data: Record<string, unknown>;
   representativeEmail: string | undefined;
   resumeTokenHash: string | undefined;
@@ -213,6 +230,20 @@ export type Module = {
   description: string | undefined
   defaultUrl: string
   active: boolean
+  productId: string | null
+  parentId: string | null
+}
+
+// A product the tenant can reach, with the modules it effectively grants.
+// Backs the portal landing: products first, modules inside each one.
+export type AvailableProduct = {
+  id: string
+  name: string
+  description: string | undefined
+}
+
+export type AvailableProductWithModules = AvailableProduct & {
+  modules: EffectiveModule[]
 }
 
 export type EffectiveModule = Module & {
@@ -240,79 +271,6 @@ export interface UserProductRole {
   assignedBy: string | undefined
   createdAt: Date
 }
-
-// ============================================================
-// QUIZ TYPES
-// ============================================================
-
-export type QuestionType = 'multiple_choice' | 'true_false';
-
-export type AttemptStatus = 'in_progress' | 'completed' | 'abandoned';
-
-export interface Quiz {
-  id: string;
-  moduleId: string | undefined;
-  title: string;
-  description: string | undefined;
-  passingScore: number;
-  timeLimitMinutes: number | undefined;
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Question {
-  id: string;
-  quizId: string;
-  text: string;
-  type: QuestionType;
-  order: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface QuestionOption {
-  id: string;
-  questionId: string;
-  text: string;
-  isCorrect: boolean;
-  order: number;
-  createdAt: Date;
-}
-
-export interface QuizAttempt {
-  id: string;
-  quizId: string;
-  tenantId: string;
-  userId: string;
-  score: number | undefined;
-  passed: boolean | undefined;
-  status: AttemptStatus;
-  startedAt: Date;
-  completedAt: Date | undefined;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface QuizAttemptAnswer {
-  id: string;
-  attemptId: string;
-  questionId: string;
-  selectedOptionId: string | undefined;
-  createdAt: Date;
-}
-
-export type QuizWithQuestions = Quiz & {
-  questions: (Question & { options: QuestionOption[] })[];
-};
-
-export type QuizAttemptWithAnswers = QuizAttempt & {
-  quiz?: Quiz;
-  answers: (QuizAttemptAnswer & {
-    question?: Question & { options: QuestionOption[] };
-    selectedOption?: QuestionOption | null;
-  })[];
-};
 
 // ============================================================
 // CONTEXT TYPES

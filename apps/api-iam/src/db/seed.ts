@@ -25,6 +25,9 @@ const PLANS = [
     features: ['Hasta 5 usuarios', 'Soporte comunitario', '1 GB de almacenamiento'],
     popular: false,
     active: true,
+    productId: 'instagram-dashboard',
+    displayOrder: 0,
+    isDefault: true,
   },
   {
     id: 'professional',
@@ -37,6 +40,9 @@ const PLANS = [
     features: ['Hasta 25 usuarios', 'Soporte por email', '10 GB de almacenamiento', 'Acceso a API'],
     popular: true,
     active: true,
+    productId: 'instagram-dashboard',
+    displayOrder: 1,
+    isDefault: false,
   },
   {
     id: 'enterprise',
@@ -55,6 +61,9 @@ const PLANS = [
     ],
     popular: false,
     active: true,
+    productId: 'instagram-dashboard',
+    displayOrder: 2,
+    isDefault: false,
   },
 ];
 
@@ -186,64 +195,39 @@ async function seedDevFixtures() {
 
 const BASE_MODULES = [
   {
-    id: 'buscador-app',
-    name: 'Buscador de Clientes',
-    description: 'Consulta y gestión de información de clientes',
-    defaultUrl: 'http://localhost:3000',
+    id: 'ig-basic-metrics',
+    name: 'Métricas Básicas',
+    description: 'Panel de métricas, crecimiento y demografía de tu cuenta',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
-    id: 'facturacion-app',
-    name: 'Facturación Electrónica',
-    description: 'Emisión y control de facturas electrónicas',
-    defaultUrl: 'http://localhost:3002',
+    id: 'ig-publications',
+    name: 'Publicaciones',
+    description: 'Gestioná y analizá tus publicaciones, reels e historias',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
-    id: 'rrhh-app',
-    name: 'Recursos Humanos',
-    description: 'Gestión de personal y nómina',
-    defaultUrl: 'http://localhost:3003',
+    id: 'ig-ai-agent',
+    name: 'Agente IA',
+    description: 'Asistente inteligente para crecer en Instagram',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
-    id: 'reportes-app',
-    name: 'Reportes Gerenciales',
-    description: 'Informes y dashboards ejecutivos',
-    defaultUrl: 'http://localhost:3004',
+    id: 'ig-ai-chat',
+    name: 'Chat - Agente de Crecimiento',
+    description: 'Conversá con el agente IA sobre estrategias de crecimiento',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
-    id: 'inventario-app',
-    name: 'Control de Inventario',
-    description: 'Seguimiento y gestión de existencias',
-    defaultUrl: 'http://localhost:3005',
+    id: 'ig-ai-suggestions',
+    name: 'Sugerencias de Contenido',
+    description: 'Recibí ideas de contenido generadas por IA',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
-    id: 'configuracion-app',
-    name: 'Configuración',
-    description: 'Parámetros y ajustes del sistema',
-    defaultUrl: 'http://localhost:3006',
-  },
-  {
-    id: 'vacaciones-app',
-    name: 'Solicitud de Vacaciones',
-    description: 'Formulario para solicitar días de vacaciones',
-    defaultUrl: 'http://localhost:3010',
-  },
-  {
-    id: 'prueba',
-    name: 'Evaluaciones',
-    description: 'Creá y administrá cuestionarios, exámenes y pruebas de conocimiento para tu equipo',
-    defaultUrl: '/prueba',
-  },
-  {
-    // The Instagram Dashboard frontend is a standalone product web app
-    // (products/instagram-dashboard/web) that hub loads via the module iframe
-    // shell. A full URL here (not a leading-slash path) makes hub route through
-    // /apps/[slug] (ModuleShell) instead of an internal route. Dev defaults to
-    // localhost:3010; set INSTAGRAM_DASHBOARD_WEB_URL for deployed environments.
-    // The backend API (products/instagram-dashboard/api, port 3003) is a separate
-    // service, authenticated with JWT verified against api-iam's JWKS endpoint.
-    id: 'dashboard-instagram',
-    name: 'Dashboard Instagram',
-    description: 'Panel de análisis y métricas de Instagram',
+    id: 'ig-ai-carousels',
+    name: 'Carousels - Creación con IA',
+    description: 'Creá carousels profesionales con inteligencia artificial',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
 ];
@@ -259,21 +243,13 @@ async function seedModules() {
   console.log(`${BASE_MODULES.length} base modules seeded.`);
 
   const PLAN_MODULE_ASSIGNMENTS: Record<string, string[]> = {
-    starter: ['buscador-app', 'configuracion-app', 'vacaciones-app'],
-    professional: [
-      'buscador-app',
-      'facturacion-app',
-      'rrhh-app',
-      'reportes-app',
-      'inventario-app',
-      'configuracion-app',
-      'vacaciones-app',
-      'prueba',
-    ],
-    enterprise: BASE_MODULES.map(m => m.id),
+    starter: ['ig-basic-metrics'],
+    professional: ['ig-basic-metrics', 'ig-publications'],
+    enterprise: BASE_MODULES.map((m) => m.id),
   };
 
   let totalAssignments = 0;
+
   for (const [planId, moduleIds] of Object.entries(PLAN_MODULE_ASSIGNMENTS)) {
     for (const moduleId of moduleIds) {
       await prisma.planModule.upsert({
@@ -287,27 +263,61 @@ async function seedModules() {
   console.log(`${totalAssignments} plan-module assignments seeded.`);
 }
 
+// 'dashboard-instagram' was never a module — it IS the Instagram product, and
+// it kept showing up in the module lists. Its dependants are removed by hand
+// before the delete: plan_modules / overrides / role access all cascade, but
+// entitlements.module_id is nullable, so a cascade would turn a module-scoped
+// grant into a whole-product grant.
+async function retireLegacyInstagramModule() {
+  const legacyId = 'dashboard-instagram';
+  const legacy = await prisma.module.findUnique({ where: { id: legacyId } });
+  if (!legacy) return;
+
+  await prisma.$transaction([
+    prisma.planModule.deleteMany({ where: { moduleId: legacyId } }),
+    prisma.tenantModuleOverride.deleteMany({ where: { moduleId: legacyId } }),
+    prisma.entitlement.deleteMany({ where: { moduleId: legacyId } }),
+    prisma.roleModuleAccess.deleteMany({ where: { moduleId: legacyId } }),
+    prisma.module.delete({ where: { id: legacyId } }),
+  ]);
+  console.log(`Retired legacy module '${legacyId}' (it is a product, not a module).`);
+}
+
 // The instagram-dashboard product API (products/instagram-dashboard/api) gates
 // every request with an entitlement guard that resolves access via
 // TenantProductSubscription → Plan → PlanModule. Without a Product row, the
 // dashboard-instagram module's product_id, and a subscription for the system
 // tenant, that guard fails closed (403) even though the module shows in the hub.
 async function seedInstagramProduct() {
+  // Seeded products ship with trials OFF. A trial is an explicit decision per
+  // tenant (backoffice → Trials), never something a fresh install hands out.
+  // `update` sets it too, so re-seeding also switches off a product that was
+  // created before this rule.
   await prisma.product.upsert({
     where: { id: 'instagram-dashboard' },
-    update: {},
+    update: { trialEnabled: false },
     create: {
       id: 'instagram-dashboard',
       name: 'Dashboard Instagram',
       description: 'Panel de análisis y métricas de Instagram',
+      trialEnabled: false,
     },
   });
 
-  // Link the module to its product so product-scoped resolution works.
-  await prisma.module.update({
-    where: { id: 'dashboard-instagram' },
-    data: { productId: 'instagram-dashboard' },
-  });
+  // Link all IG modules to the product and set parent-child relationships.
+  const igModules = ['ig-basic-metrics', 'ig-publications', 'ig-ai-agent',
+    'ig-ai-chat', 'ig-ai-suggestions', 'ig-ai-carousels'];
+  for (const id of igModules) {
+    await prisma.module.update({
+      where: { id },
+      data: {
+        productId: 'instagram-dashboard',
+        parentId: id.startsWith('ig-ai-') && id !== 'ig-ai-agent' ? 'ig-ai-agent' : null,
+      },
+    });
+  }
+
+  await retireLegacyInstagramModule();
 
   // Give the system tenant (enterprise plan, which includes dashboard-instagram)
   // an active subscription to the product so the entitlement guard resolves.
@@ -328,12 +338,10 @@ async function seedInstagramProduct() {
 }
 
 async function main() {
-  const existingPlans = await prisma.plan.count();
-  if (existingPlans === PLANS.length) {
-    console.log('Plans already seeded, skipping plan seed.');
-  } else {
-    await seedPlans();
-  }
+  // seedPlans upserts, so it is already idempotent. The old count guard skipped
+  // it whenever the row count matched, which silently froze plan data — new
+  // fields (displayOrder, isDefault) never reached an existing database.
+  await seedPlans();
 
   // PlanQuota seeding: idempotent (upsert by planId + resourceType).
   // Runs every time — only creates/updates quotas that are missing or outdated.

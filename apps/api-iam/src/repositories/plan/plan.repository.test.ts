@@ -34,7 +34,11 @@ describe('PrismaPlanRepository', () => {
     prisma.plan.findMany.mockResolvedValue([makePlanRaw()])
     const plans = await repo.findAll()
     expect(plans).toHaveLength(1)
-    expect(prisma.plan.findMany).toHaveBeenCalledWith({ where: { active: true } })
+    expect(prisma.plan.findMany).toHaveBeenCalledWith({
+      where: { active: true },
+      include: { planModules: { include: { module: true } } },
+      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
+    })
   })
 
   it('findById throws NotFoundError when plan missing', async () => {

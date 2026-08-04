@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.7.0
+  version: 1.12.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -10,6 +10,23 @@ info:
     cambio aquí requiere un PR coordinado en ambos repositorios.
 
     ## Changelog
+
+    ### 1.12.0 (2026-08-04)
+    - ADD: `PUT /admin/plans/reorder` — reordenar planes (drag and drop del backoffice)
+    - ADD: `AdminPlan.displayOrder` y `AdminPlan.isDefault`; `isDefault` aceptado en `PATCH /admin/plans/{planId}`
+    - ADD: `Plan.isDefault` en el listado público — el wizard preselecciona ese plan
+    - CHANGE: `GET /plans` y `GET /admin/plans` ordenan por `displayOrder`
+
+    ### 1.11.0 (2026-08-04)
+    - REMOVE: Quiz module — all admin and tenant quiz endpoints, plus the
+      `Quiz`, `Question`, `QuestionOption`, `QuizAttempt`, `CreateQuizRequest`,
+      `UpdateQuizRequest`, `SubmitAnswerRequest`, `QuestionType` and
+      `AttemptStatus` schemas. The feature was dropped from the product.
+
+    ### 1.10.0 (2026-08-04)
+    - ADD: `GET /tenants/current/products` — products available to the tenant, with their modules
+    - ADD: `Plan.modules` — modules a plan grants, resolved from the plan-module association
+    - ADD: `AdminPlan.productId` and required `CreateModuleRequest.productId`
 
     ### 1.7.0 (2026-05-24)
     - ADD: `GET /admin/plans` — list all plans with tenant counts (SuperAdmin)
@@ -329,6 +346,31 @@ components:
         features:
           type: array
           items: { type: string }
+        modules:
+          type: array
+          description: |
+            Modules the plan grants, resolved live from the plan-module
+            association. Sub-modules (the functionalities of a module) are
+            nested one level deep.
+          items:
+            type: object
+            required: [id, name, subModules]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              description: { type: string }
+              subModules:
+                type: array
+                items:
+                  type: object
+                  required: [id, name]
+                  properties:
+                    id: { type: string }
+                    name: { type: string }
+                    description: { type: string }
+        isDefault:
+          type: boolean
+          description: Plan predeterminado del producto — el wizard lo preselecciona.
         popular: { type: boolean, default: false }
       example:
         id: professional
@@ -337,6 +379,11 @@ components:
         currency: PYG
         billingCycle: monthly
         features: [Hasta 25 usuarios, IVR avanzado, Soporte 24/5]
+        modules:
+          - id: ig-basic-metrics
+            name: Métricas Básicas
+            description: Panel de métricas, crecimiento y demografía de tu cuenta
+            subModules: []
         popular: true
 
     Session:
@@ -874,6 +921,39 @@ components:
           items:
             $ref: '#/components/schemas/AccessibleModule'
 
+    ProductModule:
+      allOf:
+        - $ref: '#/components/schemas/AccessibleModule'
+        - type: object
+          required: [subModules]
+          properties:
+            subModules:
+              type: array
+              description: Functionalities of the module (1 nesting level).
+              items:
+                $ref: '#/components/schemas/AccessibleModule'
+
+    AvailableProduct:
+      type: object
+      required: [id, name, modules]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductModule'
+
+    AvailableProductList:
+      type: object
+      required: [products]
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailableProduct'
+
     ModuleList:
       type: object
       required: [modules]
@@ -885,7 +965,7 @@ components:
 
     CreateModuleRequest:
       type: object
-      required: [id, name, defaultUrl]
+      required: [id, name, defaultUrl, productId]
       properties:
         id:
           type: string
@@ -897,6 +977,17 @@ components:
         defaultUrl:
           type: string
           description: Ruta relativa del módulo en el Hub (ej. "/lab", "/billing")
+        productId:
+          type: string
+          description: |
+            Producto al que pertenece el módulo. Un módulo pertenece a
+            exactamente un producto y solo puede asignarse a planes de ese
+            mismo producto — no existen módulos sin producto.
+        parentId:
+          type: string
+          description: |
+            Módulo padre, para sub-módulos (funcionalidades). Debe pertenecer al
+            mismo producto y no ser a su vez un sub-módulo (1 nivel máximo).
 
     UpdateModuleRequest:
       type: object
@@ -931,125 +1022,6 @@ components:
         reason:
           type: string
           description: Motivo del override (opcional, para auditoría)
-
-    QuestionType:
-      type: string
-      enum: [multiple_choice, true_false]
-
-    AttemptStatus:
-      type: string
-      enum: [in_progress, completed, abandoned]
-
-    Quiz:
-      type: object
-      required: [id, title, passingScore, active, createdAt, updatedAt]
-      properties:
-        id: { type: string, format: uuid }
-        moduleId: { type: ['string', 'null'] }
-        title: { type: string }
-        description: { type: ['string', 'null'] }
-        passingScore: { type: integer, minimum: 0, maximum: 100 }
-        timeLimitMinutes: { type: ['integer', 'null'] }
-        active: { type: boolean }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    Question:
-      type: object
-      required: [id, quizId, text, type, order, createdAt, updatedAt]
-      properties:
-        id: { type: string, format: uuid }
-        quizId: { type: string, format: uuid }
-        text: { type: string }
-        type: { $ref: '#/components/schemas/QuestionType' }
-        order: { type: integer }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    QuestionWithOptions:
-      allOf:
-        - $ref: '#/components/schemas/Question'
-        - type: object
-          required: [options]
-          properties:
-            options:
-              type: array
-              items: { $ref: '#/components/schemas/QuestionOption' }
-
-    QuestionOption:
-      type: object
-      required: [id, questionId, text, isCorrect, order, createdAt]
-      properties:
-        id: { type: string, format: uuid }
-        questionId: { type: string, format: uuid }
-        text: { type: string }
-        isCorrect: { type: boolean }
-        order: { type: integer }
-        createdAt: { type: string, format: date-time }
-
-    QuizAttempt:
-      type: object
-      required: [id, quizId, tenantId, userId, status, startedAt, createdAt, updatedAt]
-      properties:
-        id: { type: string, format: uuid }
-        quizId: { type: string, format: uuid }
-        tenantId: { type: string, format: uuid }
-        userId: { type: string, format: uuid }
-        score: { type: ['integer', 'null'] }
-        passed: { type: ['boolean', 'null'] }
-        status: { $ref: '#/components/schemas/AttemptStatus' }
-        startedAt: { type: string, format: date-time }
-        completedAt: { type: ['string', 'null'], format: date-time }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    CreateQuizRequest:
-      type: object
-      required: [title, passingScore]
-      properties:
-        title: { type: string, minLength: 1, maxLength: 200 }
-        description: { type: string }
-        passingScore: { type: integer, minimum: 0, maximum: 100, default: 60 }
-        timeLimitMinutes: { type: integer, minimum: 1 }
-        moduleId: { type: string }
-
-    UpdateQuizRequest:
-      type: object
-      properties:
-        title: { type: string, minLength: 1, maxLength: 200 }
-        description: { type: string }
-        passingScore: { type: integer, minimum: 0, maximum: 100 }
-        timeLimitMinutes: { type: ['integer', 'null'] }
-        active: { type: boolean }
-        moduleId: { type: ['string', 'null'] }
-
-    CreateQuestionRequest:
-      type: object
-      required: [text, type]
-      properties:
-        text: { type: string, minLength: 1 }
-        type: { $ref: '#/components/schemas/QuestionType' }
-
-    ReorderQuestionsRequest:
-      type: object
-      required: [orderedIds]
-      properties:
-        orderedIds:
-          type: array
-          items: { type: string, format: uuid }
-
-    SubmitAnswerRequest:
-      type: object
-      required: [questionId]
-      properties:
-        questionId: { type: string, format: uuid }
-        selectedOptionId: { type: ['string', 'null'], format: uuid }
-
-    QuizListResponse:
-      type: object
-      required: [quizzes]
-      properties:
-        quizzes: { type: array, items: { $ref: '#/components/schemas/Quiz' } }
 
     PlanModulesResponse:
       type: object
@@ -1086,6 +1058,18 @@ components:
           enum: [month, year]
         active:
           type: boolean
+        productId:
+          type: string
+          nullable: true
+          description: |
+            Producto que vende el plan. Solo se le pueden asignar módulos de
+            este mismo producto.
+        displayOrder:
+          type: integer
+          description: Orden de la lista, definido por drag and drop en el backoffice.
+        isDefault:
+          type: boolean
+          description: Plan predeterminado del producto (uno solo por producto).
         tenantCount:
           type: integer
         createdAt:
@@ -2590,6 +2574,36 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /tenants/current/products:
+    get:
+      tags: [modules, Módulos]
+      operationId: getAvailableProducts
+      summary: Listar productos disponibles para el tenant autenticado
+      description: |
+        **Propósito**: Retorna los productos que el tenant puede usar, cada uno con
+        los módulos efectivos que otorga. Es la fuente del landing del portal.
+
+        **Regla de resolución**:
+        1. Productos con suscripción activa (`TenantProductSubscription.status = active`)
+        2. Más productos con un Entitlement de tipo `grant` vigente (trial/admin/override)
+        3. Los módulos de cada producto se resuelven con la misma regla que
+           `/tenants/current/modules`, pero acotada a ese producto
+        4. Un producto sin módulos alcanzables no se devuelve
+        5. SuperAdmin recibe todos los productos activos con todos sus módulos activos
+
+        **Precondiciones**: Sesión activa (cualquier rol).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de productos disponibles con sus módulos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailableProductList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /admin/modules:
     get:
       tags: [modules, Admin]
@@ -2945,6 +2959,38 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
 
+  /admin/plans/reorder:
+    put:
+      tags: [admin, plans]
+      operationId: reorderPlans
+      summary: Reordenar planes (SuperAdmin)
+      description: |
+        Recibe la lista completa de planes en su nuevo orden; el índice de cada id
+        pasa a ser su `displayOrder`. Es lo que persiste el drag and drop del
+        backoffice, y define el orden en que se muestran los planes en el wizard.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planIds]
+              properties:
+                planIds:
+                  type: array
+                  minItems: 1
+                  items: { type: string }
+      responses:
+        '204':
+          description: Orden actualizado
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
   /admin/plans/{planId}/modules:
     put:
       tags: [modules, Admin]
@@ -2984,6 +3030,21 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+    get:
+      tags: [admin, plans]
+      operationId: getPlanModules
+      summary: Get modules assigned to a plan (SuperAdmin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: planId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Plan modules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlanModulesResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /admin/tenants/{tenantId}/modules/{moduleId}/override:
     put:
@@ -3097,393 +3158,6 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
 
-  # ==================== QUIZZES (ADMIN) ====================
-  /admin/quizzes:
-    get:
-      tags: [admin, quizzes]
-      operationId: listQuizzes
-      summary: List all quizzes (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - name: active
-          in: query
-          required: false
-          schema: { type: string, enum: ['true', 'false'] }
-      responses:
-        '200':
-          description: List of quizzes
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/QuizListResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-    post:
-      tags: [admin, quizzes]
-      operationId: createQuiz
-      summary: Create a new quiz (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/CreateQuizRequest' }
-      responses:
-        '201':
-          description: Quiz created
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Quiz' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
-
-  /admin/quizzes/{quizId}:
-    get:
-      tags: [admin, quizzes]
-      operationId: getQuiz
-      summary: Get quiz with questions (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '200':
-          description: Quiz with questions
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Quiz' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-    patch:
-      tags: [admin, quizzes]
-      operationId: updateQuiz
-      summary: Update quiz (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/UpdateQuizRequest' }
-      responses:
-        '200':
-          description: Quiz updated
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Quiz' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
-    delete:
-      tags: [admin, quizzes]
-      operationId: archiveQuiz
-      summary: Archive quiz (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      responses:
-        '200':
-          description: Quiz archived
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  /admin/quizzes/{quizId}/questions:
-    post:
-      tags: [admin, quizzes]
-      operationId: addQuestion
-      summary: Add question to quiz (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/CreateQuestionRequest' }
-      responses:
-        '201':
-          description: Question created
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
-
-  /admin/quizzes/{quizId}/questions/{questionId}:
-    patch:
-      tags: [admin, quizzes]
-      operationId: updateQuestion
-      summary: Update question (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/CreateQuestionRequest' }
-      responses:
-        '200':
-          description: Question updated
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
-    delete:
-      tags: [admin, quizzes]
-      operationId: deleteQuestion
-      summary: Delete question (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      responses:
-        '204':
-          description: Question deleted
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  /admin/quizzes/{quizId}/questions/reorder:
-    put:
-      tags: [admin, quizzes]
-      operationId: reorderQuestions
-      summary: Reorder questions (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/ReorderQuestionsRequest' }
-      responses:
-        '204':
-          description: Questions reordered
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  /admin/quizzes/{quizId}/questions/{questionId}/options:
-    post:
-      tags: [admin, quizzes]
-      operationId: addOption
-      summary: Add option to question (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [text]
-              properties:
-                text: { type: string }
-                isCorrect: { type: boolean, default: false }
-      responses:
-        '201':
-          description: Option created
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
-
-  /admin/quizzes/{quizId}/questions/{questionId}/options/{optionId}:
-    patch:
-      tags: [admin, quizzes]
-      operationId: updateOption
-      summary: Update option (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: optionId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                text: { type: string }
-                isCorrect: { type: boolean }
-      responses:
-        '200':
-          description: Option updated
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
-    delete:
-      tags: [admin, quizzes]
-      operationId: deleteOption
-      summary: Delete option (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: questionId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: optionId, in: path, required: true, schema: { type: string, format: uuid } }
-        - $ref: '#/components/parameters/IdempotencyKeyHeader'
-      responses:
-        '204':
-          description: Option deleted
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  /admin/quiz-results:
-    get:
-      tags: [admin, quizzes]
-      operationId: listQuizResults
-      summary: View quiz attempt results (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: query, required: false, schema: { type: string, format: uuid } }
-        - { name: tenantId, in: query, required: false, schema: { type: string, format: uuid } }
-      responses:
-        '200':
-          description: Quiz attempt results
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-
-  /admin/plans/{planId}/modules:
-    get:
-      tags: [admin, plans]
-      operationId: getPlanModules
-      summary: Get modules assigned to a plan (SuperAdmin)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: planId, in: path, required: true, schema: { type: string } }
-      responses:
-        '200':
-          description: Plan modules
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/PlanModulesResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-
-  # ==================== QUIZZES (TENANT) ====================
-  /tenants/current/quizzes:
-    get:
-      tags: [tenant, quizzes]
-      operationId: listAvailableQuizzes
-      summary: List available quizzes for the tenant
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200':
-          description: Available quizzes
-        '401': { $ref: '#/components/responses/Unauthorized' }
-
-  /tenants/current/quizzes/{quizId}:
-    get:
-      tags: [tenant, quizzes]
-      operationId: getTenantQuiz
-      summary: Get quiz detail (no answers revealed)
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '200':
-          description: Quiz detail
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  /tenants/current/quizzes/{quizId}/attempts:
-    post:
-      tags: [tenant, quizzes]
-      operationId: startAttempt
-      summary: Start a quiz attempt
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '201':
-          description: Attempt started
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '409': { $ref: '#/components/responses/Conflict' }
-    get:
-      tags: [tenant, quizzes]
-      operationId: listAttempts
-      summary: List user attempts for quiz
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '200':
-          description: User attempts
-        '401': { $ref: '#/components/responses/Unauthorized' }
-
-  /tenants/current/quizzes/{quizId}/attempts/{attemptId}:
-    get:
-      tags: [tenant, quizzes]
-      operationId: getAttempt
-      summary: Get attempt with answers
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: attemptId, in: path, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '200':
-          description: Attempt detail
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  /tenants/current/quizzes/{quizId}/attempts/{attemptId}/answers:
-    post:
-      tags: [tenant, quizzes]
-      operationId: submitAnswer
-      summary: Submit answer for a question
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: attemptId, in: path, required: true, schema: { type: string, format: uuid } }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/SubmitAnswerRequest' }
-      responses:
-        '200':
-          description: Answer submitted
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '409': { $ref: '#/components/responses/Conflict' }
-
-  /tenants/current/quizzes/{quizId}/attempts/{attemptId}/complete:
-    post:
-      tags: [tenant, quizzes]
-      operationId: completeAttempt
-      summary: Complete attempt and calculate score
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: quizId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: attemptId, in: path, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '200':
-          description: Attempt completed with score
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '409': { $ref: '#/components/responses/Conflict' }
-
-  # ==================== BILLING ====================
   /billing/documents/{documentId}/signed-url:
     get:
       tags: [billing, Billing]

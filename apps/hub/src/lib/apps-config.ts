@@ -1,17 +1,16 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   BarChart3,
-  Database,
+  Bot,
   FileText,
-  Palmtree,
-  Search,
-  Settings,
-  Users,
-  GraduationCap,
   Instagram,
+  Layout,
+  LayoutGrid,
+  Lightbulb,
+  MessageSquare,
 } from 'lucide-react';
 
-export type AppColor = 'blue' | 'green' | 'purple' | 'orange' | 'teal' | 'red';
+export type AppColor = 'blue' | 'green' | 'purple' | 'orange' | 'teal' | 'red' | 'amber';
 
 // Metadata visual that does NOT come from the backend (typed, tree-shakeable)
 export interface ModuleVisuals {
@@ -20,44 +19,51 @@ export interface ModuleVisuals {
 }
 
 export const moduleVisuals: Record<string, ModuleVisuals> = {
-  'buscador-app': {
-    icon: Search,
+  'ig-basic-metrics': {
+    icon: BarChart3,
     color: 'blue',
   },
-  'facturacion-app': {
+  'ig-publications': {
     icon: FileText,
     color: 'green',
   },
-  'rrhh-app': {
-    icon: Users,
+  'ig-ai-agent': {
+    icon: Bot,
     color: 'purple',
   },
-  'reportes-app': {
-    icon: BarChart3,
+  'ig-ai-chat': {
+    icon: MessageSquare,
+    color: 'purple',
+  },
+  'ig-ai-suggestions': {
+    icon: Lightbulb,
+    color: 'amber',
+  },
+  'ig-ai-carousels': {
+    icon: Layout,
     color: 'orange',
   },
-  'inventario-app': {
-    icon: Database,
-    color: 'teal',
-  },
-  'configuracion-app': {
-    icon: Settings,
-    color: 'red',
-  },
-  'vacaciones-app': {
-    icon: Palmtree,
-    color: 'teal',
-  },
-  prueba: {
-    icon: GraduationCap,
-    color: 'purple',
-  },
-  'dashboard-instagram': {
+};
+
+export const productVisuals: Record<string, ModuleVisuals> = {
+  'instagram-dashboard': {
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- brand icon still needed
     icon: Instagram,
     color: 'orange',
   },
 };
+
+const FALLBACK_VISUALS: ModuleVisuals = { icon: LayoutGrid, color: 'blue' };
+
+// A module or product without a hand-picked icon still renders — it used to be
+// dropped from the grid, which silently hid anything newly created in backoffice.
+export function getModuleVisuals(moduleId: string): ModuleVisuals {
+  return moduleVisuals[moduleId] ?? FALLBACK_VISUALS;
+}
+
+export function getProductVisuals(productId: string): ModuleVisuals {
+  return productVisuals[productId] ?? FALLBACK_VISUALS;
+}
 
 export function isLocalModule(defaultUrl: string): boolean {
   return defaultUrl.startsWith('/');

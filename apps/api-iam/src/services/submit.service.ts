@@ -174,7 +174,21 @@ export function createSubmitService(deps: SubmitServiceDeps) {
             slug = `${baseSlug}-${String(attempt + 1)}`
           }
 
-          const planId = draft.planId ?? 'starter'
+          // The wizard's product step decides which product the tenant buys;
+          // DEFAULT_PRODUCT_ID is only the fallback for drafts created before
+          // that step existed. Getting this wrong sends the tenant to the
+          // portal with the wrong product listed.
+          const productId = draft.productId ?? DEFAULT_PRODUCT_ID
+          // A draft without a plan falls back to the product's default plan
+          // (backoffice → Planes), not to a hardcoded id that may not exist.
+          const defaultPlan =
+            draft.planId === undefined
+              ? await tx.plan.findFirst({
+                  where: { productId, isDefault: true, active: true },
+                  select: { id: true },
+                })
+              : null
+          const planId = draft.planId ?? defaultPlan?.id ?? 'starter'
           const repData = draft.data['representative'] as Record<string, unknown> | undefined
           const repEmail = draft.representativeEmail ?? (repData?.['email'] as string | undefined) ?? 'admin@corehub.com'
           const repFullName = repData?.['fullName'] as string | undefined
@@ -245,8 +259,8 @@ export function createSubmitService(deps: SubmitServiceDeps) {
           // assignment written above — this is the only write path for
           // Tenant.planId today (see design "Backfill scope").
           await tx.tenantProductSubscription.upsert({
-            where: { tenantId_productId: { tenantId: tenant.id, productId: DEFAULT_PRODUCT_ID } },
-            create: { tenantId: tenant.id, productId: DEFAULT_PRODUCT_ID, planId },
+            where: { tenantId_productId: { tenantId: tenant.id, productId } },
+            create: { tenantId: tenant.id, productId, planId },
             update: { planId },
           })
 

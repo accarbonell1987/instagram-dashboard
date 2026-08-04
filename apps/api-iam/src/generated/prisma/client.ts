@@ -157,27 +157,7 @@ export type ProductRole = Prisma.ProductRoleModel
  */
 export type UserProductRole = Prisma.UserProductRoleModel
 /**
- * Model Quiz
+ * Model RoleModuleAccess
  * 
  */
-export type Quiz = Prisma.QuizModel
-/**
- * Model Question
- * 
- */
-export type Question = Prisma.QuestionModel
-/**
- * Model QuestionOption
- * 
- */
-export type QuestionOption = Prisma.QuestionOptionModel
-/**
- * Model QuizAttempt
- * 
- */
-export type QuizAttempt = Prisma.QuizAttemptModel
-/**
- * Model QuizAttemptAnswer
- * 
- */
-export type QuizAttemptAnswer = Prisma.QuizAttemptAnswerModel
+export type RoleModuleAccess = Prisma.RoleModuleAccessModel

@@ -1,9 +1,45 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import type { PlanService } from '../../services/index.js';
 import type { PlanQuotaRepository } from '../../repositories/index.js';
+import type { Plan, PlanModuleSummary } from '../../domain/index.js';
 import { ListPlansResponseSchema, GetPlanResponseSchema } from '../schemas/index.js';
 import { commonErrorResponses } from '../schemas/index.js';
 import { PlanQuotaListResponseSchema } from '../schemas/admin.schemas.js';
+
+/**
+ * Nests the plan's flat module list into module → sub-modules. A sub-module
+ * whose parent is not part of the plan is surfaced as a top-level entry, so
+ * nothing the plan grants can go missing from the listing.
+ */
+function toModuleTree(modules: PlanModuleSummary[]) {
+  const included = new Set(modules.map((m) => m.id));
+  const isRoot = (m: PlanModuleSummary) => m.parentId === null || !included.has(m.parentId);
+
+  return modules.filter(isRoot).map((parent) => ({
+    id: parent.id,
+    name: parent.name,
+    description: parent.description,
+    subModules: modules
+      .filter((m) => m.parentId === parent.id)
+      .map((child) => ({ id: child.id, name: child.name, description: child.description })),
+  }));
+}
+
+function toPlanResponse(plan: Plan) {
+  return {
+    id: plan.id,
+    name: plan.name,
+    price: plan.price,
+    currency: plan.currency,
+    billingCycle: plan.billingInterval as 'monthly' | 'yearly',
+    features: Array.isArray(plan.features)
+      ? (plan.features as string[])
+      : Object.keys(plan.features as Record<string, unknown>),
+    modules: toModuleTree(plan.modules),
+    isDefault: plan.isDefault,
+    popular: plan.popular ?? false,
+  };
+}
 
 export function createPlansRouter(planService: PlanService, planQuotaRepo: PlanQuotaRepository) {
   const router = new OpenAPIHono();
@@ -23,23 +59,11 @@ export function createPlansRouter(planService: PlanService, planQuotaRepo: PlanQ
   });
 
   router.openapi(listPlansRoute, async (c) => {
-    const plans = await planService.listPlans();
-    return c.json(
-      {
-        plans: plans.map((p) => ({
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          currency: p.currency,
-          billingCycle: p.billingInterval as 'monthly' | 'yearly',
-          features: Array.isArray(p.features)
-            ? (p.features as string[])
-            : Object.keys(p.features as Record<string, unknown>),
-          popular: p.popular ?? false,
-        })),
-      },
-      200
+    const productId = c.req.query('productId') ?? undefined;
+    const plans = await planService.listPlans(
+      productId !== undefined ? { productId, active: true } : undefined,
     );
+    return c.json({ plans: plans.map(toPlanResponse) }, 200);
   });
 
   const getPlanRoute = createRoute({
@@ -63,20 +87,7 @@ export function createPlansRouter(planService: PlanService, planQuotaRepo: PlanQ
   router.openapi(getPlanRoute, async (c) => {
     const { planId } = c.req.valid('param');
     const plan = await planService.getPlan(planId);
-    return c.json(
-      {
-        id: plan.id,
-        name: plan.name,
-        price: plan.price,
-        currency: plan.currency,
-        billingCycle: plan.billingInterval as 'monthly' | 'yearly',
-        features: Array.isArray(plan.features)
-          ? (plan.features as string[])
-          : Object.keys(plan.features as Record<string, unknown>),
-        popular: plan.popular ?? false,
-      },
-      200
-    );
+    return c.json(toPlanResponse(plan), 200);
   });
 
   // ── GET /plans/:planId/quotas ──────────────────────────────────────────────

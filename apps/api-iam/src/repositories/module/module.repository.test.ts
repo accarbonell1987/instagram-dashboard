@@ -28,6 +28,12 @@ function makePrisma(overrides: Record<string, unknown> = {}) {
     // null) to every module of the product via module.findMany.
     module: {
       findMany: vi.fn().mockResolvedValue([]),
+      // Override writes resolve the module's own product for the Entitlement
+      // scope — a module without a product is rejected.
+      findUnique: vi.fn().mockResolvedValue({ productId: DEFAULT_PRODUCT_ID }),
+    },
+    plan: {
+      findUnique: vi.fn().mockResolvedValue({ productId: DEFAULT_PRODUCT_ID }),
     },
     ...overrides,
   }
@@ -444,5 +450,63 @@ describe('ModuleRepository — grantTrial — product-scoped grant (moduleId: nu
 
     expect(prisma.entitlement.upsert).toHaveBeenCalled()
     expect(prisma.$transaction).not.toHaveBeenCalled()
+  })
+})
+
+// A module belongs to exactly one product and is not attachable to plans of a
+// different product (e.g. the ig-* modules only belong to instagram-dashboard).
+// setPlanModules is the only write path into plan_modules, so it is the gate.
+describe('ModuleRepository — setPlanModules product coupling', () => {
+  it('rejects modules that belong to another product', async () => {
+    const prisma = makePrisma({
+      plan: { findUnique: vi.fn().mockResolvedValue({ productId: 'instagram-dashboard' }) },
+      module: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: 'ig-basic-metrics', productId: 'instagram-dashboard' },
+          { id: 'crm-contacts', productId: 'crm' },
+        ]),
+        findUnique: vi.fn(),
+      },
+    })
+    const repo = createModuleRepository(prisma as never)
+
+    await expect(
+      repo.setPlanModules('starter', ['ig-basic-metrics', 'crm-contacts']),
+    ).rejects.toMatchObject({ code: 'modules.product_mismatch' })
+    expect(prisma.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('rejects a module with no product at all', async () => {
+    const prisma = makePrisma({
+      plan: { findUnique: vi.fn().mockResolvedValue({ productId: 'instagram-dashboard' }) },
+      module: {
+        findMany: vi.fn().mockResolvedValue([{ id: 'orphan', productId: null }]),
+        findUnique: vi.fn(),
+      },
+    })
+    const repo = createModuleRepository(prisma as never)
+
+    await expect(repo.setPlanModules('starter', ['orphan'])).rejects.toMatchObject({
+      code: 'modules.product_mismatch',
+    })
+  })
+
+  it('writes the assignment when every module shares the plan product', async () => {
+    const prisma = makePrisma({
+      plan: { findUnique: vi.fn().mockResolvedValue({ productId: 'instagram-dashboard' }) },
+      module: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: 'ig-basic-metrics', productId: 'instagram-dashboard' },
+          { id: 'ig-publications', productId: 'instagram-dashboard' },
+        ]),
+        findUnique: vi.fn(),
+      },
+      planModule: { findMany: vi.fn(), deleteMany: vi.fn(), create: vi.fn() },
+    })
+    const repo = createModuleRepository(prisma as never)
+
+    await repo.setPlanModules('starter', ['ig-basic-metrics', 'ig-publications'])
+
+    expect(prisma.$transaction).toHaveBeenCalled()
   })
 })

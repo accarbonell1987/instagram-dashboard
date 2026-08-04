@@ -18,6 +18,8 @@ export type ProductRoleService = {
   assignToUser(userId: string, productRoleId: string, assignedBy?: string): Promise<UserProductRole>
   unassignFromUser(userId: string, productRoleId: string): Promise<void>
   listByUser(userId: string): Promise<UserProductRole[]>
+  getRoleModules(roleId: string): Promise<string[]>
+  setRoleModules(roleId: string, moduleIds: string[]): Promise<void>
 }
 
 export function createProductRoleService(deps: ProductRoleServiceDeps): ProductRoleService {
@@ -63,6 +65,14 @@ export function createProductRoleService(deps: ProductRoleServiceDeps): ProductR
 
     async listByUser(userId) {
       return productRoleRepository.listByUser(userId)
+    },
+
+    async getRoleModules(roleId) {
+      return productRoleRepository.getRoleModules(roleId)
+    },
+
+    async setRoleModules(roleId, moduleIds) {
+      await productRoleRepository.setRoleModules(roleId, moduleIds)
     },
   }
 }

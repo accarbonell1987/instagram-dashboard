@@ -70,6 +70,7 @@ export type DraftStatus = (typeof DraftStatus)[keyof typeof DraftStatus]
 
 
 export const DraftStep = {
+  product: 'product',
   plan: 'plan',
   representative: 'representative',
   otp: 'otp',
@@ -122,23 +123,6 @@ export const PlanChangeRequestStatus = {
 } as const
 
 export type PlanChangeRequestStatus = (typeof PlanChangeRequestStatus)[keyof typeof PlanChangeRequestStatus]
-
-
-export const QuestionType = {
-  multiple_choice: 'multiple_choice',
-  true_false: 'true_false'
-} as const
-
-export type QuestionType = (typeof QuestionType)[keyof typeof QuestionType]
-
-
-export const AttemptStatus = {
-  in_progress: 'in_progress',
-  completed: 'completed',
-  abandoned: 'abandoned'
-} as const
-
-export type AttemptStatus = (typeof AttemptStatus)[keyof typeof AttemptStatus]
 
 
 export const ResourceType = {

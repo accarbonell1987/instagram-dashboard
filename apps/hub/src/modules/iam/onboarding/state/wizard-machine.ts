@@ -2,9 +2,10 @@ import type { DraftState } from '../services/draft.service';
 
 // ─── Step types ───────────────────────────────────────────────────────────────
 
-export type Step = 'plan' | 'representative' | 'otp' | 'company' | 'payment' | 'summary';
+export type Step = 'product' | 'plan' | 'representative' | 'otp' | 'company' | 'payment' | 'summary';
 
 export const STEPS: readonly Step[] = [
+  'product',
   'plan',
   'representative',
   'otp',
@@ -43,6 +44,9 @@ export function prevStep(current: Step): Step | null {
  */
 export function isStepReachable(target: Step, draft: DraftState): boolean {
   switch (target) {
+    case 'product':
+      return true;
+
     case 'plan':
       return true;
 

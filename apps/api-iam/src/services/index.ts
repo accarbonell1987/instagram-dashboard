@@ -89,8 +89,4 @@ export type {
   AdminTenantDetail,
 } from './admin-tenant.service.js';
 
-export { createQuizService } from './quiz.service.js';
-export type { QuizService, QuizServiceDeps } from './quiz.service.js';
 
-export { createQuizAttemptService } from './quiz-attempt.service.js';
-export type { QuizAttemptService, QuizAttemptServiceDeps } from './quiz-attempt.service.js';

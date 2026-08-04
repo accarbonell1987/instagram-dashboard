@@ -1,22 +1,32 @@
 import type { PrismaClient } from '../../generated/prisma/client.js'
-import type { Module, EffectiveModule } from '../../domain/index.js'
-import { DEFAULT_PRODUCT_ID } from '../../domain/index.js'
+import type { Module, EffectiveModule, AvailableProduct } from '../../domain/index.js'
+import { NotFoundError, ValidationError } from '../../errors.js'
 
 export type ModuleRepository = {
-  findAll(): Promise<Module[]>
+  findAll(productId?: string): Promise<Module[]>
+  // The products a tenant can reach: an active subscription, or a live grant
+  // Entitlement (trial/admin/override). Same access model as
+  // resolveEffectiveModules, one level up.
+  findAvailableProducts(tenantId: string): Promise<AvailableProduct[]>
+  findAllActiveProducts(): Promise<AvailableProduct[]>
   findById(id: string): Promise<Module | null>
   // Legacy resolver (pre-a3). Kept available for one release per the design
   // rollout notes — rollback lever if the a3 switch needs to be reverted.
   findEffectiveForTenant(planId: string, tenantId: string): Promise<EffectiveModule[]>
   // a3: effective modules = (plan live-join ∪ grant Entitlements) − revoke
   // Entitlements, scoped to (tenantId, productId).
-  resolveEffectiveModules(tenantId: string, productId: string): Promise<EffectiveModule[]>
-  create(data: { id: string; name: string; description?: string; defaultUrl: string }): Promise<Module>
+  resolveEffectiveModules(tenantId: string, productId: string, userId?: string): Promise<EffectiveModule[]>
+  // productId is required: an orphan module can't be sold through any plan
+  // (see setPlanModules), so creating one is always a mistake.
+  create(data: { id: string; name: string; description?: string; defaultUrl: string; productId: string; parentId?: string }): Promise<Module>
   update(id: string, data: Partial<{ name: string; description: string; defaultUrl: string; active: boolean }>): Promise<Module>
   delete(id: string): Promise<void>
   setPlanModules(planId: string, moduleIds: string[]): Promise<void>
-  upsertTenantOverride(tenantId: string, moduleId: string, enabled: boolean, createdBy?: string, reason?: string): Promise<void>
-  deleteTenantOverride(tenantId: string, moduleId: string): Promise<void>
+  findPlanModules(planId: string): Promise<{ moduleId: string }[]>
+  // Both return the module's productId so the caller can purge the right
+  // entitlements cache.
+  upsertTenantOverride(tenantId: string, moduleId: string, enabled: boolean, createdBy?: string, reason?: string): Promise<string>
+  deleteTenantOverride(tenantId: string, moduleId: string): Promise<string>
   // b1 (5.1) + b1.5 (PR7, owner decision #1679/1): tenant-level trial grant —
   // Entitlement(source: trial, kind: grant). moduleId: null means a
   // whole-product grant (resolveEffectiveModules expands it to every module
@@ -33,14 +43,47 @@ export type ModuleRepository = {
 
 export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
   return {
-    async findAll() {
-      const rows = await prisma.module.findMany({ orderBy: { id: 'asc' } })
+    async findAll(productId) {
+      const rows = await prisma.module.findMany({
+        ...(productId !== undefined ? { where: { productId } } : {}),
+        orderBy: { id: 'asc' },
+      })
       return rows.map(toModule)
     },
 
     async findById(id) {
       const row = await prisma.module.findUnique({ where: { id } })
       return row ? toModule(row) : null
+    },
+
+    async findAvailableProducts(tenantId) {
+      const now = new Date()
+      const [subscriptions, entitlements] = await Promise.all([
+        prisma.tenantProductSubscription.findMany({
+          where: { tenantId, status: 'active' },
+          include: { product: true },
+        }),
+        prisma.entitlement.findMany({
+          where: {
+            tenantId,
+            kind: 'grant',
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          },
+          include: { product: true },
+        }),
+      ])
+
+      const byId = new Map<string, AvailableProduct>()
+      for (const row of [...subscriptions, ...entitlements]) {
+        if (!row.product.active) continue
+        byId.set(row.product.id, toProduct(row.product))
+      }
+      return Array.from(byId.values())
+    },
+
+    async findAllActiveProducts() {
+      const rows = await prisma.product.findMany({ where: { active: true }, orderBy: { id: 'asc' } })
+      return rows.map(toProduct)
     },
 
     async findEffectiveForTenant(planId, tenantId) {
@@ -73,7 +116,7 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
       return Array.from(result.values())
     },
 
-    async resolveEffectiveModules(tenantId, productId) {
+    async resolveEffectiveModules(tenantId, productId, userId) {
       const now = new Date()
       const [subscription, entitlements] = await Promise.all([
         prisma.tenantProductSubscription.findUnique({
@@ -133,10 +176,82 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
         }
       }
 
+      // Phase 1 sub-module cascading: fetch all active modules for this
+      // product to build a parent→children map, then auto-include children
+      // whose parent is already in the result set (same source).
+      const allModules = await prisma.module.findMany({
+        where: { productId, active: true },
+      })
+      const childrenOf = new Map<string, typeof allModules>()
+      const moduleById = new Map(allModules.map(m => [m.id, m]))
+      for (const m of allModules) {
+        if (m.parentId) {
+          const list = childrenOf.get(m.parentId) ?? []
+          list.push(m)
+          childrenOf.set(m.parentId, list)
+        }
+      }
+
+      for (const [moduleId, entry] of result) {
+        const children = childrenOf.get(moduleId)
+        if (!children) continue
+        for (const child of children) {
+          if (!result.has(child.id)) {
+            result.set(child.id, { ...toModule(child), effectiveUrl: entry.effectiveUrl, source: entry.source })
+          }
+        }
+      }
+
+      // Phase 2 role filtering: when userId is provided, intersect the
+      // result with the modules permitted by the user's product roles.
+      if (userId) {
+        const userRoles = await prisma.userProductRole.findMany({
+          where: { userId },
+          include: { productRole: true },
+        });
+        const productRoleIds = userRoles
+          .filter((ur) => ur.productRole.productId === productId)
+          .map((ur) => ur.productRoleId);
+
+        if (productRoleIds.length > 0) {
+          const permittedModules = await prisma.roleModuleAccess.findMany({
+            where: { productRoleId: { in: productRoleIds } },
+            select: { moduleId: true },
+          });
+          const permittedIds = new Set(permittedModules.map((r) => r.moduleId));
+          for (const moduleId of result.keys()) {
+            if (!permittedIds.has(moduleId)) {
+              result.delete(moduleId);
+            }
+          }
+        }
+      }
+
       return Array.from(result.values())
     },
 
     async create(data) {
+      const product = await prisma.product.findUnique({ where: { id: data.productId } })
+      if (!product) throw new NotFoundError('product.not_found', `Unknown product '${data.productId}'`)
+
+      if (data.parentId !== undefined) {
+        const parent = await prisma.module.findUnique({ where: { id: data.parentId } })
+        if (!parent) throw new NotFoundError('modules.not_found', `Unknown parent '${data.parentId}'`)
+        if (parent.productId !== data.productId) {
+          throw new ValidationError(
+            'modules.product_mismatch',
+            `Parent '${data.parentId}' belongs to product '${parent.productId ?? 'none'}'`,
+          )
+        }
+        // Sub-module nesting is 1 level max (see schema.prisma Module.parentId).
+        if (parent.parentId !== null) {
+          throw new ValidationError(
+            'modules.nesting_too_deep',
+            `Parent '${data.parentId}' is already a sub-module`,
+          )
+        }
+      }
+
       const row = await prisma.module.create({ data })
       return toModule(row)
     },
@@ -151,12 +266,51 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
     },
 
     async setPlanModules(planId, moduleIds) {
+      // A module belongs to exactly one product and can only be sold through
+      // plans of that same product — the invariant is enforced here because
+      // this is the only write path into plan_modules.
+      const plan = await prisma.plan.findUnique({ where: { id: planId }, select: { productId: true } })
+      if (!plan) throw new NotFoundError('plans.not_found')
+
+      if (moduleIds.length > 0 && plan.productId !== null) {
+        const modules = await prisma.module.findMany({
+          where: { id: { in: moduleIds } },
+          select: { id: true, productId: true },
+        })
+
+        const found = new Set(modules.map((m) => m.id))
+        const missing = moduleIds.filter((id) => !found.has(id))
+        if (missing.length > 0) {
+          throw new NotFoundError('modules.not_found', `Unknown modules: ${missing.join(', ')}`)
+        }
+
+        const foreign = modules.filter((m) => m.productId !== plan.productId)
+        if (foreign.length > 0) {
+          throw new ValidationError(
+            'modules.product_mismatch',
+            `Modules do not belong to product '${plan.productId}': ${foreign.map((m) => m.id).join(', ')}`,
+            foreign.map((m) => ({
+              field: 'moduleIds',
+              code: 'modules.product_mismatch',
+              message: `Module '${m.id}' belongs to product '${m.productId ?? 'none'}'`,
+            })),
+          )
+        }
+      }
+
       await prisma.$transaction([
         prisma.planModule.deleteMany({ where: { planId } }),
-        prisma.planModule.createMany({
-          data: moduleIds.map(moduleId => ({ planId, moduleId })),
-        }),
+        ...moduleIds.map((moduleId) =>
+          prisma.planModule.create({ data: { planId, moduleId } })
+        ),
       ])
+    },
+
+    async findPlanModules(planId) {
+      return prisma.planModule.findMany({
+        where: { planId },
+        select: { moduleId: true },
+      })
     },
 
     async upsertTenantOverride(tenantId, moduleId, enabled, createdBy, reason) {
@@ -165,6 +319,10 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
       // reads (plan ∪ grant) − revoke, so a disable must persist a revoke
       // row to keep suppressing plan-derived access.
       const kind = enabled ? 'grant' : 'revoke'
+      // The entitlement must be scoped to the module's OWN product. Using a
+      // fixed product id here wrote the override under the wrong product for
+      // any non-Instagram module, so the resolver never saw it.
+      const productId = await productIdOfModule(prisma, moduleId)
       await prisma.$transaction([
         prisma.tenantModuleOverride.upsert({
           where: { tenantId_moduleId: { tenantId, moduleId } },
@@ -175,14 +333,14 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
           where: {
             tenantId_productId_moduleId_source: {
               tenantId,
-              productId: DEFAULT_PRODUCT_ID,
+              productId,
               moduleId,
               source: 'override',
             },
           },
           create: {
             tenantId,
-            productId: DEFAULT_PRODUCT_ID,
+            productId,
             moduleId,
             source: 'override',
             kind,
@@ -192,17 +350,20 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
           update: { kind, createdBy: createdBy ?? null, reason: reason ?? null },
         }),
       ])
+      return productId
     },
 
     async deleteTenantOverride(tenantId, moduleId) {
+      const productId = await productIdOfModule(prisma, moduleId)
       await prisma.$transaction([
         prisma.tenantModuleOverride.delete({
           where: { tenantId_moduleId: { tenantId, moduleId } },
         }),
         prisma.entitlement.deleteMany({
-          where: { tenantId, productId: DEFAULT_PRODUCT_ID, moduleId, source: 'override' },
+          where: { tenantId, productId, moduleId, source: 'override' },
         }),
       ])
+      return productId
     },
 
     async grantTrial(tenantId, productId, moduleId, expiresAt, createdBy, reason) {
@@ -226,6 +387,16 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
           }
         })
         return
+      }
+
+      // Granting a module of another product would make the resolver surface
+      // it under this product — same coupling rule as setPlanModules.
+      const moduleProductId = await productIdOfModule(prisma, moduleId)
+      if (moduleProductId !== productId) {
+        throw new ValidationError(
+          'modules.product_mismatch',
+          `Module '${moduleId}' belongs to product '${moduleProductId}', not '${productId}'`,
+        )
       }
 
       const key = { tenantId, productId, moduleId, source: 'trial' as const }
@@ -256,12 +427,34 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
   }
 }
 
-function toModule(row: { id: string; name: string; description: string | null; defaultUrl: string; active: boolean }): Module {
+async function productIdOfModule(prisma: PrismaClient, moduleId: string): Promise<string> {
+  const module = await prisma.module.findUnique({
+    where: { id: moduleId },
+    select: { productId: true },
+  })
+  if (!module) throw new NotFoundError('modules.not_found', `Unknown module '${moduleId}'`)
+  if (module.productId === null) {
+    throw new ValidationError('modules.no_product', `Module '${moduleId}' is not attached to a product`)
+  }
+  return module.productId
+}
+
+function toProduct(row: { id: string; name: string; description: string | null }): AvailableProduct {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? undefined,
+  }
+}
+
+function toModule(row: { id: string; name: string; description: string | null; defaultUrl: string; active: boolean; productId?: string | null; parentId?: string | null }): Module {
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? undefined,
     defaultUrl: row.defaultUrl,
     active: row.active,
+    productId: row.productId ?? null,
+    parentId: row.parentId ?? null,
   }
 }

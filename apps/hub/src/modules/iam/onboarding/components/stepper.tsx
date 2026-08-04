@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   CreditCard,
+  Layers,
   Package,
   ShieldCheck,
   User,
@@ -26,6 +27,7 @@ export interface StepperProps {
 type StepStatus = 'pending' | 'current' | 'completed';
 
 const STEP_LABELS: Record<Step, string> = {
+  product: 'Producto',
   plan: 'Plan',
   representative: 'Representante',
   otp: 'Verificación',
@@ -35,6 +37,7 @@ const STEP_LABELS: Record<Step, string> = {
 };
 
 const STEP_ICONS: Record<Step, LucideIcon> = {
+  product: Layers,
   plan: Package,
   representative: User,
   otp: ShieldCheck,

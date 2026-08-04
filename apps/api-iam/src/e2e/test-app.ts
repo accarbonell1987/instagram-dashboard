@@ -24,8 +24,6 @@ import {
   createModuleService,
   createProductRoleService,
   createAdminTenantService,
-  createQuizService,
-  createQuizAttemptService,
 } from '../services/index.js'
 import { requestId } from '../middleware/request-id.js'
 import { createErrorHandler } from '../middleware/error-handler.js'
@@ -240,17 +238,6 @@ export async function createTestApp(): Promise<TestApp> {
     prisma,
   })
 
-  const quizService = createQuizService({
-    quizRepository: repos.quizRepository,
-    logger,
-  })
-
-  const quizAttemptService = createQuizAttemptService({
-    attemptRepository: repos.quizAttemptRepository,
-    quizRepository: repos.quizRepository,
-    logger,
-  })
-
   const services: Services = {
     authService,
     otpService,
@@ -268,8 +255,6 @@ export async function createTestApp(): Promise<TestApp> {
     moduleService,
     productRoleService,
     adminTenantService,
-    quizService,
-    quizAttemptService,
   }
 
   const app = new OpenAPIHono()

@@ -45,7 +45,12 @@ export function createPlanService(deps: PlanServiceDeps) {
     return planRepo.update(id, { active: false })
   }
 
-  return { listPlans, getPlan, createPlan, updatePlan, archivePlan }
+  // The backoffice sends the full list in its new order; index becomes rank.
+  async function reorderPlans(planIds: string[]): Promise<void> {
+    return planRepo.reorder(planIds)
+  }
+
+  return { listPlans, getPlan, createPlan, updatePlan, archivePlan, reorderPlans }
 }
 
 export type PlanService = ReturnType<typeof createPlanService>

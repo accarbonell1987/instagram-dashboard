@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type JSX } from 'react';
 
 import { StepHeader } from '../../components/step-header';
-import { WizardNav } from '../../components/wizard-nav';
 import { useDraftContext } from '../../context/draft-context';
 import { patchDraft } from '../../services/draft.service';
 
@@ -85,19 +84,19 @@ export function StepOtpVerification({ draftId }: StepOtpVerificationProps): JSX.
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-8">
+    <div className="flex flex-col gap-8">
       <StepHeader
         icon={Mail}
         title="Verificación del correo"
-        description={
-          <p className="text-muted-foreground mt-2">
-            Ingresa el código de 6 dígitos que enviamos a tu correo.
-          </p>
-        }
+        description="Ingresa el código de 6 dígitos que enviamos a tu correo."
+        currentStep="otp"
+        draftId={draftId}
+        onContinue={isVerified ? handleContinue : undefined}
+        isSubmitting={isContinuing}
       />
 
       {otpId.length > 0 && (
-        <>
+        <div className="mx-auto w-full max-w-md">
           <OtpForm
             otpId={otpId}
             channel="email"
@@ -106,14 +105,7 @@ export function StepOtpVerification({ draftId }: StepOtpVerificationProps): JSX.
             onResend={handleResend}
             showTrustDevice={false}
           />
-
-          <WizardNav
-            currentStep="otp"
-            draftId={draftId}
-            onContinue={isVerified ? handleContinue : undefined}
-            isSubmitting={isContinuing}
-          />
-        </>
+        </div>
       )}
 
       {otpId.length === 0 && (

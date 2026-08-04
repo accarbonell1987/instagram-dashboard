@@ -39,6 +39,7 @@ function makeDeps(overrides: Partial<PlanServiceDeps> = {}): PlanServiceDeps {
         makePlanWithTenantCount(),
         makePlanWithTenantCount({ id: 'starter', active: false, tenantCount: 0 }),
       ]),
+      reorder: vi.fn(),
     },
     ...overrides,
   }
@@ -64,6 +65,7 @@ describe('PlanService', () => {
           create: vi.fn(),
           update: vi.fn(),
           findAllWithTenantCount: vi.fn().mockResolvedValue([]),
+          reorder: vi.fn(),
         },
       })
       const service = createPlanService(deps)
@@ -92,6 +94,7 @@ describe('PlanService', () => {
           create: vi.fn(),
           update: vi.fn(),
           findAllWithTenantCount: vi.fn(),
+      reorder: vi.fn(),
         },
       })
       const service = createPlanService(deps)
@@ -123,6 +126,7 @@ describe('PlanService', () => {
           findAllWithTenantCount: vi.fn().mockResolvedValue([
             makePlanWithTenantCount({ tenantCount: 5 }),
           ]),
+          reorder: vi.fn(),
         },
       })
       const service = createPlanService(deps)
@@ -163,6 +167,7 @@ describe('PlanService', () => {
           create: vi.fn().mockRejectedValue(new ConflictError('plans.duplicate')),
           update: vi.fn(),
           findAllWithTenantCount: vi.fn(),
+      reorder: vi.fn(),
         },
       })
       const service = createPlanService(deps)
@@ -192,6 +197,7 @@ describe('PlanService', () => {
           create: vi.fn(),
           update: vi.fn().mockRejectedValue(new NotFoundError('plans.not_found')),
           findAllWithTenantCount: vi.fn(),
+      reorder: vi.fn(),
         },
       })
       const service = createPlanService(deps)
@@ -220,6 +226,7 @@ describe('PlanService', () => {
           create: vi.fn(),
           update: vi.fn().mockRejectedValue(new NotFoundError('plans.not_found')),
           findAllWithTenantCount: vi.fn(),
+      reorder: vi.fn(),
         },
       })
       const service = createPlanService(deps)

@@ -15,7 +15,7 @@ interface CacheEntry {
 }
 
 interface TenantVariables {
-  Variables: { tenant: { tenantId: string } };
+  Variables: { tenant: { tenantId: string; userId?: string } };
 }
 
 export type EntitlementGuardHandler = MiddlewareHandler<TenantVariables> & {
@@ -35,8 +35,9 @@ export function entitlementGuard(opts: EntitlementGuardOptions): EntitlementGuar
   const cache = new Map<string, CacheEntry>();
   const ttl = opts.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
 
-  async function resolveAllowed(tenantId: string): Promise<boolean> {
-    const cacheKey = `${tenantId}:${opts.productId}:${opts.moduleId ?? ''}`;
+  async function resolveAllowed(tenantId: string, userId?: string): Promise<boolean> {
+    const userSuffix = userId !== undefined ? `:${userId}` : '';
+    const cacheKey = `${tenantId}:${opts.productId}:${opts.moduleId ?? ''}${userSuffix}`;
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.fetchedAt < ttl) {
       return cached.allowed;
@@ -46,6 +47,7 @@ export function entitlementGuard(opts: EntitlementGuardOptions): EntitlementGuar
       const url = new URL(`/internal/tenants/${tenantId}/entitlements`, opts.iamBaseUrl);
       url.searchParams.set('productId', opts.productId);
       if (opts.moduleId) url.searchParams.set('moduleId', opts.moduleId);
+      if (userId !== undefined) url.searchParams.set('userId', userId);
 
       const res = await fetch(url);
       if (!res.ok) throw new Error(`iam entitlements check failed: ${String(res.status)}`);
@@ -61,7 +63,7 @@ export function entitlementGuard(opts: EntitlementGuardOptions): EntitlementGuar
 
   const handler = createMiddleware<TenantVariables>(async (c, next) => {
     const tenant = c.get('tenant');
-    const allowed = await resolveAllowed(tenant.tenantId);
+    const allowed = await resolveAllowed(tenant.tenantId, tenant.userId);
 
     if (!allowed) {
       return c.json(

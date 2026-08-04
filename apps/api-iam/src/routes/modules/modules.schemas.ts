@@ -30,6 +30,27 @@ export const GetTenantModulesResponseSchema = z.object({
 
 export type GetTenantModulesResponse = z.infer<typeof GetTenantModulesResponseSchema>
 
+// ── GET /tenants/current/products ─────────────────────────────────────────
+// Portal landing: products first, their modules nested. Sub-modules are the
+// functionalities of a module — 1 nesting level, same as the plan listing.
+
+export const ProductModuleSchema = EffectiveModuleSchema.extend({
+  subModules: z.array(EffectiveModuleSchema),
+})
+
+export const AvailableProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  modules: z.array(ProductModuleSchema),
+})
+
+export const GetTenantProductsResponseSchema = z.object({
+  products: z.array(AvailableProductSchema),
+})
+
+export type GetTenantProductsResponse = z.infer<typeof GetTenantProductsResponseSchema>
+
 // ── T11: GET /admin/modules ───────────────────────────────────────────────
 
 export const ListAllModulesResponseSchema = z.object({
@@ -45,6 +66,10 @@ export const CreateModuleRequestSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   defaultUrl: z.string().min(1),
+  // A module always belongs to one product — it can only be sold through
+  // plans of that product, so there is no valid orphan module.
+  productId: z.string().min(1),
+  parentId: z.string().min(1).optional(),
 })
 
 export type CreateModuleRequest = z.infer<typeof CreateModuleRequestSchema>

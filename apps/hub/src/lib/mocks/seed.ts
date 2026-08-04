@@ -33,6 +33,30 @@ export const SEED = {
 
 // ─── Base seed ───────────────────────────────────────────────────────────────
 
+// Mirrors the api-iam plan-module assignments (see apps/api-iam/src/db/seed.ts).
+const IG_METRICS = {
+  id: 'ig-basic-metrics',
+  name: 'Métricas Básicas',
+  description: 'Panel de métricas, crecimiento y demografía de tu cuenta',
+  subModules: [],
+};
+const IG_PUBLICATIONS = {
+  id: 'ig-publications',
+  name: 'Publicaciones',
+  description: 'Gestioná y analizá tus publicaciones, reels e historias',
+  subModules: [],
+};
+const IG_AI_AGENT = {
+  id: 'ig-ai-agent',
+  name: 'Agente IA',
+  description: 'Asistente inteligente para crecer en Instagram',
+  subModules: [
+    { id: 'ig-ai-chat', name: 'Chat - Agente de Crecimiento' },
+    { id: 'ig-ai-suggestions', name: 'Sugerencias de Contenido' },
+    { id: 'ig-ai-carousels', name: 'Carousels - Creación con IA' },
+  ],
+};
+
 function seedPlans(): void {
   db.plan.create({
     id: SEED.planStarter,
@@ -40,7 +64,8 @@ function seedPlans(): void {
     price: 150_000,
     currency: 'PYG',
     billingCycle: 'monthly',
-    features: ['Hasta 5 usuarios', 'Soporte email', 'IVR básico'],
+    features: ['Hasta 5 usuarios', 'Soporte email'],
+    modules: [IG_METRICS],
     popular: false,
   });
   db.plan.create({
@@ -49,7 +74,8 @@ function seedPlans(): void {
     price: 450_000,
     currency: 'PYG',
     billingCycle: 'monthly',
-    features: ['Hasta 25 usuarios', 'IVR avanzado', 'Soporte 24/5', 'Analítica'],
+    features: ['Hasta 25 usuarios', 'Soporte 24/5'],
+    modules: [IG_METRICS, IG_PUBLICATIONS],
     popular: true,
   });
   db.plan.create({
@@ -58,7 +84,8 @@ function seedPlans(): void {
     price: 0,
     currency: 'PYG',
     billingCycle: 'monthly',
-    features: ['Usuarios ilimitados', 'SLA garantizado', 'Soporte dedicado', 'Integración custom'],
+    features: ['Usuarios ilimitados', 'Soporte dedicado', 'SLA garantizado'],
+    modules: [IG_METRICS, IG_PUBLICATIONS, IG_AI_AGENT],
     popular: false,
   });
 }
@@ -73,7 +100,7 @@ function seedHappyBase(): void {
     planId: SEED.planProfessional,
     status: 'active',
     createdAt: stablePast(90 * 24 * 3600), // 90 days ago
-    updatedAt: stablePast(7 * 24 * 3600),  // 7 days ago
+    updatedAt: stablePast(7 * 24 * 3600), // 7 days ago
   });
 
   db.user.create({

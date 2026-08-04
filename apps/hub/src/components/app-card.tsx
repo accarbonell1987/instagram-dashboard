@@ -20,6 +20,7 @@ const colorClasses: Record<AppColor, string> = {
   orange: 'bg-app-orange',
   teal: 'bg-app-teal',
   red: 'bg-app-red',
+  amber: 'bg-amber-500',
 };
 
 const iconBgClasses: Record<AppColor, string> = {
@@ -29,6 +30,7 @@ const iconBgClasses: Record<AppColor, string> = {
   orange: 'bg-app-orange/10 text-app-orange',
   teal: 'bg-app-teal/10 text-app-teal',
   red: 'bg-app-red/10 text-app-red',
+  amber: 'bg-amber-500/10 text-amber-600',
 };
 
 export function AppCard({ name, description, icon: Icon, color, onClick }: AppCardProps) {

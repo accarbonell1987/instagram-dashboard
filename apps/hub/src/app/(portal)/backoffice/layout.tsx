@@ -14,10 +14,12 @@ interface NavLink {
 }
 
 const NAV_LINKS: NavLink[] = [
+  { href: '/backoffice/products', label: 'Productos' },
   { href: '/backoffice/modules', label: 'Módulos' },
   { href: '/backoffice/plans', label: 'Planes' },
+  { href: '/backoffice/roles', label: 'Roles' },
+  { href: '/backoffice/trials', label: 'Trials' },
   { href: '/backoffice/tenants', label: 'Tenants' },
-  { href: '/backoffice/quizzes', label: 'Evaluaciones' },
 ];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────

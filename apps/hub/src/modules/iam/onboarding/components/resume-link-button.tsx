@@ -16,7 +16,10 @@ type SendStatus = 'idle' | 'sending' | 'sent' | 'error';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ResumeLinkButton({ draftId, representativeEmail }: ResumeLinkButtonProps): JSX.Element {
+export function ResumeLinkButton({
+  draftId,
+  representativeEmail,
+}: ResumeLinkButtonProps): JSX.Element {
   const [status, setStatus] = useState<SendStatus>('idle');
 
   async function handleClick(): Promise<void> {
@@ -33,22 +36,24 @@ export function ResumeLinkButton({ draftId, representativeEmail }: ResumeLinkBut
 
   if (status === 'sent') {
     return (
-      <p className="text-center text-sm text-muted-foreground" role="status" aria-live="polite">
+      <p className="text-muted-foreground text-center text-sm" role="status" aria-live="polite">
         ✓ Te enviamos un enlace a{' '}
-        <span className="font-medium text-foreground">{representativeEmail}</span>
+        <span className="text-foreground font-medium">{representativeEmail}</span>
       </p>
     );
   }
 
   if (status === 'error') {
     return (
-      <p className="text-center text-sm text-destructive" role="alert">
+      <p className="text-destructive text-center text-sm" role="alert">
         No pudimos enviar el enlace. Por favor, inténtalo de nuevo.{' '}
         <Button
           type="button"
           variant="link"
           size="sm"
-          onClick={() => { setStatus('idle'); }}
+          onClick={() => {
+            setStatus('idle');
+          }}
         >
           Reintentar
         </Button>
@@ -61,11 +66,15 @@ export function ResumeLinkButton({ draftId, representativeEmail }: ResumeLinkBut
       type="button"
       variant="link"
       disabled={status === 'sending'}
-      onClick={() => { void handleClick(); }}
+      onClick={() => {
+        void handleClick();
+      }}
       className="mx-auto block text-sm"
       aria-busy={status === 'sending'}
     >
-      {status === 'sending' ? 'Enviando…' : '¿Quieres continuar después? Envíate un enlace al correo'}
+      {status === 'sending'
+        ? 'Enviando…'
+        : '¿Quieres continuar después? Envíate un enlace al correo'}
     </Button>
   );
 }

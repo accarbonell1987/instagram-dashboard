@@ -10,6 +10,11 @@ export const AdminPlanSchema = z.object({
   currency: z.string(),
   billingInterval: z.string(),
   active: z.boolean(),
+  // Drives the module picker: a plan can only take modules of its own product.
+  productId: z.string().nullable().optional(),
+  // Backoffice drag-and-drop rank and the product's default plan.
+  displayOrder: z.number().int().optional(),
+  isDefault: z.boolean().optional(),
   tenantCount: z.number().int().min(0),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -37,6 +42,13 @@ export type AdminCreatePlanRequest = z.infer<typeof AdminCreatePlanSchema>
 
 // ── Admin Plan update request ───────────────────────────────────────────────
 
+// Reorder is its own endpoint: the client posts the full list in its new order.
+export const ReorderPlansSchema = z.object({
+  planIds: z.array(z.string().min(1)).min(1),
+})
+
+export type ReorderPlansRequest = z.infer<typeof ReorderPlansSchema>
+
 export const AdminUpdatePlanSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
@@ -44,6 +56,8 @@ export const AdminUpdatePlanSchema = z.object({
   currency: z.string().min(1).optional(),
   billingInterval: z.enum(['month', 'year']).optional(),
   active: z.boolean().optional(),
+  // Promoting a plan demotes the others of the same product.
+  isDefault: z.boolean().optional(),
 })
 
 export type AdminUpdatePlanRequest = z.infer<typeof AdminUpdatePlanSchema>
@@ -277,3 +291,17 @@ export const UserProductRoleListResponseSchema = z.object({
 })
 
 export type AdminUserProductRoleListResponse = z.infer<typeof UserProductRoleListResponseSchema>
+
+// ── Role module assignment schemas (Phase 2) ─────────────────────────────────
+
+export const RoleModulesParamsSchema = z.object({
+  roleId: z.string().min(1),
+})
+
+export type RoleModulesParams = z.infer<typeof RoleModulesParamsSchema>
+
+export const SetRoleModulesRequestSchema = z.object({
+  moduleIds: z.array(z.string()),
+})
+
+export type SetRoleModulesRequest = z.infer<typeof SetRoleModulesRequestSchema>

@@ -29,6 +29,7 @@ export interface DraftState {
   id: string;
   currentStep: string;
   status: string;
+  productId?: string | null;
   plan: Plan | null;
   representative: DraftRepresentative | null;
   otpVerified: boolean;
@@ -40,11 +41,13 @@ export interface DraftState {
 
 export interface CreateDraftInput {
   planId?: string | undefined;
+  productId?: string | undefined;
   signal?: AbortSignal | undefined;
 }
 
 export interface PatchDraftInput {
   planId?: string | undefined;
+  productId?: string | undefined;
   representative?: DraftRepresentative | undefined;
   company?: DraftCompany | undefined;
   version: number;
@@ -67,6 +70,7 @@ export async function createDraft(
 ): Promise<{ draftId: string; currentStep: string }> {
   const body: Record<string, unknown> = {};
   if (input.planId !== undefined) body['planId'] = input.planId;
+  if (input.productId !== undefined) body['productId'] = input.productId;
 
   // Stable idempotency key scoped to the plan (or a generic scope when no plan).
   // getIdempotencyKey persists to localStorage so the key survives React Strict Mode
@@ -122,6 +126,7 @@ export async function patchDraft(
   };
 
   if (partial.planId !== undefined) body['plan'] = { id: partial.planId };
+  if (partial.productId !== undefined) body['productId'] = partial.productId;
   if (partial.representative !== undefined) body['representative'] = partial.representative;
   if (partial.company !== undefined) body['company'] = partial.company;
 

@@ -29,11 +29,13 @@ export type AggregatePlan = {
 export type PlanAvgAggregateOutputType = {
   price: runtime.Decimal | null
   maxUsers: number | null
+  displayOrder: number | null
 }
 
 export type PlanSumAggregateOutputType = {
   price: runtime.Decimal | null
   maxUsers: number | null
+  displayOrder: number | null
 }
 
 export type PlanMinAggregateOutputType = {
@@ -46,6 +48,8 @@ export type PlanMinAggregateOutputType = {
   maxUsers: number | null
   popular: boolean | null
   active: boolean | null
+  displayOrder: number | null
+  isDefault: boolean | null
   productId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -61,6 +65,8 @@ export type PlanMaxAggregateOutputType = {
   maxUsers: number | null
   popular: boolean | null
   active: boolean | null
+  displayOrder: number | null
+  isDefault: boolean | null
   productId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -77,6 +83,8 @@ export type PlanCountAggregateOutputType = {
   features: number
   popular: number
   active: number
+  displayOrder: number
+  isDefault: number
   productId: number
   createdAt: number
   updatedAt: number
@@ -87,11 +95,13 @@ export type PlanCountAggregateOutputType = {
 export type PlanAvgAggregateInputType = {
   price?: true
   maxUsers?: true
+  displayOrder?: true
 }
 
 export type PlanSumAggregateInputType = {
   price?: true
   maxUsers?: true
+  displayOrder?: true
 }
 
 export type PlanMinAggregateInputType = {
@@ -104,6 +114,8 @@ export type PlanMinAggregateInputType = {
   maxUsers?: true
   popular?: true
   active?: true
+  displayOrder?: true
+  isDefault?: true
   productId?: true
   createdAt?: true
   updatedAt?: true
@@ -119,6 +131,8 @@ export type PlanMaxAggregateInputType = {
   maxUsers?: true
   popular?: true
   active?: true
+  displayOrder?: true
+  isDefault?: true
   productId?: true
   createdAt?: true
   updatedAt?: true
@@ -135,6 +149,8 @@ export type PlanCountAggregateInputType = {
   features?: true
   popular?: true
   active?: true
+  displayOrder?: true
+  isDefault?: true
   productId?: true
   createdAt?: true
   updatedAt?: true
@@ -238,6 +254,8 @@ export type PlanGroupByOutputType = {
   features: runtime.JsonValue
   popular: boolean
   active: boolean
+  displayOrder: number
+  isDefault: boolean
   productId: string | null
   createdAt: Date
   updatedAt: Date
@@ -277,6 +295,8 @@ export type PlanWhereInput = {
   features?: Prisma.JsonFilter<"Plan">
   popular?: Prisma.BoolFilter<"Plan"> | boolean
   active?: Prisma.BoolFilter<"Plan"> | boolean
+  displayOrder?: Prisma.IntFilter<"Plan"> | number
+  isDefault?: Prisma.BoolFilter<"Plan"> | boolean
   productId?: Prisma.StringNullableFilter<"Plan"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
@@ -299,6 +319,8 @@ export type PlanOrderByWithRelationInput = {
   features?: Prisma.SortOrder
   popular?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  displayOrder?: Prisma.SortOrder
+  isDefault?: Prisma.SortOrder
   productId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -324,6 +346,8 @@ export type PlanWhereUniqueInput = Prisma.AtLeast<{
   features?: Prisma.JsonFilter<"Plan">
   popular?: Prisma.BoolFilter<"Plan"> | boolean
   active?: Prisma.BoolFilter<"Plan"> | boolean
+  displayOrder?: Prisma.IntFilter<"Plan"> | number
+  isDefault?: Prisma.BoolFilter<"Plan"> | boolean
   productId?: Prisma.StringNullableFilter<"Plan"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
@@ -346,6 +370,8 @@ export type PlanOrderByWithAggregationInput = {
   features?: Prisma.SortOrder
   popular?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  displayOrder?: Prisma.SortOrder
+  isDefault?: Prisma.SortOrder
   productId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -370,6 +396,8 @@ export type PlanScalarWhereWithAggregatesInput = {
   features?: Prisma.JsonWithAggregatesFilter<"Plan">
   popular?: Prisma.BoolWithAggregatesFilter<"Plan"> | boolean
   active?: Prisma.BoolWithAggregatesFilter<"Plan"> | boolean
+  displayOrder?: Prisma.IntWithAggregatesFilter<"Plan"> | number
+  isDefault?: Prisma.BoolWithAggregatesFilter<"Plan"> | boolean
   productId?: Prisma.StringNullableWithAggregatesFilter<"Plan"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Plan"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Plan"> | Date | string
@@ -386,6 +414,8 @@ export type PlanCreateInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   product?: Prisma.ProductCreateNestedOneWithoutPlansInput
@@ -407,6 +437,8 @@ export type PlanUncheckedCreateInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -428,6 +460,8 @@ export type PlanUpdateInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   product?: Prisma.ProductUpdateOneWithoutPlansNestedInput
@@ -449,6 +483,8 @@ export type PlanUncheckedUpdateInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -470,6 +506,8 @@ export type PlanCreateManyInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -486,6 +524,8 @@ export type PlanUpdateManyMutationInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -501,6 +541,8 @@ export type PlanUncheckedUpdateManyInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -527,6 +569,8 @@ export type PlanCountOrderByAggregateInput = {
   features?: Prisma.SortOrder
   popular?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  displayOrder?: Prisma.SortOrder
+  isDefault?: Prisma.SortOrder
   productId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -535,6 +579,7 @@ export type PlanCountOrderByAggregateInput = {
 export type PlanAvgOrderByAggregateInput = {
   price?: Prisma.SortOrder
   maxUsers?: Prisma.SortOrder
+  displayOrder?: Prisma.SortOrder
 }
 
 export type PlanMaxOrderByAggregateInput = {
@@ -547,6 +592,8 @@ export type PlanMaxOrderByAggregateInput = {
   maxUsers?: Prisma.SortOrder
   popular?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  displayOrder?: Prisma.SortOrder
+  isDefault?: Prisma.SortOrder
   productId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -562,6 +609,8 @@ export type PlanMinOrderByAggregateInput = {
   maxUsers?: Prisma.SortOrder
   popular?: Prisma.SortOrder
   active?: Prisma.SortOrder
+  displayOrder?: Prisma.SortOrder
+  isDefault?: Prisma.SortOrder
   productId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -570,6 +619,7 @@ export type PlanMinOrderByAggregateInput = {
 export type PlanSumOrderByAggregateInput = {
   price?: Prisma.SortOrder
   maxUsers?: Prisma.SortOrder
+  displayOrder?: Prisma.SortOrder
 }
 
 export type PlanScalarRelationFilter = {
@@ -630,14 +680,6 @@ export type DecimalFieldUpdateOperationsInput = {
   decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
   multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
 }
 
 export type PlanCreateNestedOneWithoutQuotasInput = {
@@ -723,6 +765,8 @@ export type PlanCreateWithoutProductInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   tenants?: Prisma.TenantCreateNestedManyWithoutPlanInput
@@ -743,6 +787,8 @@ export type PlanUncheckedCreateWithoutProductInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   tenants?: Prisma.TenantUncheckedCreateNestedManyWithoutPlanInput
@@ -792,6 +838,8 @@ export type PlanScalarWhereInput = {
   features?: Prisma.JsonFilter<"Plan">
   popular?: Prisma.BoolFilter<"Plan"> | boolean
   active?: Prisma.BoolFilter<"Plan"> | boolean
+  displayOrder?: Prisma.IntFilter<"Plan"> | number
+  isDefault?: Prisma.BoolFilter<"Plan"> | boolean
   productId?: Prisma.StringNullableFilter<"Plan"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
@@ -808,6 +856,8 @@ export type PlanCreateWithoutQuotasInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   product?: Prisma.ProductCreateNestedOneWithoutPlansInput
@@ -828,6 +878,8 @@ export type PlanUncheckedCreateWithoutQuotasInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -864,6 +916,8 @@ export type PlanUpdateWithoutQuotasInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   product?: Prisma.ProductUpdateOneWithoutPlansNestedInput
@@ -884,6 +938,8 @@ export type PlanUncheckedUpdateWithoutQuotasInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -904,6 +960,8 @@ export type PlanCreateWithoutTenantsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   product?: Prisma.ProductCreateNestedOneWithoutPlansInput
@@ -924,6 +982,8 @@ export type PlanUncheckedCreateWithoutTenantsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -960,6 +1020,8 @@ export type PlanUpdateWithoutTenantsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   product?: Prisma.ProductUpdateOneWithoutPlansNestedInput
@@ -980,6 +1042,8 @@ export type PlanUncheckedUpdateWithoutTenantsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1000,6 +1064,8 @@ export type PlanCreateWithoutDraftsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   product?: Prisma.ProductCreateNestedOneWithoutPlansInput
@@ -1020,6 +1086,8 @@ export type PlanUncheckedCreateWithoutDraftsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1056,6 +1124,8 @@ export type PlanUpdateWithoutDraftsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   product?: Prisma.ProductUpdateOneWithoutPlansNestedInput
@@ -1076,6 +1146,8 @@ export type PlanUncheckedUpdateWithoutDraftsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1096,6 +1168,8 @@ export type PlanCreateWithoutPlanModulesInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   product?: Prisma.ProductCreateNestedOneWithoutPlansInput
@@ -1116,6 +1190,8 @@ export type PlanUncheckedCreateWithoutPlanModulesInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1152,6 +1228,8 @@ export type PlanUpdateWithoutPlanModulesInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   product?: Prisma.ProductUpdateOneWithoutPlansNestedInput
@@ -1172,6 +1250,8 @@ export type PlanUncheckedUpdateWithoutPlanModulesInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1192,6 +1272,8 @@ export type PlanCreateWithoutSubscriptionsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   product?: Prisma.ProductCreateNestedOneWithoutPlansInput
@@ -1212,6 +1294,8 @@ export type PlanUncheckedCreateWithoutSubscriptionsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   productId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1248,6 +1332,8 @@ export type PlanUpdateWithoutSubscriptionsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   product?: Prisma.ProductUpdateOneWithoutPlansNestedInput
@@ -1268,6 +1354,8 @@ export type PlanUncheckedUpdateWithoutSubscriptionsInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1288,6 +1376,8 @@ export type PlanCreateManyProductInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: boolean
   active?: boolean
+  displayOrder?: number
+  isDefault?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1303,6 +1393,8 @@ export type PlanUpdateWithoutProductInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenants?: Prisma.TenantUpdateManyWithoutPlanNestedInput
@@ -1323,6 +1415,8 @@ export type PlanUncheckedUpdateWithoutProductInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenants?: Prisma.TenantUncheckedUpdateManyWithoutPlanNestedInput
@@ -1343,6 +1437,8 @@ export type PlanUncheckedUpdateManyWithoutProductInput = {
   features?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   popular?: Prisma.BoolFieldUpdateOperationsInput | boolean
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1425,6 +1521,8 @@ export type PlanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   features?: boolean
   popular?: boolean
   active?: boolean
+  displayOrder?: boolean
+  isDefault?: boolean
   productId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1448,6 +1546,8 @@ export type PlanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   features?: boolean
   popular?: boolean
   active?: boolean
+  displayOrder?: boolean
+  isDefault?: boolean
   productId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1465,6 +1565,8 @@ export type PlanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   features?: boolean
   popular?: boolean
   active?: boolean
+  displayOrder?: boolean
+  isDefault?: boolean
   productId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1482,12 +1584,14 @@ export type PlanSelectScalar = {
   features?: boolean
   popular?: boolean
   active?: boolean
+  displayOrder?: boolean
+  isDefault?: boolean
   productId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "price" | "currency" | "billingInterval" | "maxUsers" | "features" | "popular" | "active" | "productId" | "createdAt" | "updatedAt", ExtArgs["result"]["plan"]>
+export type PlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "price" | "currency" | "billingInterval" | "maxUsers" | "features" | "popular" | "active" | "displayOrder" | "isDefault" | "productId" | "createdAt" | "updatedAt", ExtArgs["result"]["plan"]>
 export type PlanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   product?: boolean | Prisma.Plan$productArgs<ExtArgs>
   tenants?: boolean | Prisma.Plan$tenantsArgs<ExtArgs>
@@ -1525,6 +1629,8 @@ export type $PlanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     features: runtime.JsonValue
     popular: boolean
     active: boolean
+    displayOrder: number
+    isDefault: boolean
     productId: string | null
     createdAt: Date
     updatedAt: Date
@@ -1967,6 +2073,8 @@ export interface PlanFieldRefs {
   readonly features: Prisma.FieldRef<"Plan", 'Json'>
   readonly popular: Prisma.FieldRef<"Plan", 'Boolean'>
   readonly active: Prisma.FieldRef<"Plan", 'Boolean'>
+  readonly displayOrder: Prisma.FieldRef<"Plan", 'Int'>
+  readonly isDefault: Prisma.FieldRef<"Plan", 'Boolean'>
   readonly productId: Prisma.FieldRef<"Plan", 'String'>
   readonly createdAt: Prisma.FieldRef<"Plan", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Plan", 'DateTime'>

@@ -76,7 +76,7 @@ describe('plan-admin.service — createPlan', () => {
         return HttpResponse.json(makePlan({ name: 'New Plan' }), { status: 201 })
       })
     )
-    const result = await createPlan({ name: 'New Plan', price: 99, currency: 'PYG', billingInterval: 'month' })
+    const result = await createPlan({ name: 'New Plan', price: 99, currency: 'PYG', billingInterval: 'month', productId: 'instagram-dashboard' })
     expect(result.name).toBe('New Plan')
     expect(capturedBody['price']).toBe(99)
   })

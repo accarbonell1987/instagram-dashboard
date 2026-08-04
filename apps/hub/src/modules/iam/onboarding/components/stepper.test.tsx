@@ -5,7 +5,6 @@ import type { DraftState } from '../services/draft.service';
 
 import { Stepper } from './stepper';
 
-
 function makeDraft(overrides: Partial<DraftState> = {}): DraftState {
   return {
     id: 'draft-001',
@@ -41,7 +40,15 @@ describe('Stepper', () => {
 
   it('completed steps before current are marked completed', () => {
     const draft = makeDraft({
-      plan: { id: 'starter', name: 'Básico', price: 150_000, currency: 'PYG', billingCycle: 'monthly', features: [], popular: false },
+      plan: {
+        id: 'starter',
+        name: 'Básico',
+        price: 150_000,
+        currency: 'PYG',
+        billingCycle: 'monthly',
+        features: [],
+        popular: false,
+      },
       representative: { email: 'a@b.com', fullName: 'Ana', phone: '' },
     });
     render(<Stepper current="otp" draft={draft} draftId="draft-001" />);

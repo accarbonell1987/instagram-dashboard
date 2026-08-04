@@ -2,6 +2,7 @@
 
 import { use, type JSX } from 'react';
 
+import { ProductSelectionStep } from '@/modules/iam/onboarding/steps/step-0-product-selection';
 import { StepPlanSelection } from '@/modules/iam/onboarding/steps/step-1-plan-selection';
 import { StepRepresentativeEmail } from '@/modules/iam/onboarding/steps/step-2-representative';
 import { StepOtpVerification } from '@/modules/iam/onboarding/steps/step-3-otp';
@@ -17,6 +18,8 @@ export default function WizardStepPage({
   const { draftId, step } = use(params);
 
   switch (step) {
+    case 'product':
+      return <ProductSelectionStep draftId={draftId} />;
     case 'plan':
       return <StepPlanSelection draftId={draftId} />;
     case 'representative':

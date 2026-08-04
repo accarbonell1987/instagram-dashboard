@@ -19,10 +19,12 @@ export type UpdatePlanInput = Partial<{
   currency: string
   billingInterval: string
   active: boolean
+  isDefault: boolean
 }>
 
 export interface PlanListFilter {
   active?: boolean
+  productId?: string
 }
 
 export interface PlanRepository {
@@ -31,4 +33,6 @@ export interface PlanRepository {
   create(data: CreatePlanInput): Promise<Plan>
   update(id: string, data: UpdatePlanInput): Promise<Plan>
   findAllWithTenantCount(filter?: PlanListFilter): Promise<PlanWithTenantCount[]>
+  // Applies the drag-and-drop order: index in the list becomes displayOrder.
+  reorder(planIds: string[]): Promise<void>
 }

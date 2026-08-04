@@ -33,6 +33,7 @@ export function createInternalRouter(prisma: PrismaClient, moduleService: Module
     const tenantId = c.req.param('tenantId');
     const productId = c.req.query('productId');
     const moduleId = c.req.query('moduleId');
+    const userId = c.req.query('userId');
 
     if (!productId) {
       throw new ValidationError('entitlements.product_id_required', 'productId query parameter is required');
@@ -43,7 +44,7 @@ export function createInternalRouter(prisma: PrismaClient, moduleService: Module
       throw new NotFoundError('tenant.not_found');
     }
 
-    const effectiveModules = await moduleService.getEffectiveModulesForTenantAndProduct(tenantId, productId);
+    const effectiveModules = await moduleService.getEffectiveModulesForTenantAndProduct(tenantId, productId, userId ?? undefined);
 
     if (moduleId) {
       const match = effectiveModules.find((module) => module.id === moduleId);

@@ -2,7 +2,6 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import type { MiddlewareHandler } from 'hono'
 import type { ModuleService } from '../../services/index.js'
 import { ForbiddenError } from '../../errors.js'
-import { DEFAULT_PRODUCT_ID } from '../../domain/index.js'
 import { purgeAnalyticsEntitlementsCache } from '../../lib/entitlements-purge.js'
 import {
   ModuleSchema,
@@ -55,7 +54,8 @@ export function createAdminModulesRouter(
 
   router.openapi(listAllModulesRoute, async (c) => {
     assertSuperAdmin(c.var.user.role)
-    const modules = await moduleService.listAll()
+    const productId = c.req.query('productId') ?? undefined;
+    const modules = await moduleService.listAll(productId)
 
     return c.json(
       {
@@ -65,6 +65,8 @@ export function createAdminModulesRouter(
           description: module.description,
           defaultUrl: module.defaultUrl,
           active: module.active,
+          productId: module.productId ?? null,
+          parentId: module.parentId ?? null,
         })),
       },
       200,
@@ -100,12 +102,21 @@ export function createAdminModulesRouter(
   router.openapi(createModuleRoute, async (c) => {
     assertSuperAdmin(c.var.user.role)
     const body = c.req.valid('json')
-    const createData: { id: string; name: string; description?: string; defaultUrl: string } = {
+    const createData: {
+      id: string
+      name: string
+      description?: string
+      defaultUrl: string
+      productId: string
+      parentId?: string
+    } = {
       id: body.id,
       name: body.name,
       defaultUrl: body.defaultUrl,
+      productId: body.productId,
     }
     if (body.description !== undefined) createData.description = body.description
+    if (body.parentId !== undefined) createData.parentId = body.parentId
     const module = await moduleService.create(createData)
 
     return c.json(
@@ -238,6 +249,32 @@ export function createAdminModulesRouter(
     return c.body(null, 204)
   })
 
+  // ── GET /admin/plans/:planId/modules ───────────────────────────────────
+
+  const getPlanModulesRoute = createRoute({
+    method: 'get',
+    path: '/admin/plans/{planId}/modules',
+    operationId: 'getPlanModules',
+    tags: ['admin', 'modules'],
+    request: { params: SetPlanModulesParamsSchema },
+    responses: {
+      200: {
+        description: 'Module IDs assigned to the plan',
+        content: { 'application/json': { schema: z.object({ moduleIds: z.array(z.string()) }) } },
+      },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+      404: commonErrorResponses[404],
+    },
+  })
+
+  router.openapi(getPlanModulesRoute, async (c) => {
+    assertSuperAdmin(c.var.user.role)
+    const { planId } = c.req.valid('param')
+    const planModules = await moduleService.listPlanModules(planId)
+    return c.json({ moduleIds: planModules.map((pm) => pm.moduleId) }, 200)
+  })
+
   // ── PUT /admin/plans/:planId/modules ───────────────────────────────────
 
   router.on('PUT', '/admin/plans/:planId/modules', idempotency)
@@ -304,8 +341,14 @@ export function createAdminModulesRouter(
     const { tenantId, moduleId } = c.req.valid('param')
     const { enabled, reason } = c.req.valid('json')
     const createdBy = c.var.user.sub
-    await moduleService.upsertTenantOverride(tenantId, moduleId, enabled, createdBy, reason)
-    purgeAnalyticsEntitlementsCache(tenantId, DEFAULT_PRODUCT_ID)
+    const productId = await moduleService.upsertTenantOverride(
+      tenantId,
+      moduleId,
+      enabled,
+      createdBy,
+      reason,
+    )
+    purgeAnalyticsEntitlementsCache(tenantId, productId)
 
     return c.body(null, 204)
   })
@@ -335,7 +378,8 @@ export function createAdminModulesRouter(
   router.openapi(deleteTenantModuleOverrideRoute, async (c) => {
     assertSuperAdmin(c.var.user.role)
     const { tenantId, moduleId } = c.req.valid('param')
-    await moduleService.removeTenantOverride(tenantId, moduleId)
+    const productId = await moduleService.removeTenantOverride(tenantId, moduleId)
+    purgeAnalyticsEntitlementsCache(tenantId, productId)
 
     return c.body(null, 204)
   })

@@ -2,4 +2,3 @@
 export * from './modulo-admin';
 export * from './planes';
 export * from './tenants';
-export * from './evaluaciones';

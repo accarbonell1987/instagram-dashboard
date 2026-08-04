@@ -20,8 +20,18 @@ export type ProductModel = runtime.Types.Result.DefaultSelection<Prisma.$Product
 
 export type AggregateProduct = {
   _count: ProductCountAggregateOutputType | null
+  _avg: ProductAvgAggregateOutputType | null
+  _sum: ProductSumAggregateOutputType | null
   _min: ProductMinAggregateOutputType | null
   _max: ProductMaxAggregateOutputType | null
+}
+
+export type ProductAvgAggregateOutputType = {
+  trialDurationDays: number | null
+}
+
+export type ProductSumAggregateOutputType = {
+  trialDurationDays: number | null
 }
 
 export type ProductMinAggregateOutputType = {
@@ -30,6 +40,8 @@ export type ProductMinAggregateOutputType = {
   description: string | null
   active: boolean | null
   billingRef: string | null
+  trialEnabled: boolean | null
+  trialDurationDays: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -40,6 +52,8 @@ export type ProductMaxAggregateOutputType = {
   description: string | null
   active: boolean | null
   billingRef: string | null
+  trialEnabled: boolean | null
+  trialDurationDays: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,11 +64,21 @@ export type ProductCountAggregateOutputType = {
   description: number
   active: number
   billingRef: number
+  trialEnabled: number
+  trialDurationDays: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type ProductAvgAggregateInputType = {
+  trialDurationDays?: true
+}
+
+export type ProductSumAggregateInputType = {
+  trialDurationDays?: true
+}
 
 export type ProductMinAggregateInputType = {
   id?: true
@@ -62,6 +86,8 @@ export type ProductMinAggregateInputType = {
   description?: true
   active?: true
   billingRef?: true
+  trialEnabled?: true
+  trialDurationDays?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -72,6 +98,8 @@ export type ProductMaxAggregateInputType = {
   description?: true
   active?: true
   billingRef?: true
+  trialEnabled?: true
+  trialDurationDays?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +110,8 @@ export type ProductCountAggregateInputType = {
   description?: true
   active?: true
   billingRef?: true
+  trialEnabled?: true
+  trialDurationDays?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -125,6 +155,18 @@ export type ProductAggregateArgs<ExtArgs extends runtime.Types.Extensions.Intern
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: ProductAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: ProductSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: ProductMinAggregateInputType
@@ -155,6 +197,8 @@ export type ProductGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   _count?: ProductCountAggregateInputType | true
+  _avg?: ProductAvgAggregateInputType
+  _sum?: ProductSumAggregateInputType
   _min?: ProductMinAggregateInputType
   _max?: ProductMaxAggregateInputType
 }
@@ -165,9 +209,13 @@ export type ProductGroupByOutputType = {
   description: string | null
   active: boolean
   billingRef: string | null
+  trialEnabled: boolean
+  trialDurationDays: number
   createdAt: Date
   updatedAt: Date
   _count: ProductCountAggregateOutputType | null
+  _avg: ProductAvgAggregateOutputType | null
+  _sum: ProductSumAggregateOutputType | null
   _min: ProductMinAggregateOutputType | null
   _max: ProductMaxAggregateOutputType | null
 }
@@ -196,6 +244,8 @@ export type ProductWhereInput = {
   description?: Prisma.StringNullableFilter<"Product"> | string | null
   active?: Prisma.BoolFilter<"Product"> | boolean
   billingRef?: Prisma.StringNullableFilter<"Product"> | string | null
+  trialEnabled?: Prisma.BoolFilter<"Product"> | boolean
+  trialDurationDays?: Prisma.IntFilter<"Product"> | number
   createdAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   modules?: Prisma.ModuleListRelationFilter
@@ -203,6 +253,7 @@ export type ProductWhereInput = {
   subscriptions?: Prisma.TenantProductSubscriptionListRelationFilter
   entitlements?: Prisma.EntitlementListRelationFilter
   productRoles?: Prisma.ProductRoleListRelationFilter
+  drafts?: Prisma.OnboardingDraftListRelationFilter
 }
 
 export type ProductOrderByWithRelationInput = {
@@ -211,6 +262,8 @@ export type ProductOrderByWithRelationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrderInput | Prisma.SortOrder
+  trialEnabled?: Prisma.SortOrder
+  trialDurationDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   modules?: Prisma.ModuleOrderByRelationAggregateInput
@@ -218,6 +271,7 @@ export type ProductOrderByWithRelationInput = {
   subscriptions?: Prisma.TenantProductSubscriptionOrderByRelationAggregateInput
   entitlements?: Prisma.EntitlementOrderByRelationAggregateInput
   productRoles?: Prisma.ProductRoleOrderByRelationAggregateInput
+  drafts?: Prisma.OnboardingDraftOrderByRelationAggregateInput
 }
 
 export type ProductWhereUniqueInput = Prisma.AtLeast<{
@@ -229,6 +283,8 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   description?: Prisma.StringNullableFilter<"Product"> | string | null
   active?: Prisma.BoolFilter<"Product"> | boolean
   billingRef?: Prisma.StringNullableFilter<"Product"> | string | null
+  trialEnabled?: Prisma.BoolFilter<"Product"> | boolean
+  trialDurationDays?: Prisma.IntFilter<"Product"> | number
   createdAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   modules?: Prisma.ModuleListRelationFilter
@@ -236,6 +292,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   subscriptions?: Prisma.TenantProductSubscriptionListRelationFilter
   entitlements?: Prisma.EntitlementListRelationFilter
   productRoles?: Prisma.ProductRoleListRelationFilter
+  drafts?: Prisma.OnboardingDraftListRelationFilter
 }, "id">
 
 export type ProductOrderByWithAggregationInput = {
@@ -244,11 +301,15 @@ export type ProductOrderByWithAggregationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrderInput | Prisma.SortOrder
+  trialEnabled?: Prisma.SortOrder
+  trialDurationDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ProductCountOrderByAggregateInput
+  _avg?: Prisma.ProductAvgOrderByAggregateInput
   _max?: Prisma.ProductMaxOrderByAggregateInput
   _min?: Prisma.ProductMinOrderByAggregateInput
+  _sum?: Prisma.ProductSumOrderByAggregateInput
 }
 
 export type ProductScalarWhereWithAggregatesInput = {
@@ -260,6 +321,8 @@ export type ProductScalarWhereWithAggregatesInput = {
   description?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   active?: Prisma.BoolWithAggregatesFilter<"Product"> | boolean
   billingRef?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
+  trialEnabled?: Prisma.BoolWithAggregatesFilter<"Product"> | boolean
+  trialDurationDays?: Prisma.IntWithAggregatesFilter<"Product"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Product"> | Date | string
 }
@@ -270,6 +333,8 @@ export type ProductCreateInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleCreateNestedManyWithoutProductInput
@@ -277,6 +342,7 @@ export type ProductCreateInput = {
   subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateInput = {
@@ -285,6 +351,8 @@ export type ProductUncheckedCreateInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleUncheckedCreateNestedManyWithoutProductInput
@@ -292,6 +360,7 @@ export type ProductUncheckedCreateInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductUpdateInput = {
@@ -300,6 +369,8 @@ export type ProductUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUpdateManyWithoutProductNestedInput
@@ -307,6 +378,7 @@ export type ProductUpdateInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateInput = {
@@ -315,6 +387,8 @@ export type ProductUncheckedUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUncheckedUpdateManyWithoutProductNestedInput
@@ -322,6 +396,7 @@ export type ProductUncheckedUpdateInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateManyInput = {
@@ -330,6 +405,8 @@ export type ProductCreateManyInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -340,6 +417,8 @@ export type ProductUpdateManyMutationInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -350,6 +429,8 @@ export type ProductUncheckedUpdateManyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -360,8 +441,14 @@ export type ProductCountOrderByAggregateInput = {
   description?: Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrder
+  trialEnabled?: Prisma.SortOrder
+  trialDurationDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type ProductAvgOrderByAggregateInput = {
+  trialDurationDays?: Prisma.SortOrder
 }
 
 export type ProductMaxOrderByAggregateInput = {
@@ -370,6 +457,8 @@ export type ProductMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrder
+  trialEnabled?: Prisma.SortOrder
+  trialDurationDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -380,8 +469,14 @@ export type ProductMinOrderByAggregateInput = {
   description?: Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrder
+  trialEnabled?: Prisma.SortOrder
+  trialDurationDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type ProductSumOrderByAggregateInput = {
+  trialDurationDays?: Prisma.SortOrder
 }
 
 export type ProductNullableScalarRelationFilter = {
@@ -406,6 +501,14 @@ export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
 
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
@@ -424,6 +527,22 @@ export type ProductUpdateOneWithoutPlansNestedInput = {
   delete?: Prisma.ProductWhereInput | boolean
   connect?: Prisma.ProductWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProductUpdateToOneWithWhereWithoutPlansInput, Prisma.ProductUpdateWithoutPlansInput>, Prisma.ProductUncheckedUpdateWithoutPlansInput>
+}
+
+export type ProductCreateNestedOneWithoutDraftsInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutDraftsInput, Prisma.ProductUncheckedCreateWithoutDraftsInput>
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutDraftsInput
+  connect?: Prisma.ProductWhereUniqueInput
+}
+
+export type ProductUpdateOneWithoutDraftsNestedInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutDraftsInput, Prisma.ProductUncheckedCreateWithoutDraftsInput>
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutDraftsInput
+  upsert?: Prisma.ProductUpsertWithoutDraftsInput
+  disconnect?: Prisma.ProductWhereInput | boolean
+  delete?: Prisma.ProductWhereInput | boolean
+  connect?: Prisma.ProductWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProductUpdateToOneWithWhereWithoutDraftsInput, Prisma.ProductUpdateWithoutDraftsInput>, Prisma.ProductUncheckedUpdateWithoutDraftsInput>
 }
 
 export type ProductCreateNestedOneWithoutModulesInput = {
@@ -490,12 +609,15 @@ export type ProductCreateWithoutPlansInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleCreateNestedManyWithoutProductInput
   subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutPlansInput = {
@@ -504,12 +626,15 @@ export type ProductUncheckedCreateWithoutPlansInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleUncheckedCreateNestedManyWithoutProductInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutPlansInput = {
@@ -534,12 +659,15 @@ export type ProductUpdateWithoutPlansInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutPlansInput = {
@@ -548,9 +676,96 @@ export type ProductUncheckedUpdateWithoutPlansInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUncheckedUpdateManyWithoutProductNestedInput
+  subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
+  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
+  productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
+}
+
+export type ProductCreateWithoutDraftsInput = {
+  id: string
+  name: string
+  description?: string | null
+  active?: boolean
+  billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  modules?: Prisma.ModuleCreateNestedManyWithoutProductInput
+  plans?: Prisma.PlanCreateNestedManyWithoutProductInput
+  subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
+  entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
+  productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
+}
+
+export type ProductUncheckedCreateWithoutDraftsInput = {
+  id: string
+  name: string
+  description?: string | null
+  active?: boolean
+  billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  modules?: Prisma.ModuleUncheckedCreateNestedManyWithoutProductInput
+  plans?: Prisma.PlanUncheckedCreateNestedManyWithoutProductInput
+  subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
+  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
+  productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
+}
+
+export type ProductCreateOrConnectWithoutDraftsInput = {
+  where: Prisma.ProductWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProductCreateWithoutDraftsInput, Prisma.ProductUncheckedCreateWithoutDraftsInput>
+}
+
+export type ProductUpsertWithoutDraftsInput = {
+  update: Prisma.XOR<Prisma.ProductUpdateWithoutDraftsInput, Prisma.ProductUncheckedUpdateWithoutDraftsInput>
+  create: Prisma.XOR<Prisma.ProductCreateWithoutDraftsInput, Prisma.ProductUncheckedCreateWithoutDraftsInput>
+  where?: Prisma.ProductWhereInput
+}
+
+export type ProductUpdateToOneWithWhereWithoutDraftsInput = {
+  where?: Prisma.ProductWhereInput
+  data: Prisma.XOR<Prisma.ProductUpdateWithoutDraftsInput, Prisma.ProductUncheckedUpdateWithoutDraftsInput>
+}
+
+export type ProductUpdateWithoutDraftsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  modules?: Prisma.ModuleUpdateManyWithoutProductNestedInput
+  plans?: Prisma.PlanUpdateManyWithoutProductNestedInput
+  subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
+  entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
+  productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
+}
+
+export type ProductUncheckedUpdateWithoutDraftsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  modules?: Prisma.ModuleUncheckedUpdateManyWithoutProductNestedInput
+  plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
@@ -562,12 +777,15 @@ export type ProductCreateWithoutModulesInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   plans?: Prisma.PlanCreateNestedManyWithoutProductInput
   subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutModulesInput = {
@@ -576,12 +794,15 @@ export type ProductUncheckedCreateWithoutModulesInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   plans?: Prisma.PlanUncheckedCreateNestedManyWithoutProductInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutModulesInput = {
@@ -606,12 +827,15 @@ export type ProductUpdateWithoutModulesInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plans?: Prisma.PlanUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutModulesInput = {
@@ -620,12 +844,15 @@ export type ProductUncheckedUpdateWithoutModulesInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateWithoutSubscriptionsInput = {
@@ -634,12 +861,15 @@ export type ProductCreateWithoutSubscriptionsInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleCreateNestedManyWithoutProductInput
   plans?: Prisma.PlanCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutSubscriptionsInput = {
@@ -648,12 +878,15 @@ export type ProductUncheckedCreateWithoutSubscriptionsInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleUncheckedCreateNestedManyWithoutProductInput
   plans?: Prisma.PlanUncheckedCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutSubscriptionsInput = {
@@ -678,12 +911,15 @@ export type ProductUpdateWithoutSubscriptionsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUpdateManyWithoutProductNestedInput
   plans?: Prisma.PlanUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutSubscriptionsInput = {
@@ -692,12 +928,15 @@ export type ProductUncheckedUpdateWithoutSubscriptionsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUncheckedUpdateManyWithoutProductNestedInput
   plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateWithoutEntitlementsInput = {
@@ -706,12 +945,15 @@ export type ProductCreateWithoutEntitlementsInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleCreateNestedManyWithoutProductInput
   plans?: Prisma.PlanCreateNestedManyWithoutProductInput
   subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutEntitlementsInput = {
@@ -720,12 +962,15 @@ export type ProductUncheckedCreateWithoutEntitlementsInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleUncheckedCreateNestedManyWithoutProductInput
   plans?: Prisma.PlanUncheckedCreateNestedManyWithoutProductInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutEntitlementsInput = {
@@ -750,12 +995,15 @@ export type ProductUpdateWithoutEntitlementsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUpdateManyWithoutProductNestedInput
   plans?: Prisma.PlanUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutEntitlementsInput = {
@@ -764,12 +1012,15 @@ export type ProductUncheckedUpdateWithoutEntitlementsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUncheckedUpdateManyWithoutProductNestedInput
   plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateWithoutProductRolesInput = {
@@ -778,12 +1029,15 @@ export type ProductCreateWithoutProductRolesInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleCreateNestedManyWithoutProductInput
   plans?: Prisma.PlanCreateNestedManyWithoutProductInput
   subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutProductRolesInput = {
@@ -792,12 +1046,15 @@ export type ProductUncheckedCreateWithoutProductRolesInput = {
   description?: string | null
   active?: boolean
   billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   modules?: Prisma.ModuleUncheckedCreateNestedManyWithoutProductInput
   plans?: Prisma.PlanUncheckedCreateNestedManyWithoutProductInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutProductRolesInput = {
@@ -822,12 +1079,15 @@ export type ProductUpdateWithoutProductRolesInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUpdateManyWithoutProductNestedInput
   plans?: Prisma.PlanUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutProductRolesInput = {
@@ -836,12 +1096,15 @@ export type ProductUncheckedUpdateWithoutProductRolesInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modules?: Prisma.ModuleUncheckedUpdateManyWithoutProductNestedInput
   plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
 }
 
 
@@ -855,6 +1118,7 @@ export type ProductCountOutputType = {
   subscriptions: number
   entitlements: number
   productRoles: number
+  drafts: number
 }
 
 export type ProductCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -863,6 +1127,7 @@ export type ProductCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   subscriptions?: boolean | ProductCountOutputTypeCountSubscriptionsArgs
   entitlements?: boolean | ProductCountOutputTypeCountEntitlementsArgs
   productRoles?: boolean | ProductCountOutputTypeCountProductRolesArgs
+  drafts?: boolean | ProductCountOutputTypeCountDraftsArgs
 }
 
 /**
@@ -910,6 +1175,13 @@ export type ProductCountOutputTypeCountProductRolesArgs<ExtArgs extends runtime.
   where?: Prisma.ProductRoleWhereInput
 }
 
+/**
+ * ProductCountOutputType without action
+ */
+export type ProductCountOutputTypeCountDraftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.OnboardingDraftWhereInput
+}
+
 
 export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -917,6 +1189,8 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   description?: boolean
   active?: boolean
   billingRef?: boolean
+  trialEnabled?: boolean
+  trialDurationDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   modules?: boolean | Prisma.Product$modulesArgs<ExtArgs>
@@ -924,6 +1198,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   subscriptions?: boolean | Prisma.Product$subscriptionsArgs<ExtArgs>
   entitlements?: boolean | Prisma.Product$entitlementsArgs<ExtArgs>
   productRoles?: boolean | Prisma.Product$productRolesArgs<ExtArgs>
+  drafts?: boolean | Prisma.Product$draftsArgs<ExtArgs>
   _count?: boolean | Prisma.ProductCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["product"]>
 
@@ -933,6 +1208,8 @@ export type ProductSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   description?: boolean
   active?: boolean
   billingRef?: boolean
+  trialEnabled?: boolean
+  trialDurationDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["product"]>
@@ -943,6 +1220,8 @@ export type ProductSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   description?: boolean
   active?: boolean
   billingRef?: boolean
+  trialEnabled?: boolean
+  trialDurationDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["product"]>
@@ -953,17 +1232,20 @@ export type ProductSelectScalar = {
   description?: boolean
   active?: boolean
   billingRef?: boolean
+  trialEnabled?: boolean
+  trialDurationDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "active" | "billingRef" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
+export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "active" | "billingRef" | "trialEnabled" | "trialDurationDays" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   modules?: boolean | Prisma.Product$modulesArgs<ExtArgs>
   plans?: boolean | Prisma.Product$plansArgs<ExtArgs>
   subscriptions?: boolean | Prisma.Product$subscriptionsArgs<ExtArgs>
   entitlements?: boolean | Prisma.Product$entitlementsArgs<ExtArgs>
   productRoles?: boolean | Prisma.Product$productRolesArgs<ExtArgs>
+  drafts?: boolean | Prisma.Product$draftsArgs<ExtArgs>
   _count?: boolean | Prisma.ProductCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProductIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -977,6 +1259,7 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     subscriptions: Prisma.$TenantProductSubscriptionPayload<ExtArgs>[]
     entitlements: Prisma.$EntitlementPayload<ExtArgs>[]
     productRoles: Prisma.$ProductRolePayload<ExtArgs>[]
+    drafts: Prisma.$OnboardingDraftPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -984,6 +1267,8 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     description: string | null
     active: boolean
     billingRef: string | null
+    trialEnabled: boolean
+    trialDurationDays: number
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["product"]>
@@ -1385,6 +1670,7 @@ export interface Prisma__ProductClient<T, Null = never, ExtArgs extends runtime.
   subscriptions<T extends Prisma.Product$subscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$subscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantProductSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   entitlements<T extends Prisma.Product$entitlementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$entitlementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntitlementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   productRoles<T extends Prisma.Product$productRolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$productRolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductRolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  drafts<T extends Prisma.Product$draftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$draftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OnboardingDraftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1419,6 +1705,8 @@ export interface ProductFieldRefs {
   readonly description: Prisma.FieldRef<"Product", 'String'>
   readonly active: Prisma.FieldRef<"Product", 'Boolean'>
   readonly billingRef: Prisma.FieldRef<"Product", 'String'>
+  readonly trialEnabled: Prisma.FieldRef<"Product", 'Boolean'>
+  readonly trialDurationDays: Prisma.FieldRef<"Product", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Product", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Product", 'DateTime'>
 }
@@ -1931,6 +2219,30 @@ export type Product$productRolesArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.ProductRoleScalarFieldEnum | Prisma.ProductRoleScalarFieldEnum[]
+}
+
+/**
+ * Product.drafts
+ */
+export type Product$draftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the OnboardingDraft
+   */
+  select?: Prisma.OnboardingDraftSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the OnboardingDraft
+   */
+  omit?: Prisma.OnboardingDraftOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OnboardingDraftInclude<ExtArgs> | null
+  where?: Prisma.OnboardingDraftWhereInput
+  orderBy?: Prisma.OnboardingDraftOrderByWithRelationInput | Prisma.OnboardingDraftOrderByWithRelationInput[]
+  cursor?: Prisma.OnboardingDraftWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.OnboardingDraftScalarFieldEnum | Prisma.OnboardingDraftScalarFieldEnum[]
 }
 
 /**

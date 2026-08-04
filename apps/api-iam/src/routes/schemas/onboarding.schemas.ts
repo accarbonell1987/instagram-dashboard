@@ -28,7 +28,7 @@ export const DraftPaymentSchema = z.object({
 
 export const DraftStateSchema = z.object({
   id: z.string(),
-  currentStep: z.enum(['plan', 'representative', 'otp', 'company', 'payment', 'summary']),
+  currentStep: z.enum(['product', 'plan', 'representative', 'otp', 'company', 'payment', 'summary']),
   status: z.enum([
     'draft',
     'otp_pending',
@@ -40,6 +40,7 @@ export const DraftStateSchema = z.object({
     'abandoned',
   ]),
   version: z.number().int(),
+  productId: z.string().nullable(),
   plan: PlanInDraftSchema,
   representative: DraftRepresentativeSchema.nullable(),
   otpVerified: z.boolean(),
@@ -50,12 +51,13 @@ export const DraftStateSchema = z.object({
 
 export const CreateDraftRequestSchema = z.object({
   planId: z.string().nullable().optional(),
+  productId: z.string().nullable().optional(),
 });
 
 // UpdateDraftRequest — root-level step-specific fields matching the contract (DraftUpdateRequest)
 // Each step sends its payload at the root of the body alongside step + version.
 export const UpdateDraftRequestSchema = z.object({
-  step: z.enum(['plan', 'representative', 'otp', 'company', 'payment', 'summary']),
+  step: z.enum(['product', 'plan', 'representative', 'otp', 'company', 'payment', 'summary']),
   version: z.number().int(),
   plan: z
     .object({

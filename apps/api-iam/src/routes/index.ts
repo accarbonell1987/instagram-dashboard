@@ -18,8 +18,6 @@ import type {
   ModuleService,
   ProductRoleService,
   AdminTenantService,
-  QuizService,
-  QuizAttemptService,
 } from '../services/index.js';
 import type { KeyProvider } from '../adapters/index.js';
 import type { PlanRepository, PaymentRepository, OnboardingDraftRepository, PlanQuotaRepository } from '../repositories/index.js';
@@ -41,8 +39,7 @@ import { createAdminPlansRouter } from './admin/plans.js';
 import { createAdminTenantsRouter } from './admin/tenants.js';
 import { createAdminTrialsRouter } from './admin/trials.js';
 import { createAdminProductRolesRouter } from './admin/product-roles.js';
-import { createAdminQuizzesRouter } from './admin/quizzes.js';
-import { createTenantQuizzesRouter } from './tenant/quizzes.js';
+import { createAdminProductsRouter } from './admin/products.js';
 import { createStubBancardRouter } from './stub/index.js';
 import { createDevStorageRouter } from './dev-storage/index.js';
 import { createInternalRouter } from './internal/index.js';
@@ -64,8 +61,6 @@ export type Services = {
   moduleService: ModuleService;
   productRoleService: ProductRoleService;
   adminTenantService: AdminTenantService;
-  quizService: QuizService;
-  quizAttemptService: QuizAttemptService;
 };
 
 export type RouteDeps = {
@@ -123,11 +118,20 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   const adminModulesRouter = createAdminModulesRouter(services.moduleService, authGuard, idempotency);
   const adminPlansRouter = createAdminPlansRouter(services.planService, planQuotaRepo, authGuard, idempotency);
   const adminTenantsRouter = createAdminTenantsRouter(services.adminTenantService, authGuard, idempotency);
-  const adminTrialsRouter = createAdminTrialsRouter(services.moduleService, authGuard, idempotency);
+  const adminTrialsRouter = createAdminTrialsRouter(services.moduleService, prisma, authGuard, idempotency);
   const adminProductRolesRouter = createAdminProductRolesRouter(services.productRoleService, authGuard, idempotency);
-  const adminQuizzesRouter = createAdminQuizzesRouter(services.quizService, services.quizAttemptService, authGuard, idempotency, prisma);
-  const tenantQuizzesRouter = createTenantQuizzesRouter(services.quizService, services.quizAttemptService, authGuard);
+  const adminProductsRouter = createAdminProductsRouter(prisma, authGuard);
   const internalRouter = createInternalRouter(prisma, services.moduleService);
+
+  // Public products listing (for onboarding product picker)
+  app.get('/products', async (c) => {
+    const products = await prisma.product.findMany({
+      where: { active: true },
+      select: { id: true, name: true, description: true, active: true, trialEnabled: true, trialDurationDays: true },
+      orderBy: { id: 'asc' },
+    });
+    return c.json({ products }, 200);
+  });
 
   app.route('/', healthRouter);
   app.route('/', wellKnownRouter);
@@ -145,8 +149,7 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   app.route('/', adminTenantsRouter);
   app.route('/', adminTrialsRouter);
   app.route('/', adminProductRolesRouter);
-  app.route('/', adminQuizzesRouter);
-  app.route('/', tenantQuizzesRouter);
+  app.route('/', adminProductsRouter);
 
   if (config.BANCARD_PROVIDER === 'stub') {
     const stubBancardRouter = createStubBancardRouter(services.webhookService, paymentRepo, config);

@@ -40,6 +40,7 @@ export type OnboardingDraftMinAggregateOutputType = {
   currentStep: $Enums.DraftStep | null
   version: number | null
   planId: string | null
+  productId: string | null
   representativeEmail: string | null
   resumeTokenHash: string | null
   resumeTokenExpiresAt: Date | null
@@ -56,6 +57,7 @@ export type OnboardingDraftMaxAggregateOutputType = {
   currentStep: $Enums.DraftStep | null
   version: number | null
   planId: string | null
+  productId: string | null
   representativeEmail: string | null
   resumeTokenHash: string | null
   resumeTokenExpiresAt: Date | null
@@ -72,6 +74,7 @@ export type OnboardingDraftCountAggregateOutputType = {
   currentStep: number
   version: number
   planId: number
+  productId: number
   data: number
   representativeEmail: number
   resumeTokenHash: number
@@ -99,6 +102,7 @@ export type OnboardingDraftMinAggregateInputType = {
   currentStep?: true
   version?: true
   planId?: true
+  productId?: true
   representativeEmail?: true
   resumeTokenHash?: true
   resumeTokenExpiresAt?: true
@@ -115,6 +119,7 @@ export type OnboardingDraftMaxAggregateInputType = {
   currentStep?: true
   version?: true
   planId?: true
+  productId?: true
   representativeEmail?: true
   resumeTokenHash?: true
   resumeTokenExpiresAt?: true
@@ -131,6 +136,7 @@ export type OnboardingDraftCountAggregateInputType = {
   currentStep?: true
   version?: true
   planId?: true
+  productId?: true
   data?: true
   representativeEmail?: true
   resumeTokenHash?: true
@@ -235,6 +241,7 @@ export type OnboardingDraftGroupByOutputType = {
   currentStep: $Enums.DraftStep
   version: number
   planId: string | null
+  productId: string | null
   data: runtime.JsonValue
   representativeEmail: string | null
   resumeTokenHash: string | null
@@ -275,6 +282,7 @@ export type OnboardingDraftWhereInput = {
   currentStep?: Prisma.EnumDraftStepFilter<"OnboardingDraft"> | $Enums.DraftStep
   version?: Prisma.IntFilter<"OnboardingDraft"> | number
   planId?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
+  productId?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
   data?: Prisma.JsonFilter<"OnboardingDraft">
   representativeEmail?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
   resumeTokenHash?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
@@ -285,6 +293,7 @@ export type OnboardingDraftWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
   plan?: Prisma.XOR<Prisma.PlanNullableScalarRelationFilter, Prisma.PlanWhereInput> | null
+  product?: Prisma.XOR<Prisma.ProductNullableScalarRelationFilter, Prisma.ProductWhereInput> | null
   tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
   payments?: Prisma.PaymentListRelationFilter
 }
@@ -295,6 +304,7 @@ export type OnboardingDraftOrderByWithRelationInput = {
   currentStep?: Prisma.SortOrder
   version?: Prisma.SortOrder
   planId?: Prisma.SortOrderInput | Prisma.SortOrder
+  productId?: Prisma.SortOrderInput | Prisma.SortOrder
   data?: Prisma.SortOrder
   representativeEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   resumeTokenHash?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -305,6 +315,7 @@ export type OnboardingDraftOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   plan?: Prisma.PlanOrderByWithRelationInput
+  product?: Prisma.ProductOrderByWithRelationInput
   tenant?: Prisma.TenantOrderByWithRelationInput
   payments?: Prisma.PaymentOrderByRelationAggregateInput
 }
@@ -319,6 +330,7 @@ export type OnboardingDraftWhereUniqueInput = Prisma.AtLeast<{
   currentStep?: Prisma.EnumDraftStepFilter<"OnboardingDraft"> | $Enums.DraftStep
   version?: Prisma.IntFilter<"OnboardingDraft"> | number
   planId?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
+  productId?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
   data?: Prisma.JsonFilter<"OnboardingDraft">
   representativeEmail?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
   resumeTokenExpiresAt?: Prisma.DateTimeNullableFilter<"OnboardingDraft"> | Date | string | null
@@ -328,6 +340,7 @@ export type OnboardingDraftWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
   plan?: Prisma.XOR<Prisma.PlanNullableScalarRelationFilter, Prisma.PlanWhereInput> | null
+  product?: Prisma.XOR<Prisma.ProductNullableScalarRelationFilter, Prisma.ProductWhereInput> | null
   tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
   payments?: Prisma.PaymentListRelationFilter
 }, "id" | "resumeTokenHash">
@@ -338,6 +351,7 @@ export type OnboardingDraftOrderByWithAggregationInput = {
   currentStep?: Prisma.SortOrder
   version?: Prisma.SortOrder
   planId?: Prisma.SortOrderInput | Prisma.SortOrder
+  productId?: Prisma.SortOrderInput | Prisma.SortOrder
   data?: Prisma.SortOrder
   representativeEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   resumeTokenHash?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -363,6 +377,7 @@ export type OnboardingDraftScalarWhereWithAggregatesInput = {
   currentStep?: Prisma.EnumDraftStepWithAggregatesFilter<"OnboardingDraft"> | $Enums.DraftStep
   version?: Prisma.IntWithAggregatesFilter<"OnboardingDraft"> | number
   planId?: Prisma.StringNullableWithAggregatesFilter<"OnboardingDraft"> | string | null
+  productId?: Prisma.StringNullableWithAggregatesFilter<"OnboardingDraft"> | string | null
   data?: Prisma.JsonWithAggregatesFilter<"OnboardingDraft">
   representativeEmail?: Prisma.StringNullableWithAggregatesFilter<"OnboardingDraft"> | string | null
   resumeTokenHash?: Prisma.StringNullableWithAggregatesFilter<"OnboardingDraft"> | string | null
@@ -388,6 +403,7 @@ export type OnboardingDraftCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   plan?: Prisma.PlanCreateNestedOneWithoutDraftsInput
+  product?: Prisma.ProductCreateNestedOneWithoutDraftsInput
   tenant?: Prisma.TenantCreateNestedOneWithoutDraftsInput
   payments?: Prisma.PaymentCreateNestedManyWithoutDraftInput
 }
@@ -398,6 +414,7 @@ export type OnboardingDraftUncheckedCreateInput = {
   currentStep?: $Enums.DraftStep
   version?: number
   planId?: string | null
+  productId?: string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: string | null
   resumeTokenHash?: string | null
@@ -424,6 +441,7 @@ export type OnboardingDraftUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneWithoutDraftsNestedInput
+  product?: Prisma.ProductUpdateOneWithoutDraftsNestedInput
   tenant?: Prisma.TenantUpdateOneWithoutDraftsNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutDraftNestedInput
 }
@@ -434,6 +452,7 @@ export type OnboardingDraftUncheckedUpdateInput = {
   currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
   version?: Prisma.IntFieldUpdateOperationsInput | number
   planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -452,6 +471,7 @@ export type OnboardingDraftCreateManyInput = {
   currentStep?: $Enums.DraftStep
   version?: number
   planId?: string | null
+  productId?: string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: string | null
   resumeTokenHash?: string | null
@@ -484,6 +504,7 @@ export type OnboardingDraftUncheckedUpdateManyInput = {
   currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
   version?: Prisma.IntFieldUpdateOperationsInput | number
   planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -511,6 +532,7 @@ export type OnboardingDraftCountOrderByAggregateInput = {
   currentStep?: Prisma.SortOrder
   version?: Prisma.SortOrder
   planId?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   data?: Prisma.SortOrder
   representativeEmail?: Prisma.SortOrder
   resumeTokenHash?: Prisma.SortOrder
@@ -532,6 +554,7 @@ export type OnboardingDraftMaxOrderByAggregateInput = {
   currentStep?: Prisma.SortOrder
   version?: Prisma.SortOrder
   planId?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   representativeEmail?: Prisma.SortOrder
   resumeTokenHash?: Prisma.SortOrder
   resumeTokenExpiresAt?: Prisma.SortOrder
@@ -548,6 +571,7 @@ export type OnboardingDraftMinOrderByAggregateInput = {
   currentStep?: Prisma.SortOrder
   version?: Prisma.SortOrder
   planId?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   representativeEmail?: Prisma.SortOrder
   resumeTokenHash?: Prisma.SortOrder
   resumeTokenExpiresAt?: Prisma.SortOrder
@@ -565,6 +589,48 @@ export type OnboardingDraftSumOrderByAggregateInput = {
 export type OnboardingDraftScalarRelationFilter = {
   is?: Prisma.OnboardingDraftWhereInput
   isNot?: Prisma.OnboardingDraftWhereInput
+}
+
+export type OnboardingDraftCreateNestedManyWithoutProductInput = {
+  create?: Prisma.XOR<Prisma.OnboardingDraftCreateWithoutProductInput, Prisma.OnboardingDraftUncheckedCreateWithoutProductInput> | Prisma.OnboardingDraftCreateWithoutProductInput[] | Prisma.OnboardingDraftUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.OnboardingDraftCreateOrConnectWithoutProductInput | Prisma.OnboardingDraftCreateOrConnectWithoutProductInput[]
+  createMany?: Prisma.OnboardingDraftCreateManyProductInputEnvelope
+  connect?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+}
+
+export type OnboardingDraftUncheckedCreateNestedManyWithoutProductInput = {
+  create?: Prisma.XOR<Prisma.OnboardingDraftCreateWithoutProductInput, Prisma.OnboardingDraftUncheckedCreateWithoutProductInput> | Prisma.OnboardingDraftCreateWithoutProductInput[] | Prisma.OnboardingDraftUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.OnboardingDraftCreateOrConnectWithoutProductInput | Prisma.OnboardingDraftCreateOrConnectWithoutProductInput[]
+  createMany?: Prisma.OnboardingDraftCreateManyProductInputEnvelope
+  connect?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+}
+
+export type OnboardingDraftUpdateManyWithoutProductNestedInput = {
+  create?: Prisma.XOR<Prisma.OnboardingDraftCreateWithoutProductInput, Prisma.OnboardingDraftUncheckedCreateWithoutProductInput> | Prisma.OnboardingDraftCreateWithoutProductInput[] | Prisma.OnboardingDraftUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.OnboardingDraftCreateOrConnectWithoutProductInput | Prisma.OnboardingDraftCreateOrConnectWithoutProductInput[]
+  upsert?: Prisma.OnboardingDraftUpsertWithWhereUniqueWithoutProductInput | Prisma.OnboardingDraftUpsertWithWhereUniqueWithoutProductInput[]
+  createMany?: Prisma.OnboardingDraftCreateManyProductInputEnvelope
+  set?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+  disconnect?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+  delete?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+  connect?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+  update?: Prisma.OnboardingDraftUpdateWithWhereUniqueWithoutProductInput | Prisma.OnboardingDraftUpdateWithWhereUniqueWithoutProductInput[]
+  updateMany?: Prisma.OnboardingDraftUpdateManyWithWhereWithoutProductInput | Prisma.OnboardingDraftUpdateManyWithWhereWithoutProductInput[]
+  deleteMany?: Prisma.OnboardingDraftScalarWhereInput | Prisma.OnboardingDraftScalarWhereInput[]
+}
+
+export type OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput = {
+  create?: Prisma.XOR<Prisma.OnboardingDraftCreateWithoutProductInput, Prisma.OnboardingDraftUncheckedCreateWithoutProductInput> | Prisma.OnboardingDraftCreateWithoutProductInput[] | Prisma.OnboardingDraftUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.OnboardingDraftCreateOrConnectWithoutProductInput | Prisma.OnboardingDraftCreateOrConnectWithoutProductInput[]
+  upsert?: Prisma.OnboardingDraftUpsertWithWhereUniqueWithoutProductInput | Prisma.OnboardingDraftUpsertWithWhereUniqueWithoutProductInput[]
+  createMany?: Prisma.OnboardingDraftCreateManyProductInputEnvelope
+  set?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+  disconnect?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+  delete?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+  connect?: Prisma.OnboardingDraftWhereUniqueInput | Prisma.OnboardingDraftWhereUniqueInput[]
+  update?: Prisma.OnboardingDraftUpdateWithWhereUniqueWithoutProductInput | Prisma.OnboardingDraftUpdateWithWhereUniqueWithoutProductInput[]
+  updateMany?: Prisma.OnboardingDraftUpdateManyWithWhereWithoutProductInput | Prisma.OnboardingDraftUpdateManyWithWhereWithoutProductInput[]
+  deleteMany?: Prisma.OnboardingDraftScalarWhereInput | Prisma.OnboardingDraftScalarWhereInput[]
 }
 
 export type OnboardingDraftCreateNestedManyWithoutPlanInput = {
@@ -673,6 +739,89 @@ export type OnboardingDraftUpdateOneRequiredWithoutPaymentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.OnboardingDraftUpdateToOneWithWhereWithoutPaymentsInput, Prisma.OnboardingDraftUpdateWithoutPaymentsInput>, Prisma.OnboardingDraftUncheckedUpdateWithoutPaymentsInput>
 }
 
+export type OnboardingDraftCreateWithoutProductInput = {
+  id?: string
+  status?: $Enums.DraftStatus
+  currentStep?: $Enums.DraftStep
+  version?: number
+  data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  representativeEmail?: string | null
+  resumeTokenHash?: string | null
+  resumeTokenExpiresAt?: Date | string | null
+  resumeTokenUsed?: boolean
+  expiresAt: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  plan?: Prisma.PlanCreateNestedOneWithoutDraftsInput
+  tenant?: Prisma.TenantCreateNestedOneWithoutDraftsInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutDraftInput
+}
+
+export type OnboardingDraftUncheckedCreateWithoutProductInput = {
+  id?: string
+  status?: $Enums.DraftStatus
+  currentStep?: $Enums.DraftStep
+  version?: number
+  planId?: string | null
+  data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  representativeEmail?: string | null
+  resumeTokenHash?: string | null
+  resumeTokenExpiresAt?: Date | string | null
+  resumeTokenUsed?: boolean
+  tenantId?: string | null
+  expiresAt: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutDraftInput
+}
+
+export type OnboardingDraftCreateOrConnectWithoutProductInput = {
+  where: Prisma.OnboardingDraftWhereUniqueInput
+  create: Prisma.XOR<Prisma.OnboardingDraftCreateWithoutProductInput, Prisma.OnboardingDraftUncheckedCreateWithoutProductInput>
+}
+
+export type OnboardingDraftCreateManyProductInputEnvelope = {
+  data: Prisma.OnboardingDraftCreateManyProductInput | Prisma.OnboardingDraftCreateManyProductInput[]
+  skipDuplicates?: boolean
+}
+
+export type OnboardingDraftUpsertWithWhereUniqueWithoutProductInput = {
+  where: Prisma.OnboardingDraftWhereUniqueInput
+  update: Prisma.XOR<Prisma.OnboardingDraftUpdateWithoutProductInput, Prisma.OnboardingDraftUncheckedUpdateWithoutProductInput>
+  create: Prisma.XOR<Prisma.OnboardingDraftCreateWithoutProductInput, Prisma.OnboardingDraftUncheckedCreateWithoutProductInput>
+}
+
+export type OnboardingDraftUpdateWithWhereUniqueWithoutProductInput = {
+  where: Prisma.OnboardingDraftWhereUniqueInput
+  data: Prisma.XOR<Prisma.OnboardingDraftUpdateWithoutProductInput, Prisma.OnboardingDraftUncheckedUpdateWithoutProductInput>
+}
+
+export type OnboardingDraftUpdateManyWithWhereWithoutProductInput = {
+  where: Prisma.OnboardingDraftScalarWhereInput
+  data: Prisma.XOR<Prisma.OnboardingDraftUpdateManyMutationInput, Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductInput>
+}
+
+export type OnboardingDraftScalarWhereInput = {
+  AND?: Prisma.OnboardingDraftScalarWhereInput | Prisma.OnboardingDraftScalarWhereInput[]
+  OR?: Prisma.OnboardingDraftScalarWhereInput[]
+  NOT?: Prisma.OnboardingDraftScalarWhereInput | Prisma.OnboardingDraftScalarWhereInput[]
+  id?: Prisma.UuidFilter<"OnboardingDraft"> | string
+  status?: Prisma.EnumDraftStatusFilter<"OnboardingDraft"> | $Enums.DraftStatus
+  currentStep?: Prisma.EnumDraftStepFilter<"OnboardingDraft"> | $Enums.DraftStep
+  version?: Prisma.IntFilter<"OnboardingDraft"> | number
+  planId?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
+  productId?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
+  data?: Prisma.JsonFilter<"OnboardingDraft">
+  representativeEmail?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
+  resumeTokenHash?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
+  resumeTokenExpiresAt?: Prisma.DateTimeNullableFilter<"OnboardingDraft"> | Date | string | null
+  resumeTokenUsed?: Prisma.BoolFilter<"OnboardingDraft"> | boolean
+  tenantId?: Prisma.UuidNullableFilter<"OnboardingDraft"> | string | null
+  expiresAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
+  createdAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
+}
+
 export type OnboardingDraftCreateWithoutPlanInput = {
   id?: string
   status?: $Enums.DraftStatus
@@ -686,6 +835,7 @@ export type OnboardingDraftCreateWithoutPlanInput = {
   expiresAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
+  product?: Prisma.ProductCreateNestedOneWithoutDraftsInput
   tenant?: Prisma.TenantCreateNestedOneWithoutDraftsInput
   payments?: Prisma.PaymentCreateNestedManyWithoutDraftInput
 }
@@ -695,6 +845,7 @@ export type OnboardingDraftUncheckedCreateWithoutPlanInput = {
   status?: $Enums.DraftStatus
   currentStep?: $Enums.DraftStep
   version?: number
+  productId?: string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: string | null
   resumeTokenHash?: string | null
@@ -733,26 +884,6 @@ export type OnboardingDraftUpdateManyWithWhereWithoutPlanInput = {
   data: Prisma.XOR<Prisma.OnboardingDraftUpdateManyMutationInput, Prisma.OnboardingDraftUncheckedUpdateManyWithoutPlanInput>
 }
 
-export type OnboardingDraftScalarWhereInput = {
-  AND?: Prisma.OnboardingDraftScalarWhereInput | Prisma.OnboardingDraftScalarWhereInput[]
-  OR?: Prisma.OnboardingDraftScalarWhereInput[]
-  NOT?: Prisma.OnboardingDraftScalarWhereInput | Prisma.OnboardingDraftScalarWhereInput[]
-  id?: Prisma.UuidFilter<"OnboardingDraft"> | string
-  status?: Prisma.EnumDraftStatusFilter<"OnboardingDraft"> | $Enums.DraftStatus
-  currentStep?: Prisma.EnumDraftStepFilter<"OnboardingDraft"> | $Enums.DraftStep
-  version?: Prisma.IntFilter<"OnboardingDraft"> | number
-  planId?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
-  data?: Prisma.JsonFilter<"OnboardingDraft">
-  representativeEmail?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
-  resumeTokenHash?: Prisma.StringNullableFilter<"OnboardingDraft"> | string | null
-  resumeTokenExpiresAt?: Prisma.DateTimeNullableFilter<"OnboardingDraft"> | Date | string | null
-  resumeTokenUsed?: Prisma.BoolFilter<"OnboardingDraft"> | boolean
-  tenantId?: Prisma.UuidNullableFilter<"OnboardingDraft"> | string | null
-  expiresAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
-  createdAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"OnboardingDraft"> | Date | string
-}
-
 export type OnboardingDraftCreateWithoutTenantInput = {
   id?: string
   status?: $Enums.DraftStatus
@@ -767,6 +898,7 @@ export type OnboardingDraftCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   plan?: Prisma.PlanCreateNestedOneWithoutDraftsInput
+  product?: Prisma.ProductCreateNestedOneWithoutDraftsInput
   payments?: Prisma.PaymentCreateNestedManyWithoutDraftInput
 }
 
@@ -776,6 +908,7 @@ export type OnboardingDraftUncheckedCreateWithoutTenantInput = {
   currentStep?: $Enums.DraftStep
   version?: number
   planId?: string | null
+  productId?: string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: string | null
   resumeTokenHash?: string | null
@@ -827,6 +960,7 @@ export type OnboardingDraftCreateWithoutPaymentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   plan?: Prisma.PlanCreateNestedOneWithoutDraftsInput
+  product?: Prisma.ProductCreateNestedOneWithoutDraftsInput
   tenant?: Prisma.TenantCreateNestedOneWithoutDraftsInput
 }
 
@@ -836,6 +970,7 @@ export type OnboardingDraftUncheckedCreateWithoutPaymentsInput = {
   currentStep?: $Enums.DraftStep
   version?: number
   planId?: string | null
+  productId?: string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: string | null
   resumeTokenHash?: string | null
@@ -877,10 +1012,82 @@ export type OnboardingDraftUpdateWithoutPaymentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneWithoutDraftsNestedInput
+  product?: Prisma.ProductUpdateOneWithoutDraftsNestedInput
   tenant?: Prisma.TenantUpdateOneWithoutDraftsNestedInput
 }
 
 export type OnboardingDraftUncheckedUpdateWithoutPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumDraftStatusFieldUpdateOperationsInput | $Enums.DraftStatus
+  currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  resumeTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resumeTokenUsed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type OnboardingDraftCreateManyProductInput = {
+  id?: string
+  status?: $Enums.DraftStatus
+  currentStep?: $Enums.DraftStep
+  version?: number
+  planId?: string | null
+  data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  representativeEmail?: string | null
+  resumeTokenHash?: string | null
+  resumeTokenExpiresAt?: Date | string | null
+  resumeTokenUsed?: boolean
+  tenantId?: string | null
+  expiresAt: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type OnboardingDraftUpdateWithoutProductInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumDraftStatusFieldUpdateOperationsInput | $Enums.DraftStatus
+  currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  resumeTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resumeTokenUsed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plan?: Prisma.PlanUpdateOneWithoutDraftsNestedInput
+  tenant?: Prisma.TenantUpdateOneWithoutDraftsNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutDraftNestedInput
+}
+
+export type OnboardingDraftUncheckedUpdateWithoutProductInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumDraftStatusFieldUpdateOperationsInput | $Enums.DraftStatus
+  currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  resumeTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resumeTokenUsed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutDraftNestedInput
+}
+
+export type OnboardingDraftUncheckedUpdateManyWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumDraftStatusFieldUpdateOperationsInput | $Enums.DraftStatus
   currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
@@ -902,6 +1109,7 @@ export type OnboardingDraftCreateManyPlanInput = {
   status?: $Enums.DraftStatus
   currentStep?: $Enums.DraftStep
   version?: number
+  productId?: string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: string | null
   resumeTokenHash?: string | null
@@ -926,6 +1134,7 @@ export type OnboardingDraftUpdateWithoutPlanInput = {
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneWithoutDraftsNestedInput
   tenant?: Prisma.TenantUpdateOneWithoutDraftsNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutDraftNestedInput
 }
@@ -935,6 +1144,7 @@ export type OnboardingDraftUncheckedUpdateWithoutPlanInput = {
   status?: Prisma.EnumDraftStatusFieldUpdateOperationsInput | $Enums.DraftStatus
   currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -952,6 +1162,7 @@ export type OnboardingDraftUncheckedUpdateManyWithoutPlanInput = {
   status?: Prisma.EnumDraftStatusFieldUpdateOperationsInput | $Enums.DraftStatus
   currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -969,6 +1180,7 @@ export type OnboardingDraftCreateManyTenantInput = {
   currentStep?: $Enums.DraftStep
   version?: number
   planId?: string | null
+  productId?: string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: string | null
   resumeTokenHash?: string | null
@@ -993,6 +1205,7 @@ export type OnboardingDraftUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneWithoutDraftsNestedInput
+  product?: Prisma.ProductUpdateOneWithoutDraftsNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutDraftNestedInput
 }
 
@@ -1002,6 +1215,7 @@ export type OnboardingDraftUncheckedUpdateWithoutTenantInput = {
   currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
   version?: Prisma.IntFieldUpdateOperationsInput | number
   planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1019,6 +1233,7 @@ export type OnboardingDraftUncheckedUpdateManyWithoutTenantInput = {
   currentStep?: Prisma.EnumDraftStepFieldUpdateOperationsInput | $Enums.DraftStep
   version?: Prisma.IntFieldUpdateOperationsInput | number
   planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   data?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   representativeEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   resumeTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1066,6 +1281,7 @@ export type OnboardingDraftSelect<ExtArgs extends runtime.Types.Extensions.Inter
   currentStep?: boolean
   version?: boolean
   planId?: boolean
+  productId?: boolean
   data?: boolean
   representativeEmail?: boolean
   resumeTokenHash?: boolean
@@ -1076,6 +1292,7 @@ export type OnboardingDraftSelect<ExtArgs extends runtime.Types.Extensions.Inter
   createdAt?: boolean
   updatedAt?: boolean
   plan?: boolean | Prisma.OnboardingDraft$planArgs<ExtArgs>
+  product?: boolean | Prisma.OnboardingDraft$productArgs<ExtArgs>
   tenant?: boolean | Prisma.OnboardingDraft$tenantArgs<ExtArgs>
   payments?: boolean | Prisma.OnboardingDraft$paymentsArgs<ExtArgs>
   _count?: boolean | Prisma.OnboardingDraftCountOutputTypeDefaultArgs<ExtArgs>
@@ -1087,6 +1304,7 @@ export type OnboardingDraftSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   currentStep?: boolean
   version?: boolean
   planId?: boolean
+  productId?: boolean
   data?: boolean
   representativeEmail?: boolean
   resumeTokenHash?: boolean
@@ -1097,6 +1315,7 @@ export type OnboardingDraftSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   createdAt?: boolean
   updatedAt?: boolean
   plan?: boolean | Prisma.OnboardingDraft$planArgs<ExtArgs>
+  product?: boolean | Prisma.OnboardingDraft$productArgs<ExtArgs>
   tenant?: boolean | Prisma.OnboardingDraft$tenantArgs<ExtArgs>
 }, ExtArgs["result"]["onboardingDraft"]>
 
@@ -1106,6 +1325,7 @@ export type OnboardingDraftSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   currentStep?: boolean
   version?: boolean
   planId?: boolean
+  productId?: boolean
   data?: boolean
   representativeEmail?: boolean
   resumeTokenHash?: boolean
@@ -1116,6 +1336,7 @@ export type OnboardingDraftSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   createdAt?: boolean
   updatedAt?: boolean
   plan?: boolean | Prisma.OnboardingDraft$planArgs<ExtArgs>
+  product?: boolean | Prisma.OnboardingDraft$productArgs<ExtArgs>
   tenant?: boolean | Prisma.OnboardingDraft$tenantArgs<ExtArgs>
 }, ExtArgs["result"]["onboardingDraft"]>
 
@@ -1125,6 +1346,7 @@ export type OnboardingDraftSelectScalar = {
   currentStep?: boolean
   version?: boolean
   planId?: boolean
+  productId?: boolean
   data?: boolean
   representativeEmail?: boolean
   resumeTokenHash?: boolean
@@ -1136,19 +1358,22 @@ export type OnboardingDraftSelectScalar = {
   updatedAt?: boolean
 }
 
-export type OnboardingDraftOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "currentStep" | "version" | "planId" | "data" | "representativeEmail" | "resumeTokenHash" | "resumeTokenExpiresAt" | "resumeTokenUsed" | "tenantId" | "expiresAt" | "createdAt" | "updatedAt", ExtArgs["result"]["onboardingDraft"]>
+export type OnboardingDraftOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "currentStep" | "version" | "planId" | "productId" | "data" | "representativeEmail" | "resumeTokenHash" | "resumeTokenExpiresAt" | "resumeTokenUsed" | "tenantId" | "expiresAt" | "createdAt" | "updatedAt", ExtArgs["result"]["onboardingDraft"]>
 export type OnboardingDraftInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   plan?: boolean | Prisma.OnboardingDraft$planArgs<ExtArgs>
+  product?: boolean | Prisma.OnboardingDraft$productArgs<ExtArgs>
   tenant?: boolean | Prisma.OnboardingDraft$tenantArgs<ExtArgs>
   payments?: boolean | Prisma.OnboardingDraft$paymentsArgs<ExtArgs>
   _count?: boolean | Prisma.OnboardingDraftCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type OnboardingDraftIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   plan?: boolean | Prisma.OnboardingDraft$planArgs<ExtArgs>
+  product?: boolean | Prisma.OnboardingDraft$productArgs<ExtArgs>
   tenant?: boolean | Prisma.OnboardingDraft$tenantArgs<ExtArgs>
 }
 export type OnboardingDraftIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   plan?: boolean | Prisma.OnboardingDraft$planArgs<ExtArgs>
+  product?: boolean | Prisma.OnboardingDraft$productArgs<ExtArgs>
   tenant?: boolean | Prisma.OnboardingDraft$tenantArgs<ExtArgs>
 }
 
@@ -1156,6 +1381,7 @@ export type $OnboardingDraftPayload<ExtArgs extends runtime.Types.Extensions.Int
   name: "OnboardingDraft"
   objects: {
     plan: Prisma.$PlanPayload<ExtArgs> | null
+    product: Prisma.$ProductPayload<ExtArgs> | null
     tenant: Prisma.$TenantPayload<ExtArgs> | null
     payments: Prisma.$PaymentPayload<ExtArgs>[]
   }
@@ -1165,6 +1391,7 @@ export type $OnboardingDraftPayload<ExtArgs extends runtime.Types.Extensions.Int
     currentStep: $Enums.DraftStep
     version: number
     planId: string | null
+    productId: string | null
     data: runtime.JsonValue
     representativeEmail: string | null
     resumeTokenHash: string | null
@@ -1569,6 +1796,7 @@ readonly fields: OnboardingDraftFieldRefs;
 export interface Prisma__OnboardingDraftClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   plan<T extends Prisma.OnboardingDraft$planArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OnboardingDraft$planArgs<ExtArgs>>): Prisma.Prisma__PlanClient<runtime.Types.Result.GetResult<Prisma.$PlanPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  product<T extends Prisma.OnboardingDraft$productArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OnboardingDraft$productArgs<ExtArgs>>): Prisma.Prisma__ProductClient<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   tenant<T extends Prisma.OnboardingDraft$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OnboardingDraft$tenantArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   payments<T extends Prisma.OnboardingDraft$paymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OnboardingDraft$paymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1605,6 +1833,7 @@ export interface OnboardingDraftFieldRefs {
   readonly currentStep: Prisma.FieldRef<"OnboardingDraft", 'DraftStep'>
   readonly version: Prisma.FieldRef<"OnboardingDraft", 'Int'>
   readonly planId: Prisma.FieldRef<"OnboardingDraft", 'String'>
+  readonly productId: Prisma.FieldRef<"OnboardingDraft", 'String'>
   readonly data: Prisma.FieldRef<"OnboardingDraft", 'Json'>
   readonly representativeEmail: Prisma.FieldRef<"OnboardingDraft", 'String'>
   readonly resumeTokenHash: Prisma.FieldRef<"OnboardingDraft", 'String'>
@@ -2031,6 +2260,25 @@ export type OnboardingDraft$planArgs<ExtArgs extends runtime.Types.Extensions.In
    */
   include?: Prisma.PlanInclude<ExtArgs> | null
   where?: Prisma.PlanWhereInput
+}
+
+/**
+ * OnboardingDraft.product
+ */
+export type OnboardingDraft$productArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Product
+   */
+  select?: Prisma.ProductSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Product
+   */
+  omit?: Prisma.ProductOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProductInclude<ExtArgs> | null
+  where?: Prisma.ProductWhereInput
 }
 
 /**

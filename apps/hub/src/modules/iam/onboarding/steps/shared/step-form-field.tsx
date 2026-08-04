@@ -3,7 +3,6 @@
 import { Label } from '@core/ui';
 import { type JSX } from 'react';
 
-
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface StepFormFieldProps {

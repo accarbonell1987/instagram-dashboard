@@ -66,6 +66,7 @@ enum DraftStatus {
 }
 
 enum DraftStep {
+  product
   plan
   representative
   otp
@@ -114,21 +115,6 @@ enum PlanChangeRequestStatus {
   @@map("plan_change_request_status")
 }
 
-enum QuestionType {
-  multiple_choice
-  true_false
-
-  @@map("question_type")
-}
-
-enum AttemptStatus {
-  in_progress
-  completed
-  abandoned
-
-  @@map("attempt_status")
-}
-
 enum ResourceType {
   deepseek_tokens
   fal_images
@@ -175,7 +161,9 @@ model Product {
   name        String
   description String?
   active      Boolean  @default(true)
-  billingRef  String?  @map("billing_ref") // reserved for billing integration (owner decision #5)
+  billingRef  String?  @map("billing_ref")
+  trialEnabled      Boolean @default(true) @map("trial_enabled")
+  trialDurationDays Int     @default(14)  @map("trial_duration_days")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -184,6 +172,7 @@ model Product {
   subscriptions TenantProductSubscription[]
   entitlements  Entitlement[]
   productRoles  ProductRole[]
+  drafts        OnboardingDraft[]
 
   @@map("products")
 }
@@ -199,6 +188,12 @@ model Plan {
   features        Json     @default("{}")
   popular         Boolean  @default(false)
   active          Boolean  @default(true)
+  // Backoffice drag-and-drop order. Lower comes first; ties fall back to
+  // createdAt so a fresh plan lands at the end deterministically.
+  displayOrder    Int      @default(0) @map("display_order")
+  // The plan pre-selected in onboarding and used as the fallback when a draft
+  // has none. At most one per product (enforced in PlanRepository.update).
+  isDefault       Boolean  @default(false) @map("is_default")
   // Nullable for phase a1 (additive migration); backfilled in a2, tightened to
   // NOT NULL in a follow-up migration once verified (see design Migration/Rollout).
   productId       String?  @map("product_id")
@@ -254,7 +249,6 @@ model Tenant {
   drafts             OnboardingDraft[]
   planChangeRequests PlanChangeRequest[]
   moduleOverrides    TenantModuleOverride[]
-  quizAttempts       QuizAttempt[]
   productSubscriptions TenantProductSubscription[]
   entitlements         Entitlement[]
 
@@ -362,9 +356,10 @@ model PasswordResetToken {
 model OnboardingDraft {
   id                   String      @id @default(uuid()) @db.Uuid
   status               DraftStatus @default(draft)
-  currentStep          DraftStep   @default(plan) @map("current_step")
+  currentStep          DraftStep   @default(product) @map("current_step")
   version              Int         @default(0)
   planId               String?     @map("plan_id")
+  productId            String?     @map("product_id")
   data                 Json        @default("{}")
   representativeEmail  String?     @map("representative_email") @db.VarChar(254)
   resumeTokenHash      String?     @unique @map("resume_token_hash") @db.VarChar(64)
@@ -376,6 +371,7 @@ model OnboardingDraft {
   updatedAt            DateTime    @updatedAt @map("updated_at")
 
   plan     Plan?     @relation(fields: [planId], references: [id])
+  product  Product?  @relation(fields: [productId], references: [id])
   tenant   Tenant?   @relation(fields: [tenantId], references: [id])
   payments Payment[]
 
@@ -493,14 +489,18 @@ model Module {
   // Nullable for phase a1 (additive migration); backfilled in a2, tightened to
   // NOT NULL in a follow-up migration once verified (see design Migration/Rollout).
   productId   String?  @map("product_id")
+  // Sub-module nesting (1 level max, enforced at application layer)
+  parentId    String?  @map("parent_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   product         Product?               @relation(fields: [productId], references: [id])
+  parent          Module?                @relation("ModuleChildren", fields: [parentId], references: [id])
+  children        Module[]               @relation("ModuleChildren")
   planModules     PlanModule[]
   tenantOverrides TenantModuleOverride[]
-  quizzes         Quiz[]
   entitlements    Entitlement[]
+  roleModuleAccess RoleModuleAccess[]
 
   @@map("modules")
 }
@@ -586,6 +586,7 @@ model ProductRole {
 
   product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
   assignments UserProductRole[]
+  moduleAccess RoleModuleAccess[]
 
   @@unique([productId, key])
   @@map("product_roles")
@@ -604,91 +605,17 @@ model UserProductRole {
   @@map("user_product_roles")
 }
 
-model Quiz {
-  id               String     @id @default(uuid()) @db.Uuid
-  moduleId         String?    @map("module_id")
-  title            String     @db.VarChar(200)
-  description      String?    @db.Text
-  passingScore     Int        @default(60) @map("passing_score")
-  timeLimitMinutes Int?       @map("time_limit_minutes")
-  active           Boolean    @default(true)
-  createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
+// Phase 2: module-level permissions per product role.
+// A role's permitted modules are the union of its RoleModuleAccess rows.
+model RoleModuleAccess {
+  productRoleId String      @map("product_role_id") @db.Uuid
+  moduleId      String      @map("module_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
 
-  module    Module?         @relation(fields: [moduleId], references: [id], onDelete: SetNull)
-  questions Question[]
-  attempts  QuizAttempt[]
+  productRole ProductRole @relation(fields: [productRoleId], references: [id], onDelete: Cascade)
+  module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
-  @@index([moduleId])
-  @@index([active])
-  @@map("quizzes")
+  @@id([productRoleId, moduleId])
+  @@map("role_module_access")
 }
 
-model Question {
-  id        String       @id @default(uuid()) @db.Uuid
-  quizId    String       @map("quiz_id") @db.Uuid
-  text      String       @db.Text
-  type      QuestionType
-  order     Int          @default(0)
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
-
-  quiz    Quiz                 @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  options QuestionOption[]
-  answers QuizAttemptAnswer[]
-
-  @@index([quizId, order])
-  @@map("questions")
-}
-
-model QuestionOption {
-  id         String   @id @default(uuid()) @db.Uuid
-  questionId String   @map("question_id") @db.Uuid
-  text       String   @db.VarChar(500)
-  isCorrect  Boolean  @default(false) @map("is_correct")
-  order      Int      @default(0)
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  question Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  answers  QuizAttemptAnswer[]
-
-  @@index([questionId, order])
-  @@map("question_options")
-}
-
-model QuizAttempt {
-  id          String        @id @default(uuid()) @db.Uuid
-  quizId      String        @map("quiz_id") @db.Uuid
-  tenantId    String        @map("tenant_id") @db.Uuid
-  userId      String        @map("user_id") @db.Uuid
-  score       Int?
-  passed      Boolean?
-  status      AttemptStatus @default(in_progress)
-  startedAt   DateTime      @default(now()) @map("started_at")
-  completedAt DateTime?     @map("completed_at")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-
-  quiz    Quiz               @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  tenant  Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  answers QuizAttemptAnswer[]
-
-  @@index([tenantId, quizId])
-  @@index([quizId, userId])
-  @@map("quiz_attempts")
-}
-
-model QuizAttemptAnswer {
-  id               String   @id @default(uuid()) @db.Uuid
-  attemptId        String   @map("attempt_id") @db.Uuid
-  questionId       String   @map("question_id") @db.Uuid
-  selectedOptionId String?  @map("selected_option_id") @db.Uuid
-  createdAt        DateTime @default(now()) @map("created_at")
-
-  attempt        QuizAttempt    @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question       Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  selectedOption QuestionOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
-
-  @@unique([attemptId, questionId])
-  @@map("quiz_attempt_answers")
-}

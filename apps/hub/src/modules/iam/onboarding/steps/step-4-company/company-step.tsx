@@ -7,7 +7,6 @@ import { useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { StepHeader } from '../../components/step-header';
-import { WizardNav } from '../../components/wizard-nav';
 import { useDraftContext } from '../../context/draft-context';
 import { patchDraft } from '../../services/draft.service';
 import { StepErrorBanner } from '../shared/step-error-banner';
@@ -85,27 +84,25 @@ export function StepCompanyData({ draftId }: StepCompanyDataProps): JSX.Element 
         icon={Building}
         title="Datos de la empresa"
         description="Información legal de tu empresa para el contrato de servicio."
+        currentStep="company"
+        draftId={draftId}
+        onContinue={handleSubmit(onSubmit)}
+        isSubmitting={isSubmitting}
       />
 
-      <StepErrorBanner message={submitError} />
+      <StepErrorBanner message={submitError} className="mx-auto w-full max-w-3xl" />
 
       <form
         role="form"
         aria-labelledby="step-heading"
         onSubmit={(e) => void handleSubmit(onSubmit)(e)}
         noValidate
-        className="grid grid-cols-1 gap-6 md:grid-cols-2"
+        className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-6 md:grid-cols-2"
       >
         <CompanyFormFields register={register} control={control} errors={errors} />
 
-        <div className="md:col-span-2">
-          <WizardNav
-            currentStep="company"
-            draftId={draftId}
-            onContinue={handleSubmit(onSubmit)}
-            isSubmitting={isSubmitting}
-          />
-        </div>
+        {/* Keeps Enter-to-submit alive now that the continue button lives in the header */}
+        <button type="submit" className="hidden" tabIndex={-1} aria-hidden="true" />
       </form>
     </div>
   );

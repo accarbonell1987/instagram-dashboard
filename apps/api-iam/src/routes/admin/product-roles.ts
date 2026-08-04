@@ -15,6 +15,8 @@ import {
   AssignProductRoleRequestSchema,
   UserProductRoleSchema,
   UserProductRoleListResponseSchema,
+  RoleModulesParamsSchema,
+  SetRoleModulesRequestSchema,
 } from '../schemas/admin.schemas.js'
 import { commonErrorResponses } from '../schemas/index.js'
 
@@ -36,6 +38,7 @@ export function createAdminProductRolesRouter(
 
   router.use('/admin/products/:productId/roles', authGuard)
   router.use('/admin/products/:productId/roles/:roleId', authGuard)
+  router.use('/admin/roles/:roleId/modules', authGuard)
   router.use('/admin/users/:userId/product-roles', authGuard)
   router.use('/admin/users/:userId/product-roles/:productRoleId', authGuard)
 
@@ -147,6 +150,58 @@ export function createAdminProductRolesRouter(
     const { roleId } = c.req.valid('param')
     await productRoleService.remove(roleId)
 
+    return c.body(null, 204)
+  })
+
+  // ── GET /admin/roles/:roleId/modules ──────────────────────────────────────
+
+  const getRoleModulesRoute = createRoute({
+    method: 'get',
+    path: '/admin/roles/{roleId}/modules',
+    operationId: 'getRoleModules',
+    tags: ['admin', 'product-roles'],
+    request: { params: RoleModulesParamsSchema },
+    responses: {
+      200: { description: 'Module IDs assigned to the role' },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+    },
+  })
+
+  router.openapi(getRoleModulesRoute, async (c) => {
+    assertSuperAdmin(c.var.user.role)
+    const { roleId } = c.req.valid('param')
+    const modules = await productRoleService.getRoleModules(roleId)
+    return c.json({ moduleIds: modules }, 200)
+  })
+
+  // ── PUT /admin/roles/:roleId/modules ──────────────────────────────────────
+
+  router.on('PUT', '/admin/roles/:roleId/modules', idempotency)
+
+  const setRoleModulesRoute = createRoute({
+    method: 'put',
+    path: '/admin/roles/{roleId}/modules',
+    operationId: 'setRoleModules',
+    tags: ['admin', 'product-roles'],
+    request: {
+      params: RoleModulesParamsSchema,
+      body: { content: { 'application/json': { schema: SetRoleModulesRequestSchema } } },
+    },
+    responses: {
+      204: { description: 'Role modules updated' },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+      404: commonErrorResponses[404],
+      422: commonErrorResponses[422],
+    },
+  })
+
+  router.openapi(setRoleModulesRoute, async (c) => {
+    assertSuperAdmin(c.var.user.role)
+    const { roleId } = c.req.valid('param')
+    const { moduleIds } = c.req.valid('json')
+    await productRoleService.setRoleModules(roleId, moduleIds)
     return c.body(null, 204)
   })
 

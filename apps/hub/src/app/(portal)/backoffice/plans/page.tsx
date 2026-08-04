@@ -22,12 +22,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@core/ui';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Pencil, Archive, RotateCcw, Search, X, Puzzle } from 'lucide-react';
-import { useCallback, useEffect, useState, type JSX } from 'react';
+import { Plus, Pencil, Archive, RotateCcw, Puzzle, GripVertical, Star } from 'lucide-react';
+import { useCallback, useEffect, useState, useMemo, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { ModuleTransfer } from '@/components/module-transfer';
 import { ApiError } from '@/lib/api/errors';
 import {
   listModules,
@@ -41,6 +57,7 @@ import {
   createPlan,
   updatePlan,
   archivePlan,
+  reorderPlans,
   savePlanQuotas,
   getPlanQuotas,
   type AdminPlan,
@@ -55,11 +72,13 @@ function PlanFormDialog({
   onOpenChange,
   editingPlan,
   onSave,
+  productId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingPlan: AdminPlan | null;
   onSave: (data: CreatePlanParams | UpdatePlanParams) => Promise<string>;
+  productId: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -143,19 +162,28 @@ function PlanFormDialog({
         price: data.price,
         currency: data.currency,
         billingInterval: data.billingInterval,
+        ...(editingPlan ? {} : { productId }),
       };
       const planId = await onSave(params);
 
       // Build quotas array from form fields (skip empty/zero = unlimited)
       const quotas: { resourceType: string; limit: number; period: string }[] = [];
       if (data.deepseekTokensLimit != null && data.deepseekTokensLimit > 0) {
-        quotas.push({ resourceType: 'deepseek_tokens', limit: data.deepseekTokensLimit, period: 'month' });
+        quotas.push({
+          resourceType: 'deepseek_tokens',
+          limit: data.deepseekTokensLimit,
+          period: 'month',
+        });
       }
       if (data.falImagesLimit != null && data.falImagesLimit > 0) {
         quotas.push({ resourceType: 'fal_images', limit: data.falImagesLimit, period: 'month' });
       }
       if (data.chatSessionsLimit != null && data.chatSessionsLimit > 0) {
-        quotas.push({ resourceType: 'chat_sessions', limit: data.chatSessionsLimit, period: 'month' });
+        quotas.push({
+          resourceType: 'chat_sessions',
+          limit: data.chatSessionsLimit,
+          period: 'month',
+        });
       }
 
       if (quotas.length > 0) {
@@ -180,16 +208,11 @@ function PlanFormDialog({
         <DialogHeader>
           <DialogTitle>{editingPlan ? 'Editar Plan' : 'Crear Plan'}</DialogTitle>
           <DialogDescription>
-            {editingPlan
-              ? 'Modificá los datos del plan.'
-              : 'Completá los datos del nuevo plan.'}
+            {editingPlan ? 'Modificá los datos del plan.' : 'Completá los datos del nuevo plan.'}
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          onSubmit={(e) => void form.handleSubmit(handleSubmit)(e)}
-          noValidate
-        >
+        <form onSubmit={(e) => void form.handleSubmit(handleSubmit)(e)} noValidate>
           <div className="space-y-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Nombre</Label>
@@ -247,9 +270,7 @@ function PlanFormDialog({
                   id="currency"
                   disabled={isLoading}
                   aria-describedby={
-                    form.formState.errors.currency !== undefined
-                      ? 'currency-error'
-                      : undefined
+                    form.formState.errors.currency !== undefined ? 'currency-error' : undefined
                   }
                   {...form.register('currency')}
                 />
@@ -265,11 +286,11 @@ function PlanFormDialog({
               <Label htmlFor="billingInterval">Ciclo de facturación</Label>
               <Select
                 value={form.watch('billingInterval')}
-                onValueChange={(value) =>
-                  { form.setValue('billingInterval', value as 'month' | 'year', {
+                onValueChange={(value) => {
+                  form.setValue('billingInterval', value as 'month' | 'year', {
                     shouldValidate: true,
-                  }); }
-                }
+                  });
+                }}
                 disabled={isLoading}
               >
                 <SelectTrigger id="billingInterval">
@@ -286,9 +307,7 @@ function PlanFormDialog({
             <div className="space-y-3">
               <div>
                 <Label className="text-sm font-semibold">Cuotas de IA</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Dejar vacío o 0 = ilimitado
-                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">Dejar vacío o 0 = ilimitado</p>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -347,7 +366,9 @@ function PlanFormDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => { handleOpenChange(false); }}
+              onClick={() => {
+                handleOpenChange(false);
+              }}
               disabled={isLoading}
             >
               Cancelar
@@ -408,8 +429,7 @@ function ArchiveConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Archivar Plan</AlertDialogTitle>
           <AlertDialogDescription>
-            ¿Archivar <strong>{planName}</strong>? Los tenants que lo usan mantendrán el
-            acceso.
+            ¿Archivar <strong>{planName}</strong>? Los tenants que lo usan mantendrán el acceso.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -423,7 +443,9 @@ function ArchiveConfirmDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => { handleOpenChange(false); }}
+            onClick={() => {
+              handleOpenChange(false);
+            }}
             disabled={archiving}
           >
             Cancelar
@@ -442,18 +464,155 @@ function ArchiveConfirmDialog({
   );
 }
 
+// ─── Sortable Plan Row ─────────────────────────────────────────────────────────
+
+function SortablePlanRow({
+  plan,
+  moduleCount,
+  onModules,
+  onEdit,
+  onArchive,
+  onReactivate,
+  onSetDefault,
+  isSettingDefault,
+}: {
+  plan: AdminPlan;
+  moduleCount: number;
+  onModules: (plan: AdminPlan) => void;
+  onEdit: (plan: AdminPlan) => void;
+  onArchive: (plan: AdminPlan) => void;
+  onReactivate: (plan: AdminPlan) => void;
+  onSetDefault: (plan: AdminPlan) => void;
+  isSettingDefault: boolean;
+}): JSX.Element {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: plan.id,
+  });
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`border-border border-t ${isDragging ? 'bg-muted relative z-10' : ''}`}
+    >
+      <td className="w-10 px-2 py-3">
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground cursor-grab touch-none active:cursor-grabbing"
+          aria-label={`Reordenar ${plan.name}`}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </td>
+      <td className="px-4 py-3 font-medium">
+        <span className="flex items-center gap-2">
+          {plan.name}
+          {plan.isDefault && (
+            <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
+              Predeterminado
+            </span>
+          )}
+        </span>
+      </td>
+      <td className="px-4 py-3">
+        {plan.price.toLocaleString()} {plan.currency}
+      </td>
+      <td className="px-4 py-3">{plan.billingInterval === 'month' ? 'Mensual' : 'Anual'}</td>
+      <td className="px-4 py-3">{plan.tenantCount}</td>
+      <td className="px-4 py-3">
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+            plan.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          {plan.active ? 'Activo' : 'Archivado'}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            disabled={plan.isDefault || isSettingDefault || !plan.active}
+            onClick={() => {
+              onSetDefault(plan);
+            }}
+            aria-label={`Marcar ${plan.name} como predeterminado`}
+            title={plan.active ? 'Marcar como predeterminado' : 'Un plan archivado no puede ser el predeterminado'}
+          >
+            <Star className={`h-4 w-4 ${plan.isDefault ? 'fill-primary text-primary' : ''}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              onModules(plan);
+            }}
+            aria-label={`Módulos de ${plan.name}`}
+          >
+            <Puzzle className="h-4 w-4" />
+            {moduleCount > 0 && (
+              <span className="bg-primary text-primary-foreground absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold">
+                {moduleCount}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => {
+              onEdit(plan);
+            }}
+            aria-label={`Editar ${plan.name}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          {plan.active ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => {
+                onArchive(plan);
+              }}
+              aria-label={`Archivar ${plan.name}`}
+            >
+              <Archive className="h-4 w-4 text-orange-600" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => {
+                onReactivate(plan);
+              }}
+              aria-label={`Reactivar ${plan.name}`}
+            >
+              <RotateCcw className="h-4 w-4 text-green-600" />
+            </Button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 // ─── Module Assignment Dialog ──────────────────────────────────────────────────
 
 function ModuleAssignmentDialog({
   open,
   planId,
   planName,
+  productId,
   onOpenChange,
   onSaved,
 }: {
   open: boolean;
   planId: string;
   planName: string;
+  /** Only modules of the plan's own product can be assigned to it. */
+  productId: string | undefined;
   onOpenChange: (open: boolean) => void;
   onSaved?: ((moduleIds: string[], allModules: AdminModule[]) => void) | undefined;
 }) {
@@ -469,7 +628,7 @@ function ModuleAssignmentDialog({
     setLoadError('');
     try {
       const [modulesResult, planModulesResult] = await Promise.all([
-        listModules(),
+        listModules(productId),
         getPlanModules(planId).catch(() => ({ moduleIds: [] as string[] })),
       ]);
       setAllModules(modulesResult.modules);
@@ -481,7 +640,7 @@ function ModuleAssignmentDialog({
         setLoadError('Error al cargar módulos');
       }
       try {
-        const modulesResult = await listModules();
+        const modulesResult = await listModules(productId);
         setAllModules(modulesResult.modules);
       } catch {
         // Modules couldn't load either — UI will show error
@@ -489,7 +648,7 @@ function ModuleAssignmentDialog({
     } finally {
       setIsLoadingModules(false);
     }
-  }, [planId]);
+  }, [planId, productId]);
 
   useEffect(() => {
     if (open) {
@@ -514,8 +673,7 @@ function ModuleAssignmentDialog({
       onSaved?.(selectedIds, allModules);
       onOpenChange(false);
     } catch (err: unknown) {
-      const message =
-        err instanceof ApiError ? err.message : 'Error al guardar módulos';
+      const message = err instanceof ApiError ? err.message : 'Error al guardar módulos';
       toast.error(message);
     } finally {
       setIsSaving(false);
@@ -540,9 +698,7 @@ function ModuleAssignmentDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Módulos — {planName}</DialogTitle>
-          <DialogDescription>
-            Seleccioná los módulos para este plan.
-          </DialogDescription>
+          <DialogDescription>Seleccioná los módulos para este plan.</DialogDescription>
         </DialogHeader>
 
         {isLoadingModules ? (
@@ -552,19 +708,13 @@ function ModuleAssignmentDialog({
               <div className="space-y-2">
                 <div className="bg-muted h-5 w-24 animate-pulse rounded" />
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-muted h-[52px] animate-pulse rounded-md"
-                  />
+                  <div key={i} className="bg-muted h-[52px] animate-pulse rounded-md" />
                 ))}
               </div>
               <div className="space-y-2">
                 <div className="bg-muted h-5 w-24 animate-pulse rounded" />
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-muted h-[52px] animate-pulse rounded-md"
-                  />
+                  <div key={i} className="bg-muted h-[52px] animate-pulse rounded-md" />
                 ))}
               </div>
             </div>
@@ -588,102 +738,13 @@ function ModuleAssignmentDialog({
             No hay módulos configurados.
           </p>
         ) : (
-          <>
-            {/* Search bar */}
-            <div className="relative">
-              <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-              <Input
-                placeholder="Buscar módulo..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                }}
-                className="pl-9"
-                disabled={disabled}
-              />
-            </div>
-
-            {/* Dual list */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Assigned column */}
-              <div>
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  ASIGNADOS ({assignedModules.length})
-                </h4>
-                <div className="max-h-64 space-y-1 overflow-y-auto">
-                  {assignedModules.length === 0 ? (
-                    <p className="text-muted-foreground py-4 text-center text-xs">
-                      Sin módulos asignados
-                    </p>
-                  ) : (
-                    assignedModules.map((mod) => (
-                      <div
-                        key={mod.id}
-                        className="flex items-center justify-between rounded-md border px-3 py-2"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{mod.name}</p>
-                          <p className="text-muted-foreground text-xs font-mono">
-                            {mod.id}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => {
-                            removeModule(mod.id);
-                          }}
-                          disabled={disabled}
-                          aria-label={`Quitar ${mod.name}`}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Available column */}
-              <div>
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  DISPONIBLES ({availableModules.length})
-                </h4>
-                <div className="max-h-64 space-y-1 overflow-y-auto">
-                  {availableModules.length === 0 ? (
-                    <p className="text-muted-foreground py-4 text-center text-xs">
-                      Todos los módulos asignados
-                    </p>
-                  ) : (
-                    availableModules.map((mod) => (
-                      <div
-                        key={mod.id}
-                        className="flex items-center justify-between rounded-md border px-3 py-2"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{mod.name}</p>
-                          <p className="text-muted-foreground text-xs font-mono">
-                            {mod.id}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => {
-                            addModule(mod.id);
-                          }}
-                          disabled={disabled}
-                          aria-label={`Agregar ${mod.name}`}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
+          <ModuleTransfer
+            available={availableModules}
+            assigned={assignedModules}
+            onAssign={addModule}
+            onUnassign={removeModule}
+            className="mt-2"
+          />
         )}
 
         <DialogFooter>
@@ -697,11 +758,7 @@ function ModuleAssignmentDialog({
           >
             Cancelar
           </Button>
-          <Button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={disabled}
-          >
+          <Button type="button" onClick={() => void handleSave()} disabled={disabled}>
             {isSaving ? 'Guardando...' : 'Guardar'}
           </Button>
         </DialogFooter>
@@ -720,10 +777,14 @@ export default function PlansPage(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'archived'>('all');
+  const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<AdminPlan | null>(null);
   const [archivingPlan, setArchivingPlan] = useState<AdminPlan | null>(null);
   const [moduleDialogPlan, setModuleDialogPlan] = useState<AdminPlan | null>(null);
+  const [productFilter, setProductFilter] = useState('instagram-dashboard');
+
+  const PRODUCTS = useMemo(() => [{ id: 'instagram-dashboard', name: 'Dashboard Instagram' }], []);
 
   const loadPlans = useCallback(async () => {
     setLoading(true);
@@ -736,7 +797,7 @@ export default function PlansPage(): JSX.Element {
             ? { active: false }
             : undefined;
       const [plansResult, modulesResult] = await Promise.all([
-        listPlans(filterParam),
+        listPlans({ ...filterParam, productId: productFilter }),
         listModules(),
       ]);
       setPlans(plansResult.plans);
@@ -764,11 +825,51 @@ export default function PlansPage(): JSX.Element {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, productFilter]);
 
   useEffect(() => {
     void loadPlans();
   }, [loadPlans]);
+
+  // Drag and drop ordering. The list is optimistic: on failure it reloads, so a
+  // rejected reorder never leaves the table showing an order the server refused.
+  // ponytail: reordering a filtered view ranks only the visible plans — archived
+  // ones keep their old rank. Harmless today (the wizard only lists active plans).
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  async function handleDragEnd(event: DragEndEvent): Promise<void> {
+    const { active, over } = event;
+    if (over === null || active.id === over.id) return;
+
+    const oldIndex = plans.findIndex((p) => p.id === active.id);
+    const newIndex = plans.findIndex((p) => p.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const reordered = arrayMove(plans, oldIndex, newIndex);
+    setPlans(reordered);
+
+    try {
+      await reorderPlans(reordered.map((p) => p.id));
+      toast.success('Orden actualizado');
+    } catch (err: unknown) {
+      toast.error(err instanceof ApiError ? err.message : 'No se pudo guardar el orden');
+      await loadPlans();
+    }
+  }
+
+  async function handleSetDefault(plan: AdminPlan): Promise<void> {
+    setSettingDefaultId(plan.id);
+    try {
+      await updatePlan(plan.id, { isDefault: true });
+      // One default per product — the server demoted the others, mirror it here.
+      setPlans((prev) => prev.map((p) => ({ ...p, isDefault: p.id === plan.id })));
+      toast.success(`${plan.name} es el plan predeterminado`);
+    } catch (err: unknown) {
+      toast.error(err instanceof ApiError ? err.message : 'No se pudo marcar como predeterminado');
+    } finally {
+      setSettingDefaultId(null);
+    }
+  }
 
   const handleCreate = () => {
     setEditingPlan(null);
@@ -811,7 +912,21 @@ export default function PlansPage(): JSX.Element {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Planes</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">Producto:</h2>
+          <Select value={productFilter} onValueChange={setProductFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRODUCTS.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button size="sm" onClick={handleCreate}>
           <Plus className="mr-1 h-4 w-4" />
           Crear Plan
@@ -825,7 +940,9 @@ export default function PlansPage(): JSX.Element {
             key={f}
             variant={filter === f ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => { setFilter(f); }}
+            onClick={() => {
+              setFilter(f);
+            }}
           >
             {f === 'all' ? 'Todos' : f === 'active' ? 'Activos' : 'Archivados'}
           </Button>
@@ -849,9 +966,11 @@ export default function PlansPage(): JSX.Element {
         </div>
       ) : (
         <div className="border-border overflow-hidden rounded-lg border">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <table className="w-full text-left text-sm">
             <thead className="bg-muted">
               <tr>
+                <th className="w-10 px-2 py-3" aria-label="Reordenar" />
                 <th className="px-4 py-3 font-medium">Nombre</th>
                 <th className="px-4 py-3 font-medium">Precio</th>
                 <th className="px-4 py-3 font-medium">Ciclo</th>
@@ -861,75 +980,31 @@ export default function PlansPage(): JSX.Element {
               </tr>
             </thead>
             <tbody>
-              {plans.map((plan) => (
-                <tr key={plan.id} className="border-border border-t">
-                  <td className="px-4 py-3 font-medium">{plan.name}</td>
-                  <td className="px-4 py-3">
-                    {plan.price.toLocaleString()} {plan.currency}
-                  </td>
-                  <td className="px-4 py-3">
-                    {plan.billingInterval === 'month' ? 'Mensual' : 'Anual'}
-                  </td>
-                  <td className="px-4 py-3">{plan.tenantCount}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        plan.active
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {plan.active ? 'Activo' : 'Archivado'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => { setModuleDialogPlan(plan); }}
-                        aria-label={`Módulos de ${plan.name}`}
-                      >
-                        <Puzzle className="h-4 w-4" />
-                        {(planModules.get(plan.id)?.count ?? 0) > 0 && (
-                          <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                            {planModules.get(plan.id)?.count}
-                          </span>
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                      onClick={() => { handleEdit(plan); }}
-                      aria-label={`Editar ${plan.name}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    {plan.active ? (
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => { setArchivingPlan(plan); }}
-                        aria-label={`Archivar ${plan.name}`}
-                      >
-                        <Archive className="h-4 w-4 text-orange-600" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => void handleReactivate(plan)}
-                        aria-label={`Reactivar ${plan.name}`}
-                      >
-                        <RotateCcw className="h-4 w-4 text-green-600" />
-                      </Button>
-                    )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              <SortableContext
+                items={plans.map((p) => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {plans.map((plan) => (
+                  <SortablePlanRow
+                    key={plan.id}
+                    plan={plan}
+                    moduleCount={planModules.get(plan.id)?.count ?? 0}
+                    onModules={setModuleDialogPlan}
+                    onEdit={handleEdit}
+                    onArchive={setArchivingPlan}
+                    onReactivate={(plan) => {
+                      void handleReactivate(plan);
+                    }}
+                    onSetDefault={(plan) => {
+                      void handleSetDefault(plan);
+                    }}
+                    isSettingDefault={settingDefaultId !== null}
+                  />
+                ))}
+              </SortableContext>
             </tbody>
           </table>
+          </DndContext>
         </div>
       )}
 
@@ -938,20 +1013,26 @@ export default function PlansPage(): JSX.Element {
         onOpenChange={setFormOpen}
         editingPlan={editingPlan}
         onSave={handleSave}
+        productId={productFilter}
       />
 
       <ArchiveConfirmDialog
         open={archivingPlan !== null}
         planName={archivingPlan?.name ?? ''}
         onConfirm={handleArchive}
-        onOpenChange={() => { setArchivingPlan(null); }}
+        onOpenChange={() => {
+          setArchivingPlan(null);
+        }}
       />
 
       <ModuleAssignmentDialog
         open={moduleDialogPlan !== null}
         planId={moduleDialogPlan?.id ?? ''}
         planName={moduleDialogPlan?.name ?? ''}
-        onOpenChange={() => { setModuleDialogPlan(null); }}
+        productId={moduleDialogPlan?.productId ?? undefined}
+        onOpenChange={() => {
+          setModuleDialogPlan(null);
+        }}
         onSaved={(moduleIds, allModules) => {
           const names = moduleIds
             .map((id) => allModules.find((m) => m.id === id)?.name ?? id)

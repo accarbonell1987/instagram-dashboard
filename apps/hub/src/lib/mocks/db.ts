@@ -39,6 +39,7 @@ export const db = factory({
     currency: String,
     billingCycle: String,
     features: Array,
+    modules: Array,
     popular: Boolean,
   },
 

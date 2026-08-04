@@ -120,4 +120,25 @@ describe('StepPlanSelection', () => {
       expect(screen.getByRole('button', { name: /continuar/i })).toBeInTheDocument();
     });
   });
+  it('"Ver detalles" opens the module breakdown without selecting the plan', async () => {
+    renderStep(makeDraft());
+    await waitFor(() => {
+      expect(screen.getAllByRole('article').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const detailsButtons = screen.getAllByRole('button', { name: /ver detalles/i });
+    const firstDetails = detailsButtons[0];
+    if (!firstDetails) throw new Error('expected a details button');
+    fireEvent.click(firstDetails);
+
+    // The dialog lists what the plan grants...
+    await waitFor(() => {
+      expect(screen.getByText(/módulos incluidos/i)).toBeInTheDocument();
+    });
+
+    // ...and the click must not have selected the card underneath it — a
+    // selected plan is what makes the Continuar button appear.
+    expect(screen.queryByRole('button', { name: /continuar/i })).not.toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
 });

@@ -3,6 +3,7 @@ import type { OnboardingDraft, DraftStatus, DraftStep } from '../../domain/index
 
 export interface CreateDraftInput {
   planId?: string | undefined;
+  productId?: string | undefined;
   expiresAt: Date;
 }
 
@@ -12,6 +13,7 @@ export interface UpdateDraftInput {
   status?: DraftStatus | undefined;
   version?: number | undefined;
   planId?: string | undefined;
+  productId?: string | undefined;
   representativeEmail?: string | undefined;
   otpId?: string | undefined;
   paymentId?: string | undefined;

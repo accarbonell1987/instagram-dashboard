@@ -11,8 +11,9 @@ export interface ListPlansResult {
 
 // ─── Service functions ────────────────────────────────────────────────────────
 
-export async function listPlans(): Promise<ListPlansResult> {
-  return apiFetchWithInterceptors<ListPlansResult>('/plans', { method: 'GET' });
+export async function listPlans(productId?: string): Promise<ListPlansResult> {
+  const qs = productId !== undefined ? `?productId=${encodeURIComponent(productId)}` : '';
+  return apiFetchWithInterceptors<ListPlansResult>(`/plans${qs}`, { method: 'GET' });
 }
 
 export async function getPlan(planId: string): Promise<Plan> {
