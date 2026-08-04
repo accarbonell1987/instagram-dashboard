@@ -58,7 +58,13 @@ describe('ModuleService — getEffectiveModulesForTenant (a3 resolver switch)', 
 
     const result = await service.getEffectiveModulesForTenant('tenant-uuid-1')
 
-    expect(deps.moduleRepository.resolveEffectiveModules).toHaveBeenCalledWith('tenant-uuid-1', DEFAULT_PRODUCT_ID)
+    // The third argument is the optional userId used for role filtering — the
+    // service forwards it even when the caller omits it.
+    expect(deps.moduleRepository.resolveEffectiveModules).toHaveBeenCalledWith(
+      'tenant-uuid-1',
+      DEFAULT_PRODUCT_ID,
+      undefined,
+    )
     expect(result).toEqual([effectiveModule])
   })
 
@@ -79,7 +85,11 @@ describe('ModuleService — getEffectiveModulesForTenantAndProduct (internal end
 
     const result = await service.getEffectiveModulesForTenantAndProduct('tenant-uuid-1', 'other-product')
 
-    expect(deps.moduleRepository.resolveEffectiveModules).toHaveBeenCalledWith('tenant-uuid-1', 'other-product')
+    expect(deps.moduleRepository.resolveEffectiveModules).toHaveBeenCalledWith(
+      'tenant-uuid-1',
+      'other-product',
+      undefined,
+    )
     expect(result).toEqual([effectiveModule])
   })
 })

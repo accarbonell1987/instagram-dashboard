@@ -74,7 +74,12 @@ describe('GET /internal/tenants/:tenantId/entitlements', () => {
     const body = (await response.json()) as JsonBody
     expect(body['allowed']).toBe(true)
     expect(body['source']).toBe('trial')
-    expect(moduleService.getEffectiveModulesForTenantAndProduct).toHaveBeenCalledWith('tenant-1', 'instagram-dashboard')
+    // Third argument is the optional userId used for per-role filtering.
+    expect(moduleService.getEffectiveModulesForTenantAndProduct).toHaveBeenCalledWith(
+      'tenant-1',
+      'instagram-dashboard',
+      undefined,
+    )
   })
 
   it('returns allowed:false when moduleId is not among the effective modules (deny by default)', async () => {

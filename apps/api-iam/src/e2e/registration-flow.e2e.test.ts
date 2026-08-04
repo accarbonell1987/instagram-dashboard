@@ -121,7 +121,8 @@ describe('tenant registration flow (e2e)', () => {
       status: string
     }
     expect(draft.id).toBeTruthy()
-    expect(draft.currentStep).toBe('plan')
+    // A fresh draft starts at product selection; the plan step comes after it.
+    expect(draft.currentStep).toBe('product')
     expect(draft.status).toBe('draft')
 
     const draftId = draft.id

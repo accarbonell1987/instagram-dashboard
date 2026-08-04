@@ -14,9 +14,13 @@ fi
 echo "[api-iam] Generating Prisma client..."
 pnpm --filter @corehub/api-iam db:generate
 
-# Push schema to database (non-interactive, safe for Docker)
-echo "[api-iam] Pushing database schema..."
-pnpm --filter @corehub/api-iam db:push
+# Apply migrations (non-interactive). This used to be `db:push`, which syncs the
+# schema straight to the database and skips the migration history — the dev
+# database ended up with tables no migration created, so a `migrate deploy` in
+# CI or production built a different database than dev. Applying migrations here
+# means a schema change without a migration fails loudly, right where it starts.
+echo "[api-iam] Applying database migrations..."
+pnpm --filter @corehub/api-iam db:migrate:deploy
 
 # Seed development data (idempotent, safe to run on every start)
 echo "[api-iam] Seeding development data..."

@@ -373,16 +373,38 @@ describe('ModuleRepository — resolveEffectiveModules — product-scoped entitl
     expect(result).toEqual([])
   })
 
-  // No regression: module-level-only tenants never trigger the
-  // product-expansion query.
-  it('does not query the product module list when no product-scoped entitlement exists', async () => {
-    const moduleFindMany = vi.fn().mockResolvedValue([])
-    const prisma = makePrisma({ module: { findMany: moduleFindMany } })
+  // The resolver used to skip the product module list when no product-scoped
+  // entitlement existed. Sub-module cascading needs that list on every call, so
+  // the query is no longer conditional — what still must hold is that without a
+  // product-scoped grant nothing gets expanded to the whole product.
+  it('does not expand to the whole product when no product-scoped entitlement exists', async () => {
+    const productModules = [
+      { id: 'mod-a', name: 'mod-a', description: null, defaultUrl: '/a', active: true, parentId: null },
+      { id: 'mod-b', name: 'mod-b', description: null, defaultUrl: '/b', active: true, parentId: null },
+    ]
+    const prisma = makePrisma({
+      module: {
+        findMany: vi.fn().mockResolvedValue(productModules),
+        findUnique: vi.fn(),
+      },
+      entitlement: {
+        upsert: vi.fn(),
+        deleteMany: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            moduleId: 'mod-a',
+            kind: 'grant',
+            source: 'trial',
+            module: { id: 'mod-a', name: 'mod-a', description: null, defaultUrl: '/a', active: true },
+          },
+        ]),
+      },
+    })
     const repo = createModuleRepository(prisma as never)
 
-    await repo.resolveEffectiveModules('t1', 'p1')
+    const result = await repo.resolveEffectiveModules('t1', 'p1')
 
-    expect(moduleFindMany).not.toHaveBeenCalled()
+    expect(result.map((m) => m.id)).toEqual(['mod-a'])
   })
 })
 

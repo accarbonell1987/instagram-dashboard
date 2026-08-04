@@ -27,8 +27,16 @@ function makeDraft(overrides: Partial<DraftState> = {}): DraftState {
 }
 
 describe('STEPS', () => {
-  it('contains all 6 steps in order', () => {
-    expect(STEPS).toEqual(['plan', 'representative', 'otp', 'company', 'payment', 'summary']);
+  it('contains all 7 steps in order', () => {
+    expect(STEPS).toEqual([
+      'product',
+      'plan',
+      'representative',
+      'otp',
+      'company',
+      'payment',
+      'summary',
+    ]);
   });
 });
 
@@ -50,8 +58,14 @@ describe('nextStep', () => {
 });
 
 describe('prevStep', () => {
-  it('returns null for first step (plan)', () => {
-    expect(prevStep('plan')).toBeNull();
+  it('returns null for the first step (product)', () => {
+    expect(prevStep('product')).toBeNull();
+  });
+
+  // The machine is honest about the chain; the wizard header is what hides the
+  // back button on 'plan', because product selection is entered from outside.
+  it('goes back from plan to product', () => {
+    expect(prevStep('plan')).toBe('product');
   });
 
   it('goes back from representative to plan', () => {

@@ -24,7 +24,7 @@ import {
 } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState, useMemo, type JSX } from 'react';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ApiError } from '@/lib/api/errors';
@@ -41,6 +41,10 @@ import {
   type CreateModuleParams,
   type UpdateModuleParams,
 } from '@/modules/backoffice/modulo-admin/services/module-admin.service';
+import {
+  listProducts,
+  type AdminProduct,
+} from '@/modules/backoffice/productos/index';
 
 // ─── Module Form Dialog ────────────────────────────────────────────────────────
 
@@ -333,11 +337,25 @@ export default function ModulesPage(): JSX.Element {
   const [formOpen, setFormOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<AdminModule | null>(null);
   const [deletingModule, setDeletingModule] = useState<AdminModule | null>(null);
-  const [productFilter, setProductFilter] = useState('instagram-dashboard');
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [productFilter, setProductFilter] = useState('');
 
-  const PRODUCTS = useMemo(() => [{ id: 'instagram-dashboard', name: 'Dashboard Instagram' }], []);
+  // Real product list — a hardcoded one starts lying the day a second product
+  // exists, and every module here is created inside the selected product.
+  useEffect(() => {
+    void listProducts()
+      .then((result) => {
+        setProducts(result);
+        setProductFilter((current) => (current === '' ? (result[0]?.id ?? '') : current));
+      })
+      .catch(() => {
+        setError('No se pudieron cargar los productos');
+        setLoading(false);
+      });
+  }, []);
 
   const loadModules = useCallback(async () => {
+    if (productFilter === '') return;
     setLoading(true);
     setError('');
     try {
@@ -400,7 +418,7 @@ export default function ModulesPage(): JSX.Element {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PRODUCTS.map((p) => (
+              {products.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.name}
                 </SelectItem>

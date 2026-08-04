@@ -59,7 +59,8 @@ describe('Stepper', () => {
 
   it('renders mobile compact indicator', () => {
     render(<Stepper current="company" draft={makeDraft()} draftId="draft-001" />);
-    // Mobile compact dot indicator shows "Paso N/6"
-    expect(screen.getByText(/Paso 4/i)).toBeInTheDocument();
+    // Mobile compact dot indicator shows "Paso N/7" — company is the 5th step
+    // since the product selection step was added ahead of plan.
+    expect(screen.getByText(/Paso 5/i)).toBeInTheDocument();
   });
 });

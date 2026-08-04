@@ -76,6 +76,7 @@ function SortableModule({
     >
       <button
         type="button"
+        aria-label={`Arrastrar ${module.name}`}
         className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
         {...attributes}
         {...listeners}
@@ -87,6 +88,7 @@ function SortableModule({
       {isAssigned && onRemove !== undefined && (
         <button
           type="button"
+          aria-label={`Quitar ${module.name}`}
           onClick={() => { onRemove(module.id); }}
           className="text-muted-foreground hover:text-destructive ml-auto text-xs"
         >

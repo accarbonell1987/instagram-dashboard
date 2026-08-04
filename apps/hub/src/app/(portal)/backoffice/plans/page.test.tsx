@@ -34,6 +34,15 @@ const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080'
 
 function setupDefaultHandlers() {
   server.use(
+    // GET /admin/products — the page scopes plans (and the module picker) to a
+    // product, so it loads the real list before anything else.
+    http.get(`${BASE}/admin/products`, () => {
+      return HttpResponse.json({
+        products: [
+          { id: 'instagram-dashboard', name: 'Dashboard Instagram', description: null, active: true, trialEnabled: false, trialDurationDays: 14 },
+        ],
+      }, { status: 200 })
+    }),
     // GET /admin/plans
     http.get(`${BASE}/admin/plans`, () => {
       return HttpResponse.json({
@@ -168,7 +177,7 @@ describe('PlansPage — Module Assignment', () => {
     // Eventually the modules load
     await waitFor(() => {
       // After load, skeleton should disappear and list headers should appear
-      expect(screen.getByText(/ASIGNADOS/)).toBeInTheDocument()
+      expect(screen.getByText(/asignados/i)).toBeInTheDocument()
     })
   })
 
@@ -177,37 +186,35 @@ describe('PlansPage — Module Assignment', () => {
 
     // Wait for dialog content to load
     await waitFor(() => {
-      expect(screen.getByText(/ASIGNADOS/)).toBeInTheDocument()
+      expect(screen.getByText(/asignados/i)).toBeInTheDocument()
     })
 
     const dialog = screen.getByRole('dialog')
 
-    // Assigned modules (plan-1): buscador-app, facturacion-app
-    expect(within(dialog).getByText('Buscador de Clientes')).toBeInTheDocument()
-    expect(within(dialog).getByText('Facturación Electrónica')).toBeInTheDocument()
+    // Assigned to plan-1
+    expect(within(dialog).getByText('Métricas Básicas')).toBeInTheDocument()
+    expect(within(dialog).getByText('Publicaciones')).toBeInTheDocument()
 
-    // Available module: rrhh-app
-    expect(within(dialog).getByText('Recursos Humanos')).toBeInTheDocument()
+    // Still available
+    expect(within(dialog).getByText('Agente IA')).toBeInTheDocument()
   })
 
-  it('moves module from available to assigned when clicking +', async () => {
+  // Modules move between columns by dragging, which a pointer sensor can't
+  // simulate in jsdom. The remove button on an assigned module is the one
+  // click affordance left, so that is what this covers.
+  it('unassigns a module when clicking its remove button', async () => {
     await openModuleDialog('Plan Básico')
 
     await waitFor(() => {
-      expect(screen.getByText(/ASIGNADOS/)).toBeInTheDocument()
+      expect(screen.getByText(/asignados \(2\)/i)).toBeInTheDocument()
     })
 
-    // Click the + button for Recursos Humanos (in the DISPONIBLES column)
-    const addBtn = screen.getByRole('button', { name: 'Agregar Recursos Humanos' })
-    await userEvent.setup().click(addBtn)
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Quitar Publicaciones' }))
 
-    // Recursos Humanos should now be in ASIGNADOS (heading should show count increase)
     await waitFor(() => {
-      expect(screen.getByText(/ASIGNADOS \(3\)/)).toBeInTheDocument()
+      expect(screen.getByText(/asignados \(1\)/i)).toBeInTheDocument()
     })
-
-    // And no longer in DISPONIBLES
-    expect(screen.queryByRole('button', { name: 'Agregar Recursos Humanos' })).toBeNull()
+    expect(screen.getByText(/disponibles \(2\)/i)).toBeInTheDocument()
   })
 
   it('saves and shows success toast on Guardar', async () => {
@@ -215,7 +222,7 @@ describe('PlansPage — Module Assignment', () => {
     await openModuleDialog('Plan Básico')
 
     await waitFor(() => {
-      expect(screen.getByText(/ASIGNADOS/)).toBeInTheDocument()
+      expect(screen.getByText(/asignados/i)).toBeInTheDocument()
     })
 
     // Click Guardar without changes (already has 2 modules assigned)
@@ -244,7 +251,7 @@ describe('PlansPage — Module Assignment', () => {
     await openModuleDialog('Error Plan')
 
     await waitFor(() => {
-      expect(screen.getByText(/ASIGNADOS/)).toBeInTheDocument()
+      expect(screen.getByText(/asignados/i)).toBeInTheDocument()
     })
 
     // Click Guardar — this plan is 'error-plan' which returns 500
@@ -269,7 +276,7 @@ describe('PlansPage — Module Assignment', () => {
     await openModuleDialog('Plan Básico')
 
     await waitFor(() => {
-      expect(screen.getByText(/ASIGNADOS/)).toBeInTheDocument()
+      expect(screen.getByText(/asignados/i)).toBeInTheDocument()
     })
 
     // Click Guardar

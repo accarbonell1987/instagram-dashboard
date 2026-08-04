@@ -39,7 +39,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Pencil, Archive, RotateCcw, Puzzle, GripVertical, Star } from 'lucide-react';
-import { useCallback, useEffect, useState, useMemo, type JSX } from 'react';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -64,6 +64,10 @@ import {
   type CreatePlanParams,
   type UpdatePlanParams,
 } from '@/modules/backoffice/planes/services/plan-admin.service';
+import {
+  listProducts,
+  type AdminProduct,
+} from '@/modules/backoffice/productos/index';
 
 // ─── Plan Form Dialog ──────────────────────────────────────────────────────────
 
@@ -782,11 +786,25 @@ export default function PlansPage(): JSX.Element {
   const [editingPlan, setEditingPlan] = useState<AdminPlan | null>(null);
   const [archivingPlan, setArchivingPlan] = useState<AdminPlan | null>(null);
   const [moduleDialogPlan, setModuleDialogPlan] = useState<AdminPlan | null>(null);
-  const [productFilter, setProductFilter] = useState('instagram-dashboard');
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [productFilter, setProductFilter] = useState('');
 
-  const PRODUCTS = useMemo(() => [{ id: 'instagram-dashboard', name: 'Dashboard Instagram' }], []);
+  // Real product list — a plan is always created inside the selected product,
+  // and the module picker filters by it.
+  useEffect(() => {
+    void listProducts()
+      .then((result) => {
+        setProducts(result);
+        setProductFilter((current) => (current === '' ? (result[0]?.id ?? '') : current));
+      })
+      .catch(() => {
+        setError('No se pudieron cargar los productos');
+        setLoading(false);
+      });
+  }, []);
 
   const loadPlans = useCallback(async () => {
+    if (productFilter === '') return;
     setLoading(true);
     setError('');
     try {
@@ -919,7 +937,7 @@ export default function PlansPage(): JSX.Element {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PRODUCTS.map((p) => (
+              {products.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.name}
                 </SelectItem>
