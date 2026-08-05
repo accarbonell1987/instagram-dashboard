@@ -2574,6 +2574,8 @@ export interface components {
         AdminTenantStatusChangeRequest: {
             /** @enum {string} */
             status: "pending" | "active" | "suspended";
+            /** @description Mandatory when status is "active" — this is the audit record the customer sees in their payment log (the same settlement note used for confirm/reject). Not required for other status transitions. */
+            note?: string;
         };
         UpdateProfileRequest: {
             /** @description Full display name of the user */

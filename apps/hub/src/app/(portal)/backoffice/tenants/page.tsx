@@ -2,12 +2,20 @@
 
 import {
   Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Textarea,
 } from '@core/ui';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
@@ -127,6 +135,102 @@ function TenantPaymentsSection({ tenantId }: { tenantId: string }): JSX.Element 
   );
 }
 
+// ─── Activation Dialog (mandatory note) ────────────────────────────────────────
+
+function ActivationDialog({
+  open,
+  onOpenChange,
+  onActivate,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onActivate: (note: string) => Promise<void>;
+}): JSX.Element {
+  const [note, setNote] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setNote('');
+      setError('');
+    }
+  }, [open]);
+
+  const noteIsValid = note.trim().length > 0;
+
+  async function handleSubmit(): Promise<void> {
+    if (!noteIsValid) return;
+    setIsSaving(true);
+    setError('');
+    try {
+      await onActivate(note.trim());
+      onOpenChange(false);
+    } catch (err: unknown) {
+      setError(err instanceof ApiError ? err.message : 'Could not activate the tenant');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Activate tenant</DialogTitle>
+          <DialogDescription>
+            This becomes the audit record and is what the customer sees in their payment log.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="activation-note">Activation note (required)</Label>
+          <Textarea
+            id="activation-note"
+            value={note}
+            onChange={(e) => {
+              setNote(e.target.value);
+            }}
+            disabled={isSaving}
+            placeholder="e.g. courtesy activation, no payment required"
+            aria-describedby="activation-note-hint"
+            aria-required="true"
+          />
+          <p id="activation-note-hint" className="text-muted-foreground text-xs">
+            Required to activate — the customer will read this in their payment log.
+          </p>
+        </div>
+
+        {error !== '' && (
+          <p role="alert" className="text-destructive text-sm">
+            {error}
+          </p>
+        )}
+
+        <DialogFooter className="mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+            disabled={isSaving}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            onClick={() => void handleSubmit()}
+            disabled={isSaving || !noteIsValid}
+          >
+            {isSaving ? 'Activando...' : 'Activar'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Tenant Detail Panel ───────────────────────────────────────────────────────
 
 function TenantDetailPanel({
@@ -141,6 +245,7 @@ function TenantDetailPanel({
   const [detail, setDetail] = useState<AdminTenantDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activationOpen, setActivationOpen] = useState(false);
 
   const loadDetail = useCallback(async (id: string) => {
     setLoading(true);
@@ -181,6 +286,12 @@ function TenantDetailPanel({
         setError('Error al cambiar estado');
       }
     }
+  };
+
+  const handleActivate = async (note: string) => {
+    await changeTenantStatus(tenantId, 'active', note);
+    await loadDetail(tenantId);
+    onStatusChanged?.();
   };
 
   return (
@@ -233,7 +344,7 @@ function TenantDetailPanel({
               <Button
                 size="sm"
                 variant={detail.status === 'active' ? 'default' : 'ghost'}
-                onClick={() => handleStatusChange('active')}
+                onClick={() => { setActivationOpen(true); }}
               >
                 Activar
               </Button>
@@ -250,6 +361,12 @@ function TenantDetailPanel({
           <TenantPaymentsSection tenantId={tenantId} />
         </div>
       )}
+
+      <ActivationDialog
+        open={activationOpen}
+        onOpenChange={setActivationOpen}
+        onActivate={handleActivate}
+      />
     </div>
   );
 }

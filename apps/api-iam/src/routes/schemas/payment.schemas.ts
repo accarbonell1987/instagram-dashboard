@@ -71,9 +71,16 @@ export const PaymentParamsSchema = z.object({
   id: z.string(),
 })
 
-// note is deliberately not `.min(1)` here — an empty/missing note must
-// surface as the service's own 422 ValidationError (mandatory-note check in
-// settlement.service.ts), not a generic 400 from schema validation.
+// The contract declares note required with minLength 1, and that is the correct
+// description of the business rule. This schema stays permissive on purpose:
+// validation here is structural, and the mandatory-note rule is a domain rule
+// that settlement.service.ts owns and reports as a typed 422
+// `payment.note_required` in application/problem+json.
+//
+// Tightening this to .min(1) makes @hono/zod-openapi reject the request before
+// the handler runs, and with no defaultHook configured anywhere in this service
+// that surfaces as a bare 400 that skips errorHandler — breaking the project
+// rule that EVERY error is RFC 7807. Move this only alongside a defaultHook.
 export const PaymentNoteRequestSchema = z.object({
   note: z.string().optional(),
 })

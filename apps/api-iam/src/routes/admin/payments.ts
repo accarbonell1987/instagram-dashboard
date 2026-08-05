@@ -63,9 +63,10 @@ export function createAdminPaymentsRouter(
       assertSuperAdmin(c.var.user.role)
       const { status, tenantId, reference, dateFrom, dateTo, page, pageSize } = c.req.valid('query')
 
-      // ponytail: Payment.tenantId backfill is slice-4 scope (design "File
-      // Changes / Slice 4") — until it lands, orphan payments are excluded
-      // rather than violating the contract's required, non-null tenantId.
+      // ponytail: Payment.tenantId is backfilled at submit (submit.service.ts),
+      // but a payment initiated for a draft that never reaches submit stays
+      // orphaned (tenantId null) forever. Excluded here rather than violating
+      // the contract's required, non-null tenantId.
       const where: Record<string, unknown> = { tenantId: { not: null } }
       if (status) where['status'] = toDomainStatus(status)
       if (tenantId) where['tenantId'] = tenantId

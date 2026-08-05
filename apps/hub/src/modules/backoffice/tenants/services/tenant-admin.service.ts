@@ -1,4 +1,5 @@
 import { apiFetchWithInterceptors } from '@/lib/api/interceptors'
+import type { components } from '@/lib/api/types'
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -71,13 +72,17 @@ export async function getTenant(id: string): Promise<AdminTenantDetail> {
 
 export async function changeTenantStatus(
   id: string,
-  status: TenantStatus
+  status: TenantStatus,
+  note?: string
 ): Promise<{ id: string; status: string }> {
+  const body: components['schemas']['AdminTenantStatusChangeRequest'] =
+    note !== undefined ? { status, note } : { status }
+
   return apiFetchWithInterceptors<{ id: string; status: string }>(
     `/admin/tenants/${id}/status`,
     {
       method: 'PATCH',
-      body: { status },
+      body,
     }
   )
 }

@@ -169,6 +169,28 @@ export const paymentsHandlers = [
     return HttpResponse.json({ items, total, page, pageSize });
   }),
 
+  // PATCH /admin/tenants/:tenantId/status — activation requires a settlement note
+  http.patch(`${BASE}/admin/tenants/:tenantId/status`, async ({ params, request }) => {
+    const tenantId = params['tenantId'] as string;
+    const body = (await request.json()) as { status?: string; note?: string };
+    const status = body.status ?? '';
+
+    const tenant = db.tenant.findFirst({ where: { id: { equals: tenantId } } });
+    if (tenant === null) {
+      return notFound('Tenant not found');
+    }
+
+    if (status === 'active' && (body.note === undefined || body.note.trim() === '')) {
+      return unprocessable('payment.note_required');
+    }
+
+    const updated = db.tenant.update({ where: { id: { equals: tenantId } }, data: { status } });
+    if (updated === null) {
+      return notFound('Tenant not found');
+    }
+    return HttpResponse.json({ id: updated.id, status: updated.status });
+  }),
+
   // POST /billing/payments/:id/proof — draftId-as-capability, no bearer auth
   http.post(`${BASE}/billing/payments/:id/proof`, async ({ params, request }) => {
     const draftId = params['id'] as string;

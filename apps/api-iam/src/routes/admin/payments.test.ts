@@ -65,10 +65,14 @@ describe('POST /admin/payments/:id/confirm', () => {
     })
   })
 
-  it('returns 422 when note is empty', async () => {
-    const settlementService = makeSettlementService({
-      settlePayment: vi.fn().mockRejectedValue(new ValidationError('payment.note_required')),
-    })
+  // The mandatory note is a domain rule owned by settlement.service.ts, not a
+  // structural one: the request schema stays permissive so the rule surfaces as
+  // a typed 422 through errorHandler, like every other error here. Tightening
+  // the schema instead would make zod-openapi reject it as a bare 400 that
+  // never reaches errorHandler, since this service configures no defaultHook.
+  it('surfaces an empty note as a typed 422 from the settlement service', async () => {
+    const settlePayment = vi.fn().mockRejectedValue(new ValidationError('payment.note_required'))
+    const settlementService = makeSettlementService({ settlePayment })
     const app = buildApp(settlementService)
 
     const response = await app.request('/admin/payments/payment-1/confirm', {
@@ -78,6 +82,8 @@ describe('POST /admin/payments/:id/confirm', () => {
     })
 
     expect(response.status).toBe(422)
+    const body = (await response.json()) as JsonBody
+    expect(body['code']).toBe('payment.note_required')
   })
 
   it('returns 404 for an unmatched payment id', async () => {

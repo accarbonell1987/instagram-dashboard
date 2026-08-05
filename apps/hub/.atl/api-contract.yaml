@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.17.0
+  version: 1.18.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -10,6 +10,12 @@ info:
     cambio aquí requiere un PR coordinado en ambos repositorios.
 
     ## Changelog
+
+    ### 1.18.0 (2026-08-05)
+    - ADD: optional `note` on `AdminTenantStatusChangeRequest` (`minLength: 1`) —
+      mandatory in practice when activating a tenant, since activation now routes
+      through `settlePayment`, which requires a note for its audit record. Closes
+      a gap where the backoffice "Activar" button had no way to send one.
 
     ### 1.17.0 (2026-08-05)
     - ADD: `GET /payment-methods` — public, unauthenticated list of enabled payment
@@ -1399,6 +1405,13 @@ components:
         status:
           type: string
           enum: [pending, active, suspended]
+        note:
+          type: string
+          minLength: 1
+          description: >-
+            Mandatory when status is "active" — this is the audit record the
+            customer sees in their payment log (the same settlement note used
+            for confirm/reject). Not required for other status transitions.
 
     UpdateProfileRequest:
       type: object

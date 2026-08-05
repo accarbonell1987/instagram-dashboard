@@ -27,11 +27,12 @@ export function mapSettlementKind(
 
 // Reshape a domain Payment into the contract's Payment schema.
 //
-// ponytail: `tenantId` is required by the contract but `Payment.tenantId`
-// backfill is slice-4 scope (design "File Changes / Slice 4") — until then
-// it falls back to '' rather than crashing. List endpoints filter these rows
-// out entirely (see routes/admin/payments.ts); this fallback only applies to
-// the single-resource confirm/reject responses.
+// ponytail: `tenantId` is required by the contract but `Payment.tenantId` is
+// still nullable in the schema (submit.service.ts backfills it once a draft
+// is submitted). A payment initiated for a draft that never reaches submit
+// stays orphaned forever, so this fallback to '' guards the single-resource
+// confirm/reject responses; list endpoints filter those rows out entirely
+// (see routes/admin/payments.ts).
 export function toContractPayment(payment: Payment, tenantName?: string) {
   return {
     id: payment.id,
