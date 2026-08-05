@@ -38,11 +38,16 @@ function makePayment(overrides: Partial<Payment> = {}): Payment {
     id: 'payment-1',
     draftId: 'draft-1',
     tenantId: undefined,
-    bancardProcessId: 'proc-1',
+    externalRef: 'proc-1',
+    method: 'bancard',
     amount: 75000,
     currency: 'PYG',
     status: 'pending',
     reason: undefined,
+    settlementKind: undefined,
+    settledBy: undefined,
+    settledAt: undefined,
+    note: undefined,
     initiatedAt: new Date(),
     confirmedAt: undefined,
     createdAt: new Date(),
@@ -65,7 +70,8 @@ function makeDeps() {
   const paymentRepo = {
     create: vi.fn(),
     findByDraftId: vi.fn(),
-    findByBancardProcessId: vi.fn().mockResolvedValue(makePayment()),
+    findByExternalRef: vi.fn().mockResolvedValue(makePayment()),
+    listByTenant: vi.fn(),
     updateStatus: vi.fn().mockResolvedValue(makePayment({ status: 'approved' })),
     cancelPendingByDraftId: vi.fn(),
   }
@@ -133,7 +139,7 @@ describe('WebhookService', () => {
       const result = await service.processBancardWebhook({ rawBody, signature, payload })
 
       expect(result).toEqual({ received: true })
-      expect(deps.paymentRepo.findByBancardProcessId).toHaveBeenCalledWith('proc-1')
+      expect(deps.paymentRepo.findByExternalRef).toHaveBeenCalledWith('proc-1')
       expect(deps.paymentRepo.updateStatus).toHaveBeenCalledWith('payment-1', 'approved', expect.any(Date))
       expect(deps.draftRepo.update).toHaveBeenCalledWith(
         'draft-1',
@@ -205,7 +211,7 @@ describe('WebhookService', () => {
 
     it('unknown process_id is a no-op (payment not found)', async () => {
       const deps = makeDeps()
-      deps.paymentRepo.findByBancardProcessId.mockResolvedValue(null)
+      deps.paymentRepo.findByExternalRef.mockResolvedValue(null)
       const service = createWebhookService(deps as never)
 
       deps.prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {

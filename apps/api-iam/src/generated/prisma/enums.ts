@@ -84,6 +84,7 @@ export type DraftStep = (typeof DraftStep)[keyof typeof DraftStep]
 
 export const PaymentStatus = {
   pending: 'pending',
+  in_review: 'in_review',
   approved: 'approved',
   declined: 'declined',
   cancelled: 'cancelled',
@@ -93,9 +94,27 @@ export const PaymentStatus = {
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
 
 
+export const PaymentMethod = {
+  bancard: 'bancard',
+  bank_transfer: 'bank_transfer'
+} as const
+
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod]
+
+
+export const PaymentSettlementKind = {
+  gateway_webhook: 'gateway_webhook',
+  agent_review: 'agent_review',
+  manual_admin: 'manual_admin'
+} as const
+
+export type PaymentSettlementKind = (typeof PaymentSettlementKind)[keyof typeof PaymentSettlementKind]
+
+
 export const DocumentType = {
   invoice: 'invoice',
-  contract: 'contract'
+  contract: 'contract',
+  receipt: 'receipt'
 } as const
 
 export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType]

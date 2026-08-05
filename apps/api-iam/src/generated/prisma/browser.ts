@@ -73,6 +73,11 @@ export type OnboardingDraft = Prisma.OnboardingDraftModel
  */
 export type Payment = Prisma.PaymentModel
 /**
+ * Model PaymentMethodConfig
+ * 
+ */
+export type PaymentMethodConfig = Prisma.PaymentMethodConfigModel
+/**
  * Model WebhookEvent
  * 
  */

@@ -128,7 +128,7 @@ function draftToJson(
     ? {
         paymentId: payment.id,
         status: mapPaymentStatus(payment.status),
-        bancardProcessId: payment.bancardProcessId,
+        bancardProcessId: payment.externalRef,
       }
     : null;
 

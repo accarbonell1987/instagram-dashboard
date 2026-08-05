@@ -7,11 +7,16 @@ function mapPayment(raw: {
   id: string
   draftId: string
   tenantId: string | null
-  bancardProcessId: string
+  externalRef: string
+  method: string
   amount: Decimal
   currency: string
   status: string
   reason: string | null
+  settlementKind: string | null
+  settledBy: string | null
+  settledAt: Date | null
+  note: string | null
   initiatedAt: Date
   confirmedAt: Date | null
   createdAt: Date
@@ -21,11 +26,16 @@ function mapPayment(raw: {
     id: raw.id,
     draftId: raw.draftId,
     tenantId: raw.tenantId ?? undefined,
-    bancardProcessId: raw.bancardProcessId,
+    externalRef: raw.externalRef,
+    method: raw.method as Payment['method'],
     amount: raw.amount.toNumber(),
     currency: raw.currency,
     status: raw.status as Payment['status'],
     reason: raw.reason ?? undefined,
+    settlementKind: (raw.settlementKind as Payment['settlementKind']) ?? undefined,
+    settledBy: raw.settledBy ?? undefined,
+    settledAt: raw.settledAt ?? undefined,
+    note: raw.note ?? undefined,
     initiatedAt: raw.initiatedAt,
     confirmedAt: raw.confirmedAt ?? undefined,
     createdAt: raw.createdAt,
@@ -40,7 +50,7 @@ export class PrismaPaymentRepository implements PaymentRepository {
     const raw = await this.prisma.payment.create({
       data: {
         draftId: data.draftId,
-        bancardProcessId: data.bancardProcessId,
+        externalRef: data.externalRef,
         amount: data.amount,
         currency: data.currency,
         status: data.status,
@@ -57,9 +67,17 @@ export class PrismaPaymentRepository implements PaymentRepository {
     return raw ? mapPayment(raw) : null
   }
 
-  async findByBancardProcessId(processId: string): Promise<Payment | null> {
-    const raw = await this.prisma.payment.findUnique({ where: { bancardProcessId: processId } })
+  async findByExternalRef(externalRef: string): Promise<Payment | null> {
+    const raw = await this.prisma.payment.findUnique({ where: { externalRef } })
     return raw ? mapPayment(raw) : null
+  }
+
+  async listByTenant(tenantId: string): Promise<Payment[]> {
+    const rows = await this.prisma.payment.findMany({
+      where: { tenantId },
+      orderBy: { initiatedAt: 'desc' },
+    })
+    return rows.map(mapPayment)
   }
 
   async updateStatus(id: string, status: PaymentStatus, confirmedAt?: Date): Promise<Payment> {

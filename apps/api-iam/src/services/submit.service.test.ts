@@ -157,7 +157,8 @@ function makeDeps(draftStatus = 'payment_confirmed' as OnboardingDraft['status']
   const paymentRepo = {
     create: vi.fn(),
     findByDraftId: vi.fn(),
-    findByBancardProcessId: vi.fn(),
+    findByExternalRef: vi.fn(),
+    listByTenant: vi.fn(),
     updateStatus: vi.fn(),
     cancelPendingByDraftId: vi.fn(),
   }

@@ -13,7 +13,7 @@ export type PaymentServiceDeps = {
 
 export type PaymentInitiateResponse = {
   paymentId: string
-  bancardProcessId: string
+  externalRef: string
   redirectUrl: string
   expiresAt: Date
 }
@@ -65,7 +65,7 @@ export function createPaymentService(deps: PaymentServiceDeps) {
 
     const payment = await paymentRepo.create({
       draftId,
-      bancardProcessId: result.processId,
+      externalRef: result.processId,
       amount: resolvedAmount,
       currency: 'PYG',
       status: 'pending',
@@ -75,7 +75,7 @@ export function createPaymentService(deps: PaymentServiceDeps) {
 
     return {
       paymentId: payment.id,
-      bancardProcessId: result.processId,
+      externalRef: result.processId,
       redirectUrl: result.redirectUrl,
       expiresAt: result.expiresAt,
     }

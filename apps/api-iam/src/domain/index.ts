@@ -26,9 +26,13 @@ export type DraftStatus =
 
 export type DraftStep = 'product' | 'plan' | 'representative' | 'otp' | 'company' | 'payment' | 'summary';
 
-export type PaymentStatus = 'pending' | 'approved' | 'declined' | 'cancelled' | 'reversed';
+export type PaymentStatus = 'pending' | 'in_review' | 'approved' | 'declined' | 'cancelled' | 'reversed';
 
-export type DocumentType = 'invoice' | 'contract';
+export type PaymentMethod = 'bancard' | 'bank_transfer';
+
+export type PaymentSettlementKind = 'gateway_webhook' | 'agent_review' | 'manual_admin';
+
+export type DocumentType = 'invoice' | 'contract' | 'receipt';
 
 export type DocumentStatus = 'pending' | 'ready' | 'failed';
 
@@ -161,14 +165,28 @@ export interface Payment {
   id: string;
   draftId: string;
   tenantId: string | undefined;
-  bancardProcessId: string;
+  externalRef: string;
+  method: PaymentMethod;
   amount: number;
   currency: string;
   status: PaymentStatus;
   reason: string | undefined;
+  settlementKind: PaymentSettlementKind | undefined;
+  settledBy: string | undefined;
+  settledAt: Date | undefined;
+  note: string | undefined;
   initiatedAt: Date;
   confirmedAt: Date | undefined;
   createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PaymentMethodConfig {
+  method: PaymentMethod;
+  enabled: boolean;
+  displayName: string;
+  config: Record<string, unknown>;
+  updatedBy: string | undefined;
   updatedAt: Date;
 }
 

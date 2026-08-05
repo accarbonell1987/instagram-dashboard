@@ -72,7 +72,7 @@ export function createWebhookService(deps: WebhookServiceDeps) {
       }
 
       // ── Step 2: Find the associated payment ───────────────────────────
-      const payment = await paymentRepo.findByBancardProcessId(payload.process_id)
+      const payment = await paymentRepo.findByExternalRef(payload.process_id)
       if (!payment) {
         // Webhook for unknown payment — still a success (return 200)
         return

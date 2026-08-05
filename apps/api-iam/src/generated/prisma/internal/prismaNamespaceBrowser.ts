@@ -62,6 +62,7 @@ export const ModelName = {
   PasswordResetToken: 'PasswordResetToken',
   OnboardingDraft: 'OnboardingDraft',
   Payment: 'Payment',
+  PaymentMethodConfig: 'PaymentMethodConfig',
   WebhookEvent: 'WebhookEvent',
   IdempotencyRecord: 'IdempotencyRecord',
   Invitation: 'Invitation',
@@ -263,11 +264,16 @@ export const PaymentScalarFieldEnum = {
   id: 'id',
   draftId: 'draftId',
   tenantId: 'tenantId',
-  bancardProcessId: 'bancardProcessId',
+  externalRef: 'externalRef',
+  method: 'method',
   amount: 'amount',
   currency: 'currency',
   status: 'status',
   reason: 'reason',
+  settlementKind: 'settlementKind',
+  settledBy: 'settledBy',
+  settledAt: 'settledAt',
+  note: 'note',
   initiatedAt: 'initiatedAt',
   confirmedAt: 'confirmedAt',
   createdAt: 'createdAt',
@@ -275,6 +281,18 @@ export const PaymentScalarFieldEnum = {
 } as const
 
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
+
+
+export const PaymentMethodConfigScalarFieldEnum = {
+  method: 'method',
+  enabled: 'enabled',
+  displayName: 'displayName',
+  config: 'config',
+  updatedBy: 'updatedBy',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PaymentMethodConfigScalarFieldEnum = (typeof PaymentMethodConfigScalarFieldEnum)[keyof typeof PaymentMethodConfigScalarFieldEnum]
 
 
 export const WebhookEventScalarFieldEnum = {

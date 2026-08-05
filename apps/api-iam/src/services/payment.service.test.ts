@@ -30,11 +30,16 @@ function makePayment(overrides: Partial<Payment> = {}): Payment {
     id: 'payment-1',
     draftId: 'draft-1',
     tenantId: undefined,
-    bancardProcessId: 'bancard-proc-1',
+    externalRef: 'bancard-proc-1',
+    method: 'bancard',
     amount: 75000,
     currency: 'PYG',
     status: 'pending',
     reason: undefined,
+    settlementKind: undefined,
+    settledBy: undefined,
+    settledAt: undefined,
+    note: undefined,
     initiatedAt: new Date(),
     confirmedAt: undefined,
     createdAt: new Date(),
@@ -66,7 +71,8 @@ function makeDeps(draftStatus = 'otp_verified' as OnboardingDraft['status']) {
   const paymentRepo = {
     create: vi.fn().mockResolvedValue(makePayment()),
     findByDraftId: vi.fn().mockResolvedValue(makePayment()),
-    findByBancardProcessId: vi.fn(),
+    findByExternalRef: vi.fn(),
+    listByTenant: vi.fn(),
     updateStatus: vi.fn(),
     cancelPendingByDraftId: vi.fn().mockResolvedValue(undefined),
   }
@@ -111,7 +117,7 @@ describe('PaymentService', () => {
       )
       expect(result).toMatchObject({
         paymentId: 'payment-1',
-        bancardProcessId: 'bancard-proc-1',
+        externalRef: 'bancard-proc-1',
         redirectUrl: expect.any(String),
         expiresAt: expect.any(Date),
       })

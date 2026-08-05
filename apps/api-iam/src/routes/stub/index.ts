@@ -20,7 +20,7 @@ export function createStubBancardRouter(
       return c.text('Missing process_id', 400)
     }
 
-    const payment = await paymentRepo.findByBancardProcessId(processId)
+    const payment = await paymentRepo.findByExternalRef(processId)
     if (!payment) {
       return c.text(`No payment found for process_id: ${processId}`, 404)
     }

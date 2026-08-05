@@ -79,6 +79,7 @@ enum DraftStep {
 
 enum PaymentStatus {
   pending
+  in_review
   approved
   declined
   cancelled
@@ -87,9 +88,25 @@ enum PaymentStatus {
   @@map("payment_status")
 }
 
+enum PaymentMethod {
+  bancard
+  bank_transfer
+
+  @@map("payment_method")
+}
+
+enum PaymentSettlementKind {
+  gateway_webhook
+  agent_review
+  manual_admin
+
+  @@map("payment_settlement_kind")
+}
+
 enum DocumentType {
   invoice
   contract
+  receipt
 
   @@map("document_type")
 }
@@ -381,24 +398,43 @@ model OnboardingDraft {
 }
 
 model Payment {
-  id               String        @id @default(uuid()) @db.Uuid
-  draftId          String        @map("draft_id") @db.Uuid
-  tenantId         String?       @map("tenant_id") @db.Uuid
-  bancardProcessId String        @unique @map("bancard_process_id") @db.VarChar(100)
-  amount           Decimal       @db.Decimal(12, 2)
-  currency         String        @default("PYG") @db.VarChar(3)
-  status           PaymentStatus @default(pending)
-  reason           String?       @db.VarChar(200)
-  initiatedAt      DateTime      @default(now()) @map("initiated_at")
-  confirmedAt      DateTime?     @map("confirmed_at")
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
+  id             String                  @id @default(uuid()) @db.Uuid
+  draftId        String                  @map("draft_id") @db.Uuid
+  tenantId       String?                 @map("tenant_id") @db.Uuid
+  externalRef    String                  @unique @map("external_ref") @db.VarChar(100)
+  method         PaymentMethod           @default(bancard)
+  amount         Decimal                 @db.Decimal(12, 2)
+  currency       String                  @default("PYG") @db.VarChar(3)
+  status         PaymentStatus           @default(pending)
+  reason         String?                 @db.VarChar(200)
+  settlementKind PaymentSettlementKind?  @map("settlement_kind")
+  settledBy      String?                 @map("settled_by") @db.Uuid
+  settledAt      DateTime?               @map("settled_at")
+  note           String?                 @db.VarChar(500)
+  initiatedAt    DateTime                @default(now()) @map("initiated_at")
+  confirmedAt    DateTime?               @map("confirmed_at")
+  createdAt      DateTime                @default(now()) @map("created_at")
+  updatedAt      DateTime                @updatedAt @map("updated_at")
 
   draft  OnboardingDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
   tenant Tenant?         @relation(fields: [tenantId], references: [id])
 
   @@index([draftId, initiatedAt])
   @@map("payments")
+}
+
+// Backoffice-toggleable payment methods (owner correction, tasks phase):
+// bootstrap rows are seeded in the migration SQL, not only db/seed.ts, since
+// `docker-entrypoint` runs `db:migrate:deploy` (not seed) in some environments.
+model PaymentMethodConfig {
+  method      PaymentMethod @id
+  enabled     Boolean       @default(true)
+  displayName String        @map("display_name") @db.VarChar(100)
+  config      Json          @default("{}")
+  updatedBy   String?       @map("updated_by") @db.Uuid
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("payment_method_configs")
 }
 
 model WebhookEvent {
