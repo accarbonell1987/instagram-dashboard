@@ -2038,13 +2038,16 @@ export interface components {
             representative?: components["schemas"]["DraftRepresentative"];
             company?: components["schemas"]["DraftCompany"];
         };
+        /**
+         * @description What the customer must do next, which differs per method: a gateway
+         *     redirect, or a reference plus the accounts to transfer to. Carried as a
+         *     discriminated union so a client cannot read one method's fields off the
+         *     other; switch on `instruction.kind`.
+         */
         PaymentInitiateResponse: {
             /** Format: uuid */
             paymentId: string;
-            /** Format: uri */
-            redirectUrl: string;
-            /** Format: date-time */
-            expiresAt: string;
+            instruction: components["schemas"]["PaymentInstruction"];
         };
         PaymentStatus: {
             /** Format: uuid */
@@ -3524,8 +3527,11 @@ export interface operations {
                     /**
                      * @example {
                      *       "paymentId": "8d3c9b1f-1234-4abc-9def-deadbeef0001",
-                     *       "redirectUrl": "https://vpos.infonet.com.py/checkout/abc123",
-                     *       "expiresAt": "2026-04-29T19:00:00Z"
+                     *       "instruction": {
+                     *         "kind": "redirect",
+                     *         "redirectUrl": "https://vpos.infonet.com.py/checkout/abc123",
+                     *         "expiresAt": "2026-04-29T19:00:00Z"
+                     *       }
                      *     }
                      */
                     "application/json": components["schemas"]["PaymentInitiateResponse"];

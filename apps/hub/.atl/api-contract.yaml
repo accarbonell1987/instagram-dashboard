@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.14.0
+  version: 1.15.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -606,11 +606,15 @@ components:
 
     PaymentInitiateResponse:
       type: object
-      required: [paymentId, redirectUrl, expiresAt]
+      required: [paymentId, instruction]
+      description: |
+        What the customer must do next, which differs per method: a gateway
+        redirect, or a reference plus the accounts to transfer to. Carried as a
+        discriminated union so a client cannot read one method's fields off the
+        other; switch on `instruction.kind`.
       properties:
         paymentId: { type: string, format: uuid }
-        redirectUrl: { type: string, format: uri }
-        expiresAt: { type: string, format: date-time }
+        instruction: { $ref: '#/components/schemas/PaymentInstruction' }
 
     PaymentStatus:
       type: object
@@ -2214,8 +2218,10 @@ paths:
               schema: { $ref: '#/components/schemas/PaymentInitiateResponse' }
               example:
                 paymentId: 8d3c9b1f-1234-4abc-9def-deadbeef0001
-                redirectUrl: 'https://vpos.infonet.com.py/checkout/abc123'
-                expiresAt: '2026-04-29T19:00:00Z'
+                instruction:
+                  kind: redirect
+                  redirectUrl: 'https://vpos.infonet.com.py/checkout/abc123'
+                  expiresAt: '2026-04-29T19:00:00Z'
         '409':
           description: Pago ya pendiente o aprobado para este borrador
         '422': { $ref: '#/components/responses/UnprocessableEntity' }
