@@ -13,13 +13,15 @@ export type AdminPaymentStatus = AdminPayment['status'];
  * keeps its reference so the customer can retry, and the agent confirms that same
  * payment once it clears.
  *
- * Deliberately missing `in_review`, which the backend accepts but the published
- * contract does not declare. api-contract.yaml still carries the pre-bank-transfer
- * PaymentStatus set: it lacks `in_review` and `reversed` and declares a `timeout`
- * the database never had. Add the missing members here once the contract is
- * corrected — until then this list cannot name a status the generated types reject.
+ * `timeout` is absent on purpose: it is the contract's public name for the
+ * database's `reversed`, a Bancard reversal, which is terminal rather than
+ * awaiting an agent.
  */
-export const SETTLEABLE_STATUSES: readonly AdminPaymentStatus[] = ['pending', 'declined'];
+export const SETTLEABLE_STATUSES: readonly AdminPaymentStatus[] = [
+  'pending',
+  'in_review',
+  'declined',
+];
 
 export function isSettleable(status: AdminPaymentStatus): boolean {
   return SETTLEABLE_STATUSES.includes(status);

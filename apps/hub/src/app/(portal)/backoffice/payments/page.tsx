@@ -33,6 +33,7 @@ import {
 
 const STATUS_LABELS: Record<AdminPaymentStatus, string> = {
   pending: 'Pending',
+  in_review: 'Awaiting review',
   approved: 'Approved',
   declined: 'Declined',
   cancelled: 'Cancelled',
@@ -41,6 +42,7 @@ const STATUS_LABELS: Record<AdminPaymentStatus, string> = {
 
 const STATUS_COLORS: Record<AdminPaymentStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-700',
+  in_review: 'bg-blue-100 text-blue-700',
   approved: 'bg-green-100 text-green-700',
   declined: 'bg-red-100 text-red-700',
   cancelled: 'bg-gray-100 text-gray-700',

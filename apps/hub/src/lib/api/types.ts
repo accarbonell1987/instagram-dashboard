@@ -1983,7 +1983,7 @@ export interface components {
             /** Format: uuid */
             paymentId?: string;
             /** @enum {string} */
-            status?: "pending" | "approved" | "declined" | "cancelled" | "timeout";
+            status?: "pending" | "in_review" | "approved" | "declined" | "cancelled" | "timeout";
             bancardProcessId?: string;
         };
         /**
@@ -2050,7 +2050,7 @@ export interface components {
             /** Format: uuid */
             paymentId: string;
             /** @enum {string} */
-            status: "pending" | "approved" | "declined" | "cancelled" | "timeout";
+            status: "pending" | "in_review" | "approved" | "declined" | "cancelled" | "timeout";
             reason?: string | null;
             /** Format: date-time */
             confirmedAt?: string | null;
@@ -2192,7 +2192,7 @@ export interface components {
             tenantName?: string;
             method: components["schemas"]["PaymentMethodKind"];
             /** @enum {string} */
-            status: "pending" | "approved" | "declined" | "cancelled" | "timeout";
+            status: "pending" | "in_review" | "approved" | "declined" | "cancelled" | "timeout";
             settlementKind?: ("webhook" | "agent" | "manual_admin") | null;
             /** @description Bancard process id (redirect) or bank-transfer CH-XXXXXX code */
             reference?: string | null;
@@ -2223,12 +2223,26 @@ export interface components {
         PaymentMethodConfig: {
             method: components["schemas"]["PaymentMethodKind"];
             enabled: boolean;
+            displayName?: string;
+            /**
+             * @description Bank accounts shown to the customer on the transfer instructions.
+             *     Only meaningful for `bank_transfer`; empty for gateway methods.
+             */
+            accounts?: components["schemas"]["BankAccount"][];
         };
         PaymentMethodConfigListResponse: {
             items: components["schemas"]["PaymentMethodConfig"][];
         };
         PaymentMethodConfigUpdateRequest: {
             enabled: boolean;
+            displayName?: string;
+            /**
+             * @description Replaces the stored account list when present. Omit to leave the
+             *     existing accounts untouched; send an empty array to clear them.
+             *     Editing these without a deploy is the reason this config lives in
+             *     the database rather than in an environment variable.
+             */
+            accounts?: components["schemas"]["BankAccount"][];
         };
         ProofUploadResponse: {
             /** Format: uuid */
@@ -4312,7 +4326,7 @@ export interface operations {
     adminListPayments: {
         parameters: {
             query?: {
-                status?: "pending" | "approved" | "declined" | "cancelled" | "timeout";
+                status?: "pending" | "in_review" | "approved" | "declined" | "cancelled" | "timeout";
                 tenantId?: string;
                 reference?: string;
                 dateFrom?: string;
