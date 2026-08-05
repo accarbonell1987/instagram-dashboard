@@ -1,5 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
+import { SETTLEABLE_STATUSES } from '@/modules/backoffice/payments';
+
 import { db } from '../db';
 import { SEED } from '../seed';
 import { stableNow } from '../seed-utils';
@@ -48,7 +50,10 @@ export const paymentsHandlers = [
       return notFound('Payment not found');
     }
 
-    if (payment.status !== 'pending') {
+    // Mirrors UNSETTLED_STATUSES in api-iam's settlement.service.ts. A declined
+    // payment is still settleable: the customer keeps the reference and retries.
+    // The mock db types status as a plain string, so widen rather than narrow.
+    if (!(SETTLEABLE_STATUSES as readonly string[]).includes(payment.status)) {
       return HttpResponse.json(payment);
     }
 

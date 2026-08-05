@@ -13,6 +13,10 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 
 import { ApiError } from '@/lib/api/errors';
 import {
+  listTenantPayments,
+  type AdminPayment,
+} from '@/modules/backoffice/payments';
+import {
   listTenants,
   getTenant,
   changeTenantStatus,
@@ -20,6 +24,23 @@ import {
   type AdminTenantDetail,
   type TenantStatus,
 } from '@/modules/backoffice/tenants/services/tenant-admin.service';
+
+// ─── Payment labels ─────────────────────────────────────────────────────────────
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  bancard: 'Bancard',
+  bank_transfer: 'Bank transfer',
+};
+
+const SETTLEMENT_KIND_LABELS: Record<string, string> = {
+  webhook: 'Gateway webhook',
+  agent: 'Agent review',
+  manual_admin: 'Manual admin',
+};
+
+function formatPaymentDate(iso: string): string {
+  return new Date(iso).toLocaleDateString();
+}
 
 // ─── Status badge ──────────────────────────────────────────────────────────────
 
@@ -40,6 +61,69 @@ function StatusBadge({ status }: { status: TenantStatus }) {
     >
       {labels[status]}
     </span>
+  );
+}
+
+// ─── Tenant Payments Section ────────────────────────────────────────────────────
+
+function TenantPaymentsSection({ tenantId }: { tenantId: string }): JSX.Element {
+  const [payments, setPayments] = useState<AdminPayment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    listTenantPayments(tenantId)
+      .then((result) => {
+        if (!cancelled) setPayments(result.items);
+      })
+      .catch(() => {
+        if (!cancelled) setError('No se pudieron cargar los pagos');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId]);
+
+  return (
+    <div className="border-border border-t pt-4">
+      <p className="text-muted-foreground mb-2 text-xs">Payments</p>
+      {loading ? (
+        <p className="text-muted-foreground text-xs">Loading payments...</p>
+      ) : error !== '' ? (
+        <p role="alert" className="text-destructive text-xs">
+          {error}
+        </p>
+      ) : payments.length === 0 ? (
+        <p className="text-muted-foreground text-xs">No payments yet.</p>
+      ) : (
+        <ul className="space-y-2 text-xs">
+          {payments.map((payment) => (
+            <li key={payment.id} className="border-border rounded-md border p-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">
+                  {payment.amount.toLocaleString()} {payment.currency}
+                </span>
+                <span className="text-muted-foreground">{formatPaymentDate(payment.createdAt)}</span>
+              </div>
+              <div className="text-muted-foreground mt-1">
+                {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method} · {payment.status}
+                {payment.settlementKind != null &&
+                  ` · ${SETTLEMENT_KIND_LABELS[payment.settlementKind] ?? payment.settlementKind}`}
+              </div>
+              {payment.note != null && payment.note !== '' && (
+                <p className="mt-1 italic">{payment.note}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -162,6 +246,8 @@ function TenantDetailPanel({
               </Button>
             </div>
           </div>
+
+          <TenantPaymentsSection tenantId={tenantId} />
         </div>
       )}
     </div>

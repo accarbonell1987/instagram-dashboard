@@ -20,6 +20,8 @@ const NAV_LINKS: NavLink[] = [
   { href: '/backoffice/roles', label: 'Roles' },
   { href: '/backoffice/trials', label: 'Trials' },
   { href: '/backoffice/tenants', label: 'Tenants' },
+  { href: '/backoffice/payments', label: 'Payments' },
+  { href: '/backoffice/payment-methods', label: 'Payment Methods' },
 ];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
