@@ -18,6 +18,7 @@ import {
   createDraftService,
   createPaymentService,
   createSubmitService,
+  createSettlementService,
   createWebhookService,
   createInvitationService,
   createBillingService,
@@ -139,10 +140,16 @@ async function main(): Promise<void> {
     logger: rootLogger,
   });
 
+  const settlementService = createSettlementService({
+    prisma,
+    logger: rootLogger,
+  });
+
   const webhookService = createWebhookService({
     webhookEventRepo: repos.webhookEventRepo,
     paymentRepo: repos.paymentRepo,
     draftRepo: repos.draftRepo,
+    settlementService,
     prisma,
     config,
   });

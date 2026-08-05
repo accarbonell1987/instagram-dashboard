@@ -3,7 +3,7 @@ import { Decimal } from '@prisma/client/runtime/client'
 import type { Payment, PaymentStatus } from '../../domain/index.js'
 import type { CreatePaymentInput, PaymentRepository } from './types.js'
 
-function mapPayment(raw: {
+export function mapPayment(raw: {
   id: string
   draftId: string
   tenantId: string | null

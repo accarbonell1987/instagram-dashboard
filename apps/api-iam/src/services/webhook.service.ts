@@ -2,12 +2,14 @@ import { createHmac, timingSafeEqual } from 'crypto'
 import type { PrismaClient } from '../generated/prisma/client.js'
 import type { WebhookEventRepository, PaymentRepository, OnboardingDraftRepository } from '../repositories/index.js'
 import type { Config } from '../config.js'
+import type { SettlementService } from './settlement.service.js'
 import { UnauthorizedError } from '../errors.js'
 
 export type WebhookServiceDeps = {
   webhookEventRepo: WebhookEventRepository
   paymentRepo: PaymentRepository
   draftRepo: OnboardingDraftRepository
+  settlementService: SettlementService
   prisma: PrismaClient
   config: Config
 }
@@ -34,7 +36,7 @@ function verifyBancardSignature(secret: string, rawBody: string, signature: stri
 }
 
 export function createWebhookService(deps: WebhookServiceDeps) {
-  const { webhookEventRepo, paymentRepo, draftRepo, prisma, config } = deps
+  const { webhookEventRepo, paymentRepo, draftRepo, settlementService, prisma, config } = deps
 
   async function processBancardWebhook(params: {
     rawBody: string
@@ -78,14 +80,18 @@ export function createWebhookService(deps: WebhookServiceDeps) {
         return
       }
 
-      // ── Step 3: Apply status mapping ──────────────────────────────────
+      // ── Step 3: Apply status mapping via the shared settlement path ────
       if (payload.status === 'approved') {
-        await paymentRepo.updateStatus(payment.id, 'approved', new Date())
+        await settlementService.settlePayment(
+          { paymentId: payment.id, decision: 'approved', settlementKind: 'gateway_webhook', settledBy: undefined, note: undefined },
+          tx,
+        )
         await draftRepo.update(payment.draftId, { status: 'payment_confirmed' })
-      } else if (payload.status === 'rejected' || payload.status === 'cancelled') {
-        await paymentRepo.updateStatus(payment.id, 'declined')
-      } else if (payload.status === 'reversed') {
-        await paymentRepo.updateStatus(payment.id, 'declined')
+      } else if (payload.status === 'rejected' || payload.status === 'cancelled' || payload.status === 'reversed') {
+        await settlementService.settlePayment(
+          { paymentId: payment.id, decision: 'declined', settlementKind: 'gateway_webhook', settledBy: undefined, note: undefined },
+          tx,
+        )
       }
       // All other statuses: no-op (webhook_event is inserted but no payment/draft change)
     })

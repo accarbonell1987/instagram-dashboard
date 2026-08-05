@@ -73,6 +73,15 @@ export type {
   BancardWebhookPayload,
 } from './webhook.service.js';
 
+export { createSettlementService } from './settlement.service.js';
+export type {
+  SettlementService,
+  SettlementServiceDeps,
+  SettleDecision,
+  SettlePaymentParams,
+  SettlePaymentResult,
+} from './settlement.service.js';
+
 export { createModuleService } from './module.service.js';
 export type { ModuleService } from './module.service.js';
 

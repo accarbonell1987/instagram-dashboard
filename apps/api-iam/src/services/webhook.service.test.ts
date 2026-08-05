@@ -76,6 +76,10 @@ function makeDeps() {
     cancelPendingByDraftId: vi.fn(),
   }
 
+  const settlementService = {
+    settlePayment: vi.fn().mockResolvedValue({ payment: makePayment({ status: 'approved' }), alreadySettled: false }),
+  }
+
   const draftRepo = {
     findByIdOrThrow: vi.fn(),
     findById: vi.fn(),
@@ -95,7 +99,7 @@ function makeDeps() {
 
   const config = makeConfig()
 
-  return { webhookEventRepo, paymentRepo, draftRepo, prisma, config }
+  return { webhookEventRepo, paymentRepo, draftRepo, settlementService, prisma, config }
 }
 
 // ─── Tests ─────────────────────────────────────────────────────────────────
@@ -140,7 +144,10 @@ describe('WebhookService', () => {
 
       expect(result).toEqual({ received: true })
       expect(deps.paymentRepo.findByExternalRef).toHaveBeenCalledWith('proc-1')
-      expect(deps.paymentRepo.updateStatus).toHaveBeenCalledWith('payment-1', 'approved', expect.any(Date))
+      expect(deps.settlementService.settlePayment).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentId: 'payment-1', decision: 'approved', settlementKind: 'gateway_webhook' }),
+        expect.anything(),
+      )
       expect(deps.draftRepo.update).toHaveBeenCalledWith(
         'draft-1',
         expect.objectContaining({ status: 'payment_confirmed' }),
@@ -167,7 +174,7 @@ describe('WebhookService', () => {
 
       expect(result).toEqual({ received: true })
       // No payment or draft update on duplicate
-      expect(deps.paymentRepo.updateStatus).not.toHaveBeenCalled()
+      expect(deps.settlementService.settlePayment).not.toHaveBeenCalled()
       expect(deps.draftRepo.update).not.toHaveBeenCalled()
     })
 
@@ -186,7 +193,10 @@ describe('WebhookService', () => {
 
       await service.processBancardWebhook({ rawBody, signature, payload })
 
-      expect(deps.paymentRepo.updateStatus).toHaveBeenCalledWith('payment-1', 'declined')
+      expect(deps.settlementService.settlePayment).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentId: 'payment-1', decision: 'declined', settlementKind: 'gateway_webhook' }),
+        expect.anything(),
+      )
       // Draft should NOT be updated for rejected payment
       expect(deps.draftRepo.update).not.toHaveBeenCalled()
     })
@@ -206,7 +216,10 @@ describe('WebhookService', () => {
 
       await service.processBancardWebhook({ rawBody, signature, payload })
 
-      expect(deps.paymentRepo.updateStatus).toHaveBeenCalledWith('payment-1', 'declined')
+      expect(deps.settlementService.settlePayment).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentId: 'payment-1', decision: 'declined', settlementKind: 'gateway_webhook' }),
+        expect.anything(),
+      )
     })
 
     it('unknown process_id is a no-op (payment not found)', async () => {
@@ -226,7 +239,7 @@ describe('WebhookService', () => {
       const result = await service.processBancardWebhook({ rawBody, signature, payload })
 
       expect(result).toEqual({ received: true })
-      expect(deps.paymentRepo.updateStatus).not.toHaveBeenCalled()
+      expect(deps.settlementService.settlePayment).not.toHaveBeenCalled()
       expect(deps.draftRepo.update).not.toHaveBeenCalled()
     })
   })
