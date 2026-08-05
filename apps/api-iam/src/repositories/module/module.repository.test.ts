@@ -18,6 +18,13 @@ function makePrisma(overrides: Record<string, unknown> = {}) {
       create: vi.fn().mockResolvedValue({}),
       update: vi.fn().mockResolvedValue({}),
     },
+    // The resolver fails closed on tenant status — a tenant that is pending
+    // (provisioned but unpaid) or suspended resolves no modules at all. Default
+    // to active so the existing cases keep exercising the resolution logic;
+    // the status guard has its own tests below.
+    tenant: {
+      findUnique: vi.fn().mockResolvedValue({ status: 'active' }),
+    },
     tenantProductSubscription: {
       findUnique: vi.fn().mockResolvedValue(null),
     },
@@ -142,6 +149,43 @@ describe('ModuleRepository — resolveEffectiveModules (a3)', () => {
     const result = await repo.resolveEffectiveModules('t1', 'p1')
 
     expect(result).toEqual([expect.objectContaining({ id: 'mod-a', source: 'plan' })])
+  })
+
+  // Provisioning happens at the wizard's summary step now, before payment
+  // settles, so a fully-provisioned tenant can still owe money. These three
+  // cases are the backend's own refusal — not the frontend declining to hand
+  // out a session.
+  it.each([
+    ['pending', 'a provisioned tenant that has not paid yet'],
+    ['suspended', 'a tenant the unpaid sweep suspended'],
+  ])('resolves nothing for a %s tenant (%s)', async (status) => {
+    const prisma = makePrisma({
+      tenant: { findUnique: vi.fn().mockResolvedValue({ status }) },
+      tenantProductSubscription: {
+        findUnique: vi.fn().mockResolvedValue({ tenantId: 't1', productId: 'p1', planId: 'plan-1' }),
+      },
+      planModule: {
+        findMany: vi.fn().mockResolvedValue([{ planId: 'plan-1', moduleId: 'mod-a', module: activeModule('mod-a') }]),
+      },
+    })
+    const repo = createModuleRepository(prisma as never)
+
+    expect(await repo.resolveEffectiveModules('t1', 'p1')).toEqual([])
+  })
+
+  it('resolves nothing for a tenant that does not exist', async () => {
+    const prisma = makePrisma({
+      tenant: { findUnique: vi.fn().mockResolvedValue(null) },
+      tenantProductSubscription: {
+        findUnique: vi.fn().mockResolvedValue({ tenantId: 't1', productId: 'p1', planId: 'plan-1' }),
+      },
+      planModule: {
+        findMany: vi.fn().mockResolvedValue([{ planId: 'plan-1', moduleId: 'mod-a', module: activeModule('mod-a') }]),
+      },
+    })
+    const repo = createModuleRepository(prisma as never)
+
+    expect(await repo.resolveEffectiveModules('t1', 'p1')).toEqual([])
   })
 
   it('a grant entitlement adds a module the plan does not grant', async () => {

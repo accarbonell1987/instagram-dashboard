@@ -118,7 +118,11 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
 
     async resolveEffectiveModules(tenantId, productId, userId) {
       const now = new Date()
-      const [subscription, entitlements] = await Promise.all([
+      const [tenant, subscription, entitlements] = await Promise.all([
+        prisma.tenant.findUnique({
+          where: { id: tenantId },
+          select: { status: true },
+        }),
         prisma.tenantProductSubscription.findUnique({
           where: { tenantId_productId: { tenantId, productId } },
         }),
@@ -131,6 +135,16 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
           include: { module: true },
         }),
       ])
+
+      // Fail closed on tenant status. Provisioning now happens at the wizard's
+      // summary step, before any payment settles, so a tenant can legitimately
+      // exist while owing money — and the unpaid sweep suspends it after 15
+      // days. Neither state may resolve modules: an unknown or non-active
+      // tenant gets nothing, which the entitlement guard reads as denied.
+      //
+      // Without this the only thing standing between an unpaid tenant and the
+      // product is the frontend choosing to discard its token.
+      if (tenant?.status !== 'active') return []
 
       const result = new Map<string, EffectiveModule>()
 
