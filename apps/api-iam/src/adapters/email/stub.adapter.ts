@@ -5,9 +5,9 @@ export class StubEmailAdapter implements EmailAdapter {
   constructor(private readonly logger: Logger) {}
 
   async send(params: EmailSendParams): Promise<void> {
-    const { to, subject } = params
+    const { to, subject, attachments } = params
     this.logger.info(
-      { category: 'email', event: 'email_stub_sent', to, subject },
+      { category: 'email', event: 'email_stub_sent', to, subject, attachmentFilenames: attachments?.map((a) => a.filename) },
       '[EMAIL STUB]',
     )
   }

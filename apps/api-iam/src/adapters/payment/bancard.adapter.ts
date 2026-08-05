@@ -8,6 +8,6 @@ export class BancardPaymentAdapter implements PaymentMethodAdapter {
 
   async initiate(params: PaymentInitiateParams): Promise<PaymentInitiateResult> {
     const result = await this.bancard.initiatePayment(params)
-    return { kind: 'redirect', url: result.redirectUrl, expiresAt: result.expiresAt }
+    return { kind: 'redirect', externalRef: result.processId, url: result.redirectUrl, expiresAt: result.expiresAt }
   }
 }

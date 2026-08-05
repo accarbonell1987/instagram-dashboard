@@ -350,9 +350,14 @@ describe('tenant registration flow (e2e)', () => {
     expect(errorBody.code).toBe('auth.otp_invalid')
   }, 30_000)
 
-  // ── Test 3: Submit without payment confirmation ─────────────────────────────
+  // ── Test 3: Submit with a still-pending payment (bank-transfer-style) ──────
+  // This used to 409 — the whole point of this redesign is that provisioning no
+  // longer waits for settlement. The tenant is provisioned `pending` and the
+  // payment settles later via an agent/webhook (see submit.service.ts,
+  // settlement.service.ts). Renamed from "returns 409" to reflect the new,
+  // deliberate behavior.
 
-  it('returns 409 when submitting a draft that has not received payment confirmation', async () => {
+  it('submits successfully with a still-pending payment — tenant provisioned pending, no premature 409', async () => {
     const repEmail = `rep+nopay+${Date.now()}@example.com`
     const tenantSlug = uniqueSlug()
 
@@ -431,14 +436,35 @@ describe('tenant registration flow (e2e)', () => {
     const latestDraft = await appFetch(app, `/onboarding/draft/${draftId}`)
     version = (await latestDraft.json() as { version: number }).version
 
-    // Attempt submit — should fail because status is payment_pending, not payment_confirmed
+    // Submit while the payment is still pending (no webhook received) — succeeds now
     const submitRes = await appFetch(app, `/onboarding/draft/${draftId}/submit`, {
       method: 'POST',
       body: { version },
       headers: { 'Idempotency-Key': idempotencyKey() },
     })
-    expect(submitRes.status).toBe(409)
-    const errorBody = await submitRes.json() as { code: string }
-    expect(errorBody.code).toBe('onboarding.draft_not_submittable')
+    expect(submitRes.status).toBe(200)
+    const submitBody = await submitRes.json() as {
+      tenantId: string
+      accessToken: string
+      documents: { invoiceId: string; contractId: string }
+    }
+    expect(submitBody.tenantId).toBeTruthy()
+    // Invoice is a placeholder until settlement — still returned so the contract
+    // shape (documents.invoiceId required) is honored, just not downloadable yet.
+    expect(submitBody.documents.invoiceId).toBeTruthy()
+
+    // Tenant is provisioned but NOT activated — settlement hasn't happened
+    const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } })
+    expect(tenant?.status).toBe('pending')
+
+    // Submitting again with a stale version now hits the normal version-conflict
+    // path (draft is already completed) rather than draft_not_submittable —
+    // proving the payment-existence gate, not the old status gate, is what runs.
+    const secondSubmitRes = await appFetch(app, `/onboarding/draft/${draftId}/submit`, {
+      method: 'POST',
+      body: { version },
+      headers: { 'Idempotency-Key': idempotencyKey() },
+    })
+    expect(secondSubmitRes.status).not.toBe(200)
   }, 30_000)
 })

@@ -1,4 +1,4 @@
-export type PdfDocumentType = 'invoice' | 'contract'
+export type PdfDocumentType = 'invoice' | 'contract' | 'receipt'
 
 export interface PdfGenerateParams {
   type: PdfDocumentType

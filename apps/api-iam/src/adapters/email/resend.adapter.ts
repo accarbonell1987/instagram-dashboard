@@ -20,6 +20,13 @@ export class ResendEmailAdapter implements EmailAdapter {
     if (params.text !== undefined) {
       payload.text = params.text
     }
+    if (params.attachments !== undefined) {
+      payload.attachments = params.attachments.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      }))
+    }
     const { error } = await this.resend.emails.send(payload)
 
     if (error) {

@@ -29,7 +29,8 @@ function makeRawPayment(overrides: Partial<{ tenantId: string | null; status: st
 function makeTx(opts: {
   updateManyCount?: number
   raw?: ReturnType<typeof makeRawPayment>
-  tenant?: { id: string; status: string } | null
+  tenant?: { id: string; status: string; name?: string; planId?: string } | null
+  user?: { id: string; email: string; fullName: string | null } | null
 } = {}) {
   return {
     payment: {
@@ -40,12 +41,25 @@ function makeTx(opts: {
       findUnique: vi.fn().mockResolvedValue(opts.tenant ?? null),
       update: vi.fn().mockResolvedValue({}),
     },
+    user: {
+      findFirst: vi.fn().mockResolvedValue(opts.user === undefined ? null : opts.user),
+      update: vi.fn().mockResolvedValue({}),
+    },
+    document: {
+      findFirst: vi.fn().mockResolvedValue(null),
+      update: vi.fn().mockResolvedValue({}),
+      create: vi.fn().mockResolvedValue({}),
+    },
   }
 }
 
 function makeDeps(tx: ReturnType<typeof makeTx>) {
   const prisma = { $transaction: vi.fn().mockImplementation((fn: (t: unknown) => Promise<unknown>) => fn(tx)) }
-  return { prisma, logger: silentLogger }
+  const pdfAdapter = { generate: vi.fn().mockResolvedValue(Buffer.from('fake-pdf')) }
+  const storageAdapter = { upload: vi.fn().mockResolvedValue(undefined), signedUrl: vi.fn() }
+  const emailAdapter = { send: vi.fn().mockResolvedValue(undefined), sendPlanChangeNotification: vi.fn() }
+  const config = { HUB_BASE_URL: 'http://localhost:3001' }
+  return { prisma, pdfAdapter, storageAdapter, emailAdapter, config, logger: silentLogger }
 }
 
 describe('SettlementService.settlePayment', () => {
@@ -106,6 +120,59 @@ describe('SettlementService.settlePayment', () => {
       expect(tx.tenant.update).toHaveBeenCalledWith({ where: { id: 'tenant-1' }, data: { status: 'active' } })
     },
   )
+
+  it('generates invoice+receipt PDFs, fills the invoice placeholder, and emails invoice+receipt attachments on activation', async () => {
+    const tx = makeTx({
+      raw: makeRawPayment({ tenantId: 'tenant-1' }),
+      tenant: { id: 'tenant-1', status: 'pending', name: 'ACME Corp', planId: 'professional' },
+      user: { id: 'user-1', email: 'ana@acme.com', fullName: 'Ana Pérez' },
+    })
+    tx.document.findFirst.mockResolvedValue({ id: 'doc-invoice-1' })
+    const deps = makeDeps(tx)
+    const service = createSettlementService(deps as never)
+
+    await service.settlePayment({
+      paymentId: 'payment-1', decision: 'approved', settlementKind: 'manual_admin', settledBy: 'admin-1', note: 'confirmed',
+    })
+
+    expect(deps.pdfAdapter.generate).toHaveBeenCalledWith(expect.objectContaining({ type: 'invoice' }))
+    expect(deps.pdfAdapter.generate).toHaveBeenCalledWith(expect.objectContaining({ type: 'receipt' }))
+    expect(tx.document.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'doc-invoice-1' }, data: expect.objectContaining({ status: 'ready' }) }),
+    )
+    expect(tx.document.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ type: 'receipt', status: 'ready' }) }),
+    )
+    expect(tx.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'user-1' }, data: expect.objectContaining({ activationTokenUsed: false }) }),
+    )
+    expect(deps.emailAdapter.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'ana@acme.com',
+        attachments: [
+          expect.objectContaining({ filename: 'factura.pdf' }),
+          expect.objectContaining({ filename: 'recibo.pdf' }),
+        ],
+      }),
+    )
+  })
+
+  it('does not re-send the confirmation email on a repeat settle of an already-active tenant', async () => {
+    const tx = makeTx({
+      updateManyCount: 0,
+      raw: makeRawPayment({ status: 'approved', tenantId: 'tenant-1' }),
+      tenant: { id: 'tenant-1', status: 'active' },
+    })
+    const deps = makeDeps(tx)
+    const service = createSettlementService(deps as never)
+
+    await service.settlePayment({
+      paymentId: 'payment-1', decision: 'approved', settlementKind: 'agent_review', settledBy: 'admin-1', note: 'duplicate confirm',
+    })
+
+    expect(tx.tenant.update).not.toHaveBeenCalled()
+    expect(deps.emailAdapter.send).not.toHaveBeenCalled()
+  })
 
   it('does not activate a tenant on decline', async () => {
     const tx = makeTx({ raw: makeRawPayment({ tenantId: 'tenant-1', status: 'declined' }), tenant: { id: 'tenant-1', status: 'pending' } })

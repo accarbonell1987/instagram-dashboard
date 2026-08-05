@@ -20,6 +20,11 @@ describe('BancardPaymentAdapter (regression)', () => {
     expect(wrapped.url).toMatch(/^http:\/\/localhost:8080\/__stub\/bancard\/approve\?process_id=stub_/)
     expect(direct.redirectUrl).toMatch(/^http:\/\/localhost:8080\/__stub\/bancard\/approve\?process_id=stub_/)
     expect(wrapped.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + 31 * 60 * 1000)
+    // externalRef must survive the reshape (it's what payment.service.ts stores as
+    // Payment.externalRef, matched back against by the Bancard webhook) — assert it's
+    // embedded in wrapped's own url, the same relationship the direct call has.
+    expect(wrapped.url).toContain(wrapped.externalRef)
+    expect(direct.redirectUrl).toContain(direct.processId)
   })
 })
 

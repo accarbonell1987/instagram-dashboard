@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createBillingService } from './billing.service.js'
-import { ForbiddenError, NotFoundError } from '../errors.js'
+import { ConflictError, ForbiddenError, NotFoundError } from '../errors.js'
 import type { BillingServiceDeps } from './billing.service.js'
 
 function makeDocument(overrides: Partial<Record<string, unknown>> = {}) {
@@ -113,6 +113,23 @@ describe('BillingService', () => {
       await expect(
         service.getSignedDocumentUrl({ documentId: 'doc-1', tenantUuid: 'tenant-uuid-1' }),
       ).rejects.toBeInstanceOf(ForbiddenError)
+    })
+
+    it('throws ConflictError when the document is a placeholder (status: pending)', async () => {
+      const deps = makeDeps({
+        documentRepo: {
+          create: vi.fn(),
+          findById: vi.fn().mockResolvedValue(makeDocument({ status: 'pending', storageKey: 'pending' })),
+          findByTenantId: vi.fn(),
+          updateStatus: vi.fn(),
+        },
+      })
+      const service = createBillingService(deps)
+
+      await expect(
+        service.getSignedDocumentUrl({ documentId: 'doc-1', tenantUuid: 'tenant-uuid-1' }),
+      ).rejects.toBeInstanceOf(ConflictError)
+      expect(deps.storageAdapter.signedUrl).not.toHaveBeenCalled()
     })
 
     it('expiresAt is approximately 5 minutes in the future', async () => {

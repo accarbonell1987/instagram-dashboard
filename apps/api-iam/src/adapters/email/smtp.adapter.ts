@@ -18,6 +18,7 @@ export class SmtpEmailAdapter implements EmailAdapter {
       subject: params.subject,
       html: params.html,
       ...(params.text !== undefined && { text: params.text }),
+      ...(params.attachments !== undefined && { attachments: params.attachments }),
     })
   }
 

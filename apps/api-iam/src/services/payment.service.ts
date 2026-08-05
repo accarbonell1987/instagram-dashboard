@@ -1,13 +1,13 @@
 import type { PaymentRepository, OnboardingDraftRepository } from '../repositories/index.js'
-import type { BancardAdapter } from '../adapters/index.js'
+import type { PaymentAdapterRegistry } from '../adapters/payment/index.js'
 import type { Config } from '../config.js'
 import type { Payment } from '../domain/index.js'
-import { ConflictError, ValidationError } from '../errors.js'
+import { ConflictError, InternalError, ValidationError } from '../errors.js'
 
 export type PaymentServiceDeps = {
   paymentRepo: PaymentRepository
   draftRepo: OnboardingDraftRepository
-  bancardAdapter: BancardAdapter
+  paymentAdapterRegistry: PaymentAdapterRegistry
   config: Config
 }
 
@@ -25,7 +25,7 @@ export type PaymentStatusResponse = {
 }
 
 export function createPaymentService(deps: PaymentServiceDeps) {
-  const { paymentRepo, draftRepo, bancardAdapter, config } = deps
+  const { paymentRepo, draftRepo, paymentAdapterRegistry, config } = deps
 
   async function initiatePayment(params: {
     draftId: string
@@ -55,7 +55,12 @@ export function createPaymentService(deps: PaymentServiceDeps) {
     const resolvedAmount =
       typeof planData?.['price'] === 'number' ? planData['price'] : amount
 
-    const result = await bancardAdapter.initiatePayment({
+    // Method selection isn't wired to this endpoint yet (no UI offers a choice —
+    // that's step-5-payment/bank-transfer-view.tsx, a separate slice). Bancard
+    // is the only method this route drives today; `bank_transfer` stays reachable
+    // only through the registry directly (see adapters/payment/index.ts).
+    const adapter = await paymentAdapterRegistry.getEnabledAdapter('bancard')
+    const instruction = await adapter.initiate({
       amount: resolvedAmount,
       currency: 'PYG',
       draftId,
@@ -63,9 +68,20 @@ export function createPaymentService(deps: PaymentServiceDeps) {
       description: 'Corehub Plan',
     })
 
+    // The onboarding contract's PaymentInitiateResponse is still the flat
+    // Bancard-only shape — it doesn't yet expose PaymentInstruction's
+    // discriminated union. Since this route only ever drives 'bancard' today,
+    // this is defensive, not reachable in practice.
+    if (instruction.kind !== 'redirect') {
+      throw new InternalError(
+        'payment.unsupported_instruction_kind',
+        `Route does not support "${instruction.kind}" instructions yet — requires an api-contract.yaml update`,
+      )
+    }
+
     const payment = await paymentRepo.create({
       draftId,
-      externalRef: result.processId,
+      externalRef: instruction.externalRef,
       amount: resolvedAmount,
       currency: 'PYG',
       status: 'pending',
@@ -75,9 +91,9 @@ export function createPaymentService(deps: PaymentServiceDeps) {
 
     return {
       paymentId: payment.id,
-      externalRef: result.processId,
-      redirectUrl: result.redirectUrl,
-      expiresAt: result.expiresAt,
+      externalRef: instruction.externalRef,
+      redirectUrl: instruction.url,
+      expiresAt: instruction.expiresAt,
     }
   }
 

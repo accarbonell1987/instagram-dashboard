@@ -28,7 +28,7 @@ function pdfEscape(str: string): string {
 }
 
 function buildStubPdf(type: PdfDocumentType, data: Record<string, unknown>): Buffer {
-  const title = type === 'invoice' ? 'Factura (stub)' : 'Contrato (stub)'
+  const title = type === 'invoice' ? 'Factura (stub)' : type === 'receipt' ? 'Recibo (stub)' : 'Contrato (stub)'
 
   const lines = [
     title,

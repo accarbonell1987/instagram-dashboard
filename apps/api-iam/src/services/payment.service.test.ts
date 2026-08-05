@@ -77,17 +77,22 @@ function makeDeps(draftStatus = 'otp_verified' as OnboardingDraft['status']) {
     cancelPendingByDraftId: vi.fn().mockResolvedValue(undefined),
   }
 
-  const bancardAdapter = {
-    initiatePayment: vi.fn().mockResolvedValue({
-      processId: 'bancard-proc-1',
-      redirectUrl: 'https://vpos.infonet.com.py/redirect',
+  const bancardMethodAdapter = {
+    initiate: vi.fn().mockResolvedValue({
+      kind: 'redirect' as const,
+      externalRef: 'bancard-proc-1',
+      url: 'https://vpos.infonet.com.py/redirect',
       expiresAt: new Date(Date.now() + 30 * 60 * 1000),
     }),
   }
 
+  const paymentAdapterRegistry = {
+    getEnabledAdapter: vi.fn().mockResolvedValue(bancardMethodAdapter),
+  }
+
   const config = makeConfig()
 
-  return { draftRepo, paymentRepo, bancardAdapter, config, draft }
+  return { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config, draft }
 }
 
 // ─── Tests ─────────────────────────────────────────────────────────────────
@@ -95,13 +100,13 @@ function makeDeps(draftStatus = 'otp_verified' as OnboardingDraft['status']) {
 describe('PaymentService', () => {
   describe('initiatePayment', () => {
     it('IAM-ONB-006.1: happy path — creates payment and calls Bancard once', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps('otp_verified')
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('otp_verified')
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       const result = await service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false })
 
-      expect(bancardAdapter.initiatePayment).toHaveBeenCalledTimes(1)
-      expect(bancardAdapter.initiatePayment).toHaveBeenCalledWith(
+      expect(bancardMethodAdapter.initiate).toHaveBeenCalledTimes(1)
+      expect(bancardMethodAdapter.initiate).toHaveBeenCalledWith(
         expect.objectContaining({
           currency: 'PYG',
           draftId: 'draft-1',
@@ -124,8 +129,8 @@ describe('PaymentService', () => {
     })
 
     it('IAM-ONB-006.1: also works from payment_pending status', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps('payment_pending')
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('payment_pending')
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       await expect(
         service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false }),
@@ -133,8 +138,8 @@ describe('PaymentService', () => {
     })
 
     it('throws ConflictError when payment already approved', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps('payment_confirmed')
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('payment_confirmed')
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       await expect(
         service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false }),
@@ -142,8 +147,8 @@ describe('PaymentService', () => {
     })
 
     it('throws ValidationError for invalid draft state (draft)', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps('draft')
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('draft')
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       await expect(
         service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false }),
@@ -151,18 +156,18 @@ describe('PaymentService', () => {
     })
 
     it('IAM-ONB-006.3: idempotencyReset=true cancels pending payment before creating new', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps('payment_pending')
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('payment_pending')
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       await service.initiatePayment({ draftId: 'draft-1', idempotencyReset: true })
 
       expect(paymentRepo.cancelPendingByDraftId).toHaveBeenCalledWith('draft-1')
-      expect(bancardAdapter.initiatePayment).toHaveBeenCalledTimes(1)
+      expect(bancardMethodAdapter.initiate).toHaveBeenCalledTimes(1)
     })
 
     it('does NOT cancel pending when idempotencyReset=false', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps('otp_verified')
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('otp_verified')
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       await service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false })
 
@@ -172,11 +177,11 @@ describe('PaymentService', () => {
 
   describe('getPaymentStatus', () => {
     it('IAM-ONB-007.1: returns approved status when webhook arrived', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps()
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps()
       paymentRepo.findByDraftId.mockResolvedValue(
         makePayment({ status: 'approved', confirmedAt: new Date() }),
       )
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       const result = await service.getPaymentStatus('draft-1')
 
@@ -186,9 +191,9 @@ describe('PaymentService', () => {
     })
 
     it('IAM-ONB-007.2: returns pending status when webhook not yet arrived', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps()
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps()
       paymentRepo.findByDraftId.mockResolvedValue(makePayment({ status: 'pending' }))
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       const result = await service.getPaymentStatus('draft-1')
 
@@ -197,9 +202,9 @@ describe('PaymentService', () => {
     })
 
     it('returns pending when no payment record found', async () => {
-      const { draftRepo, paymentRepo, bancardAdapter, config } = makeDeps()
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps()
       paymentRepo.findByDraftId.mockResolvedValue(null)
-      const service = createPaymentService({ draftRepo, paymentRepo, bancardAdapter, config } as never)
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
 
       const result = await service.getPaymentStatus('draft-1')
 

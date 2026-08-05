@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 import type { DocumentRepository, PaymentRepository } from '../repositories/index.js'
 import type { StorageAdapter } from '../adapters/index.js'
 import { toContractPayment } from '../lib/payment-mapper.js'
-import { ForbiddenError, NotFoundError } from '../errors.js'
+import { ConflictError, ForbiddenError, NotFoundError } from '../errors.js'
 
 export type BillingServiceDeps = {
   documentRepo: DocumentRepository
@@ -27,6 +27,12 @@ export function createBillingService(deps: BillingServiceDeps) {
 
     if (document.tenantId !== tenantUuid) {
       throw new ForbiddenError('auth.forbidden')
+    }
+
+    // Invoices are placeholder rows (status: 'pending') until settlement generates
+    // the real PDF — see submit.service.ts / settlement.service.ts.
+    if (document.status !== 'ready') {
+      throw new ConflictError('billing.document_not_ready', `Document ${documentId} is not ready yet`)
     }
 
     const url = await storageAdapter.signedUrl({ key: document.storageKey, ttlSeconds: 300 })

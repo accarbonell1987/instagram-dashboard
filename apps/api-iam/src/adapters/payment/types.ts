@@ -14,8 +14,8 @@ export type PaymentInitiateParams = {
 }
 
 export type PaymentInitiateResult =
-  | { kind: 'redirect'; url: string; expiresAt: Date }
-  | { kind: 'bank_transfer'; reference: string; accounts: BankAccount[] }
+  | { kind: 'redirect'; externalRef: string; url: string; expiresAt: Date }
+  | { kind: 'bank_transfer'; externalRef: string; reference: string; accounts: BankAccount[] }
 
 export interface PaymentMethodAdapter {
   initiate(params: PaymentInitiateParams): Promise<PaymentInitiateResult>

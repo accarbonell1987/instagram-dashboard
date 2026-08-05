@@ -25,6 +25,6 @@ export class BankTransferAdapter implements PaymentMethodAdapter {
       reference = `CH-${generateReferenceCode()}`
     }
 
-    return { kind: 'bank_transfer', reference, accounts }
+    return { kind: 'bank_transfer', externalRef: reference, reference, accounts }
   }
 }

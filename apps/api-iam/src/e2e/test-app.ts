@@ -5,6 +5,7 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { parseConfig } from '../config.js'
 import { createAdapters } from '../adapters/index.js'
+import { createPaymentAdapterRegistry } from '../adapters/payment/index.js'
 import { createRepositories } from '../repositories/index.js'
 import {
   createTokenService,
@@ -150,11 +151,25 @@ export async function createTestApp(): Promise<TestApp> {
     logger,
   })
 
+  const paymentAdapterRegistry = createPaymentAdapterRegistry({
+    prisma,
+    bancardAdapter: adapters.bancardAdapter,
+  })
+
   const paymentService = createPaymentService({
     paymentRepo: repos.paymentRepo,
     draftRepo: repos.draftRepo,
-    bancardAdapter: adapters.bancardAdapter,
+    paymentAdapterRegistry,
     config,
+  })
+
+  const settlementService = createSettlementService({
+    prisma,
+    pdfAdapter: adapters.pdfAdapter,
+    storageAdapter: adapters.storageAdapter,
+    emailAdapter: adapters.emailAdapter,
+    config,
+    logger,
   })
 
   const submitService = createSubmitService({
@@ -168,13 +183,9 @@ export async function createTestApp(): Promise<TestApp> {
     storageAdapter: adapters.storageAdapter,
     emailAdapter: adapters.emailAdapter,
     tokenService,
+    settlementService,
     prisma,
     config,
-    logger,
-  })
-
-  const settlementService = createSettlementService({
-    prisma,
     logger,
   })
 

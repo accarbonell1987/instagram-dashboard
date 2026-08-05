@@ -10,8 +10,8 @@ import type {
   PaymentRepository,
 } from '../repositories/index.js'
 import type { EmailAdapter, PdfAdapter, StorageAdapter } from '../adapters/index.js'
-import { activationTemplate } from '../adapters/email/templates/index.js'
 import type { TokenService } from './token.service.js'
+import type { SettlementService } from './settlement.service.js'
 import type { Config } from '../config.js'
 import type { Tenant } from '../domain/index.js'
 import { DEFAULT_PRODUCT_ID } from '../domain/index.js'
@@ -32,6 +32,7 @@ export type SubmitServiceDeps = {
   storageAdapter: StorageAdapter
   emailAdapter: EmailAdapter
   tokenService: TokenService
+  settlementService: SettlementService
   prisma: PrismaClient
   config: Config
   logger: Logger
@@ -48,6 +49,8 @@ export type SubmitResponse = {
     // Bug 9 fix: return document IDs so the hub can fetch fresh signed URLs on demand
     // via GET /billing/documents/{id}/signed-url, rather than using pre-signed URLs
     // that expire quickly (old TTL was 300s — insufficient for slow users).
+    // invoiceId is a `status: 'pending'` placeholder until settlement generates the
+    // real PDF — see settlement.service.ts. You don't invoice what hasn't been paid.
     invoiceId: string
     contractId: string
   }
@@ -63,8 +66,8 @@ export function createSubmitService(deps: SubmitServiceDeps) {
     tenantRepo,
     pdfAdapter,
     storageAdapter,
-    emailAdapter,
     tokenService,
+    settlementService,
     prisma,
     config,
     logger,
@@ -105,7 +108,6 @@ export function createSubmitService(deps: SubmitServiceDeps) {
     let invoiceDocumentId: string
     let contractDocumentId: string
     let refreshTokenRaw: string
-    let rawActivationToken: string
     let ownerEmail: string = ''
     let ownerName: string = ''
 
@@ -115,16 +117,29 @@ export function createSubmitService(deps: SubmitServiceDeps) {
       // if PDF generation fails, tenant/user are NOT created. The tradeoff is acceptable
       // because @react-pdf/renderer renders simple docs in p95 ≤ 800ms.
       // If p95 > 2s in production, switch to async + documents.status='pending' flow.
-      ;({ tenantId, tenantSlug, userId, invoiceDocumentId, contractDocumentId, refreshTokenRaw, rawActivationToken } =
+      // The invoice PDF itself moved out of this transaction (see Step 10 below) —
+      // ADR-5's tradeoff still stands for the contract PDF that remains here.
+      ;({ tenantId, tenantSlug, userId, invoiceDocumentId, contractDocumentId, refreshTokenRaw } =
         await prisma.$transaction(async (tx) => {
           // ── Step 1: Lock the draft row ─────────────────────────────────
           const draft = await draftRepo.findByIdForUpdate(draftId, tx)
 
           // ── Step 2: Validate draft state ───────────────────────────────
-          if (draft.status !== 'payment_confirmed') {
+          // Provisioning now happens as soon as the wizard reaches summary,
+          // regardless of settlement state — a bank-transfer payment stays
+          // `pending` and the tenant is provisioned `pending` too; activation
+          // is exclusively settlement's job (see settlePayment below). The
+          // only hard requirement left is that a payment was actually
+          // initiated for this draft (there's nothing to backfill/settle
+          // otherwise).
+          const payment = await tx.payment.findFirst({
+            where: { draftId },
+            orderBy: { initiatedAt: 'desc' },
+          })
+          if (!payment) {
             throw new ConflictError(
               'onboarding.draft_not_submittable',
-              `Draft must be in payment_confirmed status, got: ${draft.status}`,
+              'Draft has no payment to submit',
             )
           }
 
@@ -231,10 +246,10 @@ export function createSubmitService(deps: SubmitServiceDeps) {
           })
 
           // ── Step 7: INSERT TenantAdmin user ────────────────────────────
-          rawActivationToken = nanoid(32)
-          const activationTokenHash = hashToken(rawActivationToken)
-          const activationTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-
+          // Activation token is no longer generated here — it's only useful once
+          // the tenant is actually activated, which settlement now owns exclusively
+          // (see settlePayment below / settlement.service.ts). Generating one here
+          // that might never get emailed (bank-transfer stays pending) would be dead data.
           const user = await tx.user.create({
             data: {
               tenantId: tenant.id,
@@ -243,17 +258,11 @@ export function createSubmitService(deps: SubmitServiceDeps) {
               role: 'TenantAdmin',
               status: 'pending_first_login',
               passwordHash: null,
-              activationTokenHash,
-              activationTokenExpiresAt: activationTokenExpiry,
-              activationTokenUsed: false,
             },
           })
 
-          // ── Step 8: UPDATE tenant status = active ──────────────────────
-          await tx.tenant.update({
-            where: { id: tenant.id },
-            data: { status: 'active' },
-          })
+          // Tenant stays `pending` (created that way in Step 6) — activation is
+          // exclusively settlement's job now (see settlePayment call below).
 
           // a2 (2.2): keep TenantProductSubscription in sync with the plan
           // assignment written above — this is the only write path for
@@ -273,7 +282,12 @@ export function createSubmitService(deps: SubmitServiceDeps) {
             },
           })
 
-          // ── Step 10: Generate PDFs (sync, inside tx per ADR-5) ─────────
+          // ── Step 10: Generate the CONTRACT PDF only (sync, inside tx per ADR-5) ──
+          // The contract is an agreement, not a payment document — it still generates
+          // at submit. The INVOICE moves to settlement (you don't invoice what hasn't
+          // been paid); a `status: 'pending'` placeholder row is created here so
+          // `documents.invoiceId` in the response stays stable — settlement fills it
+          // in later (see settlement.service.ts).
           const pdfData = {
             tenantName: companyName,
             planId,
@@ -283,42 +297,22 @@ export function createSubmitService(deps: SubmitServiceDeps) {
             ...draft.data,
           }
 
-          const [invoiceBuffer, contractBuffer] = await Promise.all([
-            pdfAdapter.generate({ type: 'invoice', data: pdfData }),
-            pdfAdapter.generate({ type: 'contract', data: pdfData }),
-          ])
+          const contractBuffer = await pdfAdapter.generate({ type: 'contract', data: pdfData })
 
-          // ── Step 11: Upload PDFs ───────────────────────────────────────
+          // ── Step 11: Upload contract PDF ────────────────────────────────
           // Document.id is @db.Uuid — must be a valid UUID, not nanoid
           const invoiceId = crypto.randomUUID()
           const contractId = crypto.randomUUID()
-          const txInvoiceStorageKey = `tenants/${tenant.id}/documents/${invoiceId}.pdf`
           const txContractStorageKey = `tenants/${tenant.id}/documents/${contractId}.pdf`
 
-          await Promise.all([
-            storageAdapter.upload({
-              key: txInvoiceStorageKey,
-              buffer: invoiceBuffer,
-              contentType: 'application/pdf',
-            }),
-            storageAdapter.upload({
-              key: txContractStorageKey,
-              buffer: contractBuffer,
-              contentType: 'application/pdf',
-            }),
-          ])
+          await storageAdapter.upload({
+            key: txContractStorageKey,
+            buffer: contractBuffer,
+            contentType: 'application/pdf',
+          })
 
           // ── Step 12: INSERT document rows ──────────────────────────────
           await Promise.all([
-            tx.document.create({
-              data: {
-                id: invoiceId,
-                tenantId: tenant.id,
-                type: 'invoice',
-                storageKey: txInvoiceStorageKey,
-                status: 'ready',
-              },
-            }),
             tx.document.create({
               data: {
                 id: contractId,
@@ -328,7 +322,44 @@ export function createSubmitService(deps: SubmitServiceDeps) {
                 status: 'ready',
               },
             }),
+            tx.document.create({
+              data: {
+                id: invoiceId,
+                tenantId: tenant.id,
+                type: 'invoice',
+                storageKey: 'pending',
+                status: 'pending',
+              },
+            }),
           ])
+
+          // ── Step 12b: Backfill Payment.tenantId ─────────────────────────
+          // The payment was created before the tenant existed (at the payment
+          // step) — link it now so admin/billing payment lists can find it
+          // (see payment-mapper.ts's orphan-row gap from slice 3a).
+          await tx.payment.update({
+            where: { id: payment.id },
+            data: { tenantId: tenant.id },
+          })
+
+          // Bancard is typically already `approved` by the time the wizard
+          // reaches summary (the webhook settles it before the tenant even
+          // exists) — settle it now through the shared path, which is what
+          // actually activates the tenant and generates invoice/receipt/email
+          // (see settlement.service.ts). Bank-transfer payments stay `pending`
+          // here and settle later via agent confirm / admin activation.
+          if (payment.status === 'approved') {
+            await settlementService.settlePayment(
+              {
+                paymentId: payment.id,
+                decision: 'approved',
+                settlementKind: 'gateway_webhook',
+                settledBy: undefined,
+                note: undefined,
+              },
+              tx,
+            )
+          }
 
           // ── Step 13: INSERT refresh_token ──────────────────────────────
           const rawToken = tokenService.signRefreshTokenRaw()
@@ -352,7 +383,6 @@ export function createSubmitService(deps: SubmitServiceDeps) {
             invoiceDocumentId: invoiceId,
             contractDocumentId: contractId,
             refreshTokenRaw: rawToken,
-            rawActivationToken,
             tenant,
           }
         }))
@@ -397,22 +427,9 @@ export function createSubmitService(deps: SubmitServiceDeps) {
       user_status: 'pending_first_login',
     })
 
-    // ── Send activation email (best-effort, outside transaction) ──────
-    const activationUrl = `${config.HUB_BASE_URL}/first-login?token=${rawActivationToken}`
-    const { subject: activationSubject, html: activationHtml } = activationTemplate({
-      tenantName: ownerName,
-      activationUrl,
-    })
-    try {
-      await emailAdapter.send({
-        to: repEmail,
-        subject: activationSubject,
-        html: activationHtml,
-      })
-    } catch (emailError) {
-      log.warn({ category: 'auth', event: 'activation_email_failed', tenantId, err: emailError },
-        'Activation email send failed — user can activate via first-login flow')
-    }
+    // Activation email no longer sent here — it goes out from settlement.service.ts
+    // only once the tenant is actually activated (never before a payment can be
+    // reversed). See settlePayment() above and settlement.service.ts.
 
     // ── Step 15: Fetch tenant for response ────────────────────────────────
     const tenant = await tenantRepo.findByUuid(tenantId)

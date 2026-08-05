@@ -54,7 +54,17 @@ function makeConfig() {
   }
 }
 
-function makeTxClient(draftStatus = 'payment_confirmed' as OnboardingDraft['status']) {
+function makePaymentRow(overrides: Partial<{ id: string; status: string }> = {}) {
+  return {
+    id: 'payment-1',
+    draftId: 'draft-1',
+    status: 'approved',
+    initiatedAt: new Date(),
+    ...overrides,
+  }
+}
+
+function makeTxClient(paymentStatus = 'approved') {
   return {
     $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
     tenant: {
@@ -66,7 +76,7 @@ function makeTxClient(draftStatus = 'payment_confirmed' as OnboardingDraft['stat
         name: 'ACME Corp',
         schemaName: 'tenant_acme',
         planId: 'professional',
-        status: 'active',
+        status: 'pending',
         createdAt: new Date(),
         updatedAt: new Date(),
       }),
@@ -94,6 +104,10 @@ function makeTxClient(draftStatus = 'payment_confirmed' as OnboardingDraft['stat
     document: {
       create: vi.fn().mockResolvedValue({}),
     },
+    payment: {
+      findFirst: vi.fn().mockResolvedValue(makePaymentRow({ status: paymentStatus })),
+      update: vi.fn().mockResolvedValue({}),
+    },
     refreshToken: {
       create: vi.fn().mockResolvedValue({}),
     },
@@ -103,9 +117,9 @@ function makeTxClient(draftStatus = 'payment_confirmed' as OnboardingDraft['stat
   }
 }
 
-function makeDeps(draftStatus = 'payment_confirmed' as OnboardingDraft['status']) {
-  const draft = makeDraft({ status: draftStatus })
-  const tx = makeTxClient(draftStatus)
+function makeDeps(paymentStatus = 'approved') {
+  const draft = makeDraft()
+  const tx = makeTxClient(paymentStatus)
 
   const draftRepo = {
     findByIdForUpdate: vi.fn().mockResolvedValue(draft),
@@ -190,21 +204,28 @@ function makeDeps(draftStatus = 'payment_confirmed' as OnboardingDraft['status']
     send: vi.fn().mockResolvedValue(undefined),
   }
 
+  const settlementService = {
+    settlePayment: vi.fn().mockResolvedValue({
+      payment: makePaymentRow({ status: 'approved' }),
+      alreadySettled: false,
+    }),
+  }
+
   const config = makeConfig()
 
   const prisma = {
     $transaction: vi.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(tx)),
   }
 
-  return { draftRepo, tenantRepo, userRepo, documentRepo, refreshTokenRepo, paymentRepo, pdfAdapter, storageAdapter, emailAdapter, tokenService, config, prisma, logger: silentLogger, tx }
+  return { draftRepo, tenantRepo, userRepo, documentRepo, refreshTokenRepo, paymentRepo, pdfAdapter, storageAdapter, emailAdapter, tokenService, settlementService, config, prisma, logger: silentLogger, tx }
 }
 
 // ─── Tests ─────────────────────────────────────────────────────────────────
 
 describe('SubmitService', () => {
   describe('submit', () => {
-    it('IAM-ONB-008.1: happy path — runs full provisioning and returns SubmitResponse', async () => {
-      const deps = makeDeps('payment_confirmed')
+    it('IAM-ONB-008.1: Bancard-approved happy path — provisions, settles inline, returns SubmitResponse (regression)', async () => {
+      const deps = makeDeps('approved')
       const service = createSubmitService(deps as never)
 
       const result = await service.submit({ draftId: 'draft-1', version: 5 })
@@ -217,7 +238,7 @@ describe('SubmitService', () => {
         expect.stringContaining('CREATE SCHEMA'),
       )
 
-      // Tenant created
+      // Tenant created — pending, not active (activation is settlement's job)
       expect(deps.tx.tenant.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ slug: 'acme', status: 'pending' }) }),
       )
@@ -233,9 +254,20 @@ describe('SubmitService', () => {
         }),
       )
 
-      // Tenant activated
-      expect(deps.tx.tenant.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: { status: 'active' } }),
+      // submit.service.ts no longer flips tenant status itself
+      expect(deps.tx.tenant.update).not.toHaveBeenCalled()
+
+      // Payment.tenantId backfilled
+      expect(deps.tx.payment.update).toHaveBeenCalledWith({
+        where: { id: 'payment-1' },
+        data: { tenantId: 'tenant-uuid-1' },
+      })
+
+      // Bancard is already approved by the time summary is reached — submit settles
+      // it inline through the shared path (regression: preserves today's UX)
+      expect(deps.settlementService.settlePayment).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentId: 'payment-1', decision: 'approved', settlementKind: 'gateway_webhook' }),
+        deps.tx,
       )
 
       // Draft completed
@@ -252,14 +284,18 @@ describe('SubmitService', () => {
         }),
       )
 
-      // PDFs generated (2 — invoice + contract)
-      expect(deps.pdfAdapter.generate).toHaveBeenCalledTimes(2)
+      // Only the CONTRACT PDF is generated at submit — invoice moved to settlement
+      expect(deps.pdfAdapter.generate).toHaveBeenCalledTimes(1)
+      expect(deps.pdfAdapter.generate).toHaveBeenCalledWith(expect.objectContaining({ type: 'contract' }))
 
-      // Files uploaded
-      expect(deps.storageAdapter.upload).toHaveBeenCalledTimes(2)
+      // Only the contract file is uploaded
+      expect(deps.storageAdapter.upload).toHaveBeenCalledTimes(1)
 
-      // Documents inserted in tx
+      // Documents inserted in tx: contract (ready) + invoice (pending placeholder)
       expect(deps.tx.document.create).toHaveBeenCalledTimes(2)
+      expect(deps.tx.document.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ type: 'invoice', status: 'pending', storageKey: 'pending' }) }),
+      )
 
       // Refresh token inserted in tx
       expect(deps.tx.refreshToken.create).toHaveBeenCalledTimes(1)
@@ -285,15 +321,46 @@ describe('SubmitService', () => {
       })
     })
 
-    it('IAM-ONB-008.3: throws ConflictError when draft status is not payment_confirmed', async () => {
-      const deps = makeDeps('otp_verified')
+    it('provisions a bank-transfer draft with a still-pending payment — tenant stays pending, no settlement, no activation email', async () => {
+      const deps = makeDeps('pending')
+      const service = createSubmitService(deps as never)
+
+      const result = await service.submit({ draftId: 'draft-1', version: 5 })
+
+      // Tenant provisioned pending — never activated at submit
+      expect(deps.tx.tenant.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'pending' }) }),
+      )
+      expect(deps.tx.tenant.update).not.toHaveBeenCalled()
+
+      // Still backfills tenantId so admin/billing lists can find the payment
+      expect(deps.tx.payment.update).toHaveBeenCalledWith({
+        where: { id: 'payment-1' },
+        data: { tenantId: 'tenant-uuid-1' },
+      })
+
+      // Nothing to settle yet — bank-transfer waits for agent confirm
+      expect(deps.settlementService.settlePayment).not.toHaveBeenCalled()
+
+      // The latent bug this redesign fixes: no activation email at submit, ever
+      expect(deps.emailAdapter.send).not.toHaveBeenCalled()
+
+      // Draft still reaches completed + returns a usable SubmitResponse
+      expect(result.tenantId).toBe('tenant-uuid-1')
+      expect(result.documents.invoiceId).toBeTruthy()
+    })
+
+    it('throws ConflictError when the draft has no payment to submit', async () => {
+      const deps = makeDeps('approved')
+      deps.tx.payment.findFirst.mockResolvedValue(null)
       const service = createSubmitService(deps as never)
 
       await expect(service.submit({ draftId: 'draft-1', version: 5 })).rejects.toThrow(ConflictError)
+      expect(deps.settlementService.settlePayment).not.toHaveBeenCalled()
     })
 
     it('throws ConflictError on version mismatch', async () => {
-      const deps = makeDeps('payment_confirmed')
+      const deps = makeDeps('approved')
       // Draft has version 5, but we submit with version 3
       deps.draftRepo.findByIdForUpdate.mockResolvedValue(makeDraft({ version: 5 }))
       const service = createSubmitService(deps as never)
@@ -302,7 +369,7 @@ describe('SubmitService', () => {
     })
 
     it('IAM-ONB-008.4: unexpected errors propagate as InternalError (full rollback by Prisma)', async () => {
-      const deps = makeDeps('payment_confirmed')
+      const deps = makeDeps('approved')
 
       // Make PDF generation fail — simulates mid-transaction failure
       deps.pdfAdapter.generate.mockRejectedValue(new Error('PDF engine crash'))
@@ -313,7 +380,7 @@ describe('SubmitService', () => {
     })
 
     it('throws ConflictError when email already exists (pre-transaction check)', async () => {
-      const deps = makeDeps('payment_confirmed')
+      const deps = makeDeps('approved')
       // Mock an existing user with the same email
       deps.userRepo.findByEmailGlobal.mockResolvedValue({
         id: 'existing-user',
@@ -339,7 +406,7 @@ describe('SubmitService', () => {
     })
 
     it('throws ConflictError when RUC already exists (pre-transaction check)', async () => {
-      const deps = makeDeps('payment_confirmed')
+      const deps = makeDeps('approved')
       // Draft has RUC in company data
       deps.draftRepo.findByIdOrThrow.mockResolvedValue(
         makeDraft({
@@ -361,7 +428,7 @@ describe('SubmitService', () => {
     })
 
     it('converts Prisma P2002 duplicate-key to ConflictError', async () => {
-      const deps = makeDeps('payment_confirmed')
+      const deps = makeDeps('approved')
       // Pre-checks pass — email not found, no RUC in data
       deps.userRepo.findByEmailGlobal.mockResolvedValue(null)
       deps.draftRepo.findByRuc.mockResolvedValue(null)
@@ -373,53 +440,8 @@ describe('SubmitService', () => {
         .rejects.toThrow(ConflictError)
     })
 
-    it('sends activation email with tokenized URL on successful submit', async () => {
-      const deps = makeDeps('payment_confirmed')
-      deps.userRepo.findByEmailGlobal.mockResolvedValue(null)
-      deps.draftRepo.findByRuc.mockResolvedValue(null)
-      const service = createSubmitService(deps as never)
-
-      await service.submit({ draftId: 'draft-1', version: 5 })
-
-      expect(deps.emailAdapter.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'ana@acme.com',
-          subject: 'Tu empresa ha sido activada',
-          html: expect.stringContaining('/first-login?token='),
-        }),
-      )
-      // Verify email uses branded template (contains Corehub branding in html)
-      expect(deps.emailAdapter.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          html: expect.stringContaining('Corehub'),
-        }),
-      )
-      // Verify email does NOT contain the old broken URL
-      expect(deps.emailAdapter.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          html: expect.not.stringContaining('/login?first-login=true'),
-        }),
-      )
-    })
-
-    it('activation email failure logs warning but does not throw', async () => {
-      const deps = makeDeps('payment_confirmed')
-      deps.userRepo.findByEmailGlobal.mockResolvedValue(null)
-      deps.draftRepo.findByRuc.mockResolvedValue(null)
-      deps.emailAdapter.send.mockRejectedValue(new Error('SMTP connection refused'))
-      const service = createSubmitService(deps as never)
-
-      // Should NOT throw — submit succeeds despite email failure
-      const result = await service.submit({ draftId: 'draft-1', version: 5 })
-
-      expect(result).toMatchObject({
-        tenantId: expect.any(String),
-        accessToken: expect.any(String),
-      })
-    })
-
-    it('stores activation token hash on User during transaction', async () => {
-      const deps = makeDeps('payment_confirmed')
+    it('does not generate an activation token on the User row — that is settlement.service.ts\'s job now', async () => {
+      const deps = makeDeps('approved')
       deps.userRepo.findByEmailGlobal.mockResolvedValue(null)
       deps.draftRepo.findByRuc.mockResolvedValue(null)
       const service = createSubmitService(deps as never)
@@ -428,11 +450,7 @@ describe('SubmitService', () => {
 
       expect(deps.tx.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            activationTokenHash: expect.any(String),
-            activationTokenExpiresAt: expect.any(Date),
-            activationTokenUsed: false,
-          }),
+          data: expect.not.objectContaining({ activationTokenHash: expect.anything() }),
         }),
       )
     })

@@ -8,6 +8,7 @@ import { parseConfig } from './config.js';
 import { createLogger } from './lib/logger.js';
 import { createAccessLogMiddleware } from './middleware/access-log.middleware.js';
 import { createAdapters } from './adapters/index.js';
+import { createPaymentAdapterRegistry } from './adapters/payment/index.js';
 import { createRepositories } from './repositories/index.js';
 import {
   createTokenService,
@@ -117,11 +118,25 @@ async function main(): Promise<void> {
     logger: rootLogger,
   });
 
+  const paymentAdapterRegistry = createPaymentAdapterRegistry({
+    prisma,
+    bancardAdapter: adapters.bancardAdapter,
+  });
+
   const paymentService = createPaymentService({
     paymentRepo: repos.paymentRepo,
     draftRepo: repos.draftRepo,
-    bancardAdapter: adapters.bancardAdapter,
+    paymentAdapterRegistry,
     config,
+  });
+
+  const settlementService = createSettlementService({
+    prisma,
+    pdfAdapter: adapters.pdfAdapter,
+    storageAdapter: adapters.storageAdapter,
+    emailAdapter: adapters.emailAdapter,
+    config,
+    logger: rootLogger,
   });
 
   const submitService = createSubmitService({
@@ -135,13 +150,9 @@ async function main(): Promise<void> {
     storageAdapter: adapters.storageAdapter,
     emailAdapter: adapters.emailAdapter,
     tokenService,
+    settlementService,
     prisma,
     config,
-    logger: rootLogger,
-  });
-
-  const settlementService = createSettlementService({
-    prisma,
     logger: rootLogger,
   });
 
