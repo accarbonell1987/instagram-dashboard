@@ -14,7 +14,10 @@ const makeTenant = () => ({
 })
 
 function makePrisma() {
-  return { tenant: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() } }
+  return {
+    tenant: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    payment: { findMany: vi.fn() },
+  }
 }
 
 describe('PrismaTenantRepository', () => {
@@ -42,5 +45,32 @@ describe('PrismaTenantRepository', () => {
     expect(prisma.tenant.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ schemaName: 'tenant_acme' }) })
     )
+  })
+
+  // Task 3.9 — day-15 unpaid sweep boundary
+  describe('sweepUnpaidPending', () => {
+    it('suspends tenants whose oldest pending payment is past the threshold', async () => {
+      prisma.payment.findMany.mockResolvedValue([{ tenantId: 'tenant-stale' }])
+      const result = await repo.sweepUnpaidPending(15)
+
+      expect(prisma.payment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: 'pending', tenantId: { not: null }, tenant: { status: 'pending' } }),
+        }),
+      )
+      expect(prisma.tenant.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['tenant-stale'] } },
+        data: { status: 'suspended' },
+      })
+      expect(result).toEqual(['tenant-stale'])
+    })
+
+    it('does nothing when no payment is past the threshold', async () => {
+      prisma.payment.findMany.mockResolvedValue([])
+      const result = await repo.sweepUnpaidPending(15)
+
+      expect(prisma.tenant.updateMany).not.toHaveBeenCalled()
+      expect(result).toEqual([])
+    })
   })
 })

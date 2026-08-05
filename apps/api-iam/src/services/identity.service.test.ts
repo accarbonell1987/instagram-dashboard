@@ -58,6 +58,7 @@ function makeDeps(overrides: Partial<IdentityServiceDeps> = {}): IdentityService
       updateName: vi.fn().mockResolvedValue(undefined),
       findAllPaginated: vi.fn(),
       findByIdWithDetail: vi.fn(),
+      sweepUnpaidPending: vi.fn(),
     },
     userRepo: {
       findByEmail: vi.fn(),
@@ -116,6 +117,7 @@ describe('IdentityService', () => {
           updateName: vi.fn(),
           findAllPaginated: vi.fn(),
           findByIdWithDetail: vi.fn(),
+          sweepUnpaidPending: vi.fn(),
         },
       })
       const service = createIdentityService(deps)

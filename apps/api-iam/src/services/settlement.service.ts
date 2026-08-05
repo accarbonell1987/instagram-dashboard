@@ -31,7 +31,10 @@ export type SettlePaymentResult = {
 const NOTE_REQUIRED_KINDS: PaymentSettlementKind[] = ['agent_review', 'manual_admin']
 // A payment is still open for settlement in these states; anything else has
 // already gone through this path once (idempotent no-op on retry).
-const UNSETTLED_STATUSES: PaymentStatus[] = ['pending', 'in_review']
+// 'declined' is included so an agent can reopen a rejected bank-transfer
+// payment when the user re-transfers under the same reference (see spec
+// "payment-reconciliation" — reject → same-reference retry → confirm).
+export const UNSETTLED_STATUSES: PaymentStatus[] = ['pending', 'in_review', 'declined']
 
 export function createSettlementService(deps: SettlementServiceDeps) {
   const { prisma, logger } = deps

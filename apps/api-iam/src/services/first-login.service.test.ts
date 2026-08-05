@@ -105,6 +105,7 @@ describe('FirstLoginService', () => {
       updateName: vi.fn(),
       findAllPaginated: vi.fn(),
       findByIdWithDetail: vi.fn(),
+      sweepUnpaidPending: vi.fn(),
     };
     otpService = {
       sendOtp: vi.fn().mockResolvedValue({

@@ -139,6 +139,9 @@ export type AdminTenantParams = z.infer<typeof AdminTenantParamsSchema>
 export const AdminTenantStatusChangeSchema = z.object({
   status: z.enum(['pending', 'active', 'suspended']),
   reason: z.string().optional(),
+  // Required by the service when status === 'active' — activation routes
+  // through settlePayment(), which mandates a note (see admin-tenant.service.ts).
+  note: z.string().optional(),
 })
 
 export type AdminTenantStatusChangeRequest = z.infer<typeof AdminTenantStatusChangeSchema>

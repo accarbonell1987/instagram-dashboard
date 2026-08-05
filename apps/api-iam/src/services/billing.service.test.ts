@@ -28,6 +28,37 @@ function makeDeps(overrides: Partial<BillingServiceDeps> = {}): BillingServiceDe
       upload: vi.fn(),
       signedUrl: vi.fn().mockResolvedValue('https://storage.example.com/signed-url'),
     },
+    paymentRepo: {
+      create: vi.fn(),
+      findByDraftId: vi.fn(),
+      findByExternalRef: vi.fn(),
+      listByTenant: vi.fn().mockResolvedValue([]),
+      updateStatus: vi.fn(),
+      cancelPendingByDraftId: vi.fn(),
+    },
+    ...overrides,
+  }
+}
+
+function makePayment(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: 'pay-1',
+    draftId: 'draft-1',
+    tenantId: 'tenant-uuid-1',
+    externalRef: 'CH-2K4M9Q',
+    method: 'bank_transfer' as const,
+    amount: 75000,
+    currency: 'PYG',
+    status: 'pending' as const,
+    reason: undefined,
+    settlementKind: undefined,
+    settledBy: undefined,
+    settledAt: undefined,
+    note: undefined,
+    initiatedAt: new Date('2026-01-01'),
+    confirmedAt: undefined,
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-01'),
     ...overrides,
   }
 }
@@ -97,6 +128,34 @@ describe('BillingService', () => {
       const after = Date.now()
       expect(result.expiresAt.getTime()).toBeGreaterThanOrEqual(before + 300_000 - 10)
       expect(result.expiresAt.getTime()).toBeLessThanOrEqual(after + 300_000 + 10)
+    })
+  })
+
+  // ── listPayments (payment-visibility spec) ──────────────────────────────────
+
+  describe('listPayments', () => {
+    it('scopes to the caller tenant and maps method/status/settlementKind/reference', async () => {
+      const deps = makeDeps({ paymentRepo: { ...makeDeps().paymentRepo, listByTenant: vi.fn().mockResolvedValue([makePayment()]) } })
+      const service = createBillingService(deps)
+
+      const result = await service.listPayments({ tenantUuid: 'tenant-uuid-1', page: 1, pageSize: 10 })
+
+      expect(deps.paymentRepo.listByTenant).toHaveBeenCalledWith('tenant-uuid-1')
+      expect(result.items).toEqual([
+        expect.objectContaining({ method: 'bank_transfer', status: 'pending', reference: 'CH-2K4M9Q' }),
+      ])
+      expect(result.total).toBe(1)
+    })
+
+    it('paginates in-memory', async () => {
+      const payments = [makePayment({ id: 'pay-1' }), makePayment({ id: 'pay-2' }), makePayment({ id: 'pay-3' })]
+      const deps = makeDeps({ paymentRepo: { ...makeDeps().paymentRepo, listByTenant: vi.fn().mockResolvedValue(payments) } })
+      const service = createBillingService(deps)
+
+      const result = await service.listPayments({ tenantUuid: 'tenant-uuid-1', page: 2, pageSize: 2 })
+
+      expect(result.items).toHaveLength(1)
+      expect(result.total).toBe(3)
     })
   })
 })

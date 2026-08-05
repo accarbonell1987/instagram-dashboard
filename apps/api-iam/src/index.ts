@@ -170,6 +170,7 @@ async function main(): Promise<void> {
   const billingService = createBillingService({
     documentRepo: repos.documentRepo,
     storageAdapter: adapters.storageAdapter,
+    paymentRepo: repos.paymentRepo,
   });
 
   const planService = createPlanService({
@@ -211,6 +212,9 @@ async function main(): Promise<void> {
     tenantRepo: repos.tenantRepo,
     userRepo: repos.userRepo,
     refreshTokenRepo: repos.refreshTokenRepo,
+    paymentRepo: repos.paymentRepo,
+    draftRepo: repos.draftRepo,
+    settlementService,
     prisma,
   });
 
@@ -231,6 +235,7 @@ async function main(): Promise<void> {
     moduleService,
     productRoleService,
     adminTenantService,
+    settlementService,
   };
 
   const app = new OpenAPIHono();
@@ -263,7 +268,7 @@ async function main(): Promise<void> {
     prisma,
   });
 
-  startBackgroundJobs(repos, rootLogger);
+  startBackgroundJobs(repos, rootLogger, config.UNPAID_PAYMENT_SUSPEND_DAYS);
 
   const server = serve({ fetch: app.fetch, port: config.PORT });
 

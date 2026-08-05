@@ -74,7 +74,7 @@ describe('SettlementService.settlePayment', () => {
     expect(result.alreadySettled).toBe(false)
     expect(tx.payment.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'payment-1', status: { in: ['pending', 'in_review'] } },
+        where: { id: 'payment-1', status: { in: ['pending', 'in_review', 'declined'] } },
         data: expect.objectContaining({ status: 'approved', settlementKind: 'gateway_webhook' }),
       }),
     )
@@ -116,6 +116,21 @@ describe('SettlementService.settlePayment', () => {
     })
 
     expect(tx.tenant.update).not.toHaveBeenCalled()
+  })
+
+  it('reopens a declined payment for a later confirm (reject → same-reference retry → confirm)', async () => {
+    const tx = makeTx({ raw: makeRawPayment({ status: 'declined', tenantId: 'tenant-1' }), tenant: { id: 'tenant-1', status: 'pending' } })
+    const service = createSettlementService(makeDeps(tx) as never)
+
+    const result = await service.settlePayment({
+      paymentId: 'payment-1', decision: 'approved', settlementKind: 'agent_review', settledBy: 'admin-1', note: 're-transferred with correct amount',
+    })
+
+    expect(result.alreadySettled).toBe(false)
+    expect(tx.payment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'payment-1', status: { in: ['pending', 'in_review', 'declined'] } } }),
+    )
+    expect(tx.tenant.update).toHaveBeenCalledWith({ where: { id: 'tenant-1' }, data: { status: 'active' } })
   })
 
   it('uses a caller-provided tx instead of opening its own transaction', async () => {

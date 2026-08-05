@@ -61,6 +61,7 @@ function makeDeps(overrides: Partial<InvitationServiceDeps> = {}): InvitationSer
       updateName: vi.fn(),
       findAllPaginated: vi.fn(),
       findByIdWithDetail: vi.fn(),
+      sweepUnpaidPending: vi.fn(),
     },
     userRepo: {
       findByEmail: vi.fn(),

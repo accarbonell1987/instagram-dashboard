@@ -53,6 +53,10 @@ const configSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
 
+  // 15-day unpaid-tenant sweep threshold (tasks 3.9): pending tenants with an
+  // unsettled bank-transfer payment older than this get auto-suspended.
+  UNPAID_PAYMENT_SUSPEND_DAYS: z.coerce.number().int().positive().default(15),
+
   IDEMPOTENCY_TTL_SECONDS: z.coerce.number().default(86400),
   DEVICE_TRUST_TTL_SECONDS: z.coerce.number().default(5184000),
   DRAFT_TTL_SECONDS: z.coerce.number().default(604800),

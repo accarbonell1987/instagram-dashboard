@@ -141,4 +141,18 @@ export class PrismaTenantRepository implements TenantRepository {
       updatedAt: raw.updatedAt,
     }
   }
+
+  async sweepUnpaidPending(days: number): Promise<string[]> {
+    const threshold = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+    const stale = await this.prisma.payment.findMany({
+      where: { status: 'pending', initiatedAt: { lt: threshold }, tenantId: { not: null }, tenant: { status: 'pending' } },
+      select: { tenantId: true },
+      distinct: ['tenantId'],
+    })
+    const tenantIds = stale.map((p) => p.tenantId).filter((id): id is string => id !== null)
+    if (tenantIds.length === 0) return []
+
+    await this.prisma.tenant.updateMany({ where: { id: { in: tenantIds } }, data: { status: 'suspended' } })
+    return tenantIds
+  }
 }

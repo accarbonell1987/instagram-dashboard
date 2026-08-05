@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createAdminTenantService } from './admin-tenant.service.js'
-import { NotFoundError, ConflictError } from '../errors.js'
+import { NotFoundError, ConflictError, ValidationError } from '../errors.js'
 import type { AdminTenantServiceDeps } from './admin-tenant.service.js'
 
 function makeTenant(overrides: Partial<Record<string, unknown>> = {}) {
@@ -45,6 +45,7 @@ function makeDeps(overrides: Partial<AdminTenantServiceDeps> = {}): AdminTenantS
         total: 2,
       }),
       findByIdWithDetail: vi.fn().mockResolvedValue(makeTenantWithDetails()),
+      sweepUnpaidPending: vi.fn(),
     },
     userRepo: {
       findByEmail: vi.fn(),
@@ -74,6 +75,29 @@ function makeDeps(overrides: Partial<AdminTenantServiceDeps> = {}): AdminTenantS
       findActiveByUserId: vi.fn(),
       deleteExpired: vi.fn(),
       invalidateAllForUser: vi.fn(),
+    },
+    paymentRepo: {
+      create: vi.fn().mockResolvedValue({ id: 'payment-synthetic' }),
+      findByDraftId: vi.fn(),
+      findByExternalRef: vi.fn(),
+      listByTenant: vi.fn().mockResolvedValue([]),
+      updateStatus: vi.fn(),
+      cancelPendingByDraftId: vi.fn(),
+    },
+    draftRepo: {
+      create: vi.fn().mockResolvedValue({ id: 'draft-synthetic' }),
+      findById: vi.fn(),
+      findByIdOrThrow: vi.fn(),
+      findByIdForUpdate: vi.fn(),
+      findByRepresentativeEmail: vi.fn(),
+      update: vi.fn(),
+      setResumeToken: vi.fn(),
+      markResumeTokenUsed: vi.fn(),
+      deleteExpired: vi.fn(),
+      findByRuc: vi.fn(),
+    },
+    settlementService: {
+      settlePayment: vi.fn().mockResolvedValue({ payment: { id: 'payment-1' }, alreadySettled: false }),
     },
     prisma: {} as any,
     ...overrides,
@@ -172,7 +196,7 @@ describe('AdminTenantService', () => {
     it('does not invalidate sessions when activating', async () => {
       const deps = makeDeps()
       const service = createAdminTenantService(deps)
-      await service.changeTenantStatus('tenant-1', 'active')
+      await service.changeTenantStatus('tenant-1', 'active', 'admin-1', 'confirmed via bank statement')
 
       expect(deps.userRepo.findActiveUserIdsByTenant).not.toHaveBeenCalled()
       expect(deps.refreshTokenRepo.invalidateAllForUser).not.toHaveBeenCalled()
@@ -189,6 +213,65 @@ describe('AdminTenantService', () => {
       await expect(
         service.changeTenantStatus('nonexistent', 'suspended')
       ).rejects.toBeInstanceOf(NotFoundError)
+    })
+
+    // Task 3.8 regression: activation used to write tenant status directly.
+    // It now always routes through settlePayment() (spec
+    // "tenant-administration: Manual status changes route through settlement").
+
+    it('rejects activation with a missing/empty note, without touching tenantRepo or settlementService', async () => {
+      const deps = makeDeps()
+      const service = createAdminTenantService(deps)
+
+      await expect(
+        service.changeTenantStatus('tenant-1', 'active', 'admin-1', '  '),
+      ).rejects.toBeInstanceOf(ValidationError)
+
+      expect(deps.tenantRepo.updateStatus).not.toHaveBeenCalled()
+      expect(deps.settlementService.settlePayment).not.toHaveBeenCalled()
+    })
+
+    it('routes activation with an unsettled payment through settlePayment (manual_admin) instead of a direct status write', async () => {
+      const deps = makeDeps({
+        paymentRepo: {
+          ...makeDeps().paymentRepo,
+          listByTenant: vi.fn().mockResolvedValue([{ id: 'payment-1', status: 'pending' }]),
+        },
+      })
+      const service = createAdminTenantService(deps)
+
+      const result = await service.changeTenantStatus('tenant-1', 'active', 'admin-1', 'confirmed via bank statement')
+
+      expect(deps.tenantRepo.updateStatus).not.toHaveBeenCalled()
+      expect(deps.settlementService.settlePayment).toHaveBeenCalledWith({
+        paymentId: 'payment-1',
+        decision: 'approved',
+        settlementKind: 'manual_admin',
+        settledBy: 'admin-1',
+        note: 'confirmed via bank statement',
+      })
+      expect(deps.paymentRepo.create).not.toHaveBeenCalled()
+      expect(result).toEqual({ id: 'tenant-1', status: 'active' })
+    })
+
+    it('creates a synthetic manual_admin payment and settles it for a courtesy activation with zero payments', async () => {
+      const deps = makeDeps()
+      const service = createAdminTenantService(deps)
+
+      await service.changeTenantStatus('tenant-1', 'active', 'admin-1', 'manually provisioned tenant')
+
+      expect(deps.draftRepo.create).toHaveBeenCalledWith(expect.objectContaining({ planId: 'plan-1' }))
+      expect(deps.draftRepo.update).toHaveBeenCalledWith('draft-synthetic', { status: 'completed', tenantId: 'tenant-1' })
+      expect(deps.paymentRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ draftId: 'draft-synthetic', tenantId: 'tenant-1', amount: 0, status: 'pending' }),
+      )
+      expect(deps.settlementService.settlePayment).toHaveBeenCalledWith({
+        paymentId: 'payment-synthetic',
+        decision: 'approved',
+        settlementKind: 'manual_admin',
+        settledBy: 'admin-1',
+        note: 'manually provisioned tenant',
+      })
     })
   })
 })

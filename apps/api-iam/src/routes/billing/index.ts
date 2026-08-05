@@ -7,6 +7,7 @@ import {
   PaymentMethodChangeResponseSchema,
   InvoiceListResponseSchema,
   InvoiceListQuerySchema,
+  PaymentListResponseSchema,
   commonErrorResponses,
 } from '../schemas/index.js'
 import { NotFoundError } from '../../errors.js'
@@ -87,6 +88,29 @@ export function createBillingRouter(
   router.openapi(listInvoicesRoute, async (c) => {
     const { page, pageSize } = c.req.valid('query')
     const result = await billingService.listInvoices({ page, pageSize })
+    return c.json(result, 200)
+  })
+
+  // ─── GET /billing/payments ────────────────────────────────────────────────────
+  // Tenant-facing payment log — distinct from /billing/invoices (spec
+  // "payment-visibility": an invoice is not a payment).
+
+  const listPaymentsRoute = createRoute({
+    method: 'get',
+    path: '/billing/payments',
+    operationId: 'listPayments',
+    tags: ['billing', 'payments'],
+    request: { query: InvoiceListQuerySchema },
+    responses: {
+      200: { content: { 'application/json': { schema: PaymentListResponseSchema } }, description: 'Paginated payment history' },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+    },
+  })
+
+  router.openapi(listPaymentsRoute, async (c) => {
+    const { page, pageSize } = c.req.valid('query')
+    const result = await billingService.listPayments({ tenantUuid: c.var.user.tenantUuid, page, pageSize })
     return c.json(result, 200)
   })
 

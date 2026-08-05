@@ -4,7 +4,7 @@ import type { Logger } from '../lib/logger.js'
 import type { Repositories } from '../repositories/index.js'
 import { purgeAnalyticsEntitlementsCache } from '../lib/entitlements-purge.js'
 
-export function startBackgroundJobs(repos: Repositories, logger: Logger): void {
+export function startBackgroundJobs(repos: Repositories, logger: Logger, unpaidPaymentSuspendDays: number): void {
   if (process.env['NODE_ENV'] === 'test') return
 
   async function runJob(jobName: string, fn: () => Promise<unknown>): Promise<void> {
@@ -51,5 +51,12 @@ export function startBackgroundJobs(repos: Repositories, logger: Logger): void {
       }
       return expired
     })
+  })
+
+  // Task 3.9: tenants left `pending` with an unsettled bank-transfer payment
+  // past the threshold get auto-suspended. Reactivation happens automatically
+  // via settlePayment() when an agent later confirms the same payment.
+  cron.schedule('0 4 * * *', () => {
+    void runJob('sweep-unpaid-tenants', () => repos.tenantRepo.sweepUnpaidPending(unpaidPaymentSuspendDays))
   })
 }

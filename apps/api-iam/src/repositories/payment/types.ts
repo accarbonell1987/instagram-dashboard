@@ -6,6 +6,9 @@ export interface CreatePaymentInput {
   amount: number
   currency: string
   status: PaymentStatus
+  // Set for synthetic payments created by courtesy admin activation (task
+  // 3.7) — every other caller creates a payment before a tenant exists.
+  tenantId?: string
 }
 
 export interface PaymentRepository {

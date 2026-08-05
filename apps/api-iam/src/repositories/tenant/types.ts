@@ -55,4 +55,7 @@ export interface TenantRepository {
   updateName(id: string, name: string): Promise<void>
   findAllPaginated(query: TenantListQuery): Promise<TenantListResult>
   findByIdWithDetail(id: string): Promise<TenantDetail>
+  // 15-day unpaid sweep (task 3.9): suspends `pending` tenants whose oldest
+  // unsettled payment is older than `days`. Returns the suspended tenant ids.
+  sweepUnpaidPending(days: number): Promise<string[]>
 }

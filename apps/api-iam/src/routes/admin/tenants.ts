@@ -150,8 +150,8 @@ export function createAdminTenantsRouter(
   router.openapi(changeTenantStatusRoute, async (c) => {
     assertSuperAdmin(c.var.user.role)
     const { tenantId } = c.req.valid('param')
-    const { status } = c.req.valid('json')
-    const result = await adminTenantService.changeTenantStatus(tenantId, status)
+    const { status, note } = c.req.valid('json')
+    const result = await adminTenantService.changeTenantStatus(tenantId, status, c.var.user.sub, note)
 
     return c.json(result, 200)
   })

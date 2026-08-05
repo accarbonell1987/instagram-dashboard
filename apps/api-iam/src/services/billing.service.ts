@@ -1,15 +1,17 @@
 import { randomUUID } from 'crypto'
-import type { DocumentRepository } from '../repositories/index.js'
+import type { DocumentRepository, PaymentRepository } from '../repositories/index.js'
 import type { StorageAdapter } from '../adapters/index.js'
+import { toContractPayment } from '../lib/payment-mapper.js'
 import { ForbiddenError, NotFoundError } from '../errors.js'
 
 export type BillingServiceDeps = {
   documentRepo: DocumentRepository
   storageAdapter: StorageAdapter
+  paymentRepo: PaymentRepository
 }
 
 export function createBillingService(deps: BillingServiceDeps) {
-  const { documentRepo, storageAdapter } = deps
+  const { documentRepo, storageAdapter, paymentRepo } = deps
 
   async function getSignedDocumentUrl(params: {
     documentId: string
@@ -50,7 +52,27 @@ export function createBillingService(deps: BillingServiceDeps) {
     return { items: [], total: 0, page: params.page, pageSize: params.pageSize }
   }
 
-  return { getSignedDocumentUrl, getPaymentMethod, requestPaymentMethodChange, listInvoices }
+  // ponytail: paginates in-memory over listByTenant — this list is scoped to
+  // one tenant's payments (small, not a system-wide table scan) and adding a
+  // DB-paginated repo method isn't justified yet. Revisit if a tenant
+  // accumulates hundreds of payments.
+  async function listPayments(params: {
+    tenantUuid: string
+    page: number
+    pageSize: number
+  }): Promise<{ items: ReturnType<typeof toContractPayment>[]; total: number; page: number; pageSize: number }> {
+    const { tenantUuid, page, pageSize } = params
+    const all = await paymentRepo.listByTenant(tenantUuid)
+    const start = (page - 1) * pageSize
+    return {
+      items: all.slice(start, start + pageSize).map((p) => toContractPayment(p)),
+      total: all.length,
+      page,
+      pageSize,
+    }
+  }
+
+  return { getSignedDocumentUrl, getPaymentMethod, requestPaymentMethodChange, listInvoices, listPayments }
 }
 
 export type BillingService = ReturnType<typeof createBillingService>

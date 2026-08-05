@@ -41,6 +41,7 @@ function makeDeps(overrides: Partial<ModuleServiceDeps> = {}): ModuleServiceDeps
       updateName: vi.fn(),
       findAllPaginated: vi.fn(),
       findByIdWithDetail: vi.fn(),
+      sweepUnpaidPending: vi.fn(),
     },
     logger: silentLogger,
     ...overrides,
@@ -172,6 +173,7 @@ describe('ModuleService — grantTrial (b1, 5.1)', () => {
         updateName: vi.fn(),
         findAllPaginated: vi.fn(),
         findByIdWithDetail: vi.fn(),
+        sweepUnpaidPending: vi.fn(),
       },
     })
     const service = createModuleService(deps)

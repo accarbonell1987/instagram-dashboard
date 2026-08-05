@@ -203,6 +203,7 @@ export async function createTestApp(): Promise<TestApp> {
   const billingService = createBillingService({
     documentRepo: repos.documentRepo,
     storageAdapter: adapters.storageAdapter,
+    paymentRepo: repos.paymentRepo,
   })
 
   const planService = createPlanService({ planRepo: repos.planRepo })
@@ -242,6 +243,9 @@ export async function createTestApp(): Promise<TestApp> {
     tenantRepo: repos.tenantRepo,
     userRepo: repos.userRepo,
     refreshTokenRepo: repos.refreshTokenRepo,
+    paymentRepo: repos.paymentRepo,
+    draftRepo: repos.draftRepo,
+    settlementService,
     prisma,
   })
 
@@ -262,6 +266,7 @@ export async function createTestApp(): Promise<TestApp> {
     moduleService,
     productRoleService,
     adminTenantService,
+    settlementService,
   }
 
   const app = new OpenAPIHono()

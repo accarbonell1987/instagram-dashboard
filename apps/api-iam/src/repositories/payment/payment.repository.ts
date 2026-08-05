@@ -54,6 +54,7 @@ export class PrismaPaymentRepository implements PaymentRepository {
         amount: data.amount,
         currency: data.currency,
         status: data.status,
+        ...(data.tenantId !== undefined && { tenantId: data.tenantId }),
       },
     })
     return mapPayment(raw)

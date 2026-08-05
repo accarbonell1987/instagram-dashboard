@@ -18,6 +18,7 @@ import type {
   ModuleService,
   ProductRoleService,
   AdminTenantService,
+  SettlementService,
 } from '../services/index.js';
 import type { KeyProvider } from '../adapters/index.js';
 import type { PlanRepository, PaymentRepository, OnboardingDraftRepository, PlanQuotaRepository } from '../repositories/index.js';
@@ -40,6 +41,8 @@ import { createAdminTenantsRouter } from './admin/tenants.js';
 import { createAdminTrialsRouter } from './admin/trials.js';
 import { createAdminProductRolesRouter } from './admin/product-roles.js';
 import { createAdminProductsRouter } from './admin/products.js';
+import { createAdminPaymentsRouter } from './admin/payments.js';
+import { createAdminPaymentMethodsRouter } from './admin/payment-methods.js';
 import { createStubBancardRouter } from './stub/index.js';
 import { createDevStorageRouter } from './dev-storage/index.js';
 import { createInternalRouter } from './internal/index.js';
@@ -61,6 +64,7 @@ export type Services = {
   moduleService: ModuleService;
   productRoleService: ProductRoleService;
   adminTenantService: AdminTenantService;
+  settlementService: SettlementService;
 };
 
 export type RouteDeps = {
@@ -121,6 +125,8 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   const adminTrialsRouter = createAdminTrialsRouter(services.moduleService, prisma, authGuard, idempotency);
   const adminProductRolesRouter = createAdminProductRolesRouter(services.productRoleService, authGuard, idempotency);
   const adminProductsRouter = createAdminProductsRouter(prisma, authGuard);
+  const adminPaymentsRouter = createAdminPaymentsRouter(services.settlementService, prisma, authGuard, idempotency);
+  const adminPaymentMethodsRouter = createAdminPaymentMethodsRouter(prisma, authGuard, idempotency);
   const internalRouter = createInternalRouter(prisma, services.moduleService);
 
   // Public products listing (for onboarding product picker)
@@ -150,6 +156,8 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   app.route('/', adminTrialsRouter);
   app.route('/', adminProductRolesRouter);
   app.route('/', adminProductsRouter);
+  app.route('/', adminPaymentsRouter);
+  app.route('/', adminPaymentMethodsRouter);
 
   if (config.BANCARD_PROVIDER === 'stub') {
     const stubBancardRouter = createStubBancardRouter(services.webhookService, paymentRepo, config);

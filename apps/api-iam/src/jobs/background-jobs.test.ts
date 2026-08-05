@@ -21,6 +21,7 @@ function makeRepos(overrides: Record<string, unknown> = {}): Repositories {
     refreshTokenRepo: { deleteExpired: vi.fn() },
     draftRepo: { deleteExpired: vi.fn() },
     moduleRepository: { sweepExpiredTrials: vi.fn().mockResolvedValue([]) },
+    tenantRepo: { sweepUnpaidPending: vi.fn().mockResolvedValue([]) },
     ...overrides,
   } as unknown as Repositories
 }
@@ -43,13 +44,13 @@ describe('startBackgroundJobs — sweep-expired-trials (b1, 5.2)', () => {
   })
 
   it('registers a 6th cron job on top of the existing 5', () => {
-    startBackgroundJobs(makeRepos(), silentLogger)
+    startBackgroundJobs(makeRepos(), silentLogger, 15)
 
-    expect(cron.schedule).toHaveBeenCalledTimes(6)
+    expect(cron.schedule).toHaveBeenCalledTimes(7)
   })
 
   it('schedules the sweep every 15 minutes', () => {
-    startBackgroundJobs(makeRepos(), silentLogger)
+    startBackgroundJobs(makeRepos(), silentLogger, 15)
 
     const patterns = (cron.schedule as ReturnType<typeof vi.fn>).mock.calls.map(([pattern]) => pattern as string)
     expect(patterns).toContain('*/15 * * * *')
@@ -64,7 +65,7 @@ describe('startBackgroundJobs — sweep-expired-trials (b1, 5.2)', () => {
         ]),
       },
     })
-    startBackgroundJobs(repos, silentLogger)
+    startBackgroundJobs(repos, silentLogger, 15)
 
     const sweepCall = (cron.schedule as ReturnType<typeof vi.fn>).mock.calls.find(
       ([pattern]) => pattern === '*/15 * * * *',
@@ -79,7 +80,7 @@ describe('startBackgroundJobs — sweep-expired-trials (b1, 5.2)', () => {
 
   it('does not purge anything when the sweep finds no expired trials', async () => {
     const repos = makeRepos()
-    startBackgroundJobs(repos, silentLogger)
+    startBackgroundJobs(repos, silentLogger, 15)
 
     const sweepCall = (cron.schedule as ReturnType<typeof vi.fn>).mock.calls.find(
       ([pattern]) => pattern === '*/15 * * * *',
@@ -87,5 +88,34 @@ describe('startBackgroundJobs — sweep-expired-trials (b1, 5.2)', () => {
     await (sweepCall as [string, () => Promise<void>])[1]()
 
     expect(purgeAnalyticsEntitlementsCache).not.toHaveBeenCalled()
+  })
+})
+
+// Task 3.9: 7th cron job — suspends unpaid `pending` tenants past the
+// configurable threshold. Reactivation-on-late-confirm is exercised by
+// settlement.service.test.ts, not here (it happens through settlePayment).
+describe('startBackgroundJobs — sweep-unpaid-tenants (3.9)', () => {
+  const originalNodeEnv = process.env['NODE_ENV']
+
+  beforeEach(() => {
+    process.env['NODE_ENV'] = 'development'
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    process.env['NODE_ENV'] = originalNodeEnv
+  })
+
+  it('schedules the unpaid-tenant sweep daily and forwards the configured threshold', async () => {
+    const repos = makeRepos()
+    startBackgroundJobs(repos, silentLogger, 15)
+
+    const sweepCall = (cron.schedule as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([pattern]) => pattern === '0 4 * * *',
+    )
+    expect(sweepCall).toBeDefined()
+    await (sweepCall as [string, () => Promise<void>])[1]()
+
+    expect(repos.tenantRepo.sweepUnpaidPending).toHaveBeenCalledWith(15)
   })
 })
