@@ -267,8 +267,11 @@ export const onboardingHandlers = [
 
     const responseBody = {
       paymentId,
-      redirectUrl: `http://localhost:3001/signup/${draftId}/payment?status=verifying`,
-      expiresAt: stableFuture(900),
+      instruction: {
+        kind: 'redirect' as const,
+        redirectUrl: `http://localhost:3001/signup/${draftId}/payment?status=verifying`,
+        expiresAt: stableFuture(900),
+      },
     };
 
     if (idemKey !== null) putIdempotentCache(idemKey, 200, responseBody);

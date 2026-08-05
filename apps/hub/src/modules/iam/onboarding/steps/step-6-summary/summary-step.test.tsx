@@ -40,7 +40,7 @@ function makeDraft(overrides: Partial<DraftState> = {}): DraftState {
       city: 'Asunción',
       country: 'PY',
     },
-    payment: { paymentId: 'pay-001', status: 'approved', bancardProcessId: null },
+    payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null },
     version: 5,
     expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
     ...overrides,
@@ -65,13 +65,14 @@ function renderStep(draft: DraftState) {
 
 beforeEach(() => {
   applyScenario('happy');
+  localStorage.clear();
   mockPush.mockClear();
   mockWindowOpen.mockClear();
   vi.spyOn(window, 'open').mockImplementation(mockWindowOpen);
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('StepSummary', () => {
@@ -85,30 +86,43 @@ describe('StepSummary', () => {
     expect(screen.getByText(/ACME S\.A\./)).toBeInTheDocument();
   });
 
-  it('renders invoice and contract download buttons', () => {
+  it('does not render a document download button — documents are email-only', () => {
     renderStep(makeDraft());
-    expect(screen.getByRole('button', { name: /factura/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /contrato/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /descargar/i })).not.toBeInTheDocument();
   });
 
-  it('clicking invoice opens the URL', () => {
+  it('says documents were emailed when the payment already settled', () => {
     renderStep(makeDraft());
-    fireEvent.click(screen.getByRole('button', { name: /factura/i }));
-    expect(mockWindowOpen).toHaveBeenCalledWith(
-      '/mock-pdf/factura-test.pdf',
-      '_blank',
-      'noopener,noreferrer'
-    );
+    expect(screen.getByText(/enviamos la confirmación del pago/i)).toBeInTheDocument();
   });
 
-  it('clicking contract opens the URL', () => {
-    renderStep(makeDraft());
-    fireEvent.click(screen.getByRole('button', { name: /contrato/i }));
-    expect(mockWindowOpen).toHaveBeenCalledWith(
-      '/mock-pdf/contrato-test.pdf',
-      '_blank',
-      'noopener,noreferrer'
+  it('says documents will be emailed once confirmed, for an unsettled bank-transfer payment', () => {
+    renderStep(
+      makeDraft({
+        payment: { paymentId: 'pay-001', status: 'pending', method: 'bank_transfer', bancardProcessId: null },
+      })
     );
+    expect(screen.getByText(/apenas confirmemos tu transferencia/i)).toBeInTheDocument();
+  });
+
+  it('repeats the reference and bank accounts when a bank-transfer instruction was persisted', () => {
+    localStorage.setItem(
+      'draft:draft-test-001:payment:bank-transfer',
+      JSON.stringify({
+        kind: 'bank_transfer',
+        reference: 'CH-7K2M4Q',
+        bankAccounts: [
+          { bankName: 'Banco Itaú', accountType: 'checking', accountNumber: '123456789', accountHolder: 'Corehub S.A.' },
+        ],
+      })
+    );
+    renderStep(
+      makeDraft({
+        payment: { paymentId: 'pay-001', status: 'pending', method: 'bank_transfer', bancardProcessId: null },
+      })
+    );
+    expect(screen.getByText('CH-7K2M4Q')).toBeInTheDocument();
+    expect(screen.getByText('Banco Itaú')).toBeInTheDocument();
   });
 
   it('"Ir al inicio de sesión" navigates to /login (NOT / — user must activate account first)', () => {

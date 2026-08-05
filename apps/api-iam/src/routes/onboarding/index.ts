@@ -64,9 +64,9 @@ const OTP_VERIFIED_STATUSES: ReadonlySet<DraftStatus> = new Set([
 // Map domain PaymentStatus (has 'reversed') → contract PaymentStatus (has 'timeout')
 function mapPaymentStatus(
   status: string
-): 'pending' | 'approved' | 'declined' | 'cancelled' | 'timeout' {
+): 'pending' | 'in_review' | 'approved' | 'declined' | 'cancelled' | 'timeout' {
   if (status === 'reversed') return 'timeout';
-  return status as 'pending' | 'approved' | 'declined' | 'cancelled' | 'timeout';
+  return status as 'pending' | 'in_review' | 'approved' | 'declined' | 'cancelled' | 'timeout';
 }
 
 /**
@@ -128,6 +128,7 @@ function draftToJson(
     ? {
         paymentId: payment.id,
         status: mapPaymentStatus(payment.status),
+        method: payment.method,
         bancardProcessId: payment.externalRef,
       }
     : null;

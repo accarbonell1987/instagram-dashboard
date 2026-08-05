@@ -84,14 +84,23 @@ beforeEach(() => {
   localStorage.clear();
   currentSearchParams = new URLSearchParams();
   vi.spyOn(draftService, 'initiatePayment').mockResolvedValue({
-    redirectUrl: 'http://localhost:3001/?msw=mock-bancard&paymentId=payment-test-001',
     paymentId: 'payment-test-001',
+    instruction: {
+      kind: 'redirect',
+      redirectUrl: 'http://localhost:3001/?msw=mock-bancard&paymentId=payment-test-001',
+      expiresAt: new Date(Date.now() + 900_000).toISOString(),
+    },
   });
-  vi.spyOn(draftService, 'getPaymentStatus').mockResolvedValue({ status: 'pending' });
+  vi.spyOn(draftService, 'getPaymentStatus').mockResolvedValue({
+    paymentId: 'payment-test-001',
+    status: 'pending',
+    reason: null,
+    confirmedAt: null,
+  });
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('StepPayment — initiate view', () => {
@@ -108,6 +117,38 @@ describe('StepPayment — initiate view', () => {
     await waitFor(() => {
       expect(mockAssign).toHaveBeenCalledWith(expect.stringContaining('localhost'));
     });
+  });
+});
+
+describe('StepPayment — bank-transfer instruction', () => {
+  it('shows the reference and bank accounts instead of redirecting, then advances to summary', async () => {
+    vi.spyOn(draftService, 'initiatePayment').mockResolvedValue({
+      paymentId: 'payment-test-001',
+      instruction: {
+        kind: 'bank_transfer',
+        reference: 'CH-7K2M4Q',
+        bankAccounts: [
+          {
+            bankName: 'Banco Itaú',
+            accountType: 'checking',
+            accountNumber: '123456789',
+            accountHolder: 'Corehub S.A.',
+          },
+        ],
+      },
+    });
+
+    renderStep(makeDraft());
+    fireEvent.click(screen.getByRole('button', { name: /pagar con bancard/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transfer-reference')).toHaveTextContent('CH-7K2M4Q');
+    });
+    expect(screen.getByText('Banco Itaú')).toBeInTheDocument();
+    expect(mockAssign).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /ya transferí/i }));
+    expect(mockPush).toHaveBeenCalledWith('/signup/draft-test-001/summary');
   });
 });
 

@@ -2,6 +2,7 @@ import type { Plan } from './plans.service';
 
 import { getIdempotencyKey, resetIdempotencyKey } from '@/lib/api/idempotency';
 import { apiFetchWithInterceptors } from '@/lib/api/interceptors';
+import type { components } from '@/lib/api/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,7 +22,8 @@ export interface DraftCompany {
 
 export interface DraftPayment {
   paymentId: string;
-  status: 'pending' | 'approved' | 'declined' | 'cancelled' | 'timeout';
+  status: NonNullable<components['schemas']['DraftPayment']['status']>;
+  method: components['schemas']['PaymentMethodKind'] | null;
   bancardProcessId: string | null;
 }
 
@@ -38,6 +40,8 @@ export interface DraftState {
   version: number;
   expiresAt: string;
 }
+
+export type PaymentInstruction = components['schemas']['PaymentInstruction'];
 
 export interface CreateDraftInput {
   planId?: string | undefined;
@@ -156,7 +160,7 @@ export async function consumeResumeToken(token: string): Promise<{ draftId: stri
 export async function initiatePayment(
   draftId: string,
   attempt: number
-): Promise<{ redirectUrl: string; paymentId: string }> {
+): Promise<components['schemas']['PaymentInitiateResponse']> {
   const scope = `draft:${draftId}:payment:v${String(attempt)}`;
 
   if (attempt > 1) {
@@ -165,31 +169,23 @@ export async function initiatePayment(
 
   const idempotencyKey = getIdempotencyKey(scope);
 
-  const result = await apiFetchWithInterceptors<{
-    paymentId: string;
-    redirectUrl: string;
-    expiresAt: string;
-  }>(`/onboarding/draft/${draftId}/payment/initiate`, {
-    method: 'POST',
-    body: {},
-    idempotencyKey,
-  });
-
-  return { redirectUrl: result.redirectUrl, paymentId: result.paymentId };
+  return apiFetchWithInterceptors<components['schemas']['PaymentInitiateResponse']>(
+    `/onboarding/draft/${draftId}/payment/initiate`,
+    {
+      method: 'POST',
+      body: {},
+      idempotencyKey,
+    }
+  );
 }
 
 export async function getPaymentStatus(
   draftId: string
-): Promise<{ status: 'pending' | 'approved' | 'declined' | 'timeout' }> {
-  const result = await apiFetchWithInterceptors<{
-    paymentId: string;
-    status: string;
-    reason: string | null;
-    confirmedAt: string | null;
-  }>(`/onboarding/draft/${draftId}/payment/status`, { method: 'GET' });
-
-  const status = result.status as 'pending' | 'approved' | 'declined' | 'timeout';
-  return { status };
+): Promise<components['schemas']['PaymentStatus']> {
+  return apiFetchWithInterceptors<components['schemas']['PaymentStatus']>(
+    `/onboarding/draft/${draftId}/payment/status`,
+    { method: 'GET' }
+  );
 }
 
 export async function recoverDraft(draftId: string, step: 'company'): Promise<DraftState> {

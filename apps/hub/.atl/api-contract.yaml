@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.15.0
+  version: 1.16.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -10,6 +10,11 @@ info:
     cambio aquí requiere un PR coordinado en ambos repositorios.
 
     ## Changelog
+
+    ### 1.16.0 (2026-08-05)
+    - ADD: `DraftPayment.method` — lets the wizard distinguish a bank-transfer
+      payment (which stays pending/in_review for days) from a Bancard one (which
+      settles in seconds) when deciding whether to gate the payment step.
 
     ### 1.13.0 (2026-08-04)
     - ADD schemas: `Payment`, `PaymentInstruction` (discriminated `kind: redirect|bank_transfer`),
@@ -552,6 +557,7 @@ components:
         status:
           type: string
           enum: [pending, in_review, approved, declined, cancelled, timeout]
+        method: { $ref: '#/components/schemas/PaymentMethodKind' }
         bancardProcessId: { type: string }
 
     DraftState:

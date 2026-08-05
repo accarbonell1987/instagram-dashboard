@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('createDraft', () => {
@@ -88,11 +88,14 @@ describe('consumeResumeToken', () => {
 });
 
 describe('initiatePayment', () => {
-  it('returns redirectUrl and paymentId', async () => {
+  it('returns paymentId and a redirect instruction', async () => {
     const created = await createDraft({ planId: 'professional' });
     const result = await initiatePayment(created.draftId, 1);
-    expect(result.redirectUrl).toBeDefined();
     expect(result.paymentId).toBeDefined();
+    expect(result.instruction.kind).toBe('redirect');
+    if (result.instruction.kind === 'redirect') {
+      expect(result.instruction.redirectUrl).toBeDefined();
+    }
   });
 });
 
@@ -101,7 +104,9 @@ describe('getPaymentStatus', () => {
     const created = await createDraft({ planId: 'professional' });
     await initiatePayment(created.draftId, 1);
     const status = await getPaymentStatus(created.draftId);
-    expect(['pending', 'approved', 'declined', 'timeout']).toContain(status.status);
+    expect(['pending', 'in_review', 'approved', 'declined', 'cancelled', 'timeout']).toContain(
+      status.status
+    );
   });
 });
 

@@ -87,17 +87,24 @@ export function isStepReachable(target: Step, draft: DraftState): boolean {
  * Derives the correct wizard step from the draft state.
  * Uses gating logic (forward-only) — does NOT blindly trust `draft.currentStep`.
  */
+// Statuses that mean the payment hasn't settled yet.
+const UNSETTLED_STATUSES = new Set(['pending', 'in_review', 'declined', 'cancelled', 'timeout']);
+
 export function deriveCurrentStep(draft: DraftState): Step {
   if (draft.plan === null) return 'plan';
   if (draft.representative === null) return 'representative';
   if (!draft.otpVerified) return 'otp';
   if (draft.company === null) return 'company';
-  if (
-    draft.payment === null ||
-    draft.payment.status === 'pending' ||
-    draft.payment.status === 'declined' ||
-    draft.payment.status === 'cancelled' ||
-    draft.payment.status === 'timeout'
-  ) return 'payment';
-  return 'summary';
+
+  const payment = draft.payment;
+  if (payment === null) return 'payment';
+  if (!UNSETTLED_STATUSES.has(payment.status)) return 'summary';
+
+  // A bank transfer sits pending/in_review for days — provisioning already
+  // happens at summary, so there's nothing to block on. Bancard settles in
+  // seconds, so pending still means "stay here and wait/retry". A declined
+  // transfer still blocks: the customer needs to see it and retry.
+  if (payment.method === 'bank_transfer' && payment.status !== 'declined') return 'summary';
+
+  return 'payment';
 }

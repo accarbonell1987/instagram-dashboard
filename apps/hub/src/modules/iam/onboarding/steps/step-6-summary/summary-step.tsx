@@ -2,16 +2,19 @@
 
 import { Button } from '@core/ui';
 import { useRouter } from 'next/navigation';
-import { useState, type JSX } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 
 import { CopyButton } from '../../components/copy-button';
 import { useDraftContext } from '../../context/draft-context';
 import { recoverDraft } from '../../services/draft.service';
+import { getBankTransferInstruction } from '../step-5-payment/bank-transfer-storage';
 
 import type { StepSummaryProps } from './summary-types';
 import { useDraftSubmission } from './use-draft-submission';
 
-import { DocumentDownloadButton } from '@/modules/shared/billing/components/document-download-button';
+import type { components } from '@/lib/api/types';
+
+type BankTransferInstruction = components['schemas']['BankTransferPaymentInstruction'];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -22,14 +25,23 @@ export function StepSummary({
   const router = useRouter();
   const { draft, refresh } = useDraftContext();
   const [isRecovering, setIsRecovering] = useState(false);
+  const [bankTransfer, setBankTransfer] = useState<BankTransferInstruction | null>(null);
 
-  const { documents, isLoading, loadError, conflictStep, retry } = useDraftSubmission(
+  const { isLoading, loadError, conflictStep, retry } = useDraftSubmission(
     draftId,
     initialDocuments,
     draft.status,
     draft.version,
     refresh
   );
+
+  // Many customers close the tab before actually transferring — repeat the
+  // reference and accounts here since it's the last screen they'll see for a while.
+  useEffect(() => {
+    if (draft.payment?.method === 'bank_transfer') {
+      setBankTransfer(getBankTransferInstruction(draftId));
+    }
+  }, [draft.payment?.method, draftId]);
 
   async function handleRecoverAndEdit(targetStep: 'company' | 'representative'): Promise<void> {
     setIsRecovering(true);
@@ -44,10 +56,6 @@ export function StepSummary({
     } finally {
       setIsRecovering(false);
     }
-  }
-
-  function handleDownload(url: string): void {
-    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   if (isLoading) {
@@ -134,6 +142,9 @@ export function StepSummary({
   }
 
   const companyName = draft.company?.legalName ?? 'Tu empresa';
+  // Settlement (activation email + invoice + receipt) runs synchronously for
+  // Bancard, but only once an agent confirms a bank transfer — days later.
+  const isSettled = draft.payment?.status === 'approved';
 
   return (
     <div className="flex flex-col items-center gap-8 py-8 text-center">
@@ -150,19 +161,26 @@ export function StepSummary({
         <p className="text-muted-foreground mt-3">
           <strong>{companyName}</strong> ya es parte de Corehub.
         </p>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Para acceder a la plataforma, activá tu cuenta desde el correo que te enviamos.
-        </p>
+        {isSettled ? (
+          <p className="text-muted-foreground mt-1 text-sm">
+            Para acceder a la plataforma, activá tu cuenta desde el correo que te enviamos.
+          </p>
+        ) : (
+          <p className="text-muted-foreground mt-1 text-sm">
+            En cuanto confirmemos tu pago te enviaremos un correo para activar tu cuenta.
+          </p>
+        )}
       </div>
 
-      {/* Activation email notice */}
+      {/* Email delivery notice — documents are email-only, never downloadable here */}
       <div className="border-border bg-muted/30 w-full max-w-sm rounded-xl border p-6">
         <h2 className="text-muted-foreground mb-4 text-sm font-semibold uppercase tracking-wide">
-          Activar cuenta
+          {isSettled ? 'Tus documentos' : 'Qué sigue'}
         </h2>
         <p className="text-muted-foreground mb-4 text-sm">
-          Enviamos un enlace de activación a tu correo electrónico. Revisá tu bandeja de entrada y
-          seguí las instrucciones para configurar tu contraseña.
+          {isSettled
+            ? 'Te enviamos la confirmación del pago junto con la factura y el recibo por correo electrónico.'
+            : 'Apenas confirmemos tu transferencia, te enviaremos por correo la confirmación, la factura y el recibo — junto con el enlace de activación.'}
         </p>
         <CopyButton
           url={
@@ -173,54 +191,26 @@ export function StepSummary({
         />
       </div>
 
-      {/* Document downloads */}
-      {documents !== null && (
-        <div className="border-border bg-muted/30 w-full max-w-sm rounded-xl border p-6">
-          <h2 className="text-muted-foreground mb-4 text-sm font-semibold uppercase tracking-wide">
-            Tus documentos
+      {/* Bank-transfer recap — many customers close the tab before transferring */}
+      {bankTransfer !== null && (
+        <div className="border-border bg-muted/30 w-full max-w-sm rounded-xl border p-6 text-left">
+          <h2 className="text-muted-foreground mb-4 text-center text-sm font-semibold uppercase tracking-wide">
+            Datos para tu transferencia
           </h2>
-
-          <div className="flex flex-col gap-3">
-            {documents.invoiceId !== undefined ? (
-              <DocumentDownloadButton
-                documentId={documents.invoiceId}
-                label="Descargar Factura PDF"
-              />
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  handleDownload(documents.invoiceUrl);
-                }}
-                className="w-full justify-between rounded-lg px-4 py-3 text-sm font-medium"
-                aria-label="Descargar Factura PDF"
-              >
-                <span>Descargar Factura PDF</span>
-                <span aria-hidden="true">↓</span>
-              </Button>
-            )}
-
-            {documents.contractId !== undefined ? (
-              <DocumentDownloadButton
-                documentId={documents.contractId}
-                label="Descargar Contrato PDF"
-              />
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  handleDownload(documents.contractUrl);
-                }}
-                className="w-full justify-between rounded-lg px-4 py-3 text-sm font-medium"
-                aria-label="Descargar Contrato PDF"
-              >
-                <span>Descargar Contrato PDF</span>
-                <span aria-hidden="true">↓</span>
-              </Button>
-            )}
+          <div className="border-border bg-background flex items-center gap-2 rounded-lg border px-4 py-3">
+            <span className="text-foreground min-w-0 flex-1 select-all font-mono text-base font-bold tracking-wide">
+              {bankTransfer.reference}
+            </span>
           </div>
+          <ul className="mt-4 flex flex-col gap-3">
+            {bankTransfer.bankAccounts.map((account, index) => (
+              <li key={index} className="border-border bg-background rounded-lg border p-3 text-sm">
+                <p className="text-foreground font-semibold">{account.bankName}</p>
+                <p className="text-muted-foreground select-all font-mono">{account.accountNumber}</p>
+                <p className="text-muted-foreground">{account.accountHolder}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

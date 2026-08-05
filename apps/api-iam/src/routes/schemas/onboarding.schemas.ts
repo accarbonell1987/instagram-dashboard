@@ -22,7 +22,8 @@ export const DraftCompanySchema = z.object({
 
 export const DraftPaymentSchema = z.object({
   paymentId: z.string(),
-  status: z.enum(['pending', 'approved', 'declined', 'cancelled', 'timeout']),
+  status: z.enum(['pending', 'in_review', 'approved', 'declined', 'cancelled', 'timeout']),
+  method: z.enum(['bancard', 'bank_transfer']).optional(),
   bancardProcessId: z.string(),
 });
 

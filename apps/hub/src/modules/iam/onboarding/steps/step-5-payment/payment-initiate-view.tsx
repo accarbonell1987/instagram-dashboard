@@ -2,7 +2,7 @@
 
 import { DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, type JSX } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 
 import { StepHeader } from '../../components/step-header';
 import { initiatePayment } from '../../services/draft.service';
@@ -10,7 +10,16 @@ import type { DraftState } from '../../services/draft.service';
 import type { Plan } from '../../services/plans.service';
 import { StepErrorBanner } from '../shared/step-error-banner';
 
+import {
+  getBankTransferInstruction,
+  storeBankTransferInstruction,
+} from './bank-transfer-storage';
+import { BankTransferView } from './bank-transfer-view';
 import { ATTEMPT_STORAGE_KEY } from './use-payment-polling';
+
+import type { components } from '@/lib/api/types';
+
+type BankTransferInstruction = components['schemas']['BankTransferPaymentInstruction'];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +39,13 @@ export function PaymentInitiateView({
   const router = useRouter();
   const [isInitiating, setIsInitiating] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [bankTransfer, setBankTransfer] = useState<BankTransferInstruction | null>(null);
+
+  // Reads the persisted instruction (localStorage) on mount only — SSR has no
+  // localStorage, and it never changes across renders for a given draftId.
+  useEffect(() => {
+    setBankTransfer(getBankTransferInstruction(draftId));
+  }, [draftId]);
 
   // ─── Initiate payment handler ──────────────────────────────────────────────
 
@@ -42,21 +58,33 @@ export function PaymentInitiateView({
       const attempt = storedAttempt !== null ? Number(storedAttempt) + 1 : 1;
       localStorage.setItem(ATTEMPT_STORAGE_KEY(draftId), String(attempt));
 
-      const { redirectUrl } = await initiatePayment(draftId, attempt);
+      const { instruction } = await initiatePayment(draftId, attempt);
+
+      if (instruction.kind === 'bank_transfer') {
+        storeBankTransferInstruction(draftId, instruction);
+        setBankTransfer(instruction);
+        setIsInitiating(false);
+        return;
+      }
+
       try {
-        const url = new URL(redirectUrl);
+        const url = new URL(instruction.redirectUrl);
         if (url.origin === window.location.origin) {
           router.push(url.pathname + url.search);
         } else {
-          window.location.assign(redirectUrl);
+          window.location.assign(instruction.redirectUrl);
         }
       } catch {
-        window.location.assign(redirectUrl);
+        window.location.assign(instruction.redirectUrl);
       }
     } catch {
       setInitError('No se pudo iniciar el pago. Intenta de nuevo.');
       setIsInitiating(false);
     }
+  }
+
+  if (bankTransfer !== null) {
+    return <BankTransferView draftId={draftId} plan={plan} instruction={bankTransfer} />;
   }
 
   const priceFormatted = plan !== null ? new Intl.NumberFormat('es-PY').format(plan.price) : '—';

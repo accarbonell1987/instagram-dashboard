@@ -1984,6 +1984,7 @@ export interface components {
             paymentId?: string;
             /** @enum {string} */
             status?: "pending" | "in_review" | "approved" | "declined" | "cancelled" | "timeout";
+            method?: components["schemas"]["PaymentMethodKind"];
             bancardProcessId?: string;
         };
         /**

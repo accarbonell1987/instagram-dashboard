@@ -34,9 +34,15 @@ export function usePaymentPolling(draftId: string, isVerifying: boolean): UsePay
   const pollPaymentStatus = useCallback(async (): Promise<void> => {
     try {
       const result = await getPaymentStatus(draftId);
-      setPollStatus(result.status);
+      // Bancard-only polling: 'in_review'/'cancelled' are bank-transfer statuses
+      // that never occur on this path (see design ADR-3) — fall back to 'pending'.
+      const status =
+        result.status === 'approved' || result.status === 'declined' || result.status === 'timeout'
+          ? result.status
+          : 'pending';
+      setPollStatus(status);
 
-      if (result.status === 'approved') {
+      if (status === 'approved') {
         // Stop the interval immediately so no further polls run after navigation
         stoppedRef.current = true;
         if (intervalRef.current !== null) {

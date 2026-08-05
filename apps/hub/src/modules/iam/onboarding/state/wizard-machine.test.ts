@@ -130,7 +130,7 @@ describe('isStepReachable', () => {
       representative: { email: 'a@b.com', fullName: 'Ana', phone: '' },
       otpVerified: true,
       company: { legalName: 'ACME', ruc: '80012345-1', address: 'Calle 1', city: 'Asunción', country: 'PY' },
-      payment: { paymentId: 'pay-001', status: 'approved', bancardProcessId: null },
+      payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null },
     });
     expect(isStepReachable('summary', withPayment)).toBe(true);
     expect(isStepReachable('summary', makeDraft())).toBe(false);
@@ -182,7 +182,7 @@ describe('deriveCurrentStep', () => {
       representative: { email: 'a@b.com', fullName: 'Ana', phone: '' },
       otpVerified: true,
       company: { legalName: 'ACME', ruc: '80012345-1', address: 'Calle 1', city: 'Asunción', country: 'PY' },
-      payment: { paymentId: 'pay-001', status: 'approved', bancardProcessId: null },
+      payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null },
     });
     expect(deriveCurrentStep(draft)).toBe('summary');
   });
@@ -192,5 +192,58 @@ describe('deriveCurrentStep', () => {
     // no plan etc, but currentStep from server says company
     // deriveCurrentStep should trust gating logic, falls back to plan
     expect(deriveCurrentStep(draft)).toBe('plan');
+  });
+
+  // ─── Bank-transfer gating (a transfer sits pending/in_review for days —
+  // provisioning already happened at summary, so there's nothing to block on) ──
+
+  function makeReadyDraft(payment: NonNullable<DraftState['payment']>): DraftState {
+    return makeDraft({
+      plan: { id: 'starter', name: 'Básico', price: 150_000, currency: 'PYG', billingCycle: 'monthly', features: [], popular: false },
+      representative: { email: 'a@b.com', fullName: 'Ana', phone: '' },
+      otpVerified: true,
+      company: { legalName: 'ACME', ruc: '80012345-1', address: 'Calle 1', city: 'Asunción', country: 'PY' },
+      payment,
+    });
+  }
+
+  it('regression: returns payment when a Bancard payment is pending (must still block)', () => {
+    const draft = makeReadyDraft({
+      paymentId: 'pay-001',
+      status: 'pending',
+      method: 'bancard',
+      bancardProcessId: 'proc-001',
+    });
+    expect(deriveCurrentStep(draft)).toBe('payment');
+  });
+
+  it('returns summary when a bank-transfer payment is pending', () => {
+    const draft = makeReadyDraft({
+      paymentId: 'pay-001',
+      status: 'pending',
+      method: 'bank_transfer',
+      bancardProcessId: null,
+    });
+    expect(deriveCurrentStep(draft)).toBe('summary');
+  });
+
+  it('returns summary when a bank-transfer payment is in_review', () => {
+    const draft = makeReadyDraft({
+      paymentId: 'pay-001',
+      status: 'in_review',
+      method: 'bank_transfer',
+      bancardProcessId: null,
+    });
+    expect(deriveCurrentStep(draft)).toBe('summary');
+  });
+
+  it('returns payment when a bank-transfer payment is declined (still blocks for retry)', () => {
+    const draft = makeReadyDraft({
+      paymentId: 'pay-001',
+      status: 'declined',
+      method: 'bank_transfer',
+      bancardProcessId: null,
+    });
+    expect(deriveCurrentStep(draft)).toBe('payment');
   });
 });
