@@ -1258,6 +1258,130 @@ export interface paths {
         patch: operations["adminChangeTenantStatus"];
         trace?: never;
     };
+    "/admin/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the pending-payments queue across tenants (SuperAdmin)
+         * @description **Purpose**: Backoffice queue for reconciling payments awaiting confirmation
+         *     (mainly bank-transfer references), filterable by amount, date, reference and tenant.
+         */
+        get: operations["adminListPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/payments/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a pending payment (SuperAdmin)
+         * @description **Purpose**: Settles the payment via `settlePayment()` — activates the tenant,
+         *     purges entitlements, issues invoice/receipt, sends the confirmation email.
+         *
+         *     **Notes**: `note` is mandatory. Confirming an already-settled payment is a no-op
+         *     that returns the existing settled state (idempotent across webhook/agent/admin
+         *     triggers).
+         */
+        post: operations["adminConfirmPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/payments/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject a pending payment (SuperAdmin)
+         * @description **Purpose**: Marks the payment `declined` with a mandatory reason. The user is
+         *     notified by a resume-link email; the tenant stays `pending`; the same reference
+         *     remains valid for a retry (re-transfer + re-confirm).
+         */
+        post: operations["adminRejectPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List payment method toggles (SuperAdmin) */
+        get: operations["adminListPaymentMethods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/payment-methods/{method}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Toggle a payment method on or off (SuperAdmin)
+         * @description **Notes**: `enabled=false` blocks new initiation only, never settlement of
+         *     existing payments. Disabling the last enabled method is rejected with
+         *     409 `payment_method.last_enabled`.
+         */
+        patch: operations["adminUpdatePaymentMethod"];
+        trace?: never;
+    };
+    "/admin/tenants/{tenantId}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a tenant's payment history (SuperAdmin) */
+        get: operations["adminListTenantPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plans/reorder": {
         parameters: {
             query?: never;
@@ -1421,6 +1545,57 @@ export interface paths {
          *     un `id` de solicitud para seguimiento.
          */
         post: operations["requestPaymentMethodChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the tenant's payment history
+         * @description **Purpose**: Payment records (method, status, settlementKind, reference) for the
+         *     current tenant — distinct from `/billing/invoices`. No ledger/balance is exposed.
+         */
+        get: operations["listPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/payments/{id}/proof": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload proof-of-transfer for a pending bank-transfer payment
+         * @description **Purpose**: Lets the user attach proof-of-transfer (receipt/screenshot) to a
+         *     pending bank-transfer payment. Optional — proof presence never gates confirmation.
+         *
+         *     **Auth model**: Unauthenticated. `id` is the submitted draft's `draftId`, used as
+         *     a capability token — same pattern as other unauthenticated draft-scoped endpoints
+         *     (e.g. `PATCH /onboarding/draft/{draftId}`). No bearer token exists yet at this point
+         *     in the bank-transfer flow (no session is established until settlement).
+         *
+         *     **Controls (enforced server-side)**: max file size, content-type allowlist
+         *     (`application/pdf`, `image/jpeg`, `image/png`), max uploads per draft, rate limiting.
+         *     Exempt from the idempotency middleware, same opt-in-per-route pattern as webhooks.
+         */
+        post: operations["uploadPaymentProof"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1972,6 +2147,96 @@ export interface components {
             page: number;
             pageSize: number;
         };
+        /** @enum {string} */
+        PaymentMethodKind: "bancard" | "bank_transfer";
+        BankAccount: {
+            /** @example Banco Itaú */
+            bankName: string;
+            /** @enum {string} */
+            accountType: "checking" | "savings";
+            accountNumber: string;
+            accountHolder: string;
+        };
+        RedirectPaymentInstruction: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "redirect";
+            /** Format: uri */
+            redirectUrl: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        BankTransferPaymentInstruction: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "bank_transfer";
+            /**
+             * @description Memo reference the user must include in the transfer
+             * @example CH-7K2M4Q
+             */
+            reference: string;
+            bankAccounts: components["schemas"]["BankAccount"][];
+        };
+        /** @description Method-specific instructions for completing a payment. Discriminated by `kind`. */
+        PaymentInstruction: components["schemas"]["RedirectPaymentInstruction"] | components["schemas"]["BankTransferPaymentInstruction"];
+        Payment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenantId: string;
+            /** @description Only present in admin views */
+            tenantName?: string;
+            method: components["schemas"]["PaymentMethodKind"];
+            /** @enum {string} */
+            status: "pending" | "approved" | "declined" | "cancelled" | "timeout";
+            settlementKind?: ("webhook" | "agent" | "manual_admin") | null;
+            /** @description Bancard process id (redirect) or bank-transfer CH-XXXXXX code */
+            reference?: string | null;
+            amount: number;
+            /** @enum {string} */
+            currency: "PYG" | "USD";
+            note?: string | null;
+            /** Format: uuid */
+            settledBy?: string | null;
+            /** Format: date-time */
+            settledAt?: string | null;
+            instruction?: components["schemas"]["PaymentInstruction"] | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PaymentListResponse: {
+            items: components["schemas"]["Payment"][];
+            total: number;
+            page: number;
+            pageSize: number;
+        };
+        PaymentConfirmRequest: {
+            note: string;
+        };
+        PaymentRejectRequest: {
+            note: string;
+        };
+        PaymentMethodConfig: {
+            method: components["schemas"]["PaymentMethodKind"];
+            enabled: boolean;
+        };
+        PaymentMethodConfigListResponse: {
+            items: components["schemas"]["PaymentMethodConfig"][];
+        };
+        PaymentMethodConfigUpdateRequest: {
+            enabled: boolean;
+        };
+        ProofUploadResponse: {
+            /** Format: uuid */
+            id: string;
+            filename: string;
+            /** Format: date-time */
+            uploadedAt: string;
+        };
         JsonWebKeySet: {
             keys: components["schemas"]["JsonWebKey"][];
         };
@@ -2439,6 +2704,19 @@ export type SchemaInvoiceStatus = components['schemas']['InvoiceStatus'];
 export type SchemaInvoiceListItem = components['schemas']['InvoiceListItem'];
 export type SchemaInvoiceListResponse = components['schemas']['InvoiceListResponse'];
 export type SchemaPaginatedResponse = components['schemas']['PaginatedResponse'];
+export type SchemaPaymentMethodKind = components['schemas']['PaymentMethodKind'];
+export type SchemaBankAccount = components['schemas']['BankAccount'];
+export type SchemaRedirectPaymentInstruction = components['schemas']['RedirectPaymentInstruction'];
+export type SchemaBankTransferPaymentInstruction = components['schemas']['BankTransferPaymentInstruction'];
+export type SchemaPaymentInstruction = components['schemas']['PaymentInstruction'];
+export type SchemaPayment = components['schemas']['Payment'];
+export type SchemaPaymentListResponse = components['schemas']['PaymentListResponse'];
+export type SchemaPaymentConfirmRequest = components['schemas']['PaymentConfirmRequest'];
+export type SchemaPaymentRejectRequest = components['schemas']['PaymentRejectRequest'];
+export type SchemaPaymentMethodConfig = components['schemas']['PaymentMethodConfig'];
+export type SchemaPaymentMethodConfigListResponse = components['schemas']['PaymentMethodConfigListResponse'];
+export type SchemaPaymentMethodConfigUpdateRequest = components['schemas']['PaymentMethodConfigUpdateRequest'];
+export type SchemaProofUploadResponse = components['schemas']['ProofUploadResponse'];
 export type SchemaJsonWebKeySet = components['schemas']['JsonWebKeySet'];
 export type SchemaJsonWebKey = components['schemas']['JsonWebKey'];
 export type SchemaBancardWebhookPayload = components['schemas']['BancardWebhookPayload'];
@@ -4031,6 +4309,200 @@ export interface operations {
             422: components["responses"]["UnprocessableEntity"];
         };
     };
+    adminListPayments: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "declined" | "cancelled" | "timeout";
+                tenantId?: string;
+                reference?: string;
+                dateFrom?: string;
+                dateTo?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated payments queue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminConfirmPayment: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description UUID v4. Requerido en todos los endpoints de mutación que no sean GET. El backend almacena
+                 *     (key, request_hash, response_body, status_code, created_at) durante 24 h.
+                 *     Misma key → respuesta cacheada. Cuerpo de request diferente con la misma key → 422.
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKeyHeader"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment settled (or already-settled, returned as-is) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+        };
+    };
+    adminRejectPayment: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description UUID v4. Requerido en todos los endpoints de mutación que no sean GET. El backend almacena
+                 *     (key, request_hash, response_body, status_code, created_at) durante 24 h.
+                 *     Misma key → respuesta cacheada. Cuerpo de request diferente con la misma key → 422.
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKeyHeader"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentRejectRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment rejected */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+        };
+    };
+    adminListPaymentMethods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment method config list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodConfigListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminUpdatePaymentMethod: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description UUID v4. Requerido en todos los endpoints de mutación que no sean GET. El backend almacena
+                 *     (key, request_hash, response_body, status_code, created_at) durante 24 h.
+                 *     Misma key → respuesta cacheada. Cuerpo de request diferente con la misma key → 422.
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKeyHeader"];
+            };
+            path: {
+                method: components["schemas"]["PaymentMethodKind"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentMethodConfigUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment method updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodConfig"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    adminListTenantPayments: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated tenant payment history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     reorderPlans: {
         parameters: {
             query?: never;
@@ -4325,6 +4797,82 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    listPayments: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated payment history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    uploadPaymentProof: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description draftId of the submitted onboarding draft (capability token) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Proof uploaded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProofUploadResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description File exceeds the max allowed size */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Content-type not in the allowlist */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     listInvoices: {

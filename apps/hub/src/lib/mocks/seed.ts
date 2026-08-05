@@ -29,6 +29,11 @@ export const SEED = {
     'doc-inv-001-0000-0000-000000000001',
     'doc-inv-002-0000-0000-000000000002',
   ] as const,
+  paymentIds: [
+    'pay-001-approved-0-0000-000000000001',
+    'pay-002-pending-00-0000-000000000002',
+    'pay-003-declined-0-0000-000000000003',
+  ] as const,
 } as const;
 
 // ─── Base seed ───────────────────────────────────────────────────────────────
@@ -113,6 +118,8 @@ function seedHappyBase(): void {
     passwordHash: 'hashed:Pass1234!',
     status: 'active',
   });
+
+  seedPaymentMethods();
 }
 
 // ─── Scenario seeds ──────────────────────────────────────────────────────────
@@ -151,6 +158,7 @@ function seedHappy(): void {
 
   seedAdminData();
   seedInvoices();
+  seedPayments();
 }
 
 function seedInvoices(): void {
@@ -198,6 +206,61 @@ function seedInvoices(): void {
     currency: 'PYG',
     status: 'cancelled',
     documentId: null,
+  });
+}
+
+// Bootstrap matches the api-iam migration seed: bancard stays the only live
+// method until bank_transfer is toggled on via the admin backoffice.
+function seedPaymentMethods(): void {
+  db.paymentMethodConfig.create({ method: 'bancard', enabled: true });
+  db.paymentMethodConfig.create({ method: 'bank_transfer', enabled: false });
+}
+
+function seedPayments(): void {
+  db.paymentRecord.create({
+    id: SEED.paymentIds[0],
+    tenantId: SEED.tenantId,
+    tenantName: 'Empresa Acme S.A.',
+    method: 'bancard',
+    status: 'approved',
+    settlementKind: 'webhook',
+    reference: 'BANCARD-PROC-0001',
+    amount: 450_000,
+    currency: 'PYG',
+    note: null,
+    settledBy: null,
+    settledAt: stablePast(90 * 24 * 3600),
+    createdAt: stablePast(90 * 24 * 3600),
+  });
+  db.paymentRecord.create({
+    id: SEED.paymentIds[1],
+    tenantId: SEED.tenantId,
+    tenantName: 'Empresa Acme S.A.',
+    method: 'bank_transfer',
+    status: 'pending',
+    settlementKind: null,
+    reference: 'CH-7K2M4Q',
+    amount: 450_000,
+    currency: 'PYG',
+    note: null,
+    settledBy: null,
+    settledAt: null,
+    createdAt: stablePast(3 * 24 * 3600),
+  });
+  db.paymentRecord.create({
+    id: SEED.paymentIds[2],
+    tenantId: SEED.tenantId,
+    tenantName: 'Empresa Acme S.A.',
+    method: 'bank_transfer',
+    status: 'declined',
+    settlementKind: 'agent',
+    reference: 'CH-9P3X7T',
+    amount: 150_000,
+    currency: 'PYG',
+    note: 'Referencia no encontrada en el extracto bancario',
+    settledBy: SEED.userId,
+    settledAt: stablePast(10 * 24 * 3600),
+    createdAt: stablePast(11 * 24 * 3600),
   });
 }
 

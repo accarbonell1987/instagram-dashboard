@@ -147,6 +147,34 @@ export const db = factory({
     createdAt: String,
     status: String,
   },
+
+  paymentRecord: {
+    id: primaryKey(String),
+    tenantId: String,
+    tenantName: String,
+    method: String,
+    status: String,
+    settlementKind: nullable(String),
+    reference: nullable(String),
+    amount: Number,
+    currency: String,
+    note: nullable(String),
+    settledBy: nullable(String),
+    settledAt: nullable(String),
+    createdAt: String,
+  },
+
+  paymentMethodConfig: {
+    method: primaryKey(String),
+    enabled: Boolean,
+  },
+
+  paymentProof: {
+    id: primaryKey(String),
+    draftId: String,
+    filename: String,
+    uploadedAt: String,
+  },
 });
 
 export type Db = typeof db;
@@ -166,6 +194,9 @@ export function resetDb(): void {
   db.planChangeRequest.deleteMany({ where: {} });
   db.invoice.deleteMany({ where: {} });
   db.paymentMethodChangeRequest.deleteMany({ where: {} });
+  db.paymentRecord.deleteMany({ where: {} });
+  db.paymentMethodConfig.deleteMany({ where: {} });
+  db.paymentProof.deleteMany({ where: {} });
   // Also clear the in-memory idempotency Map (separate from db for performance)
   clearIdempotencyCache();
 }

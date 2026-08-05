@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.12.0
+  version: 1.13.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -10,6 +10,21 @@ info:
     cambio aquí requiere un PR coordinado en ambos repositorios.
 
     ## Changelog
+
+    ### 1.13.0 (2026-08-04)
+    - ADD schemas: `Payment`, `PaymentInstruction` (discriminated `kind: redirect|bank_transfer`),
+      `RedirectPaymentInstruction`, `BankTransferPaymentInstruction`, `BankAccount`,
+      `PaymentMethodConfig`
+    - ADD: `GET /admin/payments`, `POST /admin/payments/{id}/confirm`, `POST /admin/payments/{id}/reject`
+      — pending-payments reconciliation queue (SuperAdmin)
+    - ADD: `GET /admin/payment-methods`, `PATCH /admin/payment-methods/{method}` — payment method
+      toggles, last-enabled-method guard (SuperAdmin)
+    - ADD: `GET /billing/payments` — tenant payment history, distinct from `/billing/invoices`
+    - ADD: `GET /admin/tenants/{tenantId}/payments` — tenant payment history (SuperAdmin)
+    - ADD: `POST /billing/payments/{id}/proof` — optional proof-of-transfer upload, unauthenticated,
+      `id` is the submitted draft's `draftId` used as a capability token
+    - NOTE: Bank-transfer payment method — schema and paths only in this version;
+      `apps/api-iam` implementation lands in a later, separately reviewed slice
 
     ### 1.12.0 (2026-08-04)
     - ADD: `PUT /admin/plans/reorder` — reordenar planes (drag and drop del backoffice)
@@ -730,6 +745,129 @@ components:
         total: { type: integer }
         page: { type: integer }
         pageSize: { type: integer }
+
+    PaymentMethodKind:
+      type: string
+      enum: [bancard, bank_transfer]
+
+    BankAccount:
+      type: object
+      required: [bankName, accountType, accountNumber, accountHolder]
+      properties:
+        bankName: { type: string, example: 'Banco Itaú' }
+        accountType: { type: string, enum: [checking, savings] }
+        accountNumber: { type: string }
+        accountHolder: { type: string }
+
+    RedirectPaymentInstruction:
+      type: object
+      required: [kind, redirectUrl, expiresAt]
+      properties:
+        kind: { type: string, enum: [redirect] }
+        redirectUrl: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+
+    BankTransferPaymentInstruction:
+      type: object
+      required: [kind, reference, bankAccounts]
+      properties:
+        kind: { type: string, enum: [bank_transfer] }
+        reference: { type: string, example: CH-7K2M4Q, description: 'Memo reference the user must include in the transfer' }
+        bankAccounts:
+          type: array
+          items: { $ref: '#/components/schemas/BankAccount' }
+
+    PaymentInstruction:
+      description: Method-specific instructions for completing a payment. Discriminated by `kind`.
+      oneOf:
+        - $ref: '#/components/schemas/RedirectPaymentInstruction'
+        - $ref: '#/components/schemas/BankTransferPaymentInstruction'
+      discriminator:
+        propertyName: kind
+        mapping:
+          redirect: '#/components/schemas/RedirectPaymentInstruction'
+          bank_transfer: '#/components/schemas/BankTransferPaymentInstruction'
+
+    Payment:
+      type: object
+      required: [id, tenantId, method, status, amount, currency, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        tenantName: { type: string, description: 'Only present in admin views' }
+        method: { $ref: '#/components/schemas/PaymentMethodKind' }
+        status:
+          type: string
+          enum: [pending, approved, declined, cancelled, timeout]
+        settlementKind:
+          oneOf:
+            - { type: string, enum: [webhook, agent, manual_admin] }
+            - { type: 'null' }
+        reference:
+          type: ['string', 'null']
+          description: 'Bancard process id (redirect) or bank-transfer CH-XXXXXX code'
+        amount: { type: number }
+        currency: { type: string, enum: [PYG, USD] }
+        note: { type: ['string', 'null'] }
+        settledBy: { type: ['string', 'null'], format: uuid }
+        settledAt: { type: ['string', 'null'], format: date-time }
+        instruction:
+          oneOf:
+            - $ref: '#/components/schemas/PaymentInstruction'
+            - type: 'null'
+        createdAt: { type: string, format: date-time }
+
+    PaymentListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Payment' }
+        total: { type: integer, minimum: 0 }
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
+
+    PaymentConfirmRequest:
+      type: object
+      required: [note]
+      properties:
+        note: { type: string, minLength: 1 }
+
+    PaymentRejectRequest:
+      type: object
+      required: [note]
+      properties:
+        note: { type: string, minLength: 1 }
+
+    PaymentMethodConfig:
+      type: object
+      required: [method, enabled]
+      properties:
+        method: { $ref: '#/components/schemas/PaymentMethodKind' }
+        enabled: { type: boolean }
+
+    PaymentMethodConfigListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/PaymentMethodConfig' }
+
+    PaymentMethodConfigUpdateRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+
+    ProofUploadResponse:
+      type: object
+      required: [id, filename, uploadedAt]
+      properties:
+        id: { type: string, format: uuid }
+        filename: { type: string }
+        uploadedAt: { type: string, format: date-time }
 
     JsonWebKeySet:
       type: object
@@ -2959,6 +3097,163 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
 
+  /admin/payments:
+    get:
+      tags: [payments, Admin]
+      operationId: adminListPayments
+      summary: List the pending-payments queue across tenants (SuperAdmin)
+      description: |
+        **Purpose**: Backoffice queue for reconciling payments awaiting confirmation
+        (mainly bank-transfer references), filterable by amount, date, reference and tenant.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [pending, approved, declined, cancelled, timeout] } }
+        - { name: tenantId, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: reference, in: query, required: false, schema: { type: string } }
+        - { name: dateFrom, in: query, required: false, schema: { type: string, format: date-time } }
+        - { name: dateTo, in: query, required: false, schema: { type: string, format: date-time } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Paginated payments queue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/payments/{id}/confirm:
+    post:
+      tags: [payments, Admin]
+      operationId: adminConfirmPayment
+      summary: Confirm a pending payment (SuperAdmin)
+      description: |
+        **Purpose**: Settles the payment via `settlePayment()` — activates the tenant,
+        purges entitlements, issues invoice/receipt, sends the confirmation email.
+
+        **Notes**: `note` is mandatory. Confirming an already-settled payment is a no-op
+        that returns the existing settled state (idempotent across webhook/agent/admin
+        triggers).
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentConfirmRequest' }
+      responses:
+        '200':
+          description: Payment settled (or already-settled, returned as-is)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /admin/payments/{id}/reject:
+    post:
+      tags: [payments, Admin]
+      operationId: adminRejectPayment
+      summary: Reject a pending payment (SuperAdmin)
+      description: |
+        **Purpose**: Marks the payment `declined` with a mandatory reason. The user is
+        notified by a resume-link email; the tenant stays `pending`; the same reference
+        remains valid for a retry (re-transfer + re-confirm).
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentRejectRequest' }
+      responses:
+        '200':
+          description: Payment rejected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /admin/payment-methods:
+    get:
+      tags: [payments, Admin]
+      operationId: adminListPaymentMethods
+      summary: List payment method toggles (SuperAdmin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Payment method config list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentMethodConfigListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/payment-methods/{method}:
+    patch:
+      tags: [payments, Admin]
+      operationId: adminUpdatePaymentMethod
+      summary: Toggle a payment method on or off (SuperAdmin)
+      description: |
+        **Notes**: `enabled=false` blocks new initiation only, never settlement of
+        existing payments. Disabling the last enabled method is rejected with
+        409 `payment_method.last_enabled`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: method, in: path, required: true, schema: { $ref: '#/components/schemas/PaymentMethodKind' } }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentMethodConfigUpdateRequest' }
+      responses:
+        '200':
+          description: Payment method updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentMethodConfig' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /admin/tenants/{tenantId}/payments:
+    get:
+      tags: [payments, Admin, tenants]
+      operationId: adminListTenantPayments
+      summary: List a tenant's payment history (SuperAdmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: tenantId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Paginated tenant payment history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /admin/plans/reorder:
     put:
       tags: [admin, plans]
@@ -3246,6 +3541,83 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
+
+  /billing/payments:
+    get:
+      tags: [billing, Billing, payments]
+      operationId: listPayments
+      summary: List the tenant's payment history
+      description: |
+        **Purpose**: Payment records (method, status, settlementKind, reference) for the
+        current tenant — distinct from `/billing/invoices`. No ledger/balance is exposed.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
+      responses:
+        '200':
+          description: Paginated payment history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /billing/payments/{id}/proof:
+    post:
+      tags: [billing, Billing, payments]
+      operationId: uploadPaymentProof
+      summary: Upload proof-of-transfer for a pending bank-transfer payment
+      description: |
+        **Purpose**: Lets the user attach proof-of-transfer (receipt/screenshot) to a
+        pending bank-transfer payment. Optional — proof presence never gates confirmation.
+
+        **Auth model**: Unauthenticated. `id` is the submitted draft's `draftId`, used as
+        a capability token — same pattern as other unauthenticated draft-scoped endpoints
+        (e.g. `PATCH /onboarding/draft/{draftId}`). No bearer token exists yet at this point
+        in the bank-transfer flow (no session is established until settlement).
+
+        **Controls (enforced server-side)**: max file size, content-type allowlist
+        (`application/pdf`, `image/jpeg`, `image/png`), max uploads per draft, rate limiting.
+        Exempt from the idempotency middleware, same opt-in-per-route pattern as webhooks.
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+          description: draftId of the submitted onboarding draft (capability token)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Proof uploaded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProofUploadResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413':
+          description: File exceeds the max allowed size
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '415':
+          description: Content-type not in the allowlist
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
 
   /billing/invoices:
     get:

@@ -6,6 +6,7 @@ import { instagramHandlers } from './instagram';
 import { invitationsHandlers } from './invitations';
 import { modulesHandlers } from './modules';
 import { onboardingHandlers } from './onboarding';
+import { paymentsHandlers } from './payments';
 import { plansHandlers } from './plans';
 
 export const handlers = [
@@ -16,6 +17,7 @@ export const handlers = [
   ...adminHandlers,
   ...identityHandlers,
   ...billingHandlers,
+  ...paymentsHandlers,
   ...modulesHandlers,
   ...instagramHandlers,
 ];
