@@ -238,7 +238,7 @@ export const onboardingHandlers = [
   }),
 
   // POST /onboarding/draft/:draftId/payment/initiate
-  http.post(`${BASE}/onboarding/draft/:draftId/payment/initiate`, ({ params, request }) => {
+  http.post(`${BASE}/onboarding/draft/:draftId/payment/initiate`, async ({ params, request }) => {
     const idemKey = request.headers.get('Idempotency-Key');
     if (idemKey !== null) {
       const cached = getCachedIdempotent(idemKey);
@@ -249,6 +249,7 @@ export const onboardingHandlers = [
     const draft = db.draft.findFirst({ where: { id: { equals: draftId } } });
     if (draft === null) return notFound('Draft not found');
 
+    const body = (await request.json().catch(() => ({}))) as { method?: string };
     const paymentId = `payment-${draftId.substring(0, 8)}-0001`;
     const scenario = getActiveScenario();
     const initialStatus = scenario === 'payment-cancelled' ? 'declined' : 'pending';
@@ -265,14 +266,31 @@ export const onboardingHandlers = [
       db.draft.update({ where: { id: { equals: draftId } }, data: { paymentId } });
     }
 
-    const responseBody = {
-      paymentId,
-      instruction: {
-        kind: 'redirect' as const,
-        redirectUrl: `http://localhost:3001/signup/${draftId}/payment?status=verifying`,
-        expiresAt: stableFuture(900),
-      },
-    };
+    const responseBody =
+      body.method === 'bank_transfer'
+        ? {
+            paymentId,
+            instruction: {
+              kind: 'bank_transfer' as const,
+              reference: 'CH-MSWTST',
+              bankAccounts: [
+                {
+                  bankName: 'Banco Itaú',
+                  accountType: 'checking' as const,
+                  accountNumber: '123456789',
+                  accountHolder: 'Corehub S.A.',
+                },
+              ],
+            },
+          }
+        : {
+            paymentId,
+            instruction: {
+              kind: 'redirect' as const,
+              redirectUrl: `http://localhost:3001/signup/${draftId}/payment?status=verifying`,
+              expiresAt: stableFuture(900),
+            },
+          };
 
     if (idemKey !== null) putIdempotentCache(idemKey, 200, responseBody);
     return HttpResponse.json(responseBody);

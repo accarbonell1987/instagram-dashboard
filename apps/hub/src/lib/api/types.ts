@@ -681,7 +681,10 @@ export interface paths {
          *     **Notas**: Si ya existe un pago pendiente o aprobado para este borrador devuelve 409.
          *     El header `X-Idempotency-Reset: true` + nueva `Idempotency-Key` se usa cuando el
          *     usuario reinicia explícitamente el pago tras un fallo, para crear un nuevo registro
-         *     en lugar de devolver el resultado cacheado.
+         *     en lugar de devolver el resultado cacheado. El `method` del body es opcional —
+         *     se omite cuando solo hay un método habilitado (`GET /payment-methods` devuelve
+         *     uno solo); se vuelve obligatorio cuando hay 2+ habilitados, para que el wizard
+         *     muestre un selector.
          */
         post: operations["initiatePayment"];
         delete?: never;
@@ -1320,6 +1323,30 @@ export interface paths {
          *     remains valid for a retry (re-transfer + re-confirm).
          */
         post: operations["adminRejectPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List enabled payment methods (public)
+         * @description Public counterpart of `GET /admin/payment-methods` — the signup wizard is
+         *     unauthenticated, so it cannot call the SuperAdmin-gated endpoint. Returns
+         *     only enabled methods, `method` + `displayName` only, no bank-account
+         *     details (those belong to the initiate instruction, not to an anonymous
+         *     list).
+         */
+        get: operations["listPaymentMethods"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2039,6 +2066,10 @@ export interface components {
             representative?: components["schemas"]["DraftRepresentative"];
             company?: components["schemas"]["DraftCompany"];
         };
+        PaymentInitiateRequest: {
+            /** @description Omit to fall back to the single enabled method; required once 2+ methods are enabled. */
+            method?: components["schemas"]["PaymentMethodKind"];
+        };
         /**
          * @description What the customer must do next, which differs per method: a gateway
          *     redirect, or a reference plus the accounts to transfer to. Carried as a
@@ -2236,6 +2267,17 @@ export interface components {
         };
         PaymentMethodConfigListResponse: {
             items: components["schemas"]["PaymentMethodConfig"][];
+        };
+        /**
+         * @description Public counterpart of PaymentMethodConfig — no bank-account details.
+         *     The signup wizard is unauthenticated and only needs to know what to offer.
+         */
+        PaymentMethodOption: {
+            method: components["schemas"]["PaymentMethodKind"];
+            displayName: string;
+        };
+        PaymentMethodOptionListResponse: {
+            items: components["schemas"]["PaymentMethodOption"][];
         };
         PaymentMethodConfigUpdateRequest: {
             enabled: boolean;
@@ -2705,6 +2747,7 @@ export type SchemaDraftPayment = components['schemas']['DraftPayment'];
 export type SchemaDraftState = components['schemas']['DraftState'];
 export type SchemaDraftCreateRequest = components['schemas']['DraftCreateRequest'];
 export type SchemaDraftUpdateRequest = components['schemas']['DraftUpdateRequest'];
+export type SchemaPaymentInitiateRequest = components['schemas']['PaymentInitiateRequest'];
 export type SchemaPaymentInitiateResponse = components['schemas']['PaymentInitiateResponse'];
 export type SchemaPaymentStatus = components['schemas']['PaymentStatus'];
 export type SchemaSubmitResponse = components['schemas']['SubmitResponse'];
@@ -2733,6 +2776,8 @@ export type SchemaPaymentConfirmRequest = components['schemas']['PaymentConfirmR
 export type SchemaPaymentRejectRequest = components['schemas']['PaymentRejectRequest'];
 export type SchemaPaymentMethodConfig = components['schemas']['PaymentMethodConfig'];
 export type SchemaPaymentMethodConfigListResponse = components['schemas']['PaymentMethodConfigListResponse'];
+export type SchemaPaymentMethodOption = components['schemas']['PaymentMethodOption'];
+export type SchemaPaymentMethodOptionListResponse = components['schemas']['PaymentMethodOptionListResponse'];
 export type SchemaPaymentMethodConfigUpdateRequest = components['schemas']['PaymentMethodConfigUpdateRequest'];
 export type SchemaProofUploadResponse = components['schemas']['ProofUploadResponse'];
 export type SchemaJsonWebKeySet = components['schemas']['JsonWebKeySet'];
@@ -3517,7 +3562,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PaymentInitiateRequest"];
+            };
+        };
         responses: {
             /** @description Pago iniciado */
             200: {
@@ -3538,7 +3587,7 @@ export interface operations {
                     "application/json": components["schemas"]["PaymentInitiateResponse"];
                 };
             };
-            /** @description Pago ya pendiente o aprobado para este borrador */
+            /** @description Pago ya pendiente o aprobado para este borrador, o método solicitado deshabilitado */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4434,6 +4483,26 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["UnprocessableEntity"];
+        };
+    };
+    listPaymentMethods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Enabled payment methods */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodOptionListResponse"];
+                };
+            };
         };
     };
     adminListPaymentMethods: {

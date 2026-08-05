@@ -46,7 +46,7 @@ describe('PaymentAdapterRegistry', () => {
 
 describe('BankTransferAdapter', () => {
   it('generates a CH-XXXXXX reference and returns the configured accounts', async () => {
-    const accounts = [{ bankName: 'Banco Test', accountNumber: '123', accountHolder: 'Corehub SA', ruc: '80012345-6' }]
+    const accounts = [{ bankName: 'Banco Test', accountType: 'checking' as const, accountNumber: '123', accountHolder: 'Corehub SA' }]
     const prisma = {
       paymentMethodConfig: { findUnique: vi.fn().mockResolvedValue({ config: { accounts } }) },
       payment: { findUnique: vi.fn().mockResolvedValue(null) },

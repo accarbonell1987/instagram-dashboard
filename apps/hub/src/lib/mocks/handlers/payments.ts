@@ -97,6 +97,14 @@ export const paymentsHandlers = [
     return HttpResponse.json(updated);
   }),
 
+  // GET /payment-methods — public, only enabled methods, no bank-account details
+  http.get(`${BASE}/payment-methods`, () => {
+    const items = db.paymentMethodConfig
+      .findMany({ where: { enabled: { equals: true } } })
+      .map(({ method, displayName }) => ({ method, displayName }));
+    return HttpResponse.json({ items });
+  }),
+
   // GET /admin/payment-methods
   http.get(`${BASE}/admin/payment-methods`, () => {
     const items = db.paymentMethodConfig.findMany({ where: {} });

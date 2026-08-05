@@ -33,7 +33,12 @@ export function createPaymentAdapterRegistry(deps: PaymentAdapterRegistryDeps) {
     return adapters[method]
   }
 
-  return { getEnabledAdapter }
+  async function listEnabledMethods(): Promise<PaymentMethod[]> {
+    const configs = await prisma.paymentMethodConfig.findMany({ where: { enabled: true }, select: { method: true } })
+    return configs.map((c) => c.method)
+  }
+
+  return { getEnabledAdapter, listEnabledMethods }
 }
 
 export type PaymentAdapterRegistry = ReturnType<typeof createPaymentAdapterRegistry>

@@ -14,6 +14,7 @@ import {
   ResumeTokenResolutionSchema,
   ResumeLinkRequestSchema,
   ResumeLinkResponseSchema,
+  PaymentInitiateRequestSchema,
   PaymentInitiateResponseSchema,
   PaymentStatusSchema,
   SubmitResponseSchema,
@@ -348,6 +349,9 @@ export function createOnboardingRouter(
     security: [],
     request: {
       params: z.object({ draftId: z.string() }),
+      body: {
+        content: { 'application/json': { schema: PaymentInitiateRequestSchema } },
+      },
     },
     responses: {
       200: {
@@ -364,16 +368,22 @@ export function createOnboardingRouter(
 
   router.openapi(initiatePaymentRoute, async (c) => {
     const { draftId } = c.req.valid('param');
+    const { method } = c.req.valid('json');
     const idempotencyReset = c.var.idempotencyReset ?? false;
-    const result = await paymentService.initiatePayment({ draftId, idempotencyReset });
-    return c.json(
-      {
-        paymentId: result.paymentId,
-        redirectUrl: result.redirectUrl,
-        expiresAt: result.expiresAt.toISOString(),
-      },
-      200
-    );
+    const result = await paymentService.initiatePayment({ draftId, idempotencyReset, method });
+    const instruction =
+      result.instruction.kind === 'redirect'
+        ? {
+            kind: 'redirect' as const,
+            redirectUrl: result.instruction.redirectUrl,
+            expiresAt: result.instruction.expiresAt.toISOString(),
+          }
+        : {
+            kind: 'bank_transfer' as const,
+            reference: result.instruction.reference,
+            bankAccounts: result.instruction.bankAccounts,
+          };
+    return c.json({ paymentId: result.paymentId, instruction }, 200);
   });
 
   // ── GET /onboarding/draft/:draftId/payment/status ─────────────────────

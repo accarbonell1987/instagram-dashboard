@@ -30,6 +30,7 @@ import { createWellKnownRouter } from './well-known/index.js';
 import { createPlansRouter } from './plans/index.js';
 import { createAuthRouter } from './auth/index.js';
 import { createOnboardingRouter } from './onboarding/index.js';
+import { createPaymentMethodsRouter } from './payment-methods/index.js';
 import { createWebhooksRouter } from './webhooks/index.js';
 import { createIdentityRouter } from './identity/index.js';
 import { createPlanChangeRouter } from './plan-change/index.js';
@@ -127,6 +128,7 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   const adminProductsRouter = createAdminProductsRouter(prisma, authGuard);
   const adminPaymentsRouter = createAdminPaymentsRouter(services.settlementService, prisma, authGuard, idempotency);
   const adminPaymentMethodsRouter = createAdminPaymentMethodsRouter(prisma, authGuard, idempotency);
+  const paymentMethodsRouter = createPaymentMethodsRouter(prisma);
   const internalRouter = createInternalRouter(prisma, services.moduleService);
 
   // Public products listing (for onboarding product picker)
@@ -144,6 +146,7 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   app.route('/', plansRouter);
   app.route('/', authRouter);
   app.route('/', onboardingRouter);
+  app.route('/', paymentMethodsRouter);
   app.route('/', webhooksRouter);
   app.route('/', identityRouter);
   app.route('/', planChangeRouter);

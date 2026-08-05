@@ -51,6 +51,7 @@ export class PrismaPaymentRepository implements PaymentRepository {
       data: {
         draftId: data.draftId,
         externalRef: data.externalRef,
+        method: data.method,
         amount: data.amount,
         currency: data.currency,
         status: data.status,

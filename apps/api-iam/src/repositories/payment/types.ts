@@ -1,8 +1,9 @@
-import type { Payment, PaymentStatus } from '../../domain/index.js'
+import type { Payment, PaymentMethod, PaymentStatus } from '../../domain/index.js'
 
 export interface CreatePaymentInput {
   draftId: string
   externalRef: string
+  method: PaymentMethod
   amount: number
   currency: string
   status: PaymentStatus

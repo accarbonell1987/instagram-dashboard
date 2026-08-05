@@ -167,6 +167,7 @@ export const db = factory({
   paymentMethodConfig: {
     method: primaryKey(String),
     enabled: Boolean,
+    displayName: String,
   },
 
   paymentProof: {

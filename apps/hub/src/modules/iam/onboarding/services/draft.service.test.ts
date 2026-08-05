@@ -7,6 +7,7 @@ import {
   consumeResumeToken,
   initiatePayment,
   getPaymentStatus,
+  listPaymentMethods,
   submitDraft,
 } from './draft.service';
 
@@ -96,6 +97,13 @@ describe('initiatePayment', () => {
     if (result.instruction.kind === 'redirect') {
       expect(result.instruction.redirectUrl).toBeDefined();
     }
+  });
+});
+
+describe('listPaymentMethods', () => {
+  it('returns only the enabled methods', async () => {
+    const methods = await listPaymentMethods();
+    expect(methods).toEqual([{ method: 'bancard', displayName: 'Tarjeta (Bancard)' }]);
   });
 });
 

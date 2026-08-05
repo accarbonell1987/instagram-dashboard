@@ -88,6 +88,7 @@ function makeDeps(draftStatus = 'otp_verified' as OnboardingDraft['status']) {
 
   const paymentAdapterRegistry = {
     getEnabledAdapter: vi.fn().mockResolvedValue(bancardMethodAdapter),
+    listEnabledMethods: vi.fn().mockResolvedValue(['bancard']),
   }
 
   const config = makeConfig()
@@ -120,11 +121,87 @@ describe('PaymentService', () => {
         'draft-1',
         expect.objectContaining({ status: 'payment_pending' }),
       )
+      expect(paymentAdapterRegistry.getEnabledAdapter).toHaveBeenCalledWith('bancard')
       expect(result).toMatchObject({
         paymentId: 'payment-1',
-        externalRef: 'bancard-proc-1',
-        redirectUrl: expect.any(String),
-        expiresAt: expect.any(Date),
+        instruction: { kind: 'redirect', redirectUrl: expect.any(String), expiresAt: expect.any(Date) },
+      })
+    })
+
+    it('IAM-ONB-006.4: resolves to the single enabled method when none is requested', async () => {
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('otp_verified')
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
+
+      await service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false })
+
+      expect(paymentAdapterRegistry.listEnabledMethods).toHaveBeenCalledTimes(1)
+      expect(paymentAdapterRegistry.getEnabledAdapter).toHaveBeenCalledWith('bancard')
+    })
+
+    it('uses the explicitly requested method without consulting listEnabledMethods', async () => {
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('otp_verified')
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
+
+      await service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false, method: 'bank_transfer' })
+
+      expect(paymentAdapterRegistry.listEnabledMethods).not.toHaveBeenCalled()
+      expect(paymentAdapterRegistry.getEnabledAdapter).toHaveBeenCalledWith('bank_transfer')
+    })
+
+    it('throws ConflictError when the requested method is disabled', async () => {
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('otp_verified')
+      paymentAdapterRegistry.getEnabledAdapter.mockRejectedValueOnce(
+        new ConflictError('payment.method_disabled', 'Payment method "bank_transfer" is not enabled'),
+      )
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
+
+      await expect(
+        service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false, method: 'bank_transfer' }),
+      ).rejects.toThrow(ConflictError)
+    })
+
+    it('throws ConflictError when no payment method is enabled', async () => {
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('otp_verified')
+      paymentAdapterRegistry.listEnabledMethods.mockResolvedValueOnce([])
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
+
+      await expect(
+        service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false }),
+      ).rejects.toThrow(ConflictError)
+    })
+
+    it('throws ValidationError when no method is requested and more than one is enabled', async () => {
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('otp_verified')
+      paymentAdapterRegistry.listEnabledMethods.mockResolvedValueOnce(['bancard', 'bank_transfer'])
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
+
+      await expect(
+        service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false }),
+      ).rejects.toThrow(ValidationError)
+    })
+
+    it('creates the payment with the resolved bank_transfer method and its instruction shape', async () => {
+      const { draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } = makeDeps('otp_verified')
+      const bankTransferAdapter = {
+        initiate: vi.fn().mockResolvedValue({
+          kind: 'bank_transfer' as const,
+          externalRef: 'CH-7K2M4Q',
+          reference: 'CH-7K2M4Q',
+          accounts: [{ bankName: 'Banco Itaú', accountType: 'checking' as const, accountNumber: '123', accountHolder: 'Corehub SA' }],
+        }),
+      }
+      paymentAdapterRegistry.getEnabledAdapter.mockResolvedValueOnce(bankTransferAdapter)
+      const service = createPaymentService({ draftRepo, paymentRepo, paymentAdapterRegistry, bancardMethodAdapter, config } as never)
+
+      const result = await service.initiatePayment({ draftId: 'draft-1', idempotencyReset: false, method: 'bank_transfer' })
+
+      expect(paymentRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ method: 'bank_transfer', externalRef: 'CH-7K2M4Q' }),
+      )
+      expect(result.instruction).toEqual({
+        kind: 'bank_transfer',
+        reference: 'CH-7K2M4Q',
+        bankAccounts: [{ bankName: 'Banco Itaú', accountType: 'checking', accountNumber: '123', accountHolder: 'Corehub SA' }],
       })
     })
 

@@ -1,8 +1,8 @@
 import type { PaymentRepository, OnboardingDraftRepository } from '../repositories/index.js'
-import type { PaymentAdapterRegistry } from '../adapters/payment/index.js'
+import type { PaymentAdapterRegistry, BankAccount } from '../adapters/payment/index.js'
 import type { Config } from '../config.js'
-import type { Payment } from '../domain/index.js'
-import { ConflictError, InternalError, ValidationError } from '../errors.js'
+import type { Payment, PaymentMethod } from '../domain/index.js'
+import { ConflictError, ValidationError } from '../errors.js'
 
 export type PaymentServiceDeps = {
   paymentRepo: PaymentRepository
@@ -11,11 +11,13 @@ export type PaymentServiceDeps = {
   config: Config
 }
 
+export type PaymentInitiateInstruction =
+  | { kind: 'redirect'; redirectUrl: string; expiresAt: Date }
+  | { kind: 'bank_transfer'; reference: string; bankAccounts: BankAccount[] }
+
 export type PaymentInitiateResponse = {
   paymentId: string
-  externalRef: string
-  redirectUrl: string
-  expiresAt: Date
+  instruction: PaymentInitiateInstruction
 }
 
 export type PaymentStatusResponse = {
@@ -27,11 +29,29 @@ export type PaymentStatusResponse = {
 export function createPaymentService(deps: PaymentServiceDeps) {
   const { paymentRepo, draftRepo, paymentAdapterRegistry, config } = deps
 
+  // No method requested and more than one is enabled: initiation is ambiguous —
+  // the wizard always sends a method once 2+ are enabled (it shows a picker),
+  // so this only fires for a caller that skips the picker. Fail loudly rather
+  // than guess, same spirit as the zero-enabled case below.
+  async function resolveMethod(requested: PaymentMethod | undefined): Promise<PaymentMethod> {
+    if (requested !== undefined) return requested
+
+    const [only, ...rest] = await paymentAdapterRegistry.listEnabledMethods()
+    if (only === undefined) {
+      throw new ConflictError('payment.no_method_enabled', 'No payment method is currently enabled')
+    }
+    if (rest.length > 0) {
+      throw new ValidationError('payment.method_required', 'Multiple payment methods are enabled — a method must be specified')
+    }
+    return only
+  }
+
   async function initiatePayment(params: {
     draftId: string
     idempotencyReset: boolean
+    method?: PaymentMethod | undefined
   }): Promise<PaymentInitiateResponse> {
-    const { draftId, idempotencyReset } = params
+    const { draftId, idempotencyReset, method } = params
 
     const draft = await draftRepo.findByIdOrThrow(draftId)
 
@@ -55,12 +75,9 @@ export function createPaymentService(deps: PaymentServiceDeps) {
     const resolvedAmount =
       typeof planData?.['price'] === 'number' ? planData['price'] : amount
 
-    // Method selection isn't wired to this endpoint yet (no UI offers a choice —
-    // that's step-5-payment/bank-transfer-view.tsx, a separate slice). Bancard
-    // is the only method this route drives today; `bank_transfer` stays reachable
-    // only through the registry directly (see adapters/payment/index.ts).
-    const adapter = await paymentAdapterRegistry.getEnabledAdapter('bancard')
-    const instruction = await adapter.initiate({
+    const resolvedMethod = await resolveMethod(method)
+    const adapter = await paymentAdapterRegistry.getEnabledAdapter(resolvedMethod)
+    const result = await adapter.initiate({
       amount: resolvedAmount,
       currency: 'PYG',
       draftId,
@@ -68,20 +85,10 @@ export function createPaymentService(deps: PaymentServiceDeps) {
       description: 'Corehub Plan',
     })
 
-    // The onboarding contract's PaymentInitiateResponse is still the flat
-    // Bancard-only shape — it doesn't yet expose PaymentInstruction's
-    // discriminated union. Since this route only ever drives 'bancard' today,
-    // this is defensive, not reachable in practice.
-    if (instruction.kind !== 'redirect') {
-      throw new InternalError(
-        'payment.unsupported_instruction_kind',
-        `Route does not support "${instruction.kind}" instructions yet — requires an api-contract.yaml update`,
-      )
-    }
-
     const payment = await paymentRepo.create({
       draftId,
-      externalRef: instruction.externalRef,
+      externalRef: result.externalRef,
+      method: resolvedMethod,
       amount: resolvedAmount,
       currency: 'PYG',
       status: 'pending',
@@ -89,12 +96,12 @@ export function createPaymentService(deps: PaymentServiceDeps) {
 
     await draftRepo.update(draftId, { status: 'payment_pending' })
 
-    return {
-      paymentId: payment.id,
-      externalRef: instruction.externalRef,
-      redirectUrl: instruction.url,
-      expiresAt: instruction.expiresAt,
-    }
+    const instruction: PaymentInitiateInstruction =
+      result.kind === 'redirect'
+        ? { kind: 'redirect', redirectUrl: result.url, expiresAt: result.expiresAt }
+        : { kind: 'bank_transfer', reference: result.reference, bankAccounts: result.accounts }
+
+    return { paymentId: payment.id, instruction }
   }
 
   async function getPaymentStatus(draftId: string): Promise<PaymentStatusResponse> {

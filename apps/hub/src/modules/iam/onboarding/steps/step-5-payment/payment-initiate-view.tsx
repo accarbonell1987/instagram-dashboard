@@ -1,11 +1,12 @@
 'use client';
 
+import { Label, RadioGroup, RadioGroupItem } from '@core/ui';
 import { DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, type JSX } from 'react';
 
 import { StepHeader } from '../../components/step-header';
-import { initiatePayment } from '../../services/draft.service';
+import { initiatePayment, listPaymentMethods } from '../../services/draft.service';
 import type { DraftState } from '../../services/draft.service';
 import type { Plan } from '../../services/plans.service';
 import { StepErrorBanner } from '../shared/step-error-banner';
@@ -20,6 +21,8 @@ import { ATTEMPT_STORAGE_KEY } from './use-payment-polling';
 import type { components } from '@/lib/api/types';
 
 type BankTransferInstruction = components['schemas']['BankTransferPaymentInstruction'];
+type PaymentMethodOption = components['schemas']['PaymentMethodOption'];
+type PaymentMethodKind = components['schemas']['PaymentMethodKind'];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -40,12 +43,30 @@ export function PaymentInitiateView({
   const [isInitiating, setIsInitiating] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [bankTransfer, setBankTransfer] = useState<BankTransferInstruction | null>(null);
+  const [methods, setMethods] = useState<PaymentMethodOption[] | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodKind | null>(null);
 
   // Reads the persisted instruction (localStorage) on mount only — SSR has no
   // localStorage, and it never changes across renders for a given draftId.
   useEffect(() => {
     setBankTransfer(getBankTransferInstruction(draftId));
   }, [draftId]);
+
+  // One enabled method → use it directly, no picker. 2+ → wait for the user
+  // to choose via the RadioGroup below (onContinue stays disabled until then).
+  useEffect(() => {
+    let cancelled = false;
+    void listPaymentMethods().then((items) => {
+      if (cancelled) return;
+      setMethods(items);
+      if (items.length === 1) {
+        setSelectedMethod(items[0]?.method ?? null);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ─── Initiate payment handler ──────────────────────────────────────────────
 
@@ -58,7 +79,7 @@ export function PaymentInitiateView({
       const attempt = storedAttempt !== null ? Number(storedAttempt) + 1 : 1;
       localStorage.setItem(ATTEMPT_STORAGE_KEY(draftId), String(attempt));
 
-      const { instruction } = await initiatePayment(draftId, attempt);
+      const { instruction } = await initiatePayment(draftId, attempt, selectedMethod ?? undefined);
 
       if (instruction.kind === 'bank_transfer') {
         storeBankTransferInstruction(draftId, instruction);
@@ -88,6 +109,9 @@ export function PaymentInitiateView({
   }
 
   const priceFormatted = plan !== null ? new Intl.NumberFormat('es-PY').format(plan.price) : '—';
+  const showPicker = methods !== null && methods.length > 1;
+  const canContinue = !showPicker || selectedMethod !== null;
+  const continueLabel = showPicker || selectedMethod === 'bank_transfer' ? 'Continuar' : 'Pagar con Bancard';
 
   return (
     <div className="flex flex-col gap-8">
@@ -97,13 +121,33 @@ export function PaymentInitiateView({
         description="Completa tu pago para activar tu cuenta."
         currentStep="payment"
         draftId={draftId}
-        onContinue={() => void handleInitiatePayment()}
+        onContinue={canContinue ? () => void handleInitiatePayment() : undefined}
         isSubmitting={isInitiating}
-        continueLabel="Pagar con Bancard"
+        continueLabel={continueLabel}
         continueLoadingLabel="Redirigiendo..."
       />
 
       <StepErrorBanner message={initError} className="mx-auto w-full max-w-lg" />
+
+      {showPicker && methods !== null && (
+        <div className="border-border bg-muted/30 mx-auto w-full max-w-lg rounded-xl border p-6">
+          <h2 id="payment-method-picker-label" className="text-foreground mb-4 text-base font-semibold">
+            Elegí cómo pagar
+          </h2>
+          <RadioGroup
+            aria-labelledby="payment-method-picker-label"
+            value={selectedMethod ?? undefined}
+            onValueChange={(value) => setSelectedMethod(value as PaymentMethodKind)}
+          >
+            {methods.map((option) => (
+              <div key={option.method} className="flex items-center gap-2">
+                <RadioGroupItem value={option.method} id={`payment-method-${option.method}`} />
+                <Label htmlFor={`payment-method-${option.method}`}>{option.displayName}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+      )}
 
       {/* Summary panel */}
       <div className="border-border bg-muted/30 mx-auto w-full max-w-lg rounded-xl border p-6">
@@ -122,9 +166,11 @@ export function PaymentInitiateView({
         </div>
       </div>
 
-      <p className="text-muted-foreground text-center text-xs">
-        Serás redirigido al portal de pago seguro de Bancard.
-      </p>
+      {!showPicker && selectedMethod !== 'bank_transfer' && (
+        <p className="text-muted-foreground text-center text-xs">
+          Serás redirigido al portal de pago seguro de Bancard.
+        </p>
+      )}
     </div>
   );
 }

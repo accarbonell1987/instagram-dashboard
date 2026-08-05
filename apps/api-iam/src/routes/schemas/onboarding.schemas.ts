@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { SessionSchema } from './auth.schemas.js';
 import { PlanSchema } from './plans.schemas.js';
+import { PaymentMethodKindSchema, PaymentInstructionSchema } from './payment.schemas.js';
 
 export const PlanInDraftSchema = PlanSchema.nullable();
 
@@ -95,13 +96,12 @@ export const ResumeLinkResponseSchema = z.object({
 });
 
 export const PaymentInitiateRequestSchema = z.object({
-  planId: z.string().optional(),
+  method: PaymentMethodKindSchema.optional(),
 });
 
 export const PaymentInitiateResponseSchema = z.object({
   paymentId: z.string(),
-  redirectUrl: z.string(),
-  expiresAt: z.string(),
+  instruction: PaymentInstructionSchema,
 });
 
 export const PaymentStatusSchema = z.object({

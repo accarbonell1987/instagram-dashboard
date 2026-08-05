@@ -83,6 +83,9 @@ beforeEach(() => {
   mockAssign.mockClear();
   localStorage.clear();
   currentSearchParams = new URLSearchParams();
+  vi.spyOn(draftService, 'listPaymentMethods').mockResolvedValue([
+    { method: 'bancard', displayName: 'Tarjeta (Bancard)' },
+  ]);
   vi.spyOn(draftService, 'initiatePayment').mockResolvedValue({
     paymentId: 'payment-test-001',
     instruction: {
@@ -104,10 +107,11 @@ afterEach(() => {
 });
 
 describe('StepPayment — initiate view', () => {
-  it('renders the payment summary and Pagar button', () => {
+  it('renders the payment summary and Pagar button', async () => {
     renderStep(makeDraft());
     expect(screen.getByRole('heading', { name: /pago/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /pagar con bancard/i })).toBeInTheDocument();
+    await waitFor(() => expect(draftService.listPaymentMethods).toHaveBeenCalled());
   });
 
   it('clicking Pagar calls initiatePayment and redirects', async () => {
@@ -149,6 +153,51 @@ describe('StepPayment — bank-transfer instruction', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /ya transferí/i }));
     expect(mockPush).toHaveBeenCalledWith('/signup/draft-test-001/summary');
+  });
+});
+
+describe('StepPayment — method selection', () => {
+  it('one enabled method: skips the picker and pays directly', async () => {
+    renderStep(makeDraft());
+
+    await waitFor(() => {
+      expect(screen.queryByText(/elegí cómo pagar/i)).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: /pagar con bancard/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /pagar con bancard/i }));
+
+    await waitFor(() => {
+      expect(draftService.initiatePayment).toHaveBeenCalledWith('draft-test-001', 1, 'bancard');
+    });
+  });
+
+  it('two+ enabled methods: shows a picker and initiates with the chosen one', async () => {
+    vi.spyOn(draftService, 'listPaymentMethods').mockResolvedValue([
+      { method: 'bancard', displayName: 'Tarjeta (Bancard)' },
+      { method: 'bank_transfer', displayName: 'Transferencia bancaria' },
+    ]);
+
+    renderStep(makeDraft());
+
+    await waitFor(() => {
+      expect(screen.getByText(/elegí cómo pagar/i)).toBeInTheDocument();
+    });
+    // Continue is disabled (hidden) until a method is chosen.
+    expect(screen.queryByRole('button', { name: /continuar/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: /transferencia bancaria/i }));
+    expect(screen.getByRole('button', { name: /continuar/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
+
+    await waitFor(() => {
+      expect(draftService.initiatePayment).toHaveBeenCalledWith(
+        'draft-test-001',
+        1,
+        'bank_transfer',
+      );
+    });
   });
 });
 

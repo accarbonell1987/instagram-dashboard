@@ -157,6 +157,7 @@ export function createAdminTenantService(deps: AdminTenantServiceDeps) {
     const payment = await paymentRepo.create({
       draftId: draft.id,
       externalRef: `MANUAL-${nanoid()}`,
+      method: 'bancard',
       amount: 0,
       currency: 'PYG',
       status: 'pending',

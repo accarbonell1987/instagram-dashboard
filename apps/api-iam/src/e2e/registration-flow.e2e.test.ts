@@ -234,15 +234,16 @@ describe('tenant registration flow (e2e)', () => {
     expect(initiatePaymentRes.status).toBe(200)
     const paymentInit = await initiatePaymentRes.json() as {
       paymentId: string
-      redirectUrl: string
-      expiresAt: string
+      instruction: { kind: 'redirect'; redirectUrl: string; expiresAt: string } | { kind: 'bank_transfer'; reference: string }
     }
     expect(paymentInit.paymentId).toBeTruthy()
-    expect(paymentInit.redirectUrl).toContain('stub')
+    expect(paymentInit.instruction.kind).toBe('redirect')
+    if (paymentInit.instruction.kind !== 'redirect') throw new Error('unreachable')
+    expect(paymentInit.instruction.redirectUrl).toContain('stub')
 
     // Extract bancardProcessId from the stub redirect URL
     // StubBancardAdapter generates: http://...?process_id=stub_<nanoid>
-    const processIdMatch = paymentInit.redirectUrl.match(/process_id=([^&]+)/)
+    const processIdMatch = paymentInit.instruction.redirectUrl.match(/process_id=([^&]+)/)
     expect(processIdMatch).toBeTruthy()
     const processId = processIdMatch![1]
 

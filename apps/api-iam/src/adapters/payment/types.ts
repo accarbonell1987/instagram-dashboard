@@ -1,8 +1,8 @@
 export type BankAccount = {
   bankName: string
+  accountType: 'checking' | 'savings'
   accountNumber: string
   accountHolder: string
-  ruc: string
 }
 
 export type PaymentInitiateParams = {

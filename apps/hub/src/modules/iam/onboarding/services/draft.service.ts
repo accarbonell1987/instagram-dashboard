@@ -159,7 +159,8 @@ export async function consumeResumeToken(token: string): Promise<{ draftId: stri
 
 export async function initiatePayment(
   draftId: string,
-  attempt: number
+  attempt: number,
+  method?: components['schemas']['PaymentMethodKind']
 ): Promise<components['schemas']['PaymentInitiateResponse']> {
   const scope = `draft:${draftId}:payment:v${String(attempt)}`;
 
@@ -173,10 +174,19 @@ export async function initiatePayment(
     `/onboarding/draft/${draftId}/payment/initiate`,
     {
       method: 'POST',
-      body: {},
+      body: method !== undefined ? { method } : {},
       idempotencyKey,
     }
   );
+}
+
+export async function listPaymentMethods(): Promise<
+  components['schemas']['PaymentMethodOption'][]
+> {
+  const result = await apiFetchWithInterceptors<
+    components['schemas']['PaymentMethodOptionListResponse']
+  >('/payment-methods', { method: 'GET' });
+  return result.items;
 }
 
 export async function getPaymentStatus(

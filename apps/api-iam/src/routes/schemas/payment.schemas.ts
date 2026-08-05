@@ -2,6 +2,30 @@ import { z } from '@hono/zod-openapi'
 
 export const PaymentMethodKindSchema = z.enum(['bancard', 'bank_transfer'])
 
+export const BankAccountSchema = z.object({
+  bankName: z.string(),
+  accountType: z.enum(['checking', 'savings']),
+  accountNumber: z.string(),
+  accountHolder: z.string(),
+})
+
+export const RedirectPaymentInstructionSchema = z.object({
+  kind: z.literal('redirect'),
+  redirectUrl: z.string(),
+  expiresAt: z.string(),
+})
+
+export const BankTransferPaymentInstructionSchema = z.object({
+  kind: z.literal('bank_transfer'),
+  reference: z.string(),
+  bankAccounts: z.array(BankAccountSchema),
+})
+
+export const PaymentInstructionSchema = z.union([
+  RedirectPaymentInstructionSchema,
+  BankTransferPaymentInstructionSchema,
+])
+
 export const PaymentSchema = z.object({
   id: z.string(),
   tenantId: z.string(),
@@ -61,6 +85,17 @@ export const PaymentMethodConfigSchema = z.object({
 
 export const PaymentMethodConfigListResponseSchema = z.object({
   items: z.array(PaymentMethodConfigSchema),
+})
+
+// Public counterpart of PaymentMethodConfig — no bank-account details, the
+// signup wizard is unauthenticated and only needs to know what to offer.
+export const PaymentMethodOptionSchema = z.object({
+  method: PaymentMethodKindSchema,
+  displayName: z.string(),
+})
+
+export const PaymentMethodOptionListResponseSchema = z.object({
+  items: z.array(PaymentMethodOptionSchema),
 })
 
 export const PaymentMethodParamsSchema = z.object({

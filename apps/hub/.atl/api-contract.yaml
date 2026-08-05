@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.16.0
+  version: 1.17.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -10,6 +10,17 @@ info:
     cambio aquí requiere un PR coordinado en ambos repositorios.
 
     ## Changelog
+
+    ### 1.17.0 (2026-08-05)
+    - ADD: `GET /payment-methods` — public, unauthenticated list of enabled payment
+      methods (`method`, `displayName` only, no bank-account details) for the
+      signup wizard's method picker.
+    - ADD: optional `method` on the `POST /onboarding/draft/{draftId}/payment/initiate`
+      request body (`PaymentInitiateRequest`) — lets the wizard drive a specific
+      method; omitted falls back to the single enabled one.
+    - NOTE: `apps/api-iam`'s `POST .../payment/initiate` now resolves the method
+      from config instead of hardcoding `bancard` — bank-transfer payments are
+      reachable end-to-end for the first time.
 
     ### 1.16.0 (2026-08-05)
     - ADD: `DraftPayment.method` — lets the wizard distinguish a bank-transfer
@@ -610,6 +621,13 @@ components:
         representative: { $ref: '#/components/schemas/DraftRepresentative', nullable: true }
         company: { $ref: '#/components/schemas/DraftCompany', nullable: true }
 
+    PaymentInitiateRequest:
+      type: object
+      properties:
+        method:
+          allOf: [{ $ref: '#/components/schemas/PaymentMethodKind' }]
+          description: 'Omit to fall back to the single enabled method; required once 2+ methods are enabled.'
+
     PaymentInitiateResponse:
       type: object
       required: [paymentId, instruction]
@@ -871,6 +889,24 @@ components:
         items:
           type: array
           items: { $ref: '#/components/schemas/PaymentMethodConfig' }
+
+    PaymentMethodOption:
+      type: object
+      description: |
+        Public counterpart of PaymentMethodConfig — no bank-account details.
+        The signup wizard is unauthenticated and only needs to know what to offer.
+      required: [method, displayName]
+      properties:
+        method: { $ref: '#/components/schemas/PaymentMethodKind' }
+        displayName: { type: string }
+
+    PaymentMethodOptionListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/PaymentMethodOption' }
 
     PaymentMethodConfigUpdateRequest:
       type: object
@@ -2209,13 +2245,20 @@ paths:
         **Notas**: Si ya existe un pago pendiente o aprobado para este borrador devuelve 409.
         El header `X-Idempotency-Reset: true` + nueva `Idempotency-Key` se usa cuando el
         usuario reinicia explícitamente el pago tras un fallo, para crear un nuevo registro
-        en lugar de devolver el resultado cacheado.
+        en lugar de devolver el resultado cacheado. El `method` del body es opcional —
+        se omite cuando solo hay un método habilitado (`GET /payment-methods` devuelve
+        uno solo); se vuelve obligatorio cuando hay 2+ habilitados, para que el wizard
+        muestre un selector.
       operationId: initiatePayment
       parameters:
         - { name: draftId, in: path, required: true, schema: { type: string, format: uuid } }
         - $ref: '#/components/parameters/IdempotencyKeyHeader'
         - $ref: '#/components/parameters/IdempotencyResetHeader'
       security: []
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentInitiateRequest' }
       responses:
         '200':
           description: Pago iniciado
@@ -2229,7 +2272,7 @@ paths:
                   redirectUrl: 'https://vpos.infonet.com.py/checkout/abc123'
                   expiresAt: '2026-04-29T19:00:00Z'
         '409':
-          description: Pago ya pendiente o aprobado para este borrador
+          description: Pago ya pendiente o aprobado para este borrador, o método solicitado deshabilitado
         '422': { $ref: '#/components/responses/UnprocessableEntity' }
 
   /onboarding/draft/{draftId}/payment/status:
@@ -3214,6 +3257,25 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /payment-methods:
+    get:
+      tags: [onboarding, payments]
+      operationId: listPaymentMethods
+      summary: List enabled payment methods (public)
+      description: |
+        Public counterpart of `GET /admin/payment-methods` — the signup wizard is
+        unauthenticated, so it cannot call the SuperAdmin-gated endpoint. Returns
+        only enabled methods, `method` + `displayName` only, no bank-account
+        details (those belong to the initiate instruction, not to an anonymous
+        list).
+      security: []
+      responses:
+        '200':
+          description: Enabled payment methods
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentMethodOptionListResponse' }
 
   /admin/payment-methods:
     get:

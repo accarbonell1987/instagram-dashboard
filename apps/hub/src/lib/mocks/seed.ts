@@ -212,8 +212,8 @@ function seedInvoices(): void {
 // Bootstrap matches the api-iam migration seed: bancard stays the only live
 // method until bank_transfer is toggled on via the admin backoffice.
 function seedPaymentMethods(): void {
-  db.paymentMethodConfig.create({ method: 'bancard', enabled: true });
-  db.paymentMethodConfig.create({ method: 'bank_transfer', enabled: false });
+  db.paymentMethodConfig.create({ method: 'bancard', enabled: true, displayName: 'Tarjeta (Bancard)' });
+  db.paymentMethodConfig.create({ method: 'bank_transfer', enabled: false, displayName: 'Transferencia bancaria' });
 }
 
 function seedPayments(): void {
