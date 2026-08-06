@@ -51,6 +51,19 @@ describe('slugToSchemaName', () => {
   it('handles multiple hyphens', () => {
     expect(slugToSchemaName('a-b-c')).toBe('tenant_a_b_c')
   })
+
+  // Regression: submit.service interpolates this result into `CREATE SCHEMA "..."`,
+  // and identifiers cannot be parameter-bound — the allowlist is the only defence.
+  it.each([
+    'abc"; DROP TABLE users; --',
+    'abc;DROP',
+    "abc'or",
+    'ab',
+    'My-Slug',
+    'a'.repeat(60),
+  ])('rejects slug "%s" that would escape a quoted identifier', (slug) => {
+    expect(() => slugToSchemaName(slug)).toThrow(ValidationError)
+  })
 })
 
 describe('SCHEMA_NAME_REGEX', () => {

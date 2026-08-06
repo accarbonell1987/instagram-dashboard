@@ -163,54 +163,13 @@ export class PrismaOnboardingDraftRepository implements OnboardingDraftRepositor
   }
 
   async findByRuc(ruc: string, excludeDraftId?: string): Promise<OnboardingDraft | null> {
-    const excludeClause = excludeDraftId ? `AND id != '${excludeDraftId}'` : '';
-    const sql = `
-      SELECT id, status, current_step, version, plan_id, product_id, data, representative_email,
-             resume_token_hash, resume_token_expires_at, resume_token_used,
-             tenant_id, expires_at, created_at, updated_at
-      FROM onboarding_drafts
-      WHERE data->'company'->>'ruc' = '${ruc}'
-        AND status NOT IN ('completed', 'expired')
-        ${excludeClause}
-      LIMIT 1
-    `;
-    const rows = await this.prisma.$queryRawUnsafe<
-      Array<{
-        id: string;
-        status: string;
-        current_step: string;
-        version: number;
-        plan_id: string | null;
-        product_id: string | null;
-        data: unknown;
-        representative_email: string | null;
-        resume_token_hash: string | null;
-        resume_token_expires_at: Date | null;
-        resume_token_used: boolean;
-        tenant_id: string | null;
-        expires_at: Date;
-        created_at: Date;
-        updated_at: Date;
-      }>
-    >(sql);
-    const [row] = rows;
-    if (!row) return null;
-    return mapDraft({
-      id: row.id,
-      status: row.status,
-      currentStep: row.current_step,
-      version: row.version,
-      planId: row.plan_id,
-      productId: row.product_id,
-      data: row.data,
-      representativeEmail: row.representative_email,
-      resumeTokenHash: row.resume_token_hash,
-      resumeTokenExpiresAt: row.resume_token_expires_at,
-      resumeTokenUsed: row.resume_token_used,
-      tenantId: row.tenant_id,
-      expiresAt: row.expires_at,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
+    const raw = await this.prisma.onboardingDraft.findFirst({
+      where: {
+        data: { path: ['company', 'ruc'], equals: ruc },
+        status: { notIn: ['completed', 'expired'] },
+        ...(excludeDraftId !== undefined && { id: { not: excludeDraftId } }),
+      },
     });
+    return raw ? mapDraft(raw) : null;
   }
 }
