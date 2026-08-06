@@ -89,11 +89,11 @@ describe('PaymentMethodsPage', () => {
     setupHandlers();
     render(<PaymentMethodsPage />);
 
-    const bancardSwitch = await screen.findByRole('switch', { name: /disable bancard/i });
+    const bancardSwitch = await screen.findByRole('switch', { name: /deshabilitar bancard/i });
     await user.click(bancardSwitch);
 
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith('At least one payment method must stay enabled.');
+      expect(toastError).toHaveBeenCalledWith('Al menos un método de pago debe permanecer habilitado.');
     });
   });
 
@@ -102,11 +102,13 @@ describe('PaymentMethodsPage', () => {
     setupHandlers();
     render(<PaymentMethodsPage />);
 
-    const bankTransferSwitch = await screen.findByRole('switch', { name: /enable bank transfer/i });
+    const bankTransferSwitch = await screen.findByRole('switch', { name: /habilitar transferencia bancaria/i });
     await user.click(bankTransferSwitch);
 
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith('Add at least one bank account before enabling bank transfer.');
+      expect(toastError).toHaveBeenCalledWith(
+        'Agregá al menos una cuenta bancaria antes de habilitar la transferencia bancaria.'
+      );
     });
   });
 
@@ -115,18 +117,18 @@ describe('PaymentMethodsPage', () => {
     setupHandlers();
     render(<PaymentMethodsPage />);
 
-    const editButtons = await screen.findAllByRole('button', { name: 'Edit' });
+    const editButtons = await screen.findAllByRole('button', { name: 'Editar' });
     await user.click(editButtons[1]!); // bank_transfer row
 
-    await user.click(screen.getByRole('button', { name: 'Add account' }));
-    await user.type(screen.getByLabelText(/bank name/i), account.bankName);
-    await user.type(screen.getByLabelText(/account number/i), account.accountNumber);
-    await user.type(screen.getByLabelText(/account holder/i), account.accountHolder);
+    await user.click(screen.getByRole('button', { name: 'Agregar cuenta' }));
+    await user.type(screen.getByLabelText(/nombre del banco/i), account.bankName);
+    await user.type(screen.getByLabelText(/número de cuenta/i), account.accountNumber);
+    await user.type(screen.getByLabelText(/titular de la cuenta/i), account.accountHolder);
 
-    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
 
     await waitFor(() => {
-      expect(screen.getByText('1 bank account configured.')).toBeInTheDocument();
+      expect(screen.getByText('1 cuenta bancaria configurada.')).toBeInTheDocument();
     });
   });
 
@@ -135,13 +137,13 @@ describe('PaymentMethodsPage', () => {
     setupHandlers();
     render(<PaymentMethodsPage />);
 
-    const editButtons = await screen.findAllByRole('button', { name: 'Edit' });
+    const editButtons = await screen.findAllByRole('button', { name: 'Editar' });
     await user.click(editButtons[0]!); // bancard row
 
-    const displayNameInput = screen.getByLabelText('Display name');
+    const displayNameInput = screen.getByLabelText('Nombre visible');
     await user.clear(displayNameInput);
-    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
 
-    expect(await screen.findByText('Display name is required')).toBeInTheDocument();
+    expect(await screen.findByText('El nombre visible es obligatorio')).toBeInTheDocument();
   });
 });

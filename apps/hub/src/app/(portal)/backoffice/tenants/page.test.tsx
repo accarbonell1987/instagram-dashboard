@@ -69,7 +69,7 @@ describe('TenantsPage', () => {
     const submitButton = within(dialog).getByRole('button', { name: 'Activar' });
     expect(submitButton).toBeDisabled();
 
-    const noteField = within(dialog).getByLabelText(/activation note/i);
+    const noteField = within(dialog).getByLabelText(/nota de activación/i);
     await user.type(noteField, '   ');
     expect(submitButton).toBeDisabled();
     expect(onStatusChange).not.toHaveBeenCalled();
@@ -96,7 +96,7 @@ describe('TenantsPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Activar' }));
 
     const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByLabelText(/activation note/i), 'Payment matched the bank statement');
+    await user.type(within(dialog).getByLabelText(/nota de activación/i), 'Payment matched the bank statement');
     await user.click(within(dialog).getByRole('button', { name: 'Activar' }));
 
     await waitFor(() => {

@@ -79,13 +79,13 @@ describe('PaymentsQueuePage', () => {
     setupHandlers({ confirm: onConfirm });
     render(<PaymentsQueuePage />);
 
-    await user.click(await screen.findByRole('button', { name: /confirm payment/i }));
+    await user.click(await screen.findByRole('button', { name: /confirmar pago/i }));
 
     const dialog = await screen.findByRole('dialog');
-    const submitButton = within(dialog).getByRole('button', { name: 'Confirm payment' });
+    const submitButton = within(dialog).getByRole('button', { name: 'Confirmar pago' });
     expect(submitButton).toBeDisabled();
 
-    const noteField = within(dialog).getByLabelText(/settlement note/i);
+    const noteField = within(dialog).getByLabelText(/nota de liquidación/i);
     await user.type(noteField, '   ');
     expect(submitButton).toBeDisabled();
 
@@ -104,10 +104,10 @@ describe('PaymentsQueuePage', () => {
     setupHandlers();
     render(<PaymentsQueuePage />);
 
-    await user.click(await screen.findByRole('button', { name: /reject payment/i }));
+    await user.click(await screen.findByRole('button', { name: /rechazar pago/i }));
 
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText(/keeps the same reference and can retry/i)).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Reject payment' })).toBeDisabled();
+    expect(within(dialog).getByText(/conserva la misma referencia y puede reintentar/i)).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Rechazar pago' })).toBeDisabled();
   });
 });
