@@ -25,6 +25,7 @@ export interface DraftPayment {
   status: NonNullable<components['schemas']['DraftPayment']['status']>;
   method: components['schemas']['PaymentMethodKind'] | null;
   bancardProcessId: string | null;
+  instruction: components['schemas']['BankTransferPaymentInstruction'] | null;
 }
 
 export interface DraftState {

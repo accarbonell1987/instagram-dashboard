@@ -200,6 +200,48 @@ describe('SettlementService.settlePayment', () => {
     expect(tx.tenant.update).toHaveBeenCalledWith({ where: { id: 'tenant-1' }, data: { status: 'active' } })
   })
 
+  it('defers the confirmation email until the caller invokes finalize (caller-owned tx)', async () => {
+    const tx = makeTx({
+      raw: makeRawPayment({ tenantId: 'tenant-1' }),
+      tenant: { id: 'tenant-1', status: 'pending', name: 'ACME Corp', planId: 'professional' },
+      user: { id: 'user-1', email: 'ana@acme.com', fullName: 'Ana Pérez' },
+    })
+    tx.document.findFirst.mockResolvedValue({ id: 'doc-invoice-1' })
+    const deps = makeDeps(tx)
+    const service = createSettlementService(deps as never)
+
+    const result = await service.settlePayment(
+      { paymentId: 'payment-1', decision: 'approved', settlementKind: 'manual_admin', settledBy: 'admin-1', note: 'confirmed' },
+      tx as never,
+    )
+
+    // Not sent while the caller's transaction is still "open" (this call
+    // already returned, but with a real tx it would still be uncommitted).
+    expect(deps.emailAdapter.send).not.toHaveBeenCalled()
+    expect(typeof result.finalize).toBe('function')
+
+    await result.finalize?.()
+    expect(deps.emailAdapter.send).toHaveBeenCalled()
+  })
+
+  it('sends the confirmation email itself when it owns the transaction (no caller tx)', async () => {
+    const tx = makeTx({
+      raw: makeRawPayment({ tenantId: 'tenant-1' }),
+      tenant: { id: 'tenant-1', status: 'pending', name: 'ACME Corp', planId: 'professional' },
+      user: { id: 'user-1', email: 'ana@acme.com', fullName: 'Ana Pérez' },
+    })
+    tx.document.findFirst.mockResolvedValue({ id: 'doc-invoice-1' })
+    const deps = makeDeps(tx)
+    const service = createSettlementService(deps as never)
+
+    const result = await service.settlePayment({
+      paymentId: 'payment-1', decision: 'approved', settlementKind: 'manual_admin', settledBy: 'admin-1', note: 'confirmed',
+    })
+
+    expect(deps.emailAdapter.send).toHaveBeenCalled()
+    expect(result.finalize).toBeUndefined()
+  })
+
   it('uses a caller-provided tx instead of opening its own transaction', async () => {
     const tx = makeTx()
     const deps = makeDeps(tx)

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.18.0
+  version: 1.19.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -10,6 +10,14 @@ info:
     cambio aquí requiere un PR coordinado en ambos repositorios.
 
     ## Changelog
+
+    ### 1.19.0 (2026-08-05)
+    - ADD: `DraftPayment.instruction` — the bank-transfer reference and accounts for
+      an unsettled bank-transfer payment, nullable, reusing `BankTransferPaymentInstruction`.
+      Makes the backend the source of truth for that data instead of only the
+      one-time `PaymentInitiateResponse`: previously it was persisted client-side
+      only (localStorage), unrecoverable if the customer cleared storage or
+      switched device before the transfer settled.
 
     ### 1.18.0 (2026-08-05)
     - ADD: optional `note` on `AdminTenantStatusChangeRequest` (`minLength: 1`) —
@@ -576,6 +584,13 @@ components:
           enum: [pending, in_review, approved, declined, cancelled, timeout]
         method: { $ref: '#/components/schemas/PaymentMethodKind' }
         bancardProcessId: { type: string }
+        instruction:
+          allOf: [{ $ref: '#/components/schemas/BankTransferPaymentInstruction' }]
+          nullable: true
+          description: >-
+            Reference and accounts for an unsettled bank-transfer payment. null for
+            every other method/status — the source of truth the client should
+            prefer over any client-side copy.
 
     DraftState:
       type: object

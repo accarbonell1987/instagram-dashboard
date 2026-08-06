@@ -31,7 +31,7 @@ export const PaymentSchema = z.object({
   tenantId: z.string(),
   tenantName: z.string().optional(),
   method: PaymentMethodKindSchema,
-  status: z.enum(['pending', 'approved', 'declined', 'cancelled', 'timeout']),
+  status: z.enum(['pending', 'in_review', 'approved', 'declined', 'cancelled', 'timeout']),
   settlementKind: z.enum(['webhook', 'agent', 'manual_admin']).nullable(),
   reference: z.string().nullable(),
   amount: z.number(),
@@ -53,7 +53,7 @@ export const PaymentListResponseSchema = z.object({
 })
 
 export const AdminPaymentListQuerySchema = z.object({
-  status: z.enum(['pending', 'approved', 'declined', 'cancelled', 'timeout']).optional(),
+  status: z.enum(['pending', 'in_review', 'approved', 'declined', 'cancelled', 'timeout']).optional(),
   tenantId: z.string().optional(),
   reference: z.string().optional(),
   dateFrom: z.string().optional(),

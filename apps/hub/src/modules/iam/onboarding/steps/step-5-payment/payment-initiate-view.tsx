@@ -46,11 +46,13 @@ export function PaymentInitiateView({
   const [methods, setMethods] = useState<PaymentMethodOption[] | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodKind | null>(null);
 
-  // Reads the persisted instruction (localStorage) on mount only — SSR has no
-  // localStorage, and it never changes across renders for a given draftId.
+  // The backend is the source of truth (GET /onboarding/draft/{draftId} now
+  // carries the instruction for an unsettled bank-transfer payment) —
+  // localStorage is only a same-device fallback for a draft fetched before
+  // this field existed, or an offline blip.
   useEffect(() => {
-    setBankTransfer(getBankTransferInstruction(draftId));
-  }, [draftId]);
+    setBankTransfer(draft.payment?.instruction ?? getBankTransferInstruction(draftId));
+  }, [draftId, draft.payment?.instruction]);
 
   // One enabled method → use it directly, no picker. 2+ → wait for the user
   // to choose via the RadioGroup below (onContinue stays disabled until then).

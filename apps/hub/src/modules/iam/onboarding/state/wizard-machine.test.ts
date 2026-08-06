@@ -130,7 +130,7 @@ describe('isStepReachable', () => {
       representative: { email: 'a@b.com', fullName: 'Ana', phone: '' },
       otpVerified: true,
       company: { legalName: 'ACME', ruc: '80012345-1', address: 'Calle 1', city: 'Asunción', country: 'PY' },
-      payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null },
+      payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null, instruction: null },
     });
     expect(isStepReachable('summary', withPayment)).toBe(true);
     expect(isStepReachable('summary', makeDraft())).toBe(false);
@@ -182,7 +182,7 @@ describe('deriveCurrentStep', () => {
       representative: { email: 'a@b.com', fullName: 'Ana', phone: '' },
       otpVerified: true,
       company: { legalName: 'ACME', ruc: '80012345-1', address: 'Calle 1', city: 'Asunción', country: 'PY' },
-      payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null },
+      payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null, instruction: null },
     });
     expect(deriveCurrentStep(draft)).toBe('summary');
   });
@@ -213,6 +213,7 @@ describe('deriveCurrentStep', () => {
       status: 'pending',
       method: 'bancard',
       bancardProcessId: 'proc-001',
+      instruction: null,
     });
     expect(deriveCurrentStep(draft)).toBe('payment');
   });
@@ -223,6 +224,7 @@ describe('deriveCurrentStep', () => {
       status: 'pending',
       method: 'bank_transfer',
       bancardProcessId: null,
+      instruction: null,
     });
     expect(deriveCurrentStep(draft)).toBe('summary');
   });
@@ -233,6 +235,7 @@ describe('deriveCurrentStep', () => {
       status: 'in_review',
       method: 'bank_transfer',
       bancardProcessId: null,
+      instruction: null,
     });
     expect(deriveCurrentStep(draft)).toBe('summary');
   });
@@ -243,6 +246,7 @@ describe('deriveCurrentStep', () => {
       status: 'declined',
       method: 'bank_transfer',
       bancardProcessId: null,
+      instruction: null,
     });
     expect(deriveCurrentStep(draft)).toBe('payment');
   });

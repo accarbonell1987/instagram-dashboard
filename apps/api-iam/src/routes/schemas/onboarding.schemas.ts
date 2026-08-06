@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { SessionSchema } from './auth.schemas.js';
 import { PlanSchema } from './plans.schemas.js';
-import { PaymentMethodKindSchema, PaymentInstructionSchema } from './payment.schemas.js';
+import { PaymentMethodKindSchema, PaymentInstructionSchema, BankTransferPaymentInstructionSchema } from './payment.schemas.js';
 
 export const PlanInDraftSchema = PlanSchema.nullable();
 
@@ -26,6 +26,10 @@ export const DraftPaymentSchema = z.object({
   status: z.enum(['pending', 'in_review', 'approved', 'declined', 'cancelled', 'timeout']),
   method: z.enum(['bancard', 'bank_transfer']).optional(),
   bancardProcessId: z.string(),
+  // Reference + accounts for an unsettled bank-transfer payment, null otherwise —
+  // the backend is the source of truth so a customer who clears localStorage or
+  // switches device can still recover them from GET /onboarding/draft/{draftId}.
+  instruction: BankTransferPaymentInstructionSchema.nullable(),
 });
 
 export const DraftStateSchema = z.object({

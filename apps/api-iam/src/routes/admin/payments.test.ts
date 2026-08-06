@@ -156,6 +156,20 @@ describe('POST /admin/payments/:id/reject', () => {
   })
 })
 
+describe('GET /admin/payments', () => {
+  it('accepts status=in_review and filters by it (the backoffice "Awaiting review" filter)', async () => {
+    const prisma = makePrisma()
+    const app = buildApp(makeSettlementService(), prisma)
+
+    const response = await app.request('/admin/payments?status=in_review')
+
+    expect(response.status).toBe(200)
+    expect(prisma.payment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ status: 'in_review' }) }),
+    )
+  })
+})
+
 describe('GET /admin/tenants/:tenantId/payments', () => {
   it('returns 404 when the tenant does not exist', async () => {
     const app = buildApp(makeSettlementService(), makePrisma())

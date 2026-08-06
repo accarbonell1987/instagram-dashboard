@@ -2,10 +2,13 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import { setCookie } from 'hono/cookie';
 import type { DraftService, PaymentService, SubmitService } from '../../services/index.js';
+import { UNSETTLED_STATUSES } from '../../services/settlement.service.js';
 import type { PlanRepository, PaymentRepository } from '../../repositories/index.js';
 import type { OnboardingDraft, Plan, Payment } from '../../domain/index.js';
 import type { DraftStatus } from '../../domain/index.js';
 import type { Config } from '../../config.js';
+import type { PrismaClient } from '../../generated/prisma/client.js';
+import type { BankAccount } from '../../adapters/payment/index.js';
 import {
   CreateDraftRequestSchema,
   DraftStateSchema,
@@ -76,10 +79,31 @@ function mapPaymentStatus(
  *
  * @see apps/hub/.atl/api-contract.yaml — DraftState schema
  */
+type BankTransferInstructionJson = { kind: 'bank_transfer'; reference: string; bankAccounts: BankAccount[] };
+
+// The reference + accounts only come back once in the initiate response —
+// GET/PATCH draft reconstructs them from the payment row (reference lives in
+// `externalRef`) and the same global bank-account config the adapter reads at
+// initiate time, so the backend stays the recoverable source of truth instead
+// of only the client's localStorage copy. null once the payment is no longer
+// unsettled (approved/cancelled/reversed) — there's nothing left to transfer.
+async function resolveBankTransferInstruction(
+  prisma: PrismaClient,
+  payment: Payment | null | undefined
+): Promise<BankTransferInstructionJson | null> {
+  if (!payment || payment.method !== 'bank_transfer' || !UNSETTLED_STATUSES.includes(payment.status)) {
+    return null;
+  }
+  const config = await prisma.paymentMethodConfig.findUnique({ where: { method: 'bank_transfer' } });
+  const bankAccounts = (config?.config as { accounts?: BankAccount[] } | undefined)?.accounts ?? [];
+  return { kind: 'bank_transfer', reference: payment.externalRef, bankAccounts };
+}
+
 function draftToJson(
   draft: OnboardingDraft,
   plan: Plan | null | undefined,
-  payment: Payment | null | undefined
+  payment: Payment | null | undefined,
+  bankTransferInstruction: BankTransferInstructionJson | null = null
 ) {
   // ── plan ──────────────────────────────────────────────────────────────────
   const planJson = plan
@@ -131,6 +155,7 @@ function draftToJson(
         status: mapPaymentStatus(payment.status),
         method: payment.method,
         bancardProcessId: payment.externalRef,
+        instruction: bankTransferInstruction,
       }
     : null;
 
@@ -159,7 +184,8 @@ export function createOnboardingRouter(
   authGuard: MiddlewareHandler,
   config: Config,
   planRepo: PlanRepository,
-  paymentRepo: PaymentRepository
+  paymentRepo: PaymentRepository,
+  prisma: PrismaClient
 ) {
   const router = new OpenAPIHono();
 
@@ -225,7 +251,8 @@ export function createOnboardingRouter(
       draft.planId ? planRepo.findById(draft.planId).catch(() => null) : null,
       paymentRepo.findByDraftId(draftId),
     ]);
-    return c.json(draftToJson(draft, plan, payment), 200);
+    const bankTransferInstruction = await resolveBankTransferInstruction(prisma, payment);
+    return c.json(draftToJson(draft, plan, payment, bankTransferInstruction), 200);
   });
 
   // ── PATCH /onboarding/draft/:draftId ───────────────────────────────────
@@ -277,7 +304,8 @@ export function createOnboardingRouter(
       draft.planId ? planRepo.findById(draft.planId).catch(() => null) : null,
       paymentRepo.findByDraftId(draftId),
     ]);
-    return c.json(draftToJson(draft, plan, payment), 200);
+    const bankTransferInstruction = await resolveBankTransferInstruction(prisma, payment);
+    return c.json(draftToJson(draft, plan, payment, bankTransferInstruction), 200);
   });
 
   // ── GET /onboarding/draft/resume/:token ────────────────────────────────
@@ -455,7 +483,8 @@ export function createOnboardingRouter(
       draft.planId ? planRepo.findById(draft.planId).catch(() => null) : null,
       paymentRepo.findByDraftId(draftId),
     ]);
-    return c.json(draftToJson(draft, plan, payment), 200);
+    const bankTransferInstruction = await resolveBankTransferInstruction(prisma, payment);
+    return c.json(draftToJson(draft, plan, payment, bankTransferInstruction), 200);
   });
 
   // ── POST /onboarding/draft/:draftId/submit ────────────────────────────

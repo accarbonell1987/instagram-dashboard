@@ -321,6 +321,27 @@ describe('SubmitService', () => {
       })
     })
 
+    it('invokes settlePayment.finalize only after the provisioning transaction commits', async () => {
+      const deps = makeDeps('approved')
+      const finalize = vi.fn().mockResolvedValue(undefined)
+      deps.settlementService.settlePayment.mockResolvedValue({
+        payment: makePaymentRow({ status: 'approved' }),
+        alreadySettled: false,
+        finalize,
+      })
+      deps.prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        const txResult = await fn(deps.tx)
+        // Still inside the transaction here — finalize must not have run yet.
+        expect(finalize).not.toHaveBeenCalled()
+        return txResult
+      })
+      const service = createSubmitService(deps as never)
+
+      await service.submit({ draftId: 'draft-1', version: 5 })
+
+      expect(finalize).toHaveBeenCalledTimes(1)
+    })
+
     it('provisions a bank-transfer draft with a still-pending payment — tenant stays pending, no settlement, no activation email', async () => {
       const deps = makeDeps('pending')
       const service = createSubmitService(deps as never)
@@ -358,6 +379,31 @@ describe('SubmitService', () => {
       await expect(service.submit({ draftId: 'draft-1', version: 5 })).rejects.toThrow(ConflictError)
       expect(deps.settlementService.settlePayment).not.toHaveBeenCalled()
     })
+
+    it.each(['declined', 'cancelled', 'reversed'])(
+      'throws ConflictError and never provisions a tenant when the payment is %s',
+      async (paymentStatus) => {
+        const deps = makeDeps(paymentStatus)
+        const service = createSubmitService(deps as never)
+
+        await expect(service.submit({ draftId: 'draft-1', version: 5 })).rejects.toThrow(ConflictError)
+        expect(deps.tx.tenant.create).not.toHaveBeenCalled()
+        expect(deps.settlementService.settlePayment).not.toHaveBeenCalled()
+      },
+    )
+
+    it.each(['pending', 'in_review', 'approved'])(
+      'still provisions the tenant when the payment is %s',
+      async (paymentStatus) => {
+        const deps = makeDeps(paymentStatus)
+        const service = createSubmitService(deps as never)
+
+        const result = await service.submit({ draftId: 'draft-1', version: 5 })
+
+        expect(deps.tx.tenant.create).toHaveBeenCalled()
+        expect(result.tenantId).toBe('tenant-uuid-1')
+      },
+    )
 
     it('throws ConflictError on version mismatch', async () => {
       const deps = makeDeps('approved')

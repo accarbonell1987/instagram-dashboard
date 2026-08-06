@@ -59,10 +59,22 @@ describe('PrismaTenantRepository', () => {
         }),
       )
       expect(prisma.tenant.updateMany).toHaveBeenCalledWith({
-        where: { id: { in: ['tenant-stale'] } },
+        where: { id: { in: ['tenant-stale'] }, status: 'pending' },
         data: { status: 'suspended' },
       })
       expect(result).toEqual(['tenant-stale'])
+    })
+
+    it('skips a tenant that settled to active between selection and update (compare-and-swap)', async () => {
+      // A tenant that just paid is no longer `pending` by the time the write
+      // runs — the `status: 'pending'` predicate makes Prisma's updateMany
+      // affect 0 rows for it instead of overwriting the settlement.
+      prisma.payment.findMany.mockResolvedValue([{ tenantId: 'tenant-just-paid' }])
+      await repo.sweepUnpaidPending(15)
+
+      expect(prisma.tenant.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ status: 'pending' }) }),
+      )
     })
 
     it('does nothing when no payment is past the threshold', async () => {

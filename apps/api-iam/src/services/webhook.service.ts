@@ -50,6 +50,11 @@ export function createWebhookService(deps: WebhookServiceDeps) {
       throw new UnauthorizedError('webhook.invalid_signature')
     }
 
+    // Populated inside the transaction below when settlePayment defers its
+    // cache-purge/confirmation-email side effects to us (see settlement.service.ts
+    // FIX: those must not run while this transaction is still open).
+    let settlementFinalize: (() => Promise<void>) | undefined
+
     await prisma.$transaction(async (tx) => {
       // ── Step 1: Idempotent insert via UNIQUE(process_id, status) ───────
       // The repository's insertEvent uses ON CONFLICT DO NOTHING and returns true if new
@@ -82,19 +87,24 @@ export function createWebhookService(deps: WebhookServiceDeps) {
 
       // ── Step 3: Apply status mapping via the shared settlement path ────
       if (payload.status === 'approved') {
-        await settlementService.settlePayment(
+        const settled = await settlementService.settlePayment(
           { paymentId: payment.id, decision: 'approved', settlementKind: 'gateway_webhook', settledBy: undefined, note: undefined },
           tx,
         )
+        settlementFinalize = settled.finalize
         await draftRepo.update(payment.draftId, { status: 'payment_confirmed' })
       } else if (payload.status === 'rejected' || payload.status === 'cancelled' || payload.status === 'reversed') {
-        await settlementService.settlePayment(
+        const settled = await settlementService.settlePayment(
           { paymentId: payment.id, decision: 'declined', settlementKind: 'gateway_webhook', settledBy: undefined, note: undefined },
           tx,
         )
+        settlementFinalize = settled.finalize
       }
       // All other statuses: no-op (webhook_event is inserted but no payment/draft change)
     })
+
+    // Runs only now that the transaction above has committed.
+    await settlementFinalize?.()
 
     return { received: true }
   }

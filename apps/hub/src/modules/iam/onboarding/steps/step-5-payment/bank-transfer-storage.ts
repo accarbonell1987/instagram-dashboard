@@ -2,12 +2,12 @@ import type { components } from '@/lib/api/types';
 
 // ─── Bank-transfer instruction persistence ─────────────────────────────────────
 //
-// The reference + bank accounts only ever come back once, in the initiate
-// response — GET /onboarding/draft/{id} never carries them (DraftPayment is a
-// status projection, not the instruction). Persisted client-side so the summary
-// step (and a page reload) can still show them; many customers close the tab
-// before actually transferring. localStorage (not sessionStorage) so it
-// survives the days-long wait for a bank transfer to settle.
+// The backend is now the source of truth: GET /onboarding/draft/{id} carries
+// the reference + bank accounts for an unsettled bank-transfer payment
+// (DraftPayment.instruction). This client-side copy is only a same-device
+// fallback — e.g. offline right after initiate, or a draft cached before this
+// field existed. localStorage (not sessionStorage) so it survives the
+// days-long wait for a bank transfer to settle.
 
 type BankTransferInstruction = components['schemas']['BankTransferPaymentInstruction'];
 

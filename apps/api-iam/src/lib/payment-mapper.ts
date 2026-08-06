@@ -1,15 +1,14 @@
 import type { Payment, PaymentSettlementKind, PaymentStatus } from '../domain/index.js'
 
-// Map domain PaymentStatus (has 'in_review'/'reversed') → contract's Payment
-// status enum (pending/approved/declined/cancelled/timeout). Mirrors the
-// mapper already used for the draft's nested payment status
-// (routes/onboarding/index.ts:mapPaymentStatus) — 'in_review' has no live
-// caller yet (no route sets it), mapped to 'pending' as the closest fit.
+// Map domain PaymentStatus (has 'reversed') → contract's Payment status enum
+// (pending/in_review/approved/declined/cancelled/timeout). Mirrors the mapper
+// already used for the draft's nested payment status
+// (routes/onboarding/index.ts:mapPaymentStatus) — 'in_review' passes through
+// unchanged so the backoffice payments queue's "Awaiting review" filter works.
 export function mapPaymentStatus(
   status: PaymentStatus,
-): 'pending' | 'approved' | 'declined' | 'cancelled' | 'timeout' {
+): 'pending' | 'in_review' | 'approved' | 'declined' | 'cancelled' | 'timeout' {
   if (status === 'reversed') return 'timeout'
-  if (status === 'in_review') return 'pending'
   return status
 }
 

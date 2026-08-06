@@ -40,7 +40,7 @@ function makeDraft(overrides: Partial<DraftState> = {}): DraftState {
       city: 'Asunción',
       country: 'PY',
     },
-    payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null },
+    payment: { paymentId: 'pay-001', status: 'approved', method: 'bancard', bancardProcessId: null, instruction: null },
     version: 5,
     expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
     ...overrides,
@@ -99,10 +99,42 @@ describe('StepSummary', () => {
   it('says documents will be emailed once confirmed, for an unsettled bank-transfer payment', () => {
     renderStep(
       makeDraft({
-        payment: { paymentId: 'pay-001', status: 'pending', method: 'bank_transfer', bancardProcessId: null },
+        payment: { paymentId: 'pay-001', status: 'pending', method: 'bank_transfer', bancardProcessId: null, instruction: null },
       })
     );
     expect(screen.getByText(/apenas confirmemos tu transferencia/i)).toBeInTheDocument();
+  });
+
+  it('prefers the backend-provided instruction over localStorage', () => {
+    localStorage.setItem(
+      'draft:draft-test-001:payment:bank-transfer',
+      JSON.stringify({
+        kind: 'bank_transfer',
+        reference: 'CH-STALE1',
+        bankAccounts: [
+          { bankName: 'Stale Bank', accountType: 'checking', accountNumber: '000', accountHolder: 'Stale' },
+        ],
+      })
+    );
+    renderStep(
+      makeDraft({
+        payment: {
+          paymentId: 'pay-001',
+          status: 'pending',
+          method: 'bank_transfer',
+          bancardProcessId: null,
+          instruction: {
+            kind: 'bank_transfer',
+            reference: 'CH-7K2M4Q',
+            bankAccounts: [
+              { bankName: 'Banco Itaú', accountType: 'checking', accountNumber: '123456789', accountHolder: 'Corehub S.A.' },
+            ],
+          },
+        },
+      })
+    );
+    expect(screen.getByText('CH-7K2M4Q')).toBeInTheDocument();
+    expect(screen.queryByText('CH-STALE1')).not.toBeInTheDocument();
   });
 
   it('repeats the reference and bank accounts when a bank-transfer instruction was persisted', () => {
@@ -118,7 +150,7 @@ describe('StepSummary', () => {
     );
     renderStep(
       makeDraft({
-        payment: { paymentId: 'pay-001', status: 'pending', method: 'bank_transfer', bancardProcessId: null },
+        payment: { paymentId: 'pay-001', status: 'pending', method: 'bank_transfer', bancardProcessId: null, instruction: null },
       })
     );
     expect(screen.getByText('CH-7K2M4Q')).toBeInTheDocument();

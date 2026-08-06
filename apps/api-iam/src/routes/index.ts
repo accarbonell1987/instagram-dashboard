@@ -106,7 +106,8 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
     authGuard,
     config,
     planRepo,
-    paymentRepo
+    paymentRepo,
+    prisma
   );
   // Webhooks: no authGuard, no global idempotency — uses internal idempotency
   const webhooksRouter = createWebhooksRouter(services.webhookService);

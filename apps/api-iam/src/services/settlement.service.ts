@@ -35,6 +35,12 @@ export type SettlePaymentParams = {
 export type SettlePaymentResult = {
   payment: Payment
   alreadySettled: boolean
+  // Present only when the caller supplied its own `tx`: the cache purge and
+  // confirmation email are deferred here because the caller's transaction is
+  // still open. The caller MUST invoke this after its transaction commits.
+  // Absent when settlePayment opened its own transaction — those side
+  // effects have already run by the time settlePayment returns.
+  finalize?: () => Promise<void>
 }
 
 const NOTE_REQUIRED_KINDS: PaymentSettlementKind[] = ['agent_review', 'manual_admin']
@@ -50,8 +56,10 @@ function hashToken(raw: string): string {
 }
 
 // Deferred email payload, built inside the tx (needs the freshly-generated PDFs
-// and activation token) but sent outside it (best-effort, matches submit.service.ts's
-// pre-existing activation-email pattern).
+// and activation token) but sent outside it (best-effort). "Outside it" means
+// outside whichever transaction is open when settlePayment returns: its own,
+// when it opened one, or the caller's, when the caller supplied `tx` — see
+// the `finalize` callback below, which the caller must invoke post-commit.
 type ConfirmationEmail = {
   to: string
   ownerName: string
@@ -187,36 +195,52 @@ export function createSettlementService(deps: SettlementServiceDeps) {
 
     const result = tx ? await run(tx) : await prisma.$transaction((innerTx) => run(innerTx))
 
-    if (!result.alreadySettled && decision === 'approved' && result.tenantId) {
-      purgeAnalyticsEntitlementsCache(result.tenantId, DEFAULT_PRODUCT_ID)
-    }
-
-    if (result.confirmationEmail) {
-      const { to, ownerName, activationUrl, invoiceBuffer, receiptBuffer } = result.confirmationEmail
-      const { subject, html } = paymentConfirmationTemplate({ tenantName: ownerName, activationUrl })
-      try {
-        await emailAdapter.send({
-          to,
-          subject,
-          html,
-          attachments: [
-            { filename: 'factura.pdf', content: invoiceBuffer, contentType: 'application/pdf' },
-            { filename: 'recibo.pdf', content: receiptBuffer, contentType: 'application/pdf' },
-          ],
-        })
-      } catch (emailError) {
-        log.warn(
-          { category: 'payment', event: 'confirmation_email_failed', paymentId, err: emailError },
-          'confirmation email send failed — tenant is still active, user can request access via first-login',
-        )
+    // Cache purge + confirmation email touch the network (cache, SMTP with PDF
+    // attachments) and must never run inside an open transaction — Prisma's
+    // interactive-transaction timeout (5000ms) would roll back the payment,
+    // tenant-active and activation-token writes AFTER the customer already got
+    // a confirmation email whose activation link then doesn't resolve. When
+    // settlePayment opened its own transaction above, that transaction has
+    // already committed by the time we get here, so it's safe to run these
+    // now. When the caller supplied `tx`, its transaction is still open here —
+    // defer to the caller via the returned `finalize` callback instead.
+    async function finalize(): Promise<void> {
+      if (!result.alreadySettled && decision === 'approved' && result.tenantId) {
+        purgeAnalyticsEntitlementsCache(result.tenantId, DEFAULT_PRODUCT_ID)
       }
+
+      if (result.confirmationEmail) {
+        const { to, ownerName, activationUrl, invoiceBuffer, receiptBuffer } = result.confirmationEmail
+        const { subject, html } = paymentConfirmationTemplate({ tenantName: ownerName, activationUrl })
+        try {
+          await emailAdapter.send({
+            to,
+            subject,
+            html,
+            attachments: [
+              { filename: 'factura.pdf', content: invoiceBuffer, contentType: 'application/pdf' },
+              { filename: 'recibo.pdf', content: receiptBuffer, contentType: 'application/pdf' },
+            ],
+          })
+        } catch (emailError) {
+          log.warn(
+            { category: 'payment', event: 'confirmation_email_failed', paymentId, err: emailError },
+            'confirmation email send failed — tenant is still active, user can request access via first-login',
+          )
+        }
+      }
+
+      log.info(
+        { category: 'payment', event: result.alreadySettled ? 'settlement_noop' : 'settlement_completed', paymentId, decision, settlementKind },
+        'settlePayment',
+      )
     }
 
-    log.info(
-      { category: 'payment', event: result.alreadySettled ? 'settlement_noop' : 'settlement_completed', paymentId, decision, settlementKind },
-      'settlePayment',
-    )
+    if (tx) {
+      return { payment: result.payment, alreadySettled: result.alreadySettled, finalize }
+    }
 
+    await finalize()
     return { payment: result.payment, alreadySettled: result.alreadySettled }
   }
 

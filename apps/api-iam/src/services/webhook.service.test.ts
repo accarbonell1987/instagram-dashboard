@@ -222,6 +222,33 @@ describe('WebhookService', () => {
       )
     })
 
+    it('invokes settlePayment.finalize only after the webhook transaction commits', async () => {
+      const deps = makeDeps()
+      const finalize = vi.fn().mockResolvedValue(undefined)
+      deps.settlementService.settlePayment.mockResolvedValue({
+        payment: makePayment({ status: 'approved' }),
+        alreadySettled: false,
+        finalize,
+      })
+      const service = createWebhookService(deps as never)
+
+      deps.prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        const tx = { $executeRaw: vi.fn().mockResolvedValue(1) }
+        const txResult = await fn(tx)
+        // Still inside the transaction here — finalize must not have run yet.
+        expect(finalize).not.toHaveBeenCalled()
+        return txResult
+      })
+
+      const payload = makePayload({ status: 'approved' })
+      const rawBody = JSON.stringify(payload)
+      const signature = makeSignature(TEST_SECRET, rawBody)
+
+      await service.processBancardWebhook({ rawBody, signature, payload })
+
+      expect(finalize).toHaveBeenCalledTimes(1)
+    })
+
     it('unknown process_id is a no-op (payment not found)', async () => {
       const deps = makeDeps()
       deps.paymentRepo.findByExternalRef.mockResolvedValue(null)

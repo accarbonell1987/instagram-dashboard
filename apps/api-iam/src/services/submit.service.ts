@@ -13,7 +13,7 @@ import type { EmailAdapter, PdfAdapter, StorageAdapter } from '../adapters/index
 import type { TokenService } from './token.service.js'
 import type { SettlementService } from './settlement.service.js'
 import type { Config } from '../config.js'
-import type { Tenant } from '../domain/index.js'
+import type { Tenant, PaymentStatus } from '../domain/index.js'
 import { DEFAULT_PRODUCT_ID } from '../domain/index.js'
 import { purgeAnalyticsEntitlementsCache } from '../lib/entitlements-purge.js'
 import { slugToSchemaName } from '../db/with-tenant.js'
@@ -59,6 +59,14 @@ export type SubmitResponse = {
 function hashToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex')
 }
+
+// A payment still eligible to reach settlement. `declined` is deliberately
+// excluded: settlement.service.ts's UNSETTLED_STATUSES reopens a declined
+// payment so an agent can settle a customer's same-reference retry on an
+// EXISTING payment row — that is not a reason to provision a brand-new
+// tenant for a payment that has already failed. `cancelled`/`reversed` are
+// terminal for the same reason.
+const SUBMITTABLE_PAYMENT_STATUSES: PaymentStatus[] = ['pending', 'in_review', 'approved']
 
 export function createSubmitService(deps: SubmitServiceDeps) {
   const {
@@ -110,6 +118,10 @@ export function createSubmitService(deps: SubmitServiceDeps) {
     let refreshTokenRaw: string
     let ownerEmail: string = ''
     let ownerName: string = ''
+    // Populated inside the transaction when settlePayment defers its
+    // cache-purge/confirmation-email side effects to us (see settlement.service.ts
+    // FIX: those must not run while this transaction is still open).
+    let settlementFinalize: (() => Promise<void>) | undefined
 
     try {
       // NOTE: PDFs are generated synchronously inside the transaction per ADR-5.
@@ -128,10 +140,9 @@ export function createSubmitService(deps: SubmitServiceDeps) {
           // Provisioning now happens as soon as the wizard reaches summary,
           // regardless of settlement state — a bank-transfer payment stays
           // `pending` and the tenant is provisioned `pending` too; activation
-          // is exclusively settlement's job (see settlePayment below). The
-          // only hard requirement left is that a payment was actually
-          // initiated for this draft (there's nothing to backfill/settle
-          // otherwise).
+          // is exclusively settlement's job (see settlePayment below). But the
+          // payment must still be able to legitimately reach settlement —
+          // see SUBMITTABLE_PAYMENT_STATUSES above.
           const payment = await tx.payment.findFirst({
             where: { draftId },
             orderBy: { initiatedAt: 'desc' },
@@ -140,6 +151,12 @@ export function createSubmitService(deps: SubmitServiceDeps) {
             throw new ConflictError(
               'onboarding.draft_not_submittable',
               'Draft has no payment to submit',
+            )
+          }
+          if (!SUBMITTABLE_PAYMENT_STATUSES.includes(payment.status)) {
+            throw new ConflictError(
+              'onboarding.draft_not_submittable',
+              `Payment is ${payment.status} and cannot be submitted`,
             )
           }
 
@@ -349,7 +366,7 @@ export function createSubmitService(deps: SubmitServiceDeps) {
           // (see settlement.service.ts). Bank-transfer payments stay `pending`
           // here and settle later via agent confirm / admin activation.
           if (payment.status === 'approved') {
-            await settlementService.settlePayment(
+            const settled = await settlementService.settlePayment(
               {
                 paymentId: payment.id,
                 decision: 'approved',
@@ -359,6 +376,7 @@ export function createSubmitService(deps: SubmitServiceDeps) {
               },
               tx,
             )
+            settlementFinalize = settled.finalize
           }
 
           // ── Step 13: INSERT refresh_token ──────────────────────────────
@@ -402,6 +420,9 @@ export function createSubmitService(deps: SubmitServiceDeps) {
       log.error({ category: 'auth', event: 'provisioning_failed', draftId, err: error })
       throw new InternalError('onboarding.provisioning_failed', String(error))
     }
+
+    // Runs only now that the transaction above has committed.
+    await settlementFinalize?.()
 
     log.info({ category: 'auth', event: 'tenant_provisioned', tenantId, ownerUserId: userId })
 

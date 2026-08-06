@@ -152,7 +152,14 @@ export class PrismaTenantRepository implements TenantRepository {
     const tenantIds = stale.map((p) => p.tenantId).filter((id): id is string => id !== null)
     if (tenantIds.length === 0) return []
 
-    await this.prisma.tenant.updateMany({ where: { id: { in: tenantIds } }, data: { status: 'suspended' } })
+    // `status: 'pending'` here is load-bearing: it turns the write into a
+    // compare-and-swap. Without it, a tenant that settled (→ 'active')
+    // between the read above and this write gets suspended anyway, and the
+    // sweep never revisits it because it only selects `pending` tenants.
+    await this.prisma.tenant.updateMany({
+      where: { id: { in: tenantIds }, status: 'pending' },
+      data: { status: 'suspended' },
+    })
     return tenantIds
   }
 }

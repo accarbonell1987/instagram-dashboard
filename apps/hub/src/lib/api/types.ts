@@ -2013,6 +2013,8 @@ export interface components {
             status?: "pending" | "in_review" | "approved" | "declined" | "cancelled" | "timeout";
             method?: components["schemas"]["PaymentMethodKind"];
             bancardProcessId?: string;
+            /** @description Reference and accounts for an unsettled bank-transfer payment. null for every other method/status — the source of truth the client should prefer over any client-side copy. */
+            instruction?: components["schemas"]["BankTransferPaymentInstruction"] | null;
         };
         /**
          * @example {

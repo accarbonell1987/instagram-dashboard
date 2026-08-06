@@ -37,11 +37,13 @@ export function StepSummary({
 
   // Many customers close the tab before actually transferring — repeat the
   // reference and accounts here since it's the last screen they'll see for a while.
+  // The backend (draft.payment.instruction) is the source of truth; localStorage
+  // is only a same-device fallback for a draft fetched before this field existed.
   useEffect(() => {
     if (draft.payment?.method === 'bank_transfer') {
-      setBankTransfer(getBankTransferInstruction(draftId));
+      setBankTransfer(draft.payment.instruction ?? getBankTransferInstruction(draftId));
     }
-  }, [draft.payment?.method, draftId]);
+  }, [draft.payment?.method, draft.payment?.instruction, draftId]);
 
   async function handleRecoverAndEdit(targetStep: 'company' | 'representative'): Promise<void> {
     setIsRecovering(true);
