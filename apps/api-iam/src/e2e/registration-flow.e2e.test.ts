@@ -227,7 +227,9 @@ describe('tenant registration flow (e2e)', () => {
       `/onboarding/draft/${draftId}/payment/initiate`,
       {
         method: 'POST',
-        body: {},
+        // Send the method explicitly: once a second method is enabled, an unspecified
+        // initiate is refused with payment.method_required rather than guessed at.
+        body: { method: 'bancard' },
         headers: { 'Idempotency-Key': idempotencyKey() },
       }
     )
@@ -429,7 +431,9 @@ describe('tenant registration flow (e2e)', () => {
     // Initiate payment but do NOT send the webhook to confirm it
     await appFetch(app, `/onboarding/draft/${draftId}/payment/initiate`, {
       method: 'POST',
-      body: {},
+      // Send the method explicitly: once a second method is enabled, an unspecified
+      // initiate is refused with payment.method_required rather than guessed at.
+      body: { method: 'bancard' },
       headers: { 'Idempotency-Key': idempotencyKey() },
     })
 

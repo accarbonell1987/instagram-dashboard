@@ -118,6 +118,46 @@ describe('payments handlers', () => {
     expect(body.enabled).toBe(true);
   });
 
+  it('PATCH /admin/payment-methods/:method persists displayName and accounts', async () => {
+    const account = { bankName: 'Banco Itaú', accountType: 'checking', accountNumber: '456', accountHolder: 'Corehub' };
+    const response = await fetch(`${BASE}/admin/payment-methods/bank_transfer`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: false, displayName: 'Transferencia', accounts: [account] }),
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { displayName: string; accounts: unknown[] };
+    expect(body.displayName).toBe('Transferencia');
+    expect(body.accounts).toEqual([account]);
+  });
+
+  it('PATCH /admin/payment-methods/:method leaves accounts untouched when omitted', async () => {
+    const response = await fetch(`${BASE}/admin/payment-methods/bank_transfer`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: false }),
+    });
+    const body = (await response.json()) as { accounts: unknown[] };
+    expect(body.accounts.length).toBeGreaterThan(0);
+  });
+
+  it('PATCH /admin/payment-methods/:method refuses enabling bank_transfer with no accounts', async () => {
+    await fetch(`${BASE}/admin/payment-methods/bank_transfer`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: false, accounts: [] }),
+    });
+
+    const response = await fetch(`${BASE}/admin/payment-methods/bank_transfer`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: true }),
+    });
+    expect(response.status).toBe(409);
+    const body = (await response.json()) as { detail: string };
+    expect(body.detail).toBe('payment_method.no_accounts_configured');
+  });
+
   it('GET /billing/payments returns the tenant payment history', async () => {
     const response = await fetch(`${BASE}/billing/payments`);
     expect(response.status).toBe(200);
