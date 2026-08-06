@@ -45,7 +45,8 @@ interface UseGrowthAgentResult {
   saveAgentConfig: (config: AgentConfig) => Promise<void>
 }
 
-export function useGrowthAgent(): UseGrowthAgentResult {
+export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentResult {
+  const enabled = options?.enabled ?? true
   const [sessionId, setSessionId] = useState<string>('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [suggestions, setSuggestions] = useState<ContentSuggestion[]>([])
@@ -78,16 +79,16 @@ export function useGrowthAgent(): UseGrowthAgentResult {
   }, [])
 
   useEffect(() => {
-    if (!sessionId) return
+    if (!enabled || !sessionId) return
     loadBatches().catch(() => {
       // Silently fail — suggestions panel shows empty state
     })
-  }, [sessionId, loadBatches])
+  }, [sessionId, loadBatches, enabled])
 
   // T-10: Restore chat history on mount (cold start only)
   const historyRestoredRef = useRef(false)
   useEffect(() => {
-    if (!sessionId || historyRestoredRef.current) return
+    if (!enabled || !sessionId || historyRestoredRef.current) return
     historyRestoredRef.current = true
     getChatHistory(sessionId)
       .then((msgs) => {
@@ -97,12 +98,12 @@ export function useGrowthAgent(): UseGrowthAgentResult {
       .catch(() => {
         // Silently fail — messages stay empty
       })
-  }, [sessionId])
+  }, [sessionId, enabled])
 
   // Load agent config on mount
   const configLoadedRef = useRef(false)
   useEffect(() => {
-    if (!sessionId || configLoadedRef.current) return
+    if (!enabled || !sessionId || configLoadedRef.current) return
     configLoadedRef.current = true
     getAgentSettings()
       .then((response: AgentSettingsResponse) => {
@@ -112,7 +113,7 @@ export function useGrowthAgent(): UseGrowthAgentResult {
       .catch(() => {
         // Silently fail — config stays null (default prompt)
       })
-  }, [sessionId])
+  }, [sessionId, enabled])
 
   const sendMessage = useCallback(
     async (text: string) => {

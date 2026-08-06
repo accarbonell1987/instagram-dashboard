@@ -2,13 +2,14 @@
 
 import { Button } from '@core/ui';
 import type { JSX } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 
 import { ConnectAccount } from './components/connect-account';
 import { ContentIntelligenceSection } from './components/content-intelligence-section';
 import { DemographicsSection } from './components/demographics-section';
 import { FloatingAgent } from './components/floating-agent';
+import type { ActiveTab } from './components/floating-agent';
 import { GrowthChart } from './components/growth-chart';
 import { ScorecardsSkeleton, PublicationsListSkeleton } from './components/loading-skeleton';
 import { MediaDetailPanel } from './components/media-detail-panel';
@@ -26,6 +27,7 @@ import {
   usePublications,
   useDemographics,
 } from './hooks/use-instagram-dashboard';
+import { useModuleAccess } from './hooks/use-module-access';
 import { backfillFollowerHistory } from './services/instagram.service';
 import type {
   ContentFinding,
@@ -41,14 +43,45 @@ import type {
 
 export function DashboardInstagramPage(): JSX.Element {
   const { isConnected, isLoading: isCheckingConnection } = useConnectionStatus();
+  const { moduleIds, error: modulesError, refetch: refetchModules } = useModuleAccess();
+
+  // Fail closed while permissions are unknown (loading or errored) — `?? false`
+  // means no section fetches until we actually know what's granted.
+  const hasBasicMetrics = moduleIds?.has('ig-basic-metrics') ?? false;
+  const hasPublications = moduleIds?.has('ig-publications') ?? false;
+  const hasAudience = moduleIds?.has('ig-audience') ?? false;
+  const hasContentIntelligence = moduleIds?.has('ig-content-intelligence') ?? false;
+  const hasAgent = moduleIds?.has('ig-ai-agent') ?? false;
+
+  const permittedTabs = useMemo<ActiveTab[]>(() => {
+    if (!moduleIds) return [];
+    return (
+      [
+        ['chat', 'ig-ai-chat'],
+        ['suggestions', 'ig-ai-suggestions'],
+        ['carousels', 'ig-ai-carousels'],
+      ] as const
+    )
+      .filter(([, moduleId]) => moduleIds.has(moduleId))
+      .map(([tab]) => tab);
+  }, [moduleIds]);
+  // An agent with no permitted tabs is not a feature — hide the whole widget.
+  const isAgentVisible = hasAgent && permittedTabs.length > 0;
+
   const { data, isLoading, error, refetch } = useInstagramDashboard('30d', {
     enabled: isConnected,
   });
   const { syncState, triggerSync, isTriggering } = useSyncStatus({ enabled: isConnected });
-  const growthAgent = useGrowthAgent();
+  // ponytail: gates the whole agent fetch set (chat history, suggestion batches,
+  // config) on the widget being visible at all. It doesn't further split fetches
+  // per-tab (e.g. skip chat history when only carousels is permitted) — add that
+  // if per-tab fetch cost becomes a real concern.
+  const growthAgent = useGrowthAgent({ enabled: isAgentVisible });
   const [growthMetric, setGrowthMetric] = useState<GrowthMetric>('reach');
   const [growthPeriod, setGrowthPeriod] = useState<GrowthPeriod>('1y');
-  const growthData = useGrowthData(growthMetric, growthPeriod, { enabled: isConnected });
+  const growthData = useGrowthData(growthMetric, growthPeriod, {
+    enabled: isConnected && hasBasicMetrics,
+  });
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [backfillMessage, setBackfillMessage] = useState<string | null>(null);
 
@@ -74,12 +107,14 @@ export function DashboardInstagramPage(): JSX.Element {
 
   // Publications section
   const [publicationsFilter, setPublicationsFilter] = useState<PublicationFilter>('all');
-  const publicationsData = usePublications(publicationsFilter, { enabled: isConnected });
+  const publicationsData = usePublications(publicationsFilter, {
+    enabled: isConnected && hasPublications,
+  });
   const [selectedMediaId, setSelectedMediaId] = useState<string | null>(null);
   const publicationsScrollRef = useRef<number>(0);
 
   // Demographics section (lazy-loaded when visible)
-  const demographicsData = useDemographics({ enabled: isConnected && !!data });
+  const demographicsData = useDemographics({ enabled: isConnected && !!data && hasAudience });
 
   // Refetch all data after sync completes
   const prevSyncStatus = useRef<string | undefined>(undefined);
@@ -93,8 +128,11 @@ export function DashboardInstagramPage(): JSX.Element {
     prevSyncStatus.current = syncState?.status;
   }, [syncState?.status, refetch, publicationsData.refetch, growthData.refetch, demographicsData.refetch]);
 
-  // Preserve scroll when opening media detail
+  // Preserve scroll when opening media detail. The detail panel is part of
+  // ig-publications — refuse to open it without the module, even if the click
+  // originated from a different section (e.g. content intelligence's ranking).
   const handleSelectMedia = (id: string) => {
+    if (!hasPublications) return;
     publicationsScrollRef.current = window.scrollY;
     setSelectedMediaId(id);
   };
@@ -161,6 +199,33 @@ export function DashboardInstagramPage(): JSX.Element {
             isTriggering={isTriggering}
           />
         </div>
+      </div>
+    );
+  }
+
+  if (modulesError) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="bg-destructive/10 border-destructive/30 rounded-xl border p-6 text-center">
+          <p className="text-destructive mb-1 font-medium">No pudimos verificar tus permisos</p>
+          <p className="text-muted-foreground mb-4 text-sm">{modulesError}</p>
+          <Button
+            variant="default"
+            onClick={() => void refetchModules()}
+          >
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (moduleIds === null) {
+    // Permissions haven't resolved yet — reuse the dashboard's own loading
+    // skeleton instead of a blank page while we wait to know what to show.
+    return (
+      <div className="mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+        <ScorecardsSkeleton />
       </div>
     );
   }
@@ -242,6 +307,7 @@ export function DashboardInstagramPage(): JSX.Element {
         </div>
 
         {/* ── A. NORTH-STAR SCORECARDS ──────────────────────────────────────── */}
+        {hasBasicMetrics && (
         <section aria-labelledby="section-north-star">
           <div className="mb-5 space-y-1">
             <SectionHeader
@@ -277,8 +343,10 @@ export function DashboardInstagramPage(): JSX.Element {
             </span>
           </div>
         </section>
+        )}
 
         {/* ── GROWTH CHART ──────────────────────────────────────────────────── */}
+        {hasBasicMetrics && (
         <section aria-labelledby="section-growth">
           <div className="mb-4 flex items-start justify-between gap-3">
             <SectionHeader title="Evolución" description="Historial completo desde tu primera sincronización" />
@@ -347,8 +415,10 @@ export function DashboardInstagramPage(): JSX.Element {
             </p>
           )}
         </section>
+        )}
 
         {/* ── B. INTELIGENCIA DE CONTENIDO ──────────────────────────────────── */}
+        {hasContentIntelligence && (
         <section aria-labelledby="section-content-intel">
           <div className="mb-5">
             <SectionHeader
@@ -364,8 +434,10 @@ export function DashboardInstagramPage(): JSX.Element {
             onPostClick={handleSelectMedia}
           />
         </section>
+        )}
 
         {/* ── C. PUBLICACIONES ─────────────────────────────────────────────── */}
+        {hasPublications && (
         <section aria-labelledby="section-publications">
           <div className="mb-5">
             <SectionHeader
@@ -398,8 +470,10 @@ export function DashboardInstagramPage(): JSX.Element {
             />
           )}
         </section>
+        )}
 
         {/* ── D. AUDIENCIA ─────────────────────────────────────────────────── */}
+        {hasAudience && (
         <section aria-labelledby="section-audience">
           <div className="mb-5">
             <SectionHeader
@@ -415,6 +489,7 @@ export function DashboardInstagramPage(): JSX.Element {
             onRetry={() => void demographicsData.refetch()}
           />
         </section>
+        )}
 
         {/* Last updated */}
         {backend.lastUpdated && (
@@ -424,15 +499,18 @@ export function DashboardInstagramPage(): JSX.Element {
         )}
       </div>
 
-      {/* Media detail panel — outside main flow, overlay */}
+      {/* Media detail panel — outside main flow, overlay. Guarded via
+          handleSelectMedia (never sets selectedMediaId without ig-publications),
+          so this stays closed on its own when the module isn't granted. */}
       <MediaDetailPanel
         mediaId={selectedMediaId}
         onClose={handleCloseMedia}
         {...(medianViews !== undefined ? { baselineViews: medianViews } : {})}
       />
 
-      {/* Floating growth agent */}
-      <FloatingAgent hook={growthAgent} />
+      {/* Floating growth agent — hidden entirely without ig-ai-agent, or when
+          none of its tabs are permitted (see isAgentVisible above). */}
+      {isAgentVisible && <FloatingAgent hook={growthAgent} permittedTabs={permittedTabs} />}
     </>
   );
 }
