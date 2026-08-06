@@ -72,47 +72,77 @@ describe('PrismaOnboardingDraftRepository', () => {
 
   describe('findByRuc', () => {
     it('returns draft when RUC matches an active draft', async () => {
-      const rawRow = {
+      prisma.onboardingDraft.findFirst.mockResolvedValue({
+        ...makeRaw(),
         id: 'draft-xyz',
-        status: 'draft',
-        current_step: 'company',
+        currentStep: 'company',
         version: 3,
-        plan_id: 'starter',
+        planId: 'starter',
         data: { company: { ruc: '123456789' } },
-        representative_email: 'test@example.com',
-        resume_token_hash: null,
-        resume_token_expires_at: null,
-        resume_token_used: false,
-        tenant_id: null,
-        expires_at: new Date('2099-01-01'),
-        created_at: new Date('2024-01-01'),
-        updated_at: new Date('2024-01-01'),
-      }
-      prisma.$queryRawUnsafe.mockResolvedValue([rawRow])
+        representativeEmail: 'test@example.com',
+      })
 
       const result = await repo.findByRuc('123456789')
 
-      expect(prisma.$queryRawUnsafe).toHaveBeenCalled()
       expect(result).not.toBeNull()
       expect(result!.id).toBe('draft-xyz')
       expect(result!.data).toEqual({ company: { ruc: '123456789' } })
     })
 
     it('returns null when no draft matches the RUC', async () => {
-      prisma.$queryRawUnsafe.mockResolvedValue([])
+      prisma.onboardingDraft.findFirst.mockResolvedValue(null)
 
-      const result = await repo.findByRuc('nonexistent')
-
-      expect(result).toBeNull()
+      expect(await repo.findByRuc('nonexistent')).toBeNull()
     })
 
-    it('excludes completed and expired drafts from results', async () => {
-      prisma.$queryRawUnsafe.mockResolvedValue([])
+    it('filters by JSON path, excludes completed/expired, and omits the id guard when no draft is excluded', async () => {
+      prisma.onboardingDraft.findFirst.mockResolvedValue(null)
 
-      const result = await repo.findByRuc('123456789')
+      await repo.findByRuc('123456789')
 
+      expect(prisma.onboardingDraft.findFirst).toHaveBeenCalledWith({
+        where: {
+          data: { path: ['company', 'ruc'], equals: '123456789' },
+          status: { notIn: ['completed', 'expired'] },
+        },
+      })
+    })
+
+    it('excludes the given draft id when provided', async () => {
+      prisma.onboardingDraft.findFirst.mockResolvedValue(null)
+
+      await repo.findByRuc('123456789', 'draft-1')
+
+      expect(prisma.onboardingDraft.findFirst).toHaveBeenCalledWith({
+        where: {
+          data: { path: ['company', 'ruc'], equals: '123456789' },
+          status: { notIn: ['completed', 'expired'] },
+          id: { not: 'draft-1' },
+        },
+      })
+    })
+
+    // Regression: findByRuc used to interpolate `ruc` into a $queryRawUnsafe string,
+    // so this value closed the literal and made the WHERE clause always true.
+    it.each([
+      "' OR '1'='1",
+      "'; DROP TABLE onboarding_drafts; --",
+      "' UNION SELECT * FROM onboarding_drafts WHERE '1'='1",
+    ])('treats a malicious RUC (%s) as a bound value, not SQL', async (maliciousRuc) => {
+      prisma.onboardingDraft.findFirst.mockResolvedValue(null)
+
+      const result = await repo.findByRuc(maliciousRuc, 'draft-1')
+
+      // No match: the payload is compared as a literal JSON string, not executed.
       expect(result).toBeNull()
-      expect(prisma.$queryRawUnsafe).toHaveBeenCalled()
+      expect(prisma.$queryRawUnsafe).not.toHaveBeenCalled()
+      expect(prisma.onboardingDraft.findFirst).toHaveBeenCalledWith({
+        where: {
+          data: { path: ['company', 'ruc'], equals: maliciousRuc },
+          status: { notIn: ['completed', 'expired'] },
+          id: { not: 'draft-1' },
+        },
+      })
     })
   })
 })
