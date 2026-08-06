@@ -23,6 +23,7 @@ import { ApiError } from '@/lib/api/errors';
 import {
   listTenantPayments,
   type AdminPayment,
+  type AdminPaymentStatus,
 } from '@/modules/backoffice/payments';
 import {
   listTenants,
@@ -37,13 +38,22 @@ import {
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   bancard: 'Bancard',
-  bank_transfer: 'Bank transfer',
+  bank_transfer: 'Transferencia bancaria',
 };
 
 const SETTLEMENT_KIND_LABELS: Record<string, string> = {
-  webhook: 'Gateway webhook',
-  agent: 'Agent review',
-  manual_admin: 'Manual admin',
+  webhook: 'Automático (pasarela)',
+  agent: 'Revisión del agente',
+  manual_admin: 'Activación manual',
+};
+
+const PAYMENT_STATUS_LABELS: Record<AdminPaymentStatus, string> = {
+  pending: 'Pendiente',
+  in_review: 'En revisión',
+  approved: 'Aprobado',
+  declined: 'Rechazado',
+  cancelled: 'Cancelado',
+  timeout: 'Expirado',
 };
 
 function formatPaymentDate(iso: string): string {
@@ -100,15 +110,15 @@ function TenantPaymentsSection({ tenantId }: { tenantId: string }): JSX.Element 
 
   return (
     <div className="border-border border-t pt-4">
-      <p className="text-muted-foreground mb-2 text-xs">Payments</p>
+      <p className="text-muted-foreground mb-2 text-xs">Pagos</p>
       {loading ? (
-        <p className="text-muted-foreground text-xs">Loading payments...</p>
+        <p className="text-muted-foreground text-xs">Cargando pagos...</p>
       ) : error !== '' ? (
         <p role="alert" className="text-destructive text-xs">
           {error}
         </p>
       ) : payments.length === 0 ? (
-        <p className="text-muted-foreground text-xs">No payments yet.</p>
+        <p className="text-muted-foreground text-xs">Todavía no hay pagos.</p>
       ) : (
         <ul className="space-y-2 text-xs">
           {payments.map((payment) => (
@@ -120,7 +130,8 @@ function TenantPaymentsSection({ tenantId }: { tenantId: string }): JSX.Element 
                 <span className="text-muted-foreground">{formatPaymentDate(payment.createdAt)}</span>
               </div>
               <div className="text-muted-foreground mt-1">
-                {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method} · {payment.status}
+                {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method} ·{' '}
+                {PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}
                 {payment.settlementKind != null &&
                   ` · ${SETTLEMENT_KIND_LABELS[payment.settlementKind] ?? payment.settlementKind}`}
               </div>
@@ -167,7 +178,7 @@ function ActivationDialog({
       await onActivate(note.trim());
       onOpenChange(false);
     } catch (err: unknown) {
-      setError(err instanceof ApiError ? err.message : 'Could not activate the tenant');
+      setError(err instanceof ApiError ? err.message : 'No se pudo activar el tenant');
     } finally {
       setIsSaving(false);
     }
@@ -177,14 +188,14 @@ function ActivationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Activate tenant</DialogTitle>
+          <DialogTitle>Activar tenant</DialogTitle>
           <DialogDescription>
-            This becomes the audit record and is what the customer sees in their payment log.
+            Esto queda como registro de auditoría y es lo que el cliente ve en su historial de pagos.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="activation-note">Activation note (required)</Label>
+          <Label htmlFor="activation-note">Nota de activación (obligatoria)</Label>
           <Textarea
             id="activation-note"
             value={note}
@@ -192,12 +203,12 @@ function ActivationDialog({
               setNote(e.target.value);
             }}
             disabled={isSaving}
-            placeholder="e.g. courtesy activation, no payment required"
+            placeholder="ej: activación de cortesía, sin pago requerido"
             aria-describedby="activation-note-hint"
             aria-required="true"
           />
           <p id="activation-note-hint" className="text-muted-foreground text-xs">
-            Required to activate — the customer will read this in their payment log.
+            Obligatorio para activar — el cliente la va a leer en su historial de pagos.
           </p>
         </div>
 

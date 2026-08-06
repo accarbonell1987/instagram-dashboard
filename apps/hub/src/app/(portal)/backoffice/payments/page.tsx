@@ -32,12 +32,12 @@ import {
 // ─── Labels ─────────────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<AdminPaymentStatus, string> = {
-  pending: 'Pending',
-  in_review: 'Awaiting review',
-  approved: 'Approved',
-  declined: 'Declined',
-  cancelled: 'Cancelled',
-  timeout: 'Timed out',
+  pending: 'Pendiente',
+  in_review: 'En revisión',
+  approved: 'Aprobado',
+  declined: 'Rechazado',
+  cancelled: 'Cancelado',
+  timeout: 'Expirado',
 };
 
 const STATUS_COLORS: Record<AdminPaymentStatus, string> = {
@@ -51,7 +51,7 @@ const STATUS_COLORS: Record<AdminPaymentStatus, string> = {
 
 const METHOD_LABELS: Record<string, string> = {
   bancard: 'Bancard',
-  bank_transfer: 'Bank transfer',
+  bank_transfer: 'Transferencia bancaria',
 };
 
 function StatusBadge({ status }: { status: AdminPaymentStatus }): JSX.Element {
@@ -115,7 +115,7 @@ function SettlementDialog({
       onSettled();
       onOpenChange(false);
     } catch (err: unknown) {
-      setError(err instanceof ApiError ? err.message : 'Could not save the settlement');
+      setError(err instanceof ApiError ? err.message : 'No se pudo guardar la liquidación');
     } finally {
       setIsSaving(false);
     }
@@ -125,11 +125,11 @@ function SettlementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isConfirm ? 'Confirm payment' : 'Reject payment'}</DialogTitle>
+          <DialogTitle>{isConfirm ? 'Confirmar pago' : 'Rechazar pago'}</DialogTitle>
           <DialogDescription>
             {payment !== null && (
               <>
-                Reference <strong>{payment.reference ?? payment.id}</strong> —{' '}
+                Referencia <strong>{payment.reference ?? payment.id}</strong> —{' '}
                 {formatAmount(payment.amount, payment.currency)}
               </>
             )}
@@ -138,13 +138,13 @@ function SettlementDialog({
 
         {!isConfirm && (
           <p className="text-muted-foreground text-sm">
-            The customer keeps the same reference and can retry the transfer.
+            El cliente conserva la misma referencia y puede reintentar la transferencia.
           </p>
         )}
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="settlement-note">
-            {isConfirm ? 'Settlement note (required)' : 'Rejection reason (required)'}
+            {isConfirm ? 'Nota de liquidación (obligatoria)' : 'Motivo del rechazo (obligatorio)'}
           </Label>
           <Textarea
             id="settlement-note"
@@ -153,12 +153,12 @@ function SettlementDialog({
               setNote(e.target.value);
             }}
             disabled={isSaving}
-            placeholder="e.g. amount and date matched the bank statement"
+            placeholder="ej: el monto y la fecha coinciden con el extracto bancario"
             aria-describedby="settlement-note-hint"
             aria-required="true"
           />
           <p id="settlement-note-hint" className="text-muted-foreground text-xs">
-            This becomes the audit record and is what the customer sees in their payment log.
+            Esto queda como registro de auditoría y es lo que el cliente ve en su historial de pagos.
           </p>
         </div>
 
@@ -177,7 +177,7 @@ function SettlementDialog({
             }}
             disabled={isSaving}
           >
-            Cancel
+            Cancelar
           </Button>
           <Button
             type="button"
@@ -185,7 +185,7 @@ function SettlementDialog({
             onClick={() => void handleSubmit()}
             disabled={isSaving || !noteIsValid}
           >
-            {isSaving ? 'Saving...' : isConfirm ? 'Confirm payment' : 'Reject payment'}
+            {isSaving ? 'Guardando...' : isConfirm ? 'Confirmar pago' : 'Rechazar pago'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -223,7 +223,7 @@ export default function PaymentsQueuePage(): JSX.Element {
       setPayments(result.items);
       setTotal(result.total);
     } catch (err: unknown) {
-      setError(err instanceof ApiError ? err.message : 'Could not load the payments queue');
+      setError(err instanceof ApiError ? err.message : 'No se pudo cargar la cola de pagos');
     } finally {
       setLoading(false);
     }
@@ -243,12 +243,12 @@ export default function PaymentsQueuePage(): JSX.Element {
 
   return (
     <div>
-      <h2 className="mb-4 text-lg font-semibold">Pending Payments</h2>
+      <h2 className="mb-4 text-lg font-semibold">Pagos pendientes</h2>
 
       <div className="mb-4 flex flex-wrap gap-2">
         <form onSubmit={handleSearch} className="flex gap-2">
           <Label htmlFor="payments-reference-search" className="sr-only">
-            Search by reference
+            Buscar por referencia
           </Label>
           <Input
             id="payments-reference-search"
@@ -257,11 +257,11 @@ export default function PaymentsQueuePage(): JSX.Element {
             onChange={(e) => {
               setReference(e.target.value);
             }}
-            placeholder="Search by reference..."
+            placeholder="Buscar por referencia..."
             className="w-56"
           />
           <Button type="submit" size="sm" variant="ghost">
-            Search
+            Buscar
           </Button>
         </form>
         <Select
@@ -272,10 +272,10 @@ export default function PaymentsQueuePage(): JSX.Element {
           }}
         >
           <SelectTrigger className="w-44">
-            <SelectValue placeholder="All statuses" />
+            <SelectValue placeholder="Todos los estados" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="all">Todos los estados</SelectItem>
             {(Object.keys(STATUS_LABELS) as AdminPaymentStatus[]).map((status) => (
               <SelectItem key={status} value={status}>
                 {STATUS_LABELS[status]}
@@ -292,25 +292,25 @@ export default function PaymentsQueuePage(): JSX.Element {
       )}
 
       {loading ? (
-        <p className="text-muted-foreground p-4 text-sm">Loading payments...</p>
+        <p className="text-muted-foreground p-4 text-sm">Cargando pagos...</p>
       ) : payments.length === 0 ? (
         <div className="border-border bg-card rounded-lg border p-8 text-center">
-          <p className="text-muted-foreground text-sm">No payments match this filter.</p>
+          <p className="text-muted-foreground text-sm">No hay pagos que coincidan con este filtro.</p>
         </div>
       ) : (
         <>
           <div className="border-border overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">
-              <caption className="sr-only">Pending payments queue</caption>
+              <caption className="sr-only">Cola de pagos pendientes</caption>
               <thead className="bg-muted">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Amount</th>
-                  <th className="px-4 py-3 font-medium">Reference</th>
+                  <th className="px-4 py-3 font-medium">Fecha</th>
+                  <th className="px-4 py-3 font-medium">Monto</th>
+                  <th className="px-4 py-3 font-medium">Referencia</th>
                   <th className="px-4 py-3 font-medium">Tenant</th>
-                  <th className="px-4 py-3 font-medium">Method</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 text-right font-medium">Actions</th>
+                  <th className="px-4 py-3 font-medium">Método</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
+                  <th className="px-4 py-3 text-right font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,9 +333,9 @@ export default function PaymentsQueuePage(): JSX.Element {
                             onClick={() => {
                               setActionTarget({ payment, action: 'confirm' });
                             }}
-                            aria-label={`Confirm payment ${payment.reference ?? payment.id}`}
+                            aria-label={`Confirmar pago ${payment.reference ?? payment.id}`}
                           >
-                            Confirm
+                            Confirmar
                           </Button>
                           <Button
                             size="sm"
@@ -343,9 +343,9 @@ export default function PaymentsQueuePage(): JSX.Element {
                             onClick={() => {
                               setActionTarget({ payment, action: 'reject' });
                             }}
-                            aria-label={`Reject payment ${payment.reference ?? payment.id}`}
+                            aria-label={`Rechazar pago ${payment.reference ?? payment.id}`}
                           >
-                            Reject
+                            Rechazar
                           </Button>
                         </div>
                       ) : (
@@ -368,10 +368,10 @@ export default function PaymentsQueuePage(): JSX.Element {
                   setPage((p) => Math.max(1, p - 1));
                 }}
               >
-                Previous
+                Anterior
               </Button>
               <span className="text-sm">
-                Page {page} of {totalPages}
+                Página {page} de {totalPages}
               </span>
               <Button
                 variant="ghost"
@@ -381,7 +381,7 @@ export default function PaymentsQueuePage(): JSX.Element {
                   setPage((p) => p + 1);
                 }}
               >
-                Next
+                Siguiente
               </Button>
             </div>
           )}

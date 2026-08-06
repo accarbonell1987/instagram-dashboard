@@ -36,7 +36,7 @@ import {
 
 const METHOD_LABELS: Record<PaymentMethodKind, string> = {
   bancard: 'Bancard',
-  bank_transfer: 'Bank transfer',
+  bank_transfer: 'Transferencia bancaria',
 };
 
 const LAST_ENABLED_CODE = 'payment_method.last_enabled';
@@ -49,14 +49,14 @@ function conflictCode(err: ConflictError): string | undefined {
 // ─── Edit dialog ────────────────────────────────────────────────────────────────
 
 const bankAccountSchema = z.object({
-  bankName: z.string().min(1, 'Bank name is required'),
+  bankName: z.string().min(1, 'El nombre del banco es obligatorio'),
   accountType: z.enum(['checking', 'savings']),
-  accountNumber: z.string().min(1, 'Account number is required'),
-  accountHolder: z.string().min(1, 'Account holder is required'),
+  accountNumber: z.string().min(1, 'El número de cuenta es obligatorio'),
+  accountHolder: z.string().min(1, 'El titular de la cuenta es obligatorio'),
 });
 
 const editSchema = z.object({
-  displayName: z.string().min(1, 'Display name is required'),
+  displayName: z.string().min(1, 'El nombre visible es obligatorio'),
   accounts: z.array(bankAccountSchema),
 });
 
@@ -103,13 +103,13 @@ function EditMethodDialog({
         accounts: showAccounts ? data.accounts : undefined,
       });
       onSaved(updated);
-      toast.success(`${METHOD_LABELS[config.method]} updated`);
+      toast.success(`${METHOD_LABELS[config.method]} actualizado`);
       onOpenChange(false);
     } catch (err: unknown) {
       if (err instanceof ConflictError && conflictCode(err) === NO_ACCOUNTS_CODE) {
-        setError('Add at least one bank account before enabling bank transfer.');
+        setError('Agregá al menos una cuenta bancaria antes de habilitar la transferencia bancaria.');
       } else {
-        setError(err instanceof ApiError ? err.message : 'Could not save changes');
+        setError(err instanceof ApiError ? err.message : 'No se pudieron guardar los cambios');
       }
     }
   }
@@ -118,17 +118,17 @@ function EditMethodDialog({
     <Dialog open={config !== null} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit {config !== null ? METHOD_LABELS[config.method] : ''}</DialogTitle>
+          <DialogTitle>Editar {config !== null ? METHOD_LABELS[config.method] : ''}</DialogTitle>
           <DialogDescription>
             {showAccounts
-              ? 'Update the display name and the bank accounts shown to customers.'
-              : 'Update the display name shown to customers.'}
+              ? 'Actualizá el nombre visible y las cuentas bancarias que ven los clientes.'
+              : 'Actualizá el nombre visible que ven los clientes.'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={(e) => void form.handleSubmit(handleSubmit)(e)} noValidate className="space-y-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="method-display-name">Display name</Label>
+            <Label htmlFor="method-display-name">Nombre visible</Label>
             <Input
               id="method-display-name"
               disabled={isSubmitting}
@@ -148,7 +148,7 @@ function EditMethodDialog({
           {showAccounts && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Bank accounts</Label>
+                <Label>Cuentas bancarias</Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -157,23 +157,23 @@ function EditMethodDialog({
                     append({ bankName: '', accountType: 'checking', accountNumber: '', accountHolder: '' });
                   }}
                 >
-                  Add account
+                  Agregar cuenta
                 </Button>
               </div>
 
               {fields.length === 0 ? (
-                <p className="text-muted-foreground text-xs">No bank accounts configured yet.</p>
+                <p className="text-muted-foreground text-xs">Todavía no hay cuentas bancarias configuradas.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-border border-b">
-                        <th className="text-muted-foreground py-2 pr-2 font-medium">Bank</th>
-                        <th className="text-muted-foreground py-2 pr-2 font-medium">Type</th>
-                        <th className="text-muted-foreground py-2 pr-2 font-medium">Account number</th>
-                        <th className="text-muted-foreground py-2 pr-2 font-medium">Account holder</th>
+                        <th className="text-muted-foreground py-2 pr-2 font-medium">Banco</th>
+                        <th className="text-muted-foreground py-2 pr-2 font-medium">Tipo</th>
+                        <th className="text-muted-foreground py-2 pr-2 font-medium">Número de cuenta</th>
+                        <th className="text-muted-foreground py-2 pr-2 font-medium">Titular</th>
                         <th className="text-muted-foreground py-2 text-right font-medium">
-                          <span className="sr-only">Remove</span>
+                          <span className="sr-only">Eliminar</span>
                         </th>
                       </tr>
                     </thead>
@@ -184,7 +184,7 @@ function EditMethodDialog({
                           <tr key={field.id}>
                             <td className="py-2 pr-2">
                               <Label htmlFor={`account-${index}-bankName`} className="sr-only">
-                                Bank name (account {index + 1})
+                                Nombre del banco (cuenta {index + 1})
                               </Label>
                               <Input
                                 id={`account-${index}-bankName`}
@@ -195,7 +195,7 @@ function EditMethodDialog({
                             </td>
                             <td className="py-2 pr-2">
                               <Label htmlFor={`account-${index}-accountType`} className="sr-only">
-                                Account type (account {index + 1})
+                                Tipo de cuenta (cuenta {index + 1})
                               </Label>
                               <Select
                                 value={form.watch(`accounts.${index}.accountType`)}
@@ -210,14 +210,14 @@ function EditMethodDialog({
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="checking">Checking</SelectItem>
-                                  <SelectItem value="savings">Savings</SelectItem>
+                                  <SelectItem value="checking">Cuenta corriente</SelectItem>
+                                  <SelectItem value="savings">Caja de ahorro</SelectItem>
                                 </SelectContent>
                               </Select>
                             </td>
                             <td className="py-2 pr-2">
                               <Label htmlFor={`account-${index}-accountNumber`} className="sr-only">
-                                Account number (account {index + 1})
+                                Número de cuenta (cuenta {index + 1})
                               </Label>
                               <Input
                                 id={`account-${index}-accountNumber`}
@@ -228,7 +228,7 @@ function EditMethodDialog({
                             </td>
                             <td className="py-2 pr-2">
                               <Label htmlFor={`account-${index}-accountHolder`} className="sr-only">
-                                Account holder (account {index + 1})
+                                Titular de la cuenta (cuenta {index + 1})
                               </Label>
                               <Input
                                 id={`account-${index}-accountHolder`}
@@ -245,7 +245,7 @@ function EditMethodDialog({
                                 onClick={() => {
                                   remove(index);
                                 }}
-                                aria-label={`Remove account ${index + 1}`}
+                                aria-label={`Eliminar cuenta ${index + 1}`}
                                 disabled={isSubmitting}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -276,10 +276,10 @@ function EditMethodDialog({
               }}
               disabled={isSubmitting}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save'}
+              {isSubmitting ? 'Guardando...' : 'Guardar'}
             </Button>
           </DialogFooter>
         </form>
@@ -304,7 +304,7 @@ export default function PaymentMethodsPage(): JSX.Element {
       const result = await listPaymentMethods();
       setMethods(result.items);
     } catch (err: unknown) {
-      setError(err instanceof ApiError ? err.message : 'Could not load payment methods');
+      setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los métodos de pago');
     } finally {
       setLoading(false);
     }
@@ -319,14 +319,14 @@ export default function PaymentMethodsPage(): JSX.Element {
     try {
       const updated = await updatePaymentMethod(method, { enabled });
       setMethods((prev) => prev.map((m) => (m.method === method ? updated : m)));
-      toast.success(`${METHOD_LABELS[method]} ${enabled ? 'enabled' : 'disabled'}`);
+      toast.success(`${METHOD_LABELS[method]} ${enabled ? 'habilitado' : 'deshabilitado'}`);
     } catch (err: unknown) {
       if (err instanceof ConflictError && conflictCode(err) === LAST_ENABLED_CODE) {
-        toast.error('At least one payment method must stay enabled.');
+        toast.error('Al menos un método de pago debe permanecer habilitado.');
       } else if (err instanceof ConflictError && conflictCode(err) === NO_ACCOUNTS_CODE) {
-        toast.error('Add at least one bank account before enabling bank transfer.');
+        toast.error('Agregá al menos una cuenta bancaria antes de habilitar la transferencia bancaria.');
       } else {
-        toast.error(err instanceof ApiError ? err.message : 'Could not update the payment method');
+        toast.error(err instanceof ApiError ? err.message : 'No se pudo actualizar el método de pago');
       }
     } finally {
       setSavingMethod(null);
@@ -335,7 +335,7 @@ export default function PaymentMethodsPage(): JSX.Element {
 
   return (
     <div>
-      <h2 className="mb-4 text-lg font-semibold">Payment Methods</h2>
+      <h2 className="mb-4 text-lg font-semibold">Métodos de pago</h2>
 
       {error !== '' && (
         <p role="alert" className="mb-4 text-sm text-red-600">
@@ -344,7 +344,7 @@ export default function PaymentMethodsPage(): JSX.Element {
       )}
 
       {loading ? (
-        <p className="text-muted-foreground p-4 text-sm">Loading payment methods...</p>
+        <p className="text-muted-foreground p-4 text-sm">Cargando métodos de pago...</p>
       ) : (
         <div className="border-border divide-border bg-card divide-y rounded-lg border">
           {methods.map((config) => {
@@ -358,8 +358,8 @@ export default function PaymentMethodsPage(): JSX.Element {
                   {config.method === 'bank_transfer' && (
                     <p className="text-muted-foreground mt-0.5 text-xs">
                       {accountCount === 0
-                        ? 'No bank accounts configured yet.'
-                        : `${accountCount} bank account${accountCount === 1 ? '' : 's'} configured.`}
+                        ? 'Todavía no hay cuentas bancarias configuradas.'
+                        : `${accountCount} ${accountCount === 1 ? 'cuenta bancaria configurada' : 'cuentas bancarias configuradas'}.`}
                     </p>
                   )}
                 </div>
@@ -372,7 +372,7 @@ export default function PaymentMethodsPage(): JSX.Element {
                       setEditingConfig(config);
                     }}
                   >
-                    Edit
+                    Editar
                   </Button>
                   <Switch
                     id={`method-${config.method}`}
@@ -381,7 +381,7 @@ export default function PaymentMethodsPage(): JSX.Element {
                     onCheckedChange={(checked) => {
                       void handleToggle(config.method, checked);
                     }}
-                    aria-label={`${config.enabled ? 'Disable' : 'Enable'} ${METHOD_LABELS[config.method]}`}
+                    aria-label={`${config.enabled ? 'Deshabilitar' : 'Habilitar'} ${METHOD_LABELS[config.method]}`}
                   />
                 </div>
               </div>
