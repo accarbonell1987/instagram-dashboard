@@ -168,6 +168,7 @@ export const db = factory({
     method: primaryKey(String),
     enabled: Boolean,
     displayName: String,
+    accounts: Array,
   },
 
   paymentProof: {

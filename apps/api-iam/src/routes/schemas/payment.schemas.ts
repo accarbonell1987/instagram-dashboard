@@ -88,6 +88,8 @@ export const PaymentNoteRequestSchema = z.object({
 export const PaymentMethodConfigSchema = z.object({
   method: PaymentMethodKindSchema,
   enabled: z.boolean(),
+  displayName: z.string().optional(),
+  accounts: z.array(BankAccountSchema).optional(),
 })
 
 export const PaymentMethodConfigListResponseSchema = z.object({
@@ -111,4 +113,11 @@ export const PaymentMethodParamsSchema = z.object({
 
 export const PaymentMethodUpdateRequestSchema = z.object({
   enabled: z.boolean(),
+  displayName: z.string().optional(),
+  // Kept structurally loose on purpose (like PaymentNoteRequestSchema above):
+  // validating with BankAccountSchema here would make zod-openapi reject a bad
+  // shape with a bare 400 that skips errorHandler, since this service
+  // configures no defaultHook. The route validates by hand and throws a typed
+  // ValidationError instead, so it surfaces as RFC 7807 like every other error.
+  accounts: z.array(z.record(z.string(), z.unknown())).optional(),
 })

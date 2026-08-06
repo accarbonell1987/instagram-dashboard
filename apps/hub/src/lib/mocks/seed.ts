@@ -212,8 +212,15 @@ function seedInvoices(): void {
 // Bootstrap matches the api-iam migration seed: bancard stays the only live
 // method until bank_transfer is toggled on via the admin backoffice.
 function seedPaymentMethods(): void {
-  db.paymentMethodConfig.create({ method: 'bancard', enabled: true, displayName: 'Tarjeta (Bancard)' });
-  db.paymentMethodConfig.create({ method: 'bank_transfer', enabled: false, displayName: 'Transferencia bancaria' });
+  db.paymentMethodConfig.create({ method: 'bancard', enabled: true, displayName: 'Tarjeta (Bancard)', accounts: [] });
+  db.paymentMethodConfig.create({
+    method: 'bank_transfer',
+    enabled: false,
+    displayName: 'Transferencia bancaria',
+    accounts: [
+      { bankName: 'Banco Itaú', accountType: 'checking', accountNumber: '1234567890', accountHolder: 'Corehub S.A.' },
+    ],
+  });
 }
 
 function seedPayments(): void {

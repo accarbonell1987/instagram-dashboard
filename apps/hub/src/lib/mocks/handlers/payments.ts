@@ -111,10 +111,14 @@ export const paymentsHandlers = [
     return HttpResponse.json({ items });
   }),
 
-  // PATCH /admin/payment-methods/:method — last-enabled-method 409 guard
+  // PATCH /admin/payment-methods/:method — last-enabled-method and no-accounts guards
   http.patch(`${BASE}/admin/payment-methods/:method`, async ({ params, request }) => {
     const method = params['method'] as string;
-    const body = (await request.json()) as { enabled?: boolean };
+    const body = (await request.json()) as {
+      enabled?: boolean;
+      displayName?: string;
+      accounts?: { bankName: string; accountType: string; accountNumber: string; accountHolder: string }[];
+    };
 
     const config = db.paymentMethodConfig.findFirst({ where: { method: { equals: method } } });
     if (config === null) {
@@ -128,9 +132,18 @@ export const paymentsHandlers = [
       }
     }
 
+    const nextAccounts = body.accounts ?? config.accounts;
+    if (method === 'bank_transfer' && body.enabled === true && nextAccounts.length === 0) {
+      return conflict('payment_method.no_accounts_configured');
+    }
+
     const updated = db.paymentMethodConfig.update({
       where: { method: { equals: method } },
-      data: { enabled: body.enabled ?? config.enabled },
+      data: {
+        enabled: body.enabled ?? config.enabled,
+        ...(body.displayName !== undefined ? { displayName: body.displayName } : {}),
+        ...(body.accounts !== undefined ? { accounts: body.accounts } : {}),
+      },
     });
     return HttpResponse.json(updated);
   }),

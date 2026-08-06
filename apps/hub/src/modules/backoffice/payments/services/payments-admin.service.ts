@@ -30,6 +30,13 @@ export type PaymentMethodKind = components['schemas']['PaymentMethodKind'];
 export type AdminPaymentMethodConfig = components['schemas']['PaymentMethodConfig'];
 export type AdminPaymentMethodConfigListResponse =
   components['schemas']['PaymentMethodConfigListResponse'];
+export type BankAccount = components['schemas']['BankAccount'];
+
+export interface UpdatePaymentMethodParams {
+  enabled: boolean;
+  displayName?: string | undefined;
+  accounts?: BankAccount[] | undefined;
+}
 
 export interface ListAdminPaymentsParams {
   status?: AdminPaymentStatus | undefined;
@@ -85,11 +92,11 @@ export async function listPaymentMethods(): Promise<AdminPaymentMethodConfigList
 
 export async function updatePaymentMethod(
   method: PaymentMethodKind,
-  enabled: boolean
+  params: UpdatePaymentMethodParams
 ): Promise<AdminPaymentMethodConfig> {
   return apiFetchWithInterceptors<AdminPaymentMethodConfig>(`/admin/payment-methods/${method}`, {
     method: 'PATCH',
-    body: { enabled },
+    body: params,
   });
 }
 
