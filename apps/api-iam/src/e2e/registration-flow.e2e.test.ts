@@ -20,6 +20,21 @@ function uniqueSlug(): string {
 
 // ── Plans seed ───────────────────────────────────────────────────────────────
 
+/**
+ * This suite runs against the shared development database, whose payment-method
+ * config is operator-editable and therefore drifts. The flow below initiates a
+ * Bancard payment, so it has to own that precondition rather than inherit it:
+ * an initiate against a disabled method is refused with `payment.method_disabled`,
+ * which surfaced here as an unexplained 409 several commits after the fact.
+ */
+async function ensureBancardEnabled(prisma: PrismaClient): Promise<void> {
+  await prisma.paymentMethodConfig.upsert({
+    where: { method: 'bancard' },
+    update: { enabled: true },
+    create: { method: 'bancard', enabled: true, displayName: 'Tarjeta (Bancard)', config: {} },
+  })
+}
+
 async function ensurePlansExist(prisma: PrismaClient): Promise<void> {
   const count = await prisma.plan.count()
   if (count > 0) return
@@ -91,6 +106,7 @@ describe('tenant registration flow (e2e)', () => {
     await prisma.$queryRaw`SELECT 1`
 
     await ensurePlansExist(prisma)
+    await ensureBancardEnabled(prisma)
   }, 30_000)
 
   beforeEach(async () => {
