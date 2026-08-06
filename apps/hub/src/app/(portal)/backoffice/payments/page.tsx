@@ -299,32 +299,45 @@ export default function PaymentsQueuePage(): JSX.Element {
         </div>
       ) : (
         <>
-          <div className="border-border overflow-x-auto rounded-lg border">
-            <table className="w-full text-left text-sm">
+          {/* overflow-hidden, not overflow-x-auto: every other backoffice table
+              fits its container rather than scrolling sideways, and an operator
+              comparing rows should not have to scroll to see the amount. The two
+              free-text columns truncate instead, with the full value on hover. */}
+          <div className="border-border overflow-hidden rounded-lg border">
+            <table className="w-full table-fixed text-left text-sm">
               <caption className="sr-only">Cola de pagos pendientes</caption>
               <thead className="bg-muted">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Fecha</th>
-                  <th className="px-4 py-3 font-medium">Monto</th>
-                  <th className="px-4 py-3 font-medium">Referencia</th>
-                  <th className="px-4 py-3 font-medium">Tenant</th>
-                  <th className="px-4 py-3 font-medium">Método</th>
-                  <th className="px-4 py-3 font-medium">Estado</th>
-                  <th className="px-4 py-3 text-right font-medium">Acciones</th>
+                  <th className="w-[6.5rem] px-3 py-3 font-medium">Fecha</th>
+                  <th className="w-[8rem] px-3 py-3 font-medium">Monto</th>
+                  <th className="px-3 py-3 font-medium">Referencia</th>
+                  <th className="px-3 py-3 font-medium">Tenant</th>
+                  <th className="w-[9rem] px-3 py-3 font-medium">Método</th>
+                  <th className="w-[7rem] px-3 py-3 font-medium">Estado</th>
+                  <th className="w-[11rem] px-3 py-3 text-right font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((payment) => (
                   <tr key={payment.id} className="border-border border-t">
-                    <td className="px-4 py-3">{formatDate(payment.createdAt)}</td>
-                    <td className="px-4 py-3">{formatAmount(payment.amount, payment.currency)}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{payment.reference ?? '—'}</td>
-                    <td className="px-4 py-3">{payment.tenantName ?? '—'}</td>
-                    <td className="px-4 py-3">{METHOD_LABELS[payment.method] ?? payment.method}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">{formatDate(payment.createdAt)}</td>
+                    <td className="px-3 py-3">{formatAmount(payment.amount, payment.currency)}</td>
+                    <td
+                      className="truncate px-3 py-3 font-mono text-xs"
+                      title={payment.reference ?? undefined}
+                    >
+                      {payment.reference ?? '—'}
+                    </td>
+                    <td className="truncate px-3 py-3" title={payment.tenantName ?? undefined}>
+                      {payment.tenantName ?? '—'}
+                    </td>
+                    <td className="truncate px-3 py-3">
+                      {METHOD_LABELS[payment.method] ?? payment.method}
+                    </td>
+                    <td className="px-3 py-3">
                       <StatusBadge status={payment.status} />
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-3 py-3 text-right">
                       {isSettleable(payment.status) ? (
                         <div className="flex justify-end gap-2">
                           <Button
