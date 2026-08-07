@@ -20,6 +20,7 @@ import { PublicationsList } from './components/publications-list';
 import { SectionHeader } from './components/section-header';
 import { SyncStatusBadge } from './components/sync-status-badge';
 import { useGrowthAgent } from './hooks/use-growth-agent';
+import { useHubToken } from './hooks/use-hub-token';
 import {
   useInstagramDashboard,
   useConnectionStatus,
@@ -43,9 +44,15 @@ import type {
 
 export function DashboardInstagramPage(): JSX.Element {
   const { isConnected, isLoading: isCheckingConnection } = useConnectionStatus();
+  // The hub delivers the JWT over postMessage after this app mounts, so asking
+  // for permissions on mount races the handshake and answers 401 on every
+  // refresh — the user then had to press Retry for something that was only ever
+  // early. Wait for the token instead.
+  const hubToken = useHubToken();
   const { moduleIds, error: modulesError, refetch: refetchModules } = useModuleAccess({
     fetcher: getMyModules,
     fallbackErrorMessage: 'Error al cargar permisos',
+    enabled: hubToken !== null,
   });
 
   // Fail closed while permissions are unknown (loading or errored) — `?? false`

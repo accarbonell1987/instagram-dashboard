@@ -15,6 +15,16 @@ export interface UseModuleAccessOptions {
    * doesn't own product-facing copy or language — the caller supplies it.
    */
   fallbackErrorMessage: string;
+  /**
+   * Whether the caller is ready to authenticate the request. Defaults to true.
+   *
+   * A product embedded in the hub receives its JWT asynchronously over
+   * postMessage, so fetching on mount races the handshake and answers 401 on
+   * every refresh. Pass `false` until the token is in hand and the hook waits:
+   * it stays in the unknown state rather than recording a failure, because
+   * nothing was attempted yet, and fetches as soon as this turns true.
+   */
+  enabled?: boolean;
 }
 
 export interface UseModuleAccessResult {
@@ -28,7 +38,7 @@ export interface UseModuleAccessResult {
 }
 
 export function useModuleAccess(options: UseModuleAccessOptions): UseModuleAccessResult {
-  const { fetcher, fallbackErrorMessage } = options;
+  const { fetcher, fallbackErrorMessage, enabled = true } = options;
   const [moduleIds, setModuleIds] = useState<Set<string> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,8 +60,12 @@ export function useModuleAccess(options: UseModuleAccessOptions): UseModuleAcces
   }, [fetcher, fallbackErrorMessage]);
 
   useEffect(() => {
+    // Not ready yet: stay unknown and loading. Deliberately not an error state —
+    // waiting for a token is not a failure, and rendering one would make the
+    // caller offer a retry for something that resolves on its own.
+    if (!enabled) return;
     void fetchModules();
-  }, [fetchModules]);
+  }, [enabled, fetchModules]);
 
   return { moduleIds, isLoading, error, refetch: fetchModules };
 }
