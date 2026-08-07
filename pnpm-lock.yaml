@@ -699,18 +699,33 @@ importers:
       '@core/config':
         specifier: workspace:*
         version: link:../config
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.7
+      '@types/react':
+        specifier: ^19.0.7
+        version: 19.2.9
       eslint:
         specifier: ^9.18.0
         version: 9.39.2(jiti@2.6.1)
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1
+      react:
+        specifier: 19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: 19.2.4
+        version: 19.2.4(react@19.2.4)
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
       vitest:
         specifier: ^3.0.5
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.7)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(msw@2.14.2(@types/node@22.19.7)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.7)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.30.2)(msw@2.14.2(@types/node@22.19.7)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
 
   packages/shared:
     dependencies:
@@ -957,6 +972,9 @@ importers:
       '@core/config':
         specifier: workspace:*
         version: link:../../../packages/config
+      '@core/entitlements':
+        specifier: workspace:*
+        version: link:../../../packages/entitlements
       '@core/shared':
         specifier: workspace:*
         version: link:../../../packages/shared
