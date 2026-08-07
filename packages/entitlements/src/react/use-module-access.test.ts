@@ -1,13 +1,9 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import * as instagramService from '../services/instagram.service';
+import { useModuleAccess } from './use-module-access.js';
 
-import { useModuleAccess } from './use-module-access';
-
-vi.mock('../services/instagram.service');
-
-const mockedService = vi.mocked(instagramService);
+const FALLBACK_ERROR_MESSAGE = 'Error al cargar permisos';
 
 describe('useModuleAccess', () => {
   beforeEach(() => {
@@ -15,18 +11,22 @@ describe('useModuleAccess', () => {
   });
 
   it('starts loading with moduleIds null', () => {
-    mockedService.getMyModules.mockResolvedValue(['ig-basic-metrics']);
+    const fetcher = vi.fn().mockResolvedValue(['ig-basic-metrics']);
 
-    const { result } = renderHook(() => useModuleAccess());
+    const { result } = renderHook(() =>
+      useModuleAccess({ fetcher, fallbackErrorMessage: FALLBACK_ERROR_MESSAGE }),
+    );
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.moduleIds).toBeNull();
   });
 
   it('resolves the granted module ids as a Set', async () => {
-    mockedService.getMyModules.mockResolvedValue(['ig-basic-metrics', 'ig-audience']);
+    const fetcher = vi.fn().mockResolvedValue(['ig-basic-metrics', 'ig-audience']);
 
-    const { result } = renderHook(() => useModuleAccess());
+    const { result } = renderHook(() =>
+      useModuleAccess({ fetcher, fallbackErrorMessage: FALLBACK_ERROR_MESSAGE }),
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -37,9 +37,11 @@ describe('useModuleAccess', () => {
   });
 
   it('resolves a real, valid empty Set for a zero-entitlement tenant', async () => {
-    mockedService.getMyModules.mockResolvedValue([]);
+    const fetcher = vi.fn().mockResolvedValue([]);
 
-    const { result } = renderHook(() => useModuleAccess());
+    const { result } = renderHook(() =>
+      useModuleAccess({ fetcher, fallbackErrorMessage: FALLBACK_ERROR_MESSAGE }),
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -50,9 +52,11 @@ describe('useModuleAccess', () => {
   });
 
   it('fails closed on fetch error — moduleIds stays null, error is set', async () => {
-    mockedService.getMyModules.mockRejectedValue(new Error('Network error'));
+    const fetcher = vi.fn().mockRejectedValue(new Error('Network error'));
 
-    const { result } = renderHook(() => useModuleAccess());
+    const { result } = renderHook(() =>
+      useModuleAccess({ fetcher, fallbackErrorMessage: FALLBACK_ERROR_MESSAGE }),
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -62,12 +66,29 @@ describe('useModuleAccess', () => {
     expect(result.current.error).toContain('Network error');
   });
 
+  it('falls back to the caller-supplied message when the failure is not an Error', async () => {
+    const fetcher = vi.fn().mockRejectedValue('not an Error instance');
+
+    const { result } = renderHook(() =>
+      useModuleAccess({ fetcher, fallbackErrorMessage: FALLBACK_ERROR_MESSAGE }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBe(FALLBACK_ERROR_MESSAGE);
+  });
+
   it('refetch clears a prior error and re-resolves the granted modules', async () => {
-    mockedService.getMyModules
+    const fetcher = vi
+      .fn()
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValueOnce(['ig-publications']);
 
-    const { result } = renderHook(() => useModuleAccess());
+    const { result } = renderHook(() =>
+      useModuleAccess({ fetcher, fallbackErrorMessage: FALLBACK_ERROR_MESSAGE }),
+    );
 
     await waitFor(() => {
       expect(result.current.error).not.toBeNull();

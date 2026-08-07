@@ -1,5 +1,6 @@
 'use client';
 
+import { useModuleAccess } from '@core/entitlements/react';
 import { Button } from '@core/ui';
 import type { JSX } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -27,8 +28,7 @@ import {
   usePublications,
   useDemographics,
 } from './hooks/use-instagram-dashboard';
-import { useModuleAccess } from './hooks/use-module-access';
-import { backfillFollowerHistory } from './services/instagram.service';
+import { backfillFollowerHistory, getMyModules } from './services/instagram.service';
 import type {
   ContentFinding,
   FormatBreakdown,
@@ -43,7 +43,10 @@ import type {
 
 export function DashboardInstagramPage(): JSX.Element {
   const { isConnected, isLoading: isCheckingConnection } = useConnectionStatus();
-  const { moduleIds, error: modulesError, refetch: refetchModules } = useModuleAccess();
+  const { moduleIds, error: modulesError, refetch: refetchModules } = useModuleAccess({
+    fetcher: getMyModules,
+    fallbackErrorMessage: 'Error al cargar permisos',
+  });
 
   // Fail closed while permissions are unknown (loading or errored) — `?? false`
   // means no section fetches until we actually know what's granted.
