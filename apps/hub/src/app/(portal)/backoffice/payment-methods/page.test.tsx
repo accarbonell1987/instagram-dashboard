@@ -127,9 +127,13 @@ describe('PaymentMethodsPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Guardar' }));
 
+    // The saved account is rendered as a card rather than counted in a sentence,
+    // so assert the operator can actually read it back: bank, holder and type.
     await waitFor(() => {
-      expect(screen.getByText('1 cuenta bancaria configurada.')).toBeInTheDocument();
+      expect(screen.getByText(account.bankName)).toBeInTheDocument();
     });
+    expect(screen.getByText(account.accountHolder)).toBeInTheDocument();
+    expect(screen.getByText('Cuenta corriente')).toBeInTheDocument();
   });
 
   it('requires a display name in the edit dialog', async () => {

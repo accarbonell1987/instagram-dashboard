@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  BankAccountCard,
   Button,
   Dialog,
   DialogContent,
@@ -37,6 +38,18 @@ import {
 const METHOD_LABELS: Record<PaymentMethodKind, string> = {
   bancard: 'Bancard',
   bank_transfer: 'Transferencia bancaria',
+};
+
+// BankAccountCard ships English defaults on purpose — @core/ui is shared by
+// every app and by the ones the CLI generates, so it cannot own one product's
+// language. The hub supplies its own.
+const BANK_ACCOUNT_CARD_LABELS = {
+  accountHolder: 'Titular',
+  accountType: 'Tipo de cuenta',
+  checking: 'Cuenta corriente',
+  savings: 'Caja de ahorro',
+  reveal: 'Ver número completo',
+  hide: 'Ocultar número',
 };
 
 const LAST_ENABLED_CODE = 'payment_method.last_enabled';
@@ -350,16 +363,15 @@ export default function PaymentMethodsPage(): JSX.Element {
           {methods.map((config) => {
             const accountCount = config.accounts?.length ?? 0;
             return (
-              <div key={config.method} className="flex items-center justify-between gap-4 p-4">
+              <div key={config.method} className="p-4">
+                <div className="flex items-center justify-between gap-4">
                 <div>
                   <Label htmlFor={`method-${config.method}`} className="font-medium">
                     {config.displayName ?? METHOD_LABELS[config.method]}
                   </Label>
-                  {config.method === 'bank_transfer' && (
+                  {config.method === 'bank_transfer' && accountCount === 0 && (
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      {accountCount === 0
-                        ? 'Todavía no hay cuentas bancarias configuradas.'
-                        : `${accountCount} ${accountCount === 1 ? 'cuenta bancaria configurada' : 'cuentas bancarias configuradas'}.`}
+                      Todavía no hay cuentas bancarias configuradas.
                     </p>
                   )}
                 </div>
@@ -384,6 +396,24 @@ export default function PaymentMethodsPage(): JSX.Element {
                     aria-label={`${config.enabled ? 'Deshabilitar' : 'Habilitar'} ${METHOD_LABELS[config.method]}`}
                   />
                 </div>
+                </div>
+
+                {config.method === 'bank_transfer' && accountCount > 0 && (
+                  <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {config.accounts?.map((account) => (
+                      <li key={`${account.bankName}-${account.accountNumber}`}>
+                        <BankAccountCard
+                          bankName={account.bankName}
+                          accountNumber={account.accountNumber}
+                          accountHolder={account.accountHolder}
+                          accountType={account.accountType}
+                          size="compact"
+                          labels={BANK_ACCOUNT_CARD_LABELS}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             );
           })}
