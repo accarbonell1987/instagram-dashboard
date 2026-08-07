@@ -5,9 +5,19 @@ import { useEffect, useState, type JSX } from 'react';
 
 import { AppCard } from '@/components/app-card';
 import { AppCardSkeleton } from '@/components/app-card-skeleton';
-import { getProductVisuals } from '@/lib/apps-config';
+import { getProductVisuals, isLocalUrl } from '@/lib/apps-config';
+import type { AvailableProduct } from '@/modules/shared/modules/index';
 import { useProducts } from '@/modules/shared/modules/index';
 import { useAuth } from '@/providers/index';
+
+// A product whose defaultUrl is a hub-relative path is served by the hub
+// itself — navigate straight there instead of opening the iframe shell.
+function productHref(product: AvailableProduct): string {
+  if (product.defaultUrl !== undefined && isLocalUrl(product.defaultUrl)) {
+    return product.defaultUrl;
+  }
+  return `/apps/${product.id}`;
+}
 
 export default function HomePage(): JSX.Element {
   const { session } = useAuth();
@@ -45,7 +55,6 @@ export default function HomePage(): JSX.Element {
             ))
           : products.map((product, index) => {
               const visuals = getProductVisuals(product.id);
-              const moduleCount = product.modules.length;
 
               return (
                 <div
@@ -58,14 +67,11 @@ export default function HomePage(): JSX.Element {
                 >
                   <AppCard
                     name={product.name}
-                    description={
-                      product.description ??
-                      `${String(moduleCount)} ${moduleCount === 1 ? 'módulo' : 'módulos'}`
-                    }
+                    description={product.description ?? ''}
                     icon={visuals.icon}
                     color={visuals.color}
                     onClick={() => {
-                      router.push(`/products/${product.id}`);
+                      router.push(productHref(product));
                     }}
                   />
                 </div>

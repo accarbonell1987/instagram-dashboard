@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.19.0
+  version: 1.20.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -1161,6 +1161,9 @@ components:
         id: { type: string }
         name: { type: string }
         description: { type: string }
+        defaultUrl:
+          type: string
+          description: Dirección propia del producto — a dónde navega el hub al abrirlo. Ausente si el producto todavía no la tiene configurada.
         modules:
           type: array
           items:

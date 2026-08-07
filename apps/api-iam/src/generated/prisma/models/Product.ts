@@ -38,6 +38,7 @@ export type ProductMinAggregateOutputType = {
   id: string | null
   name: string | null
   description: string | null
+  defaultUrl: string | null
   active: boolean | null
   billingRef: string | null
   trialEnabled: boolean | null
@@ -50,6 +51,7 @@ export type ProductMaxAggregateOutputType = {
   id: string | null
   name: string | null
   description: string | null
+  defaultUrl: string | null
   active: boolean | null
   billingRef: string | null
   trialEnabled: boolean | null
@@ -62,6 +64,7 @@ export type ProductCountAggregateOutputType = {
   id: number
   name: number
   description: number
+  defaultUrl: number
   active: number
   billingRef: number
   trialEnabled: number
@@ -84,6 +87,7 @@ export type ProductMinAggregateInputType = {
   id?: true
   name?: true
   description?: true
+  defaultUrl?: true
   active?: true
   billingRef?: true
   trialEnabled?: true
@@ -96,6 +100,7 @@ export type ProductMaxAggregateInputType = {
   id?: true
   name?: true
   description?: true
+  defaultUrl?: true
   active?: true
   billingRef?: true
   trialEnabled?: true
@@ -108,6 +113,7 @@ export type ProductCountAggregateInputType = {
   id?: true
   name?: true
   description?: true
+  defaultUrl?: true
   active?: true
   billingRef?: true
   trialEnabled?: true
@@ -207,6 +213,7 @@ export type ProductGroupByOutputType = {
   id: string
   name: string
   description: string | null
+  defaultUrl: string | null
   active: boolean
   billingRef: string | null
   trialEnabled: boolean
@@ -242,6 +249,7 @@ export type ProductWhereInput = {
   id?: Prisma.StringFilter<"Product"> | string
   name?: Prisma.StringFilter<"Product"> | string
   description?: Prisma.StringNullableFilter<"Product"> | string | null
+  defaultUrl?: Prisma.StringNullableFilter<"Product"> | string | null
   active?: Prisma.BoolFilter<"Product"> | boolean
   billingRef?: Prisma.StringNullableFilter<"Product"> | string | null
   trialEnabled?: Prisma.BoolFilter<"Product"> | boolean
@@ -260,6 +268,7 @@ export type ProductOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  defaultUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrderInput | Prisma.SortOrder
   trialEnabled?: Prisma.SortOrder
@@ -281,6 +290,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ProductWhereInput | Prisma.ProductWhereInput[]
   name?: Prisma.StringFilter<"Product"> | string
   description?: Prisma.StringNullableFilter<"Product"> | string | null
+  defaultUrl?: Prisma.StringNullableFilter<"Product"> | string | null
   active?: Prisma.BoolFilter<"Product"> | boolean
   billingRef?: Prisma.StringNullableFilter<"Product"> | string | null
   trialEnabled?: Prisma.BoolFilter<"Product"> | boolean
@@ -299,6 +309,7 @@ export type ProductOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  defaultUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrderInput | Prisma.SortOrder
   trialEnabled?: Prisma.SortOrder
@@ -319,6 +330,7 @@ export type ProductScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Product"> | string
   name?: Prisma.StringWithAggregatesFilter<"Product"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
+  defaultUrl?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   active?: Prisma.BoolWithAggregatesFilter<"Product"> | boolean
   billingRef?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   trialEnabled?: Prisma.BoolWithAggregatesFilter<"Product"> | boolean
@@ -331,6 +343,7 @@ export type ProductCreateInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -349,6 +362,7 @@ export type ProductUncheckedCreateInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -367,6 +381,7 @@ export type ProductUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -385,6 +400,7 @@ export type ProductUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -403,6 +419,7 @@ export type ProductCreateManyInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -415,6 +432,7 @@ export type ProductUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -427,6 +445,7 @@ export type ProductUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -439,6 +458,7 @@ export type ProductCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  defaultUrl?: Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrder
   trialEnabled?: Prisma.SortOrder
@@ -455,6 +475,7 @@ export type ProductMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  defaultUrl?: Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrder
   trialEnabled?: Prisma.SortOrder
@@ -467,6 +488,7 @@ export type ProductMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  defaultUrl?: Prisma.SortOrder
   active?: Prisma.SortOrder
   billingRef?: Prisma.SortOrder
   trialEnabled?: Prisma.SortOrder
@@ -607,6 +629,7 @@ export type ProductCreateWithoutPlansInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -624,6 +647,7 @@ export type ProductUncheckedCreateWithoutPlansInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -657,6 +681,7 @@ export type ProductUpdateWithoutPlansInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -674,6 +699,7 @@ export type ProductUncheckedUpdateWithoutPlansInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -691,6 +717,7 @@ export type ProductCreateWithoutDraftsInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -708,6 +735,7 @@ export type ProductUncheckedCreateWithoutDraftsInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -741,6 +769,7 @@ export type ProductUpdateWithoutDraftsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -758,6 +787,7 @@ export type ProductUncheckedUpdateWithoutDraftsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -775,6 +805,7 @@ export type ProductCreateWithoutModulesInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -792,6 +823,7 @@ export type ProductUncheckedCreateWithoutModulesInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -825,6 +857,7 @@ export type ProductUpdateWithoutModulesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -842,6 +875,7 @@ export type ProductUncheckedUpdateWithoutModulesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -859,6 +893,7 @@ export type ProductCreateWithoutSubscriptionsInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -876,6 +911,7 @@ export type ProductUncheckedCreateWithoutSubscriptionsInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -909,6 +945,7 @@ export type ProductUpdateWithoutSubscriptionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -926,6 +963,7 @@ export type ProductUncheckedUpdateWithoutSubscriptionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -943,6 +981,7 @@ export type ProductCreateWithoutEntitlementsInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -960,6 +999,7 @@ export type ProductUncheckedCreateWithoutEntitlementsInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -993,6 +1033,7 @@ export type ProductUpdateWithoutEntitlementsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1010,6 +1051,7 @@ export type ProductUncheckedUpdateWithoutEntitlementsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1027,6 +1069,7 @@ export type ProductCreateWithoutProductRolesInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -1044,6 +1087,7 @@ export type ProductUncheckedCreateWithoutProductRolesInput = {
   id: string
   name: string
   description?: string | null
+  defaultUrl?: string | null
   active?: boolean
   billingRef?: string | null
   trialEnabled?: boolean
@@ -1077,6 +1121,7 @@ export type ProductUpdateWithoutProductRolesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1094,6 +1139,7 @@ export type ProductUncheckedUpdateWithoutProductRolesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1187,6 +1233,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   id?: boolean
   name?: boolean
   description?: boolean
+  defaultUrl?: boolean
   active?: boolean
   billingRef?: boolean
   trialEnabled?: boolean
@@ -1206,6 +1253,7 @@ export type ProductSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   id?: boolean
   name?: boolean
   description?: boolean
+  defaultUrl?: boolean
   active?: boolean
   billingRef?: boolean
   trialEnabled?: boolean
@@ -1218,6 +1266,7 @@ export type ProductSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   id?: boolean
   name?: boolean
   description?: boolean
+  defaultUrl?: boolean
   active?: boolean
   billingRef?: boolean
   trialEnabled?: boolean
@@ -1230,6 +1279,7 @@ export type ProductSelectScalar = {
   id?: boolean
   name?: boolean
   description?: boolean
+  defaultUrl?: boolean
   active?: boolean
   billingRef?: boolean
   trialEnabled?: boolean
@@ -1238,7 +1288,7 @@ export type ProductSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "active" | "billingRef" | "trialEnabled" | "trialDurationDays" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
+export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "defaultUrl" | "active" | "billingRef" | "trialEnabled" | "trialDurationDays" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   modules?: boolean | Prisma.Product$modulesArgs<ExtArgs>
   plans?: boolean | Prisma.Product$plansArgs<ExtArgs>
@@ -1265,6 +1315,7 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     id: string
     name: string
     description: string | null
+    defaultUrl: string | null
     active: boolean
     billingRef: string | null
     trialEnabled: boolean
@@ -1703,6 +1754,7 @@ export interface ProductFieldRefs {
   readonly id: Prisma.FieldRef<"Product", 'String'>
   readonly name: Prisma.FieldRef<"Product", 'String'>
   readonly description: Prisma.FieldRef<"Product", 'String'>
+  readonly defaultUrl: Prisma.FieldRef<"Product", 'String'>
   readonly active: Prisma.FieldRef<"Product", 'Boolean'>
   readonly billingRef: Prisma.FieldRef<"Product", 'String'>
   readonly trialEnabled: Prisma.FieldRef<"Product", 'Boolean'>

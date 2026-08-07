@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type JSX } from 'react';
+import { useEffect, useRef, type JSX } from 'react';
 
-import { useModules } from '../hooks/use-modules';
+import { useProducts } from '../hooks/use-products';
 import { ModuleToHubSchema } from '../lib/post-message-protocol';
-import { resolveModuleUrl } from '../lib/resolve-url';
+import { resolveProductUrl } from '../lib/resolve-url';
 
-import { ModuleNotAvailable } from './module-not-available';
+import { ProductNotAvailable } from './product-not-available';
 
 import {
   getAccessToken,
@@ -14,25 +14,25 @@ import {
 } from '@/modules/iam/identity/session/token';
 
 
-interface ModuleShellProps {
-  moduleId: string;
+interface ProductShellProps {
+  productId: string;
 }
 
-export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
+export function ProductShell({ productId }: ProductShellProps): JSX.Element {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [isReady, setIsReady] = useState(false);
-  const { modules, isLoading } = useModules();
+  const { products, isLoading } = useProducts();
 
-  const moduleItem = modules.find((m) => m.id === moduleId);
-  const moduleUrl = moduleItem !== undefined ? resolveModuleUrl(moduleId, moduleItem.defaultUrl) : null;
+  const product = products.find((p) => p.id === productId);
+  const productUrl =
+    product?.defaultUrl !== undefined ? resolveProductUrl(productId, product.defaultUrl) : null;
 
   // Send token to the iframe
   function sendToken(token: string | null): void {
     const iframe = iframeRef.current;
     if (iframe?.contentWindow === null || iframe?.contentWindow === undefined) return;
-    if (moduleUrl === null) return;
+    if (productUrl === null) return;
 
-    const targetOrigin = new URL(moduleUrl).origin;
+    const targetOrigin = new URL(productUrl).origin;
 
     if (token !== null) {
       iframe.contentWindow.postMessage(
@@ -47,11 +47,11 @@ export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
     }
   }
 
-  // Listen for messages from the module iframe
+  // Listen for messages from the product iframe
   useEffect(() => {
-    if (moduleUrl === null) return;
+    if (productUrl === null) return;
 
-    const targetOrigin = new URL(moduleUrl).origin;
+    const targetOrigin = new URL(productUrl).origin;
 
     function handleMessage(event: MessageEvent): void {
       if (event.origin !== targetOrigin) return;
@@ -65,7 +65,6 @@ export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
         message.type === 'corehub.module.v1.ready' ||
         message.type === 'corehub.module.v1.requestToken'
       ) {
-        setIsReady(true);
         const currentToken = getAccessToken();
         sendToken(currentToken?.raw ?? null);
       }
@@ -75,18 +74,19 @@ export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [moduleUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [productUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Forward token changes to the iframe. Subscribing unconditionally (not
-  // gated on isReady) covers the case where the hub's session refresh resolves
-  // after the iframe mounted: the new token is pushed as soon as it lands.
+  // gated on the ready handshake) covers the case where the hub's session
+  // refresh resolves after the iframe mounted: the new token is pushed as
+  // soon as it lands.
   useEffect(() => {
     const unsubscribe = subscribeToToken((token) => {
       sendToken(token);
     });
 
     return unsubscribe;
-  }, [moduleUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [productUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Push the current token once the iframe finishes loading. The `ready`/
   // `requestToken` handshake can be lost if the iframe posts it before this
@@ -104,18 +104,18 @@ export function ModuleShell({ moduleId }: ModuleShellProps): JSX.Element {
     );
   }
 
-  if (moduleItem === undefined || moduleUrl === null) {
-    return <ModuleNotAvailable moduleId={moduleId} />;
+  if (product === undefined || productUrl === null) {
+    return <ProductNotAvailable productId={productId} />;
   }
 
   return (
     <iframe
       ref={iframeRef}
-      src={moduleUrl}
+      src={productUrl}
       onLoad={handleIframeLoad}
       className="h-full w-full border-0"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
-      title={moduleId}
+      title={productId}
     />
   );
 }
