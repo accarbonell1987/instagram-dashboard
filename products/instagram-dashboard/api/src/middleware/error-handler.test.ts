@@ -1,3 +1,4 @@
+import { EntitlementsLookupError } from '@core/entitlements';
 import { describe, it, expect, vi } from 'vitest';
 
 import {
@@ -168,6 +169,18 @@ describe('errorHandler', () => {
     expect(body.error.message).toBe('An unexpected error occurred');
 
     process.env['NODE_ENV'] = originalEnv;
+  });
+
+  it('handles EntitlementsLookupError with 500 status and the real message, regardless of NODE_ENV', () => {
+    const c = createMockContext();
+    const error = new EntitlementsLookupError('iam entitlements lookup failed: 500');
+
+    runHandler(error, c);
+
+    const [body, status] = jsonCall(c);
+    expect(status).toBe(500);
+    expect(body.error.code).toBe('INTERNAL_ERROR');
+    expect(body.error.message).toBe('iam entitlements lookup failed: 500');
   });
 
   it('omits details field when error has no details', () => {

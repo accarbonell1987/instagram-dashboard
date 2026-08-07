@@ -1,3 +1,4 @@
+import { useModuleAccess } from '@core/entitlements/react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -61,7 +62,7 @@ const ALL_MODULE_IDS = [
   'ig-ai-suggestions',
   'ig-ai-carousels',
 ];
-vi.mock('./hooks/use-module-access', () => ({
+vi.mock('@core/entitlements/react', () => ({
   useModuleAccess: vi.fn(() => ({
     moduleIds: new Set(ALL_MODULE_IDS),
     isLoading: false,
@@ -95,6 +96,7 @@ vi.mock('./components/floating-agent', () => ({
 // Mock the Instagram service for ConnectAccount and DisconnectButton
 vi.mock('./services/instagram.service', () => ({
   getOAuthUrl: vi.fn(() => 'https://instagram.com/oauth'),
+  getMyModules: vi.fn().mockResolvedValue([]),
   getGrowthData: vi.fn().mockResolvedValue([]),
   getSuggestions: vi.fn().mockResolvedValue([]),
   sendChatMessage: vi.fn().mockResolvedValue({ reply: '', sessionId: '', suggestions: [], toolCallsTrace: [] }),
@@ -113,7 +115,6 @@ import {
   useConnectionStatus,
   useSyncStatus,
 } from './hooks/use-instagram-dashboard';
-import { useModuleAccess } from './hooks/use-module-access';
 import { DashboardInstagramPage } from './page';
 import type {
   DashboardData,
