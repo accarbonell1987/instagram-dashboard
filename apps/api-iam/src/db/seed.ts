@@ -230,6 +230,18 @@ const BASE_MODULES = [
     description: 'Creá carousels profesionales con inteligencia artificial',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
+  {
+    id: 'ig-audience',
+    name: 'Audiencia',
+    description: 'Quién te sigue — edad, género y ubicación',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+  },
+  {
+    id: 'ig-content-intelligence',
+    name: 'Inteligencia de contenido',
+    description: 'Qué hace que tu contenido funcione y qué hacer diferente esta semana',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+  },
 ];
 
 async function seedModules() {
@@ -244,7 +256,7 @@ async function seedModules() {
 
   const PLAN_MODULE_ASSIGNMENTS: Record<string, string[]> = {
     starter: ['ig-basic-metrics'],
-    professional: ['ig-basic-metrics', 'ig-publications'],
+    professional: ['ig-basic-metrics', 'ig-publications', 'ig-audience'],
     enterprise: BASE_MODULES.map((m) => m.id),
   };
 
@@ -306,7 +318,8 @@ async function seedInstagramProduct() {
 
   // Link all IG modules to the product and set parent-child relationships.
   const igModules = ['ig-basic-metrics', 'ig-publications', 'ig-ai-agent',
-    'ig-ai-chat', 'ig-ai-suggestions', 'ig-ai-carousels'];
+    'ig-ai-chat', 'ig-ai-suggestions', 'ig-ai-carousels',
+    'ig-audience', 'ig-content-intelligence'];
   for (const id of igModules) {
     await prisma.module.update({
       where: { id },

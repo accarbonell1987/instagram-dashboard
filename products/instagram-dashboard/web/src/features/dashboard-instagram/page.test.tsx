@@ -47,6 +47,29 @@ vi.mock('./hooks/use-instagram-dashboard', () => ({
   })),
 }));
 
+// Mock module access — the page's own gate for which sections/agent render.
+// Defaults to full access so pre-existing tests (written before module
+// gating existed) keep exercising the "everything visible" path unchanged.
+// Module-gating behavior itself is covered in its own describe block below.
+const ALL_MODULE_IDS = [
+  'ig-basic-metrics',
+  'ig-publications',
+  'ig-audience',
+  'ig-content-intelligence',
+  'ig-ai-agent',
+  'ig-ai-chat',
+  'ig-ai-suggestions',
+  'ig-ai-carousels',
+];
+vi.mock('./hooks/use-module-access', () => ({
+  useModuleAccess: vi.fn(() => ({
+    moduleIds: new Set(ALL_MODULE_IDS),
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  })),
+}));
+
 // Mock the growth agent hook so it doesn't call the instagram service
 vi.mock('./hooks/use-growth-agent', () => ({
   useGrowthAgent: vi.fn(() => ({
@@ -90,6 +113,7 @@ import {
   useConnectionStatus,
   useSyncStatus,
 } from './hooks/use-instagram-dashboard';
+import { useModuleAccess } from './hooks/use-module-access';
 import { DashboardInstagramPage } from './page';
 import type {
   DashboardData,
@@ -134,6 +158,18 @@ function mockSyncHook(overrides: Partial<ReturnType<typeof useSyncStatus>> = {})
   };
   const mock = { ...defaults, ...overrides };
   vi.mocked(useSyncStatus).mockReturnValue(mock);
+  return mock;
+}
+
+function mockModuleAccessHook(overrides: Partial<ReturnType<typeof useModuleAccess>> = {}) {
+  const defaults = {
+    moduleIds: new Set(ALL_MODULE_IDS) as Set<string> | null,
+    isLoading: false,
+    error: null as string | null,
+    refetch: vi.fn(),
+  };
+  const mock = { ...defaults, ...overrides };
+  vi.mocked(useModuleAccess).mockReturnValue(mock);
   return mock;
 }
 
@@ -301,5 +337,96 @@ describe('DashboardInstagramPage — state machine', () => {
       expect(screen.getByText(/Última actualización:/)).toBeInTheDocument();
     });
 
+  });
+
+  describe('Module gating', () => {
+    const fullDashboardHooks = () => {
+      mockConnectionHook({ isConnected: true, isLoading: false });
+      mockDashboardHook({ data: mockDashboardData, isLoading: false, error: null });
+      mockSyncHook({
+        syncState: { status: 'idle', lastSyncAt: '2026-06-10T10:00:00Z', mediaCount: 50, nextSyncAvailableAt: null },
+      });
+    };
+
+    it('hides a section when its module is missing', () => {
+      fullDashboardHooks();
+      mockModuleAccessHook({
+        moduleIds: new Set(ALL_MODULE_IDS.filter((id) => id !== 'ig-audience')),
+      });
+
+      render(<DashboardInstagramPage />);
+
+      expect(screen.queryByText('Audiencia')).not.toBeInTheDocument();
+      expect(screen.getByText('Métricas clave')).toBeInTheDocument();
+    });
+
+    it('renders a section when its module is granted', () => {
+      fullDashboardHooks();
+      mockModuleAccessHook();
+
+      render(<DashboardInstagramPage />);
+
+      expect(screen.getByText('Audiencia')).toBeInTheDocument();
+    });
+
+    it('hides the floating agent entirely without ig-ai-agent', () => {
+      fullDashboardHooks();
+      mockModuleAccessHook({
+        moduleIds: new Set(ALL_MODULE_IDS.filter((id) => id !== 'ig-ai-agent')),
+      });
+
+      render(<DashboardInstagramPage />);
+
+      expect(screen.queryByTestId('floating-agent')).not.toBeInTheDocument();
+    });
+
+    it('hides the floating agent when it is granted but none of its tabs are', () => {
+      fullDashboardHooks();
+      mockModuleAccessHook({
+        moduleIds: new Set([
+          'ig-basic-metrics',
+          'ig-publications',
+          'ig-audience',
+          'ig-content-intelligence',
+          'ig-ai-agent',
+        ]),
+      });
+
+      render(<DashboardInstagramPage />);
+
+      expect(screen.queryByTestId('floating-agent')).not.toBeInTheDocument();
+    });
+
+    it('shows the floating agent when it and at least one tab are granted', () => {
+      fullDashboardHooks();
+      mockModuleAccessHook();
+
+      render(<DashboardInstagramPage />);
+
+      expect(screen.getByTestId('floating-agent')).toBeInTheDocument();
+    });
+
+    it('renders a retryable error state when the modules fetch fails, without falling open', () => {
+      fullDashboardHooks();
+      mockModuleAccessHook({ moduleIds: null, error: 'Network error' });
+
+      render(<DashboardInstagramPage />);
+
+      expect(screen.getByText('No pudimos verificar tus permisos')).toBeInTheDocument();
+      expect(screen.getByText('Reintentar')).toBeInTheDocument();
+      expect(screen.queryByText('Métricas clave')).not.toBeInTheDocument();
+      expect(screen.queryByText('Audiencia')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('floating-agent')).not.toBeInTheDocument();
+    });
+
+    it('shows a loading skeleton (not sections, not a blank page) while permissions resolve', () => {
+      fullDashboardHooks();
+      mockModuleAccessHook({ moduleIds: null, isLoading: true, error: null });
+
+      const { container } = render(<DashboardInstagramPage />);
+
+      expect(screen.queryByText('Métricas clave')).not.toBeInTheDocument();
+      expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+    });
   });
 });

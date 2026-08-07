@@ -25,12 +25,14 @@ import { createDashboardRoutes } from './routes/dashboard/dashboard.routes.js';
 import { createHealthRoutes } from './routes/health/health.routes.js';
 import { createInternalRoutes } from './routes/internal/internal.routes.js';
 import { createMediaRoutes } from './routes/media/media.routes.js';
+import { createModulesRoutes } from './routes/modules/modules.routes.js';
 import { createSuggestionsRoutes } from './routes/suggestions/suggestions.routes.js';
 import { createSyncRoutes } from './routes/sync/sync.routes.js';
 import { CarouselService } from './services/carousel.service.js';
 import { DashboardService } from './services/dashboard.service.js';
 import { GrowthAgentService } from './services/growth-agent.service.js';
 import { InsightService } from './services/insight.service.js';
+import { ModulesService } from './services/modules.service.js';
 import { OAuthService } from './services/oauth.service.js';
 import { ScriptGeneratorService } from './services/script-generator.service.js';
 import { SuggestionService } from './services/suggestion.service.js';
@@ -61,6 +63,8 @@ async function bootstrap() {
     config.IAM_INTERNAL_URL,
     config.ENABLE_USAGE_TRACKING,
   );
+
+  const modulesService = new ModulesService(config.IAM_INTERNAL_URL);
 
   const suggestionService = new SuggestionService(repos, deepseekClient, usageTracker);
   // GrowthAgentService requires suggestionService to be instantiated first
@@ -112,6 +116,7 @@ async function bootstrap() {
   const api = new OpenAPIHono();
   api.use('*', authGuard);
   api.use('*', entitlementsGuard);
+  api.route('/me', createModulesRoutes(modulesService));
   api.route('/dashboard', createDashboardRoutes(dashboardService, insightService));
   api.route('/media', createMediaRoutes(dashboardService));
   api.route('/sync', createSyncRoutes(syncService));

@@ -19,15 +19,22 @@ import { SuggestionsPanel } from './suggestions-panel'
 import { UsageMeter } from './usage-meter'
 
 
-type ActiveTab = 'chat' | 'suggestions' | 'carousels'
+export type ActiveTab = 'chat' | 'suggestions' | 'carousels'
+
+const ALL_TABS: ActiveTab[] = ['chat', 'suggestions', 'carousels']
 
 interface FloatingAgentProps {
   hook: UseGrowthAgentResult
+  // Tabs this tenant/user is entitled to (ig-ai-chat / ig-ai-suggestions /
+  // ig-ai-carousels). Defaults to all three — the caller is responsible for
+  // not mounting FloatingAgent at all when the list would be empty (an agent
+  // with no permitted tabs is not a feature, see page.tsx).
+  permittedTabs?: ActiveTab[]
 }
 
-export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
+export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<ActiveTab>('chat')
+  const [activeTab, setActiveTab] = useState<ActiveTab>(permittedTabs[0] ?? 'chat')
   const [isExpanded, setIsExpanded] = useState(false)
   const [seenCount, setSeenCount] = useState(0)
   const [activeCarouselId, setActiveCarouselId] = useState<string | null>(null)
@@ -35,6 +42,15 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
   const [scriptPreview, setScriptPreview] = useState<{ topic: string; suggestionId?: string } | null>(null)
   const [usage, setUsage] = useState<UsageResponse | null>(null)
   const [usageLoading, setUsageLoading] = useState(false)
+
+  // If the active tab loses its permission (entitlements change under us),
+  // fall back to the first tab the tenant still has.
+  useEffect(() => {
+    if (permittedTabs.length > 0 && !permittedTabs.includes(activeTab)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked above
+      setActiveTab(permittedTabs[0]!)
+    }
+  }, [permittedTabs, activeTab])
 
   // Fetch usage data when the agent opens or tab changes
   useEffect(() => {
@@ -130,55 +146,61 @@ export function FloatingAgent({ hook }: FloatingAgentProps): JSX.Element {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs — only permitted ones render */}
         <div className="flex border-b border-border bg-muted/30">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => { setActiveTab('chat'); }}
-            className={`flex-1 rounded-none ${
-              activeTab === 'chat'
-                ? 'border-b-2 border-zinc-900 bg-background text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            aria-selected={activeTab === 'chat'}
-            role="tab"
-          >
-            Chat
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => { setActiveTab('suggestions'); }}
-            className={`flex-1 rounded-none ${
-              activeTab === 'suggestions'
-                ? 'border-b-2 border-zinc-900 bg-background text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            aria-selected={activeTab === 'suggestions'}
-            role="tab"
-          >
-            Sugerencias
-            {hook.suggestions.length > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-zinc-900 px-1.5 py-0.5 text-xs text-white">
-                {hook.suggestions.length}
-              </span>
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => { setActiveTab('carousels'); }}
-            className={`flex-1 rounded-none ${
-              activeTab === 'carousels'
-                ? 'border-b-2 border-zinc-900 bg-background text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            aria-selected={activeTab === 'carousels'}
-            role="tab"
-          >
-            Carruseles
-          </Button>
+          {permittedTabs.includes('chat') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setActiveTab('chat'); }}
+              className={`flex-1 rounded-none ${
+                activeTab === 'chat'
+                  ? 'border-b-2 border-zinc-900 bg-background text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-selected={activeTab === 'chat'}
+              role="tab"
+            >
+              Chat
+            </Button>
+          )}
+          {permittedTabs.includes('suggestions') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setActiveTab('suggestions'); }}
+              className={`flex-1 rounded-none ${
+                activeTab === 'suggestions'
+                  ? 'border-b-2 border-zinc-900 bg-background text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-selected={activeTab === 'suggestions'}
+              role="tab"
+            >
+              Sugerencias
+              {hook.suggestions.length > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-zinc-900 px-1.5 py-0.5 text-xs text-white">
+                  {hook.suggestions.length}
+                </span>
+              )}
+            </Button>
+          )}
+          {permittedTabs.includes('carousels') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setActiveTab('carousels'); }}
+              className={`flex-1 rounded-none ${
+                activeTab === 'carousels'
+                  ? 'border-b-2 border-zinc-900 bg-background text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-selected={activeTab === 'carousels'}
+              role="tab"
+            >
+              Carruseles
+            </Button>
+          )}
         </div>
 
         {/* Body — fill remaining space */}

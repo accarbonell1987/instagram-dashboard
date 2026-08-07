@@ -133,6 +133,16 @@ export async function getOAuthUrl(): Promise<string> {
   return result.data.url;
 }
 
+// ── Modules ──
+
+/** Module ids this tenant/user is entitled to for the instagram-dashboard product. */
+export async function getMyModules(): Promise<string[]> {
+  const result = await apiFetch<{ success: true; data: { moduleIds: string[] } }>(
+    '/api/me/modules',
+  );
+  return result.data.moduleIds;
+}
+
 // ── Sync ──
 
 export async function triggerSync(): Promise<SyncTriggerResult> {

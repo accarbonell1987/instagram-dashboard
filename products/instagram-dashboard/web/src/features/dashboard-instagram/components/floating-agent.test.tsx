@@ -193,4 +193,39 @@ describe('FloatingAgent', () => {
     // active dialog is the settings modal.
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
+
+  // ── Tab permissions (module gating) ──
+
+  it('only renders permitted tabs', () => {
+    render(<FloatingAgent hook={makeHook()} permittedTabs={['chat', 'carousels']} />)
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente de crecimiento/i }))
+
+    expect(screen.getByRole('tab', { name: /^Chat$/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Carruseles/i })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /Sugerencias/i })).not.toBeInTheDocument()
+  })
+
+  it('defaults the active tab to the first permitted one', () => {
+    render(<FloatingAgent hook={makeHook()} permittedTabs={['carousels']} />)
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente de crecimiento/i }))
+
+    expect(screen.getByRole('tab', { name: /Carruseles/i })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('falls back to the first permitted tab when the active one becomes forbidden', () => {
+    const { rerender } = render(
+      <FloatingAgent hook={makeHook()} permittedTabs={['chat', 'suggestions']} />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente de crecimiento/i }))
+
+    const suggestionsTab = screen.getByRole('tab', { name: /Sugerencias/i })
+    fireEvent.click(suggestionsTab)
+    expect(suggestionsTab).toHaveAttribute('aria-selected', 'true')
+
+    // Entitlements change under us — "suggestions" is no longer permitted
+    rerender(<FloatingAgent hook={makeHook()} permittedTabs={['chat', 'carousels']} />)
+
+    expect(screen.getByRole('tab', { name: /^Chat$/i })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByRole('tab', { name: /Sugerencias/i })).not.toBeInTheDocument()
+  })
 })

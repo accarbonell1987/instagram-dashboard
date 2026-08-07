@@ -554,4 +554,28 @@ describe('useGrowthAgent', () => {
     })
     expect(result.current.isSettingsOpen).toBe(false)
   })
+
+  // ── enabled option (page gates this on FloatingAgent being visible) ──
+
+  it('does not fetch batches, chat history, or settings when disabled', async () => {
+    renderHook(() => useGrowthAgent({ enabled: false }))
+
+    // Give any stray effect a tick to fire
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(mockedService.getSuggestionBatches).not.toHaveBeenCalled()
+    expect(mockedService.getChatHistory).not.toHaveBeenCalled()
+    expect(mockedService.getAgentSettings).not.toHaveBeenCalled()
+  })
+
+  it('fetches normally when enabled (default)', async () => {
+    const { result } = renderHook(() => useGrowthAgent())
+
+    await waitFor(() => {
+      expect(mockedService.getSuggestionBatches).toHaveBeenCalled()
+    })
+
+    expect(mockedService.getChatHistory).toHaveBeenCalledWith(result.current.sessionId)
+    expect(mockedService.getAgentSettings).toHaveBeenCalled()
+  })
 })
