@@ -42,6 +42,7 @@ export const AvailableProductSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
+  defaultUrl: z.string().optional(),
   modules: z.array(ProductModuleSchema),
 })
 

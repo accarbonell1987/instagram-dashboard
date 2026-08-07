@@ -177,6 +177,10 @@ model Product {
   id          String   @id
   name        String
   description String?
+  // The product's own address — where the hub navigates when it is opened.
+  // Nullable: a product created before this field existed (or through the
+  // product-role/module-scope test fixtures) has none yet.
+  defaultUrl  String?  @map("default_url")
   active      Boolean  @default(true)
   billingRef  String?  @map("billing_ref")
   trialEnabled      Boolean @default(true) @map("trial_enabled")

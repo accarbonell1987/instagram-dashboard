@@ -453,11 +453,12 @@ async function productIdOfModule(prisma: PrismaClient, moduleId: string): Promis
   return module.productId
 }
 
-function toProduct(row: { id: string; name: string; description: string | null }): AvailableProduct {
+function toProduct(row: { id: string; name: string; description: string | null; defaultUrl: string | null }): AvailableProduct {
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? undefined,
+    defaultUrl: row.defaultUrl ?? undefined,
   }
 }
 

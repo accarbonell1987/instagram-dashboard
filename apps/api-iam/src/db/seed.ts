@@ -305,14 +305,16 @@ async function seedInstagramProduct() {
   // tenant (backoffice → Trials), never something a fresh install hands out.
   // `update` sets it too, so re-seeding also switches off a product that was
   // created before this rule.
+  const defaultUrl = process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010';
   await prisma.product.upsert({
     where: { id: 'instagram-dashboard' },
-    update: { trialEnabled: false },
+    update: { trialEnabled: false, defaultUrl },
     create: {
       id: 'instagram-dashboard',
       name: 'Dashboard Instagram',
       description: 'Panel de análisis y métricas de Instagram',
       trialEnabled: false,
+      defaultUrl,
     },
   });
 

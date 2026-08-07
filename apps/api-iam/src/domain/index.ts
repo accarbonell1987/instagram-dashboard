@@ -258,6 +258,9 @@ export type AvailableProduct = {
   id: string
   name: string
   description: string | undefined
+  // The product's own address — where the hub navigates to open it. Absent
+  // for a product that hasn't been given one yet.
+  defaultUrl: string | undefined
 }
 
 export type AvailableProductWithModules = AvailableProduct & {

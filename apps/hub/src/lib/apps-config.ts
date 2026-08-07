@@ -55,16 +55,15 @@ export const productVisuals: Record<string, ModuleVisuals> = {
 
 const FALLBACK_VISUALS: ModuleVisuals = { icon: LayoutGrid, color: 'blue' };
 
-// A module or product without a hand-picked icon still renders — it used to be
-// dropped from the grid, which silently hid anything newly created in backoffice.
-export function getModuleVisuals(moduleId: string): ModuleVisuals {
-  return moduleVisuals[moduleId] ?? FALLBACK_VISUALS;
-}
-
+// A product without a hand-picked icon still renders — it used to be dropped
+// from the grid, which silently hid anything newly created in backoffice.
 export function getProductVisuals(productId: string): ModuleVisuals {
   return productVisuals[productId] ?? FALLBACK_VISUALS;
 }
 
-export function isLocalModule(defaultUrl: string): boolean {
+// A relative defaultUrl marks content the hub itself serves as an internal
+// page, rather than a remote app to iframe. No product uses this today (every
+// defaultUrl is absolute) but a future hub-hosted product can opt in for free.
+export function isLocalUrl(defaultUrl: string): boolean {
   return defaultUrl.startsWith('/');
 }

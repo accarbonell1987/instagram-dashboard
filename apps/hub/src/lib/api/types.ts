@@ -2438,6 +2438,8 @@ export interface components {
             id: string;
             name: string;
             description?: string;
+            /** @description Dirección propia del producto — a dónde navega el hub al abrirlo. Ausente si el producto todavía no la tiene configurada. */
+            defaultUrl?: string;
             modules: components["schemas"]["ProductModule"][];
         };
         AvailableProductList: {

@@ -124,6 +124,7 @@ export function createTenantModulesRouter(
           id: product.id,
           name: product.name,
           description: product.description,
+          defaultUrl: product.defaultUrl,
           modules: toModuleTree(product.modules),
         })),
       },

@@ -2321,6 +2321,7 @@ export const ProductScalarFieldEnum = {
   id: 'id',
   name: 'name',
   description: 'description',
+  defaultUrl: 'defaultUrl',
   active: 'active',
   billingRef: 'billingRef',
   trialEnabled: 'trialEnabled',
