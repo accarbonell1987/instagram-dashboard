@@ -29,10 +29,12 @@ const account = {
   accountHolder: 'Acme S.A.',
 };
 
-function setupHandlers(items: Record<string, unknown>[] = [
-  { method: 'bancard', enabled: true, displayName: 'Bancard', accounts: [] },
-  { method: 'bank_transfer', enabled: false, displayName: 'Bank transfer', accounts: [] },
-]) {
+function setupHandlers(
+  items: Record<string, unknown>[] = [
+    { method: 'bancard', enabled: true, displayName: 'Bancard', accounts: [] },
+    { method: 'bank_transfer', enabled: false, displayName: 'Bank transfer', accounts: [] },
+  ]
+) {
   server.use(
     http.get(`${BASE}/admin/payment-methods`, () => {
       return HttpResponse.json({ items });
@@ -48,14 +50,24 @@ function setupHandlers(items: Record<string, unknown>[] = [
 
       if (method === 'bancard' && !body.enabled) {
         return HttpResponse.json(
-          { type: 'about:blank', title: 'Conflict', status: 409, detail: 'payment_method.last_enabled' },
+          {
+            type: 'about:blank',
+            title: 'Conflict',
+            status: 409,
+            detail: 'payment_method.last_enabled',
+          },
           { status: 409, headers: { 'Content-Type': 'application/problem+json' } }
         );
       }
       const nextAccounts = body.accounts ?? current?.['accounts'] ?? [];
       if (method === 'bank_transfer' && body.enabled && (nextAccounts as unknown[]).length === 0) {
         return HttpResponse.json(
-          { type: 'about:blank', title: 'Conflict', status: 409, detail: 'payment_method.no_accounts_configured' },
+          {
+            type: 'about:blank',
+            title: 'Conflict',
+            status: 409,
+            detail: 'payment_method.no_accounts_configured',
+          },
           { status: 409, headers: { 'Content-Type': 'application/problem+json' } }
         );
       }
@@ -93,7 +105,9 @@ describe('PaymentMethodsPage', () => {
     await user.click(bancardSwitch);
 
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith('Al menos un método de pago debe permanecer habilitado.');
+      expect(toastError).toHaveBeenCalledWith(
+        'Al menos un método de pago debe permanecer habilitado.'
+      );
     });
   });
 
@@ -102,7 +116,9 @@ describe('PaymentMethodsPage', () => {
     setupHandlers();
     render(<PaymentMethodsPage />);
 
-    const bankTransferSwitch = await screen.findByRole('switch', { name: /habilitar transferencia bancaria/i });
+    const bankTransferSwitch = await screen.findByRole('switch', {
+      name: /habilitar transferencia bancaria/i,
+    });
     await user.click(bankTransferSwitch);
 
     await waitFor(() => {
@@ -117,8 +133,7 @@ describe('PaymentMethodsPage', () => {
     setupHandlers();
     render(<PaymentMethodsPage />);
 
-    const editButtons = await screen.findAllByRole('button', { name: 'Editar' });
-    await user.click(editButtons[1]!); // bank_transfer row
+    await user.click(await screen.findByRole('button', { name: 'Editar Bank transfer' }));
 
     await user.click(screen.getByRole('button', { name: 'Agregar cuenta' }));
     await user.type(screen.getByLabelText('Banco'), account.bankName);
@@ -149,11 +164,12 @@ describe('PaymentMethodsPage', () => {
     ]);
     render(<PaymentMethodsPage />);
 
-    const editButtons = await screen.findAllByRole('button', { name: 'Editar' });
-    await user.click(editButtons[1]!); // bank_transfer row
+    await user.click(await screen.findByRole('button', { name: 'Editar Bank transfer' }));
 
     const dialog = screen.getByRole('dialog');
-    await user.click(await within(dialog).findByRole('button', { name: `Editar cuenta de ${account.bankName}` }));
+    await user.click(
+      await within(dialog).findByRole('button', { name: `Editar cuenta de ${account.bankName}` })
+    );
 
     const accountHolderInput = within(dialog).getByLabelText('Titular');
     await user.clear(accountHolderInput);
@@ -174,16 +190,19 @@ describe('PaymentMethodsPage', () => {
     ]);
     render(<PaymentMethodsPage />);
 
-    const editButtons = await screen.findAllByRole('button', { name: 'Editar' });
-    await user.click(editButtons[1]!); // bank_transfer row
+    await user.click(await screen.findByRole('button', { name: 'Editar Bank transfer' }));
 
     const dialog = screen.getByRole('dialog');
-    await user.click(await within(dialog).findByRole('button', { name: `Eliminar cuenta de ${account.bankName}` }));
+    await user.click(
+      await within(dialog).findByRole('button', { name: `Eliminar cuenta de ${account.bankName}` })
+    );
 
     await waitFor(() => {
       expect(within(dialog).queryByText(account.bankName)).not.toBeInTheDocument();
     });
-    expect(within(dialog).getByText('Todavía no hay cuentas bancarias configuradas.')).toBeInTheDocument();
+    expect(
+      within(dialog).getByText('Todavía no hay cuentas bancarias configuradas.')
+    ).toBeInTheDocument();
   });
 
   it('requires a display name in the edit dialog', async () => {
@@ -191,8 +210,7 @@ describe('PaymentMethodsPage', () => {
     setupHandlers();
     render(<PaymentMethodsPage />);
 
-    const editButtons = await screen.findAllByRole('button', { name: 'Editar' });
-    await user.click(editButtons[0]!); // bancard row
+    await user.click(await screen.findByRole('button', { name: 'Editar Bancard' }));
 
     const displayNameInput = screen.getByLabelText('Nombre visible');
     await user.clear(displayNameInput);

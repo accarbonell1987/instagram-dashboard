@@ -564,7 +564,7 @@ function SortablePlanRow({
             )}
           </Button>
           <Button
-            variant="ghost"
+            variant="ghost-warning"
             size="icon-sm"
             onClick={() => {
               onEdit(plan);

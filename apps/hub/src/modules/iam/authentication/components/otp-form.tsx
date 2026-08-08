@@ -174,10 +174,16 @@ export function OtpForm({
               />
             )}
             {verificationStatus === 'success' && (
-              <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-500" aria-label="Código verificado" />
+              <CheckCircle2
+                className="text-success h-5 w-5 flex-shrink-0"
+                aria-label="Código verificado"
+              />
             )}
             {verificationStatus === 'error' && (
-              <XCircle className="text-destructive h-5 w-5 flex-shrink-0" aria-label="Código incorrecto" />
+              <XCircle
+                className="text-destructive h-5 w-5 flex-shrink-0"
+                aria-label="Código incorrecto"
+              />
             )}
           </div>
         </div>
@@ -204,11 +210,20 @@ export function OtpForm({
         <Button
           type="button"
           onClick={() => void handleVerifyWithCode(code)}
-          disabled={code.length !== OTP_LENGTH || isLocked || isVerifying || verificationStatus === 'success'}
+          disabled={
+            code.length !== OTP_LENGTH ||
+            isLocked ||
+            isVerifying ||
+            verificationStatus === 'success'
+          }
           aria-busy={isVerifying}
           className="mx-auto w-full max-w-sm"
         >
-          {isVerifying ? 'Verificando...' : verificationStatus === 'success' ? 'Verificado' : 'Verificar código'}
+          {isVerifying
+            ? 'Verificando...'
+            : verificationStatus === 'success'
+              ? 'Verificado'
+              : 'Verificar código'}
         </Button>
       )}
 

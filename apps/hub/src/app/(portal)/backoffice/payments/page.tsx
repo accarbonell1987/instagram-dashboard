@@ -17,6 +17,7 @@ import {
   SelectValue,
   Textarea,
 } from '@core/ui';
+import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent, type JSX } from 'react';
 
 import { ApiError } from '@/lib/api/errors';
@@ -158,7 +159,8 @@ function SettlementDialog({
             aria-required="true"
           />
           <p id="settlement-note-hint" className="text-muted-foreground text-xs">
-            Esto queda como registro de auditoría y es lo que el cliente ve en su historial de pagos.
+            Esto queda como registro de auditoría y es lo que el cliente ve en su historial de
+            pagos.
           </p>
         </div>
 
@@ -181,10 +183,11 @@ function SettlementDialog({
           </Button>
           <Button
             type="button"
-            variant={isConfirm ? 'default' : 'destructive'}
+            variant={isConfirm ? 'success' : 'destructive'}
             onClick={() => void handleSubmit()}
             disabled={isSaving || !noteIsValid}
           >
+            {isConfirm && !isSaving && <Check className="h-4 w-4" />}
             {isSaving ? 'Guardando...' : isConfirm ? 'Confirmar pago' : 'Rechazar pago'}
           </Button>
         </DialogFooter>
@@ -295,7 +298,9 @@ export default function PaymentsQueuePage(): JSX.Element {
         <p className="text-muted-foreground p-4 text-sm">Cargando pagos...</p>
       ) : payments.length === 0 ? (
         <div className="border-border bg-card rounded-lg border p-8 text-center">
-          <p className="text-muted-foreground text-sm">No hay pagos que coincidan con este filtro.</p>
+          <p className="text-muted-foreground text-sm">
+            No hay pagos que coincidan con este filtro.
+          </p>
         </div>
       ) : (
         <>
@@ -342,12 +347,13 @@ export default function PaymentsQueuePage(): JSX.Element {
                         <div className="flex justify-end gap-2">
                           <Button
                             size="sm"
-                            variant="default"
+                            variant="success"
                             onClick={() => {
                               setActionTarget({ payment, action: 'confirm' });
                             }}
                             aria-label={`Confirmar pago ${payment.reference ?? payment.id}`}
                           >
+                            <Check className="h-4 w-4" />
                             Confirmar
                           </Button>
                           <Button

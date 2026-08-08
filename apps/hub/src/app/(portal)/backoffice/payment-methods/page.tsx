@@ -20,7 +20,7 @@ import {
 } from '@core/ui';
 import type { BankAccountField } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -111,7 +111,10 @@ function EditMethodDialog({
     resolver: zodResolver(editSchema),
     defaultValues: { displayName: '', accounts: [] },
   });
-  const { fields, append, remove, update } = useFieldArray({ control: form.control, name: 'accounts' });
+  const { fields, append, remove, update } = useFieldArray({
+    control: form.control,
+    name: 'accounts',
+  });
 
   useEffect(() => {
     if (config !== null) {
@@ -178,7 +181,9 @@ function EditMethodDialog({
       onOpenChange(false);
     } catch (err: unknown) {
       if (err instanceof ConflictError && conflictCode(err) === NO_ACCOUNTS_CODE) {
-        setError('Agregá al menos una cuenta bancaria antes de habilitar la transferencia bancaria.');
+        setError(
+          'Agregá al menos una cuenta bancaria antes de habilitar la transferencia bancaria.'
+        );
       } else {
         setError(err instanceof ApiError ? err.message : 'No se pudieron guardar los cambios');
       }
@@ -197,7 +202,11 @@ function EditMethodDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={(e) => void form.handleSubmit(handleSubmit)(e)} noValidate className="space-y-4">
+        <form
+          onSubmit={(e) => void form.handleSubmit(handleSubmit)(e)}
+          noValidate
+          className="space-y-4"
+        >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="method-display-name">Nombre visible</Label>
             <Input
@@ -205,7 +214,9 @@ function EditMethodDialog({
               disabled={isSubmitting}
               aria-invalid={form.formState.errors.displayName !== undefined}
               aria-describedby={
-                form.formState.errors.displayName !== undefined ? 'method-display-name-error' : undefined
+                form.formState.errors.displayName !== undefined
+                  ? 'method-display-name-error'
+                  : undefined
               }
               {...form.register('displayName')}
             />
@@ -232,7 +243,9 @@ function EditMethodDialog({
               </div>
 
               {fields.length === 0 && editing === null && (
-                <p className="text-muted-foreground text-xs">Todavía no hay cuentas bancarias configuradas.</p>
+                <p className="text-muted-foreground text-xs">
+                  Todavía no hay cuentas bancarias configuradas.
+                </p>
               )}
 
               {/* table-fixed is what makes the truncate on the cells work at all:
@@ -274,19 +287,19 @@ function EditMethodDialog({
                               <div className="flex justify-end gap-1">
                                 <Button
                                   type="button"
-                                  variant="ghost"
-                                  size="sm"
+                                  variant="ghost-warning"
+                                  size="icon-sm"
                                   onClick={() => {
                                     handleEditAccount(index);
                                   }}
                                   aria-label={`Editar cuenta de ${account.bankName}`}
                                   disabled={isSubmitting || editing !== null}
                                 >
-                                  Editar
+                                  <Pencil className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   type="button"
-                                  variant="ghost"
+                                  variant="ghost-destructive"
                                   size="icon-sm"
                                   onClick={() => {
                                     remove(index);
@@ -315,8 +328,12 @@ function EditMethodDialog({
                       highlight={focusField}
                       labels={BANK_ACCOUNT_CARD_LABELS}
                       bankName={form.watch(`accounts.${editing.index}.bankName`) || 'Banco'}
-                      accountNumber={form.watch(`accounts.${editing.index}.accountNumber`) || '····'}
-                      accountHolder={form.watch(`accounts.${editing.index}.accountHolder`) || 'Titular'}
+                      accountNumber={
+                        form.watch(`accounts.${editing.index}.accountNumber`) || '····'
+                      }
+                      accountHolder={
+                        form.watch(`accounts.${editing.index}.accountHolder`) || 'Titular'
+                      }
                       accountType={form.watch(`accounts.${editing.index}.accountType`)}
                     />
                   </div>
@@ -327,17 +344,25 @@ function EditMethodDialog({
                       <Input
                         id={`account-${editing.index}-bankName`}
                         disabled={isSubmitting}
-                        aria-invalid={form.formState.errors.accounts?.[editing.index]?.bankName !== undefined}
+                        aria-invalid={
+                          form.formState.errors.accounts?.[editing.index]?.bankName !== undefined
+                        }
                         aria-describedby={
                           form.formState.errors.accounts?.[editing.index]?.bankName !== undefined
                             ? `account-${editing.index}-bankName-error`
                             : undefined
                         }
                         {...form.register(`accounts.${editing.index}.bankName`)}
-                        onFocus={() => { setFocusField('bankName'); }}
+                        onFocus={() => {
+                          setFocusField('bankName');
+                        }}
                       />
                       {form.formState.errors.accounts?.[editing.index]?.bankName !== undefined && (
-                        <p id={`account-${editing.index}-bankName-error`} role="alert" className="text-destructive text-xs">
+                        <p
+                          id={`account-${editing.index}-bankName-error`}
+                          role="alert"
+                          className="text-destructive text-xs"
+                        >
                           {form.formState.errors.accounts[editing.index]?.bankName?.message}
                         </p>
                       )}
@@ -348,15 +373,21 @@ function EditMethodDialog({
                       <Select
                         value={form.watch(`accounts.${editing.index}.accountType`)}
                         onValueChange={(value) => {
-                          form.setValue(`accounts.${editing.index}.accountType`, value as 'checking' | 'savings', {
-                            shouldValidate: true,
-                          });
+                          form.setValue(
+                            `accounts.${editing.index}.accountType`,
+                            value as 'checking' | 'savings',
+                            {
+                              shouldValidate: true,
+                            }
+                          );
                         }}
                         disabled={isSubmitting}
                       >
                         <SelectTrigger
                           id={`account-${editing.index}-accountType`}
-                          onFocus={() => { setFocusField('accountType'); }}
+                          onFocus={() => {
+                            setFocusField('accountType');
+                          }}
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -368,21 +399,34 @@ function EditMethodDialog({
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <Label htmlFor={`account-${editing.index}-accountNumber`}>Número de cuenta</Label>
+                      <Label htmlFor={`account-${editing.index}-accountNumber`}>
+                        Número de cuenta
+                      </Label>
                       <Input
                         id={`account-${editing.index}-accountNumber`}
                         disabled={isSubmitting}
-                        aria-invalid={form.formState.errors.accounts?.[editing.index]?.accountNumber !== undefined}
+                        aria-invalid={
+                          form.formState.errors.accounts?.[editing.index]?.accountNumber !==
+                          undefined
+                        }
                         aria-describedby={
-                          form.formState.errors.accounts?.[editing.index]?.accountNumber !== undefined
+                          form.formState.errors.accounts?.[editing.index]?.accountNumber !==
+                          undefined
                             ? `account-${editing.index}-accountNumber-error`
                             : undefined
                         }
                         {...form.register(`accounts.${editing.index}.accountNumber`)}
-                        onFocus={() => { setFocusField('accountNumber'); }}
+                        onFocus={() => {
+                          setFocusField('accountNumber');
+                        }}
                       />
-                      {form.formState.errors.accounts?.[editing.index]?.accountNumber !== undefined && (
-                        <p id={`account-${editing.index}-accountNumber-error`} role="alert" className="text-destructive text-xs">
+                      {form.formState.errors.accounts?.[editing.index]?.accountNumber !==
+                        undefined && (
+                        <p
+                          id={`account-${editing.index}-accountNumber-error`}
+                          role="alert"
+                          className="text-destructive text-xs"
+                        >
                           {form.formState.errors.accounts[editing.index]?.accountNumber?.message}
                         </p>
                       )}
@@ -393,17 +437,28 @@ function EditMethodDialog({
                       <Input
                         id={`account-${editing.index}-accountHolder`}
                         disabled={isSubmitting}
-                        aria-invalid={form.formState.errors.accounts?.[editing.index]?.accountHolder !== undefined}
+                        aria-invalid={
+                          form.formState.errors.accounts?.[editing.index]?.accountHolder !==
+                          undefined
+                        }
                         aria-describedby={
-                          form.formState.errors.accounts?.[editing.index]?.accountHolder !== undefined
+                          form.formState.errors.accounts?.[editing.index]?.accountHolder !==
+                          undefined
                             ? `account-${editing.index}-accountHolder-error`
                             : undefined
                         }
                         {...form.register(`accounts.${editing.index}.accountHolder`)}
-                        onFocus={() => { setFocusField('accountHolder'); }}
+                        onFocus={() => {
+                          setFocusField('accountHolder');
+                        }}
                       />
-                      {form.formState.errors.accounts?.[editing.index]?.accountHolder !== undefined && (
-                        <p id={`account-${editing.index}-accountHolder-error`} role="alert" className="text-destructive text-xs">
+                      {form.formState.errors.accounts?.[editing.index]?.accountHolder !==
+                        undefined && (
+                        <p
+                          id={`account-${editing.index}-accountHolder-error`}
+                          role="alert"
+                          className="text-destructive text-xs"
+                        >
                           {form.formState.errors.accounts[editing.index]?.accountHolder?.message}
                         </p>
                       )}
@@ -411,7 +466,13 @@ function EditMethodDialog({
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={handleCancelAccount} disabled={isSubmitting}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelAccount}
+                      disabled={isSubmitting}
+                    >
                       Cancelar cuenta
                     </Button>
                     <Button
@@ -493,9 +554,13 @@ export default function PaymentMethodsPage(): JSX.Element {
       if (err instanceof ConflictError && conflictCode(err) === LAST_ENABLED_CODE) {
         toast.error('Al menos un método de pago debe permanecer habilitado.');
       } else if (err instanceof ConflictError && conflictCode(err) === NO_ACCOUNTS_CODE) {
-        toast.error('Agregá al menos una cuenta bancaria antes de habilitar la transferencia bancaria.');
+        toast.error(
+          'Agregá al menos una cuenta bancaria antes de habilitar la transferencia bancaria.'
+        );
       } else {
-        toast.error(err instanceof ApiError ? err.message : 'No se pudo actualizar el método de pago');
+        toast.error(
+          err instanceof ApiError ? err.message : 'No se pudo actualizar el método de pago'
+        );
       }
     } finally {
       setSavingMethod(null);
@@ -521,37 +586,38 @@ export default function PaymentMethodsPage(): JSX.Element {
             return (
               <div key={config.method} className="p-4">
                 <div className="flex items-center justify-between gap-4">
-                <div>
-                  <Label htmlFor={`method-${config.method}`} className="font-medium">
-                    {config.displayName ?? METHOD_LABELS[config.method]}
-                  </Label>
-                  {config.method === 'bank_transfer' && accountCount === 0 && (
-                    <p className="text-muted-foreground mt-0.5 text-xs">
-                      Todavía no hay cuentas bancarias configuradas.
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditingConfig(config);
-                    }}
-                  >
-                    Editar
-                  </Button>
-                  <Switch
-                    id={`method-${config.method}`}
-                    checked={config.enabled}
-                    disabled={savingMethod !== null}
-                    onCheckedChange={(checked) => {
-                      void handleToggle(config.method, checked);
-                    }}
-                    aria-label={`${config.enabled ? 'Deshabilitar' : 'Habilitar'} ${METHOD_LABELS[config.method]}`}
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor={`method-${config.method}`} className="font-medium">
+                      {config.displayName ?? METHOD_LABELS[config.method]}
+                    </Label>
+                    {config.method === 'bank_transfer' && accountCount === 0 && (
+                      <p className="text-muted-foreground mt-0.5 text-xs">
+                        Todavía no hay cuentas bancarias configuradas.
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost-warning"
+                      size="icon-sm"
+                      onClick={() => {
+                        setEditingConfig(config);
+                      }}
+                      aria-label={`Editar ${config.displayName ?? METHOD_LABELS[config.method]}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Switch
+                      id={`method-${config.method}`}
+                      checked={config.enabled}
+                      disabled={savingMethod !== null}
+                      onCheckedChange={(checked) => {
+                        void handleToggle(config.method, checked);
+                      }}
+                      aria-label={`${config.enabled ? 'Deshabilitar' : 'Habilitar'} ${METHOD_LABELS[config.method]}`}
+                    />
+                  </div>
                 </div>
 
                 {config.method === 'bank_transfer' && accountCount > 0 && (

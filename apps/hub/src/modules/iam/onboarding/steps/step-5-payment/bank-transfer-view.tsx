@@ -22,7 +22,11 @@ export interface BankTransferViewProps {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function BankTransferView({ draftId, plan, instruction }: BankTransferViewProps): JSX.Element {
+export function BankTransferView({
+  draftId,
+  plan,
+  instruction,
+}: BankTransferViewProps): JSX.Element {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
 
@@ -73,7 +77,7 @@ export function BankTransferView({ draftId, plan, instruction }: BankTransferVie
             onClick={handleCopyReference}
             aria-label={copied ? 'Referencia copiada' : 'Copiar referencia'}
           >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            {copied ? <Check className="text-success h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
 
@@ -97,7 +101,9 @@ export function BankTransferView({ draftId, plan, instruction }: BankTransferVie
               <p className="text-foreground text-sm font-semibold">{account.bankName}</p>
               <dl className="text-muted-foreground mt-1 grid grid-cols-[auto_1fr] gap-x-2 text-sm">
                 <dt>Tipo:</dt>
-                <dd>{account.accountType === 'checking' ? 'Cuenta corriente' : 'Caja de ahorro'}</dd>
+                <dd>
+                  {account.accountType === 'checking' ? 'Cuenta corriente' : 'Caja de ahorro'}
+                </dd>
                 <dt>Número:</dt>
                 <dd className="select-all font-mono">{account.accountNumber}</dd>
                 <dt>Titular:</dt>
@@ -109,8 +115,8 @@ export function BankTransferView({ draftId, plan, instruction }: BankTransferVie
       </div>
 
       <p className="text-muted-foreground text-center text-xs">
-        No hace falta que esperes acá — podés continuar y te avisamos por correo apenas
-        confirmemos tu pago.
+        No hace falta que esperes acá — podés continuar y te avisamos por correo apenas confirmemos
+        tu pago.
       </p>
     </div>
   );

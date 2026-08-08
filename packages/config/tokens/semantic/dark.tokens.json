@@ -65,6 +65,26 @@
       "$type": "hsl",
       "$value": "0 0% 98%"
     },
+    "warning": {
+      "$type": "hsl",
+      "$value": "30 95% 40%"
+    },
+    "warningForeground": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "success": {
+      "$type": "hsl",
+      "$value": "161 94% 30%"
+    },
+    "successForeground": {
+      "$type": "hsl",
+      "$value": "0 0% 98%"
+    },
+    "destructiveAccent": {
+      "$type": "hsl",
+      "$value": "0 84.2% 60.2%"
+    },
     "border": {
       "$type": "hsl",
       "$value": "240 3.7% 15.9%"
