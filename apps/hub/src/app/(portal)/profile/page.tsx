@@ -77,10 +77,13 @@ export default function ProfilePage(): JSX.Element {
   };
 
   return (
-    <div className="max-w-lg">
+    // Standalone route: the portal layout only clears the fixed header, so the
+    // page owns its own container. mx-auto centres the single narrow column —
+    // under /settings a sidebar used to sit to its left and provide the offset.
+    <div className="mx-auto max-w-lg px-4 py-8">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Mi perfil</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-foreground text-2xl font-semibold">Mi perfil</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Actualizá tu nombre completo y teléfono de contacto.
         </p>
       </div>
