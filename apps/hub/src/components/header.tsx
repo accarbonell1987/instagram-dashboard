@@ -100,9 +100,14 @@ export function Header() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      Mi Perfil
+                    {/* Personal settings live here, not behind the gear: that
+                        button is admin-only, so a regular user had no way to
+                        reach their own profile. */}
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link href="/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        Mi Perfil
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="cursor-pointer text-red-600 focus:text-red-600"
