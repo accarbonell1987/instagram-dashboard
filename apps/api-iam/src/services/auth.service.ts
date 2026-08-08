@@ -74,6 +74,7 @@ export type MeResult = {
     name: string;
     planId: string;
     status: TenantStatus;
+    colorTheme: string | undefined;
   };
   role: UserRole;
 };
@@ -312,6 +313,7 @@ export function createAuthService(deps: AuthServiceDeps) {
         name: tenant.name,
         planId: tenant.planId,
         status: tenant.status,
+        colorTheme: tenant.colorTheme,
       },
       role: user.role,
     };

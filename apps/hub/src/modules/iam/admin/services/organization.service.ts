@@ -18,3 +18,11 @@ export async function updateTenantName(name: string): Promise<void> {
     body: { name },
   });
 }
+
+/** Visual style for the whole tenant — every user of it sees this on open. */
+export async function updateTenantColorTheme(colorTheme: string): Promise<void> {
+  await apiFetchWithInterceptors('/tenants/current', {
+    method: 'PATCH',
+    body: { colorTheme },
+  });
+}

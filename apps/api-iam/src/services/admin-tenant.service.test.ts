@@ -40,6 +40,7 @@ function makeDeps(overrides: Partial<AdminTenantServiceDeps> = {}): AdminTenantS
       create: vi.fn(),
       updateStatus: vi.fn().mockResolvedValue(makeTenant({ status: 'suspended' })),
       updateName: vi.fn(),
+      updateColorTheme: vi.fn(),
       findAllPaginated: vi.fn().mockResolvedValue({
         items: [makeTenantWithDetails(), makeTenantWithDetails({ id: 'tenant-2', status: 'suspended' })],
         total: 2,

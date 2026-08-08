@@ -39,6 +39,7 @@ function makeTenant(overrides: Partial<Tenant> = {}): Tenant {
     schemaName: 'tenant_acme',
     planId: 'professional',
     status: 'active',
+    colorTheme: undefined,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

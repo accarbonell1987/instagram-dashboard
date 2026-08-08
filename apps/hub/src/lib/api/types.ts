@@ -1818,6 +1818,7 @@ export interface components {
          *       "name": "Empresa Acme S.A.",
          *       "planId": "professional",
          *       "status": "active",
+         *       "colorTheme": "violet",
          *       "createdAt": "2025-04-30T00:00:00Z",
          *       "updatedAt": "2025-05-10T12:00:00Z"
          *     }
@@ -1830,6 +1831,7 @@ export interface components {
             planId: string;
             /** @enum {string} */
             status: "pending" | "active" | "suspended";
+            colorTheme?: string | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -2395,7 +2397,8 @@ export interface components {
             items: components["schemas"]["MemberListItem"][];
         };
         UpdateTenantNameRequest: {
-            name: string;
+            name?: string;
+            colorTheme?: string;
         };
         UpdateMemberStatusRequest: {
             /** @enum {string} */

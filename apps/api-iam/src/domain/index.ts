@@ -78,6 +78,8 @@ export interface Tenant {
   schemaName: string;
   planId: string;
   status: TenantStatus;
+  /** Theme slug applied to every user of this tenant; null = platform default. */
+  colorTheme: string | undefined;
   createdAt: Date;
   updatedAt: Date;
 }

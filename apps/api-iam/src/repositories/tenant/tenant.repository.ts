@@ -18,6 +18,7 @@ function mapTenant(raw: {
   schemaName: string
   planId: string
   status: string
+  colorTheme: string | null
   createdAt: Date
   updatedAt: Date
 }): Tenant {
@@ -28,6 +29,7 @@ function mapTenant(raw: {
     schemaName: raw.schemaName,
     planId: raw.planId,
     status: raw.status as Tenant['status'],
+    colorTheme: raw.colorTheme ?? undefined,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   }
@@ -67,6 +69,10 @@ export class PrismaTenantRepository implements TenantRepository {
 
   async updateName(id: string, name: string): Promise<void> {
     await this.prisma.tenant.update({ where: { id }, data: { name } })
+  }
+
+  async updateColorTheme(id: string, colorTheme: string): Promise<void> {
+    await this.prisma.tenant.update({ where: { id }, data: { colorTheme } })
   }
 
   async findAllPaginated(query: TenantListQuery): Promise<TenantListResult> {

@@ -277,7 +277,14 @@ export const authHandlers = [
       },
       tenant:
         tenant !== null
-          ? { id: tenant.id, slug: tenant.slug, name: tenant.name, planId: tenant.planId, status: tenant.status }
+          ? {
+              id: tenant.id,
+              slug: tenant.slug,
+              name: tenant.name,
+              planId: tenant.planId,
+              status: tenant.status,
+              colorTheme: tenant.colorTheme ?? null,
+            }
           : null,
       role: user.role,
     } as Record<string, unknown>);

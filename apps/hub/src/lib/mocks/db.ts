@@ -29,6 +29,7 @@ export const db = factory({
     name: String,
     planId: String,
     status: String,
+    colorTheme: nullable(String),
     createdAt: String,
     updatedAt: String,
   },

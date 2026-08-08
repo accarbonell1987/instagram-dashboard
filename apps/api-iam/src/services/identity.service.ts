@@ -82,16 +82,27 @@ export function createIdentityService(deps: IdentityServiceDeps) {
 
   async function updateTenant(params: {
     tenantUuid: string
-    name: string
+    name?: string | undefined
+    colorTheme?: string | undefined
     requesterRole: string
   }): Promise<void> {
     if (params.requesterRole !== 'TenantAdmin' && params.requesterRole !== 'SuperAdmin') {
       throw new ForbiddenError('identity.tenant.forbidden')
     }
-    if (params.name.trim().length < 1) {
-      throw new ValidationError('identity.tenant.name_required')
+
+    if (params.name !== undefined) {
+      if (params.name.trim().length < 1) {
+        throw new ValidationError('identity.tenant.name_required')
+      }
+      await tenantRepo.updateName(params.tenantUuid, params.name.trim())
     }
-    await tenantRepo.updateName(params.tenantUuid, params.name.trim())
+
+    // The theme slug is only shape-checked here and at the route. The frontend
+    // theme registry owns the list of real names, and falls back to the default
+    // for anything it does not recognise.
+    if (params.colorTheme !== undefined) {
+      await tenantRepo.updateColorTheme(params.tenantUuid, params.colorTheme)
+    }
   }
 
   async function updateMemberStatus(params: {

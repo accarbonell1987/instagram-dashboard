@@ -143,10 +143,27 @@ Note: Backend currently only supports recovering to `'company'` step. For `repre
 
 ## Settings — Rutas y acceso
 
+**`/settings` es configuración de la ORGANIZACIÓN** (se entra por el engranaje del header, solo admins).
+**`/profile` es configuración PERSONAL** (se entra por el dropdown del avatar, todos los roles).
+No mezclarlas: el engranaje está detrás de `canAccessSettings`, así que cualquier cosa personal
+puesta bajo `/settings` queda inalcanzable para el rol `User`.
+
 | Ruta                           | Módulo      | Roles requeridos                |
 | ------------------------------ | ----------- | ------------------------------- |
+| `/profile`                     | `identity`  | todos                           |
 | `/settings/organization`       | `admin`     | TenantAdmin, SuperAdmin         |
 | `/settings/team`               | `admin`     | TenantAdmin, SuperAdmin         |
 | `/settings/billing`            | `billing`   | TenantAdmin, SuperAdmin         |
+
+## Theming — quién decide qué
+
+- **Color theme = del TENANT.** Lo elige un admin en `/settings/organization` (`VisualStyleCard`),
+  se guarda en `tenants.color_theme` vía `PATCH /tenants/current`, y `TenantThemeSync` lo aplica a
+  todos los usuarios del tenant leyéndolo de `GET /auth/me`. No hay selector de color por usuario.
+- **Dark/light = del USUARIO.** Sigue en el header (`ThemeToggleSelector`) — es confort, no marca.
+- El registry de `@core/config/styles/themes/registry` es la autoridad sobre qué nombres existen;
+  la API solo valida la forma del slug. Un nombre desconocido se ignora y queda el tema actual.
+- `localStorage` sigue sembrando `ThemeProvider` al montar: funciona como caché del tema del tenant
+  y evita el flash en la segunda carga. `/auth/me` lo corrige si el admin lo cambió.
 
 El layout de settings filtra los NavLinks por rol via `useSession()`. Los NavLinks con `requiresRole` solo aparecen si el rol del usuario está en la lista.

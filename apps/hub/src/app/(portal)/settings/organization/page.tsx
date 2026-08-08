@@ -7,6 +7,7 @@ import type { components } from '@/lib/api/types';
 import { CurrentPlanCard } from '@/modules/iam/admin/components/current-plan-card';
 import { OrganizationCard } from '@/modules/iam/admin/components/organization-card';
 import { PlanChangeRequestDialog } from '@/modules/iam/admin/components/plan-change-request-dialog';
+import { VisualStyleCard } from '@/modules/iam/admin/components/visual-style-card';
 import {
   getCurrentTenant,
   updateTenantName as updateTenantNameApi,
@@ -55,15 +56,20 @@ export default function OrganizationPage(): JSX.Element {
       <div className="flex flex-col gap-6">
         <h2 className="text-foreground text-xl font-semibold">Organización</h2>
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-          <OrganizationCard
-            tenant={tenant}
-            isLoading={isLoading}
-            onSaveName={handleSaveName}
-          />
+          <OrganizationCard tenant={tenant} isLoading={isLoading} onSaveName={handleSaveName} />
           <CurrentPlanCard
             plan={currentPlan}
             isLoading={isLoading}
-            onChangePlan={() => { setPlanChangeOpen(true); }}
+            onChangePlan={() => {
+              setPlanChangeOpen(true);
+            }}
+          />
+          <VisualStyleCard
+            colorTheme={tenant?.colorTheme ?? null}
+            isLoading={isLoading}
+            onSaved={(colorTheme) => {
+              setTenant((current) => (current === null ? current : { ...current, colorTheme }));
+            }}
           />
         </div>
       </div>

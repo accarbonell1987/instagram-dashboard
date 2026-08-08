@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.21.0
+  version: 1.22.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -373,6 +373,10 @@ components:
         status:
           type: string
           enum: [pending, active, suspended]
+        # Visual style applied to every user of this tenant. null = platform
+        # default. Shape-checked only: the frontend theme registry owns the
+        # list of real names and falls back to the default for unknown ones.
+        colorTheme: { type: ['string', 'null'], pattern: '^[a-z][a-z0-9-]{1,39}$' }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
       example:
@@ -381,6 +385,7 @@ components:
         name: Empresa Acme S.A.
         planId: professional
         status: active
+        colorTheme: violet
         createdAt: '2025-04-30T00:00:00Z'
         updatedAt: '2025-05-10T12:00:00Z'
 
@@ -1071,14 +1076,20 @@ components:
           items:
             $ref: '#/components/schemas/MemberListItem'
 
+    # Despite the name (kept for contract compatibility), this updates tenant
+    # settings in general. Both fields are optional so the settings screen can
+    # save either one on its own, but at least one must be present.
     UpdateTenantNameRequest:
       type: object
-      required: [name]
+      minProperties: 1
       properties:
         name:
           type: string
           minLength: 1
           maxLength: 200
+        colorTheme:
+          type: string
+          pattern: '^[a-z][a-z0-9-]{1,39}$'
 
     UpdateMemberStatusRequest:
       type: object

@@ -20,6 +20,7 @@ export const TenantInSessionSchema = z.object({
   name: z.string(),
   planId: z.string(),
   status: z.enum(['active', 'suspended', 'pending']),
+  colorTheme: z.string().nullable().optional(),
 });
 
 export const SessionSchema = z.object({
