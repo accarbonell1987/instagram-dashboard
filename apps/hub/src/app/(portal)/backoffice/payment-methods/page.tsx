@@ -18,6 +18,7 @@ import {
   SelectValue,
   Switch,
 } from '@core/ui';
+import type { BankAccountField } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
@@ -74,6 +75,18 @@ const editSchema = z.object({
 });
 
 type EditFormData = z.infer<typeof editSchema>;
+type BankAccountFormValues = z.infer<typeof bankAccountSchema>;
+
+const EMPTY_ACCOUNT: BankAccountFormValues = {
+  bankName: '',
+  accountType: 'checking',
+  accountNumber: '',
+  accountHolder: '',
+};
+
+function accountTypeLabel(type: BankAccountFormValues['accountType']): string {
+  return type === 'checking' ? BANK_ACCOUNT_CARD_LABELS.checking : BANK_ACCOUNT_CARD_LABELS.savings;
+}
 
 function EditMethodDialog({
   config,
@@ -85,16 +98,28 @@ function EditMethodDialog({
   onSaved: (updated: AdminPaymentMethodConfig) => void;
 }): JSX.Element {
   const [error, setError] = useState('');
+  // The account currently open in the inline edit panel — at most one at a
+  // time, so there is no ambiguity about which row the preview card reflects.
+  const [editing, setEditing] = useState<{ index: number; isNew: boolean } | null>(null);
+  // Snapshot taken when an existing row enters edit mode, restored on cancel.
+  const [snapshot, setSnapshot] = useState<BankAccountFormValues | null>(null);
+  // Which field of the account being edited the operator is in. The preview
+  // card rings that region. Not cleared on blur: the ring following the caret
+  // is the point, and a card that empties between fields flickers.
+  const [focusField, setFocusField] = useState<BankAccountField | null>(null);
   const form = useForm<EditFormData>({
     resolver: zodResolver(editSchema),
     defaultValues: { displayName: '', accounts: [] },
   });
-  const { fields, append, remove } = useFieldArray({ control: form.control, name: 'accounts' });
+  const { fields, append, remove, update } = useFieldArray({ control: form.control, name: 'accounts' });
 
   useEffect(() => {
     if (config !== null) {
       form.reset({ displayName: config.displayName ?? '', accounts: config.accounts ?? [] });
       setError('');
+      setEditing(null);
+      setSnapshot(null);
+      setFocusField(null);
     }
   }, [config, form]);
 
@@ -104,6 +129,39 @@ function EditMethodDialog({
   function handleOpenChange(nextOpen: boolean): void {
     if (!nextOpen) setError('');
     onOpenChange(nextOpen);
+  }
+
+  function handleAddAccount(): void {
+    append(EMPTY_ACCOUNT);
+    setEditing({ index: fields.length, isNew: true });
+    setFocusField(null);
+  }
+
+  function handleEditAccount(index: number): void {
+    setSnapshot(form.getValues(`accounts.${index}`));
+    setEditing({ index, isNew: false });
+    setFocusField(null);
+  }
+
+  function handleCancelAccount(): void {
+    if (editing === null) return;
+    if (editing.isNew) {
+      remove(editing.index);
+    } else if (snapshot !== null) {
+      update(editing.index, snapshot);
+    }
+    setEditing(null);
+    setSnapshot(null);
+    setFocusField(null);
+  }
+
+  async function handleSaveAccount(): Promise<void> {
+    if (editing === null) return;
+    const valid = await form.trigger(`accounts.${editing.index}`);
+    if (!valid) return;
+    setEditing(null);
+    setSnapshot(null);
+    setFocusField(null);
   }
 
   async function handleSubmit(data: EditFormData): Promise<void> {
@@ -166,109 +224,207 @@ function EditMethodDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    append({ bankName: '', accountType: 'checking', accountNumber: '', accountHolder: '' });
-                  }}
+                  onClick={handleAddAccount}
+                  disabled={isSubmitting || editing !== null}
                 >
                   Agregar cuenta
                 </Button>
               </div>
 
-              {fields.length === 0 ? (
+              {fields.length === 0 && editing === null && (
                 <p className="text-muted-foreground text-xs">Todavía no hay cuentas bancarias configuradas.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-border border-b">
-                        <th className="text-muted-foreground py-2 pr-2 font-medium">Banco</th>
-                        <th className="text-muted-foreground py-2 pr-2 font-medium">Tipo</th>
-                        <th className="text-muted-foreground py-2 pr-2 font-medium">Número de cuenta</th>
-                        <th className="text-muted-foreground py-2 pr-2 font-medium">Titular</th>
-                        <th className="text-muted-foreground py-2 text-right font-medium">
-                          <span className="sr-only">Eliminar</span>
+              )}
+
+              {/* table-fixed is what makes the truncate on the cells work at all:
+                  in an auto-layout table a cell grows to its content, so a long
+                  account number pushed the table past the container and
+                  overflow-hidden simply clipped it. */}
+              {fields.some((_, index) => editing?.index !== index) && (
+                <div className="border-border overflow-hidden rounded-lg border">
+                  <table className="w-full table-fixed text-left text-sm">
+                    <caption className="sr-only">Cuentas bancarias configuradas</caption>
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-3 py-2 font-medium">Banco</th>
+                        <th className="w-24 px-3 py-2 font-medium">Tipo</th>
+                        <th className="px-3 py-2 font-medium">Número de cuenta</th>
+                        <th className="px-3 py-2 font-medium">Titular</th>
+                        <th className="w-24 px-3 py-2 text-right font-medium">
+                          <span className="sr-only">Acciones</span>
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-border divide-y">
                       {fields.map((field, index) => {
-                        const rowError = form.formState.errors.accounts?.[index];
+                        if (editing?.index === index) return null;
+                        const account = form.getValues(`accounts.${index}`);
                         return (
                           <tr key={field.id}>
-                            <td className="py-2 pr-2">
-                              <Label htmlFor={`account-${index}-bankName`} className="sr-only">
-                                Nombre del banco (cuenta {index + 1})
-                              </Label>
-                              <Input
-                                id={`account-${index}-bankName`}
-                                disabled={isSubmitting}
-                                aria-invalid={rowError?.bankName !== undefined}
-                                {...form.register(`accounts.${index}.bankName`)}
-                              />
+                            <td className="truncate px-3 py-2" title={account.bankName}>
+                              {account.bankName}
                             </td>
-                            <td className="py-2 pr-2">
-                              <Label htmlFor={`account-${index}-accountType`} className="sr-only">
-                                Tipo de cuenta (cuenta {index + 1})
-                              </Label>
-                              <Select
-                                value={form.watch(`accounts.${index}.accountType`)}
-                                onValueChange={(value) => {
-                                  form.setValue(`accounts.${index}.accountType`, value as 'checking' | 'savings', {
-                                    shouldValidate: true,
-                                  });
-                                }}
-                                disabled={isSubmitting}
-                              >
-                                <SelectTrigger id={`account-${index}-accountType`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="checking">Cuenta corriente</SelectItem>
-                                  <SelectItem value="savings">Caja de ahorro</SelectItem>
-                                </SelectContent>
-                              </Select>
+                            <td className="px-3 py-2">{accountTypeLabel(account.accountType)}</td>
+                            <td className="truncate px-3 py-2" title={account.accountNumber}>
+                              {account.accountNumber}
                             </td>
-                            <td className="py-2 pr-2">
-                              <Label htmlFor={`account-${index}-accountNumber`} className="sr-only">
-                                Número de cuenta (cuenta {index + 1})
-                              </Label>
-                              <Input
-                                id={`account-${index}-accountNumber`}
-                                disabled={isSubmitting}
-                                aria-invalid={rowError?.accountNumber !== undefined}
-                                {...form.register(`accounts.${index}.accountNumber`)}
-                              />
+                            <td className="truncate px-3 py-2" title={account.accountHolder}>
+                              {account.accountHolder}
                             </td>
-                            <td className="py-2 pr-2">
-                              <Label htmlFor={`account-${index}-accountHolder`} className="sr-only">
-                                Titular de la cuenta (cuenta {index + 1})
-                              </Label>
-                              <Input
-                                id={`account-${index}-accountHolder`}
-                                disabled={isSubmitting}
-                                aria-invalid={rowError?.accountHolder !== undefined}
-                                {...form.register(`accounts.${index}.accountHolder`)}
-                              />
-                            </td>
-                            <td className="py-2 text-right">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => {
-                                  remove(index);
-                                }}
-                                aria-label={`Eliminar cuenta ${index + 1}`}
-                                disabled={isSubmitting}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                            <td className="px-3 py-2 text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleEditAccount(index);
+                                  }}
+                                  aria-label={`Editar cuenta de ${account.bankName}`}
+                                  disabled={isSubmitting || editing !== null}
+                                >
+                                  Editar
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => {
+                                    remove(index);
+                                  }}
+                                  aria-label={`Eliminar cuenta de ${account.bankName}`}
+                                  disabled={isSubmitting || editing !== null}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {editing !== null && (
+                <div className="border-border bg-muted/30 space-y-3 rounded-lg border p-3">
+                  <div className="flex justify-center">
+                    <BankAccountCard
+                      size="compact"
+                      revealable={false}
+                      highlight={focusField}
+                      labels={BANK_ACCOUNT_CARD_LABELS}
+                      bankName={form.watch(`accounts.${editing.index}.bankName`) || 'Banco'}
+                      accountNumber={form.watch(`accounts.${editing.index}.accountNumber`) || '····'}
+                      accountHolder={form.watch(`accounts.${editing.index}.accountHolder`) || 'Titular'}
+                      accountType={form.watch(`accounts.${editing.index}.accountType`)}
+                    />
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor={`account-${editing.index}-bankName`}>Banco</Label>
+                      <Input
+                        id={`account-${editing.index}-bankName`}
+                        disabled={isSubmitting}
+                        aria-invalid={form.formState.errors.accounts?.[editing.index]?.bankName !== undefined}
+                        aria-describedby={
+                          form.formState.errors.accounts?.[editing.index]?.bankName !== undefined
+                            ? `account-${editing.index}-bankName-error`
+                            : undefined
+                        }
+                        {...form.register(`accounts.${editing.index}.bankName`)}
+                        onFocus={() => { setFocusField('bankName'); }}
+                      />
+                      {form.formState.errors.accounts?.[editing.index]?.bankName !== undefined && (
+                        <p id={`account-${editing.index}-bankName-error`} role="alert" className="text-destructive text-xs">
+                          {form.formState.errors.accounts[editing.index]?.bankName?.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor={`account-${editing.index}-accountType`}>Tipo de cuenta</Label>
+                      <Select
+                        value={form.watch(`accounts.${editing.index}.accountType`)}
+                        onValueChange={(value) => {
+                          form.setValue(`accounts.${editing.index}.accountType`, value as 'checking' | 'savings', {
+                            shouldValidate: true,
+                          });
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger
+                          id={`account-${editing.index}-accountType`}
+                          onFocus={() => { setFocusField('accountType'); }}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="checking">Cuenta corriente</SelectItem>
+                          <SelectItem value="savings">Caja de ahorro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor={`account-${editing.index}-accountNumber`}>Número de cuenta</Label>
+                      <Input
+                        id={`account-${editing.index}-accountNumber`}
+                        disabled={isSubmitting}
+                        aria-invalid={form.formState.errors.accounts?.[editing.index]?.accountNumber !== undefined}
+                        aria-describedby={
+                          form.formState.errors.accounts?.[editing.index]?.accountNumber !== undefined
+                            ? `account-${editing.index}-accountNumber-error`
+                            : undefined
+                        }
+                        {...form.register(`accounts.${editing.index}.accountNumber`)}
+                        onFocus={() => { setFocusField('accountNumber'); }}
+                      />
+                      {form.formState.errors.accounts?.[editing.index]?.accountNumber !== undefined && (
+                        <p id={`account-${editing.index}-accountNumber-error`} role="alert" className="text-destructive text-xs">
+                          {form.formState.errors.accounts[editing.index]?.accountNumber?.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor={`account-${editing.index}-accountHolder`}>Titular</Label>
+                      <Input
+                        id={`account-${editing.index}-accountHolder`}
+                        disabled={isSubmitting}
+                        aria-invalid={form.formState.errors.accounts?.[editing.index]?.accountHolder !== undefined}
+                        aria-describedby={
+                          form.formState.errors.accounts?.[editing.index]?.accountHolder !== undefined
+                            ? `account-${editing.index}-accountHolder-error`
+                            : undefined
+                        }
+                        {...form.register(`accounts.${editing.index}.accountHolder`)}
+                        onFocus={() => { setFocusField('accountHolder'); }}
+                      />
+                      {form.formState.errors.accounts?.[editing.index]?.accountHolder !== undefined && (
+                        <p id={`account-${editing.index}-accountHolder-error`} role="alert" className="text-destructive text-xs">
+                          {form.formState.errors.accounts[editing.index]?.accountHolder?.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={handleCancelAccount} disabled={isSubmitting}>
+                      Cancelar cuenta
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        void handleSaveAccount();
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Guardar cuenta
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -291,7 +447,7 @@ function EditMethodDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || editing !== null}>
               {isSubmitting ? 'Guardando...' : 'Guardar'}
             </Button>
           </DialogFooter>

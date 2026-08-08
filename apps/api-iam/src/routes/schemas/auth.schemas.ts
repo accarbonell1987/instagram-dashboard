@@ -8,6 +8,7 @@ export const UserSchema = z.object({
   id: z.string(),
   email: z.string(),
   fullName: z.string(),
+  phone: z.string().nullable().optional(),
   picture: z.string().nullable().optional(),
   role: z.enum(['SuperAdmin', 'TenantAdmin', 'User']),
   status: z.enum(['pending_first_login', 'active', 'suspended']),

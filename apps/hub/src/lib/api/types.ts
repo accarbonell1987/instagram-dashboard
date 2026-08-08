@@ -1795,6 +1795,7 @@ export interface components {
          *       "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
          *       "email": "ana@empresa-acme.com",
          *       "fullName": "Ana Pereira",
+         *       "phone": "+595981000000",
          *       "picture": null,
          *       "status": "active"
          *     }
@@ -1805,6 +1806,7 @@ export interface components {
             /** Format: email */
             email: string;
             fullName: string;
+            phone?: string | null;
             /** Format: uri */
             picture?: string | null;
             status: components["schemas"]["MemberStatus"];

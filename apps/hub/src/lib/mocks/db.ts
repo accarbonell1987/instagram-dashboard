@@ -15,6 +15,7 @@ export const db = factory({
     id: primaryKey(String),
     email: String,
     fullName: String,
+    phone: nullable(String),
     picture: nullable(String),
     role: String,
     tenantId: nullable(String),

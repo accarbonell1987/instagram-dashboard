@@ -8,7 +8,6 @@ export interface SessionUser {
   id: string;
   email: string;
   fullName: string;
-  phone?: string | undefined;
   picture?: string | undefined;
   status?: string | undefined;
 }
@@ -98,11 +97,10 @@ export function buildSessionFromToken(): SessionState {
       typeof claims['tenant_name'] === 'string' ? claims['tenant_name'] : undefined;
     const role = typeof claims['role'] === 'string' ? claims['role'] : 'User';
     const fullName = typeof claims['name'] === 'string' ? claims['name'] : email;
-    const phone = typeof claims['phone'] === 'string' ? claims['phone'] : undefined;
     const status = typeof claims['user_status'] === 'string' ? claims['user_status'] : undefined;
 
     const session: Session = {
-      user: { id: sub, email, fullName, phone, status },
+      user: { id: sub, email, fullName, status },
       tenant: { id: tenantUuid, slug: tenantSlug, name: tenantName },
       role,
       accessToken: token.raw,

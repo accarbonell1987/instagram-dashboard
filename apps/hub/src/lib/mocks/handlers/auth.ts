@@ -268,7 +268,13 @@ export const authHandlers = [
         : null;
 
     return HttpResponse.json({
-      user: { id: user.id, email: user.email, fullName: user.fullName, picture: user.picture ?? null },
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone ?? null,
+        picture: user.picture ?? null,
+      },
       tenant:
         tenant !== null
           ? { id: tenant.id, slug: tenant.slug, name: tenant.name, planId: tenant.planId, status: tenant.status }

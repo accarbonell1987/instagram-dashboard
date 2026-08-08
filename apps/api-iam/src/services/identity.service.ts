@@ -136,7 +136,6 @@ export function createIdentityService(deps: IdentityServiceDeps) {
       tenantId: tenant.slug,
       tenantUuid: tenant.id,
       role: updatedUser.role,
-      phone: data.phone,
       user_status: updatedUser.status,
     })
 

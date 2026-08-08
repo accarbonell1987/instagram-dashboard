@@ -31,6 +31,35 @@ const bankAccountCardVariants = cva(
 
 export type BankAccountType = "checking" | "savings"
 
+/** Which part of the card a form is currently editing. */
+export type BankAccountField =
+  | "bankName"
+  | "accountType"
+  | "accountNumber"
+  | "accountHolder"
+
+/**
+ * Ring drawn on the region the form is editing.
+ *
+ * The reference design positioned a floating box with hardcoded pixel offsets
+ * and then redefined every one of them in a media query. Highlighting the
+ * region itself costs no coordinates and survives any card size.
+ */
+const HIGHLIGHT =
+  "rounded-lg ring-2 ring-white/80 ring-offset-2 ring-offset-transparent transition-shadow"
+
+/**
+ * Accent rings per account type, so the two are told apart at a glance rather
+ * than by reading the chip. Blue and amber sit opposite each other on the
+ * wheel, which keeps them distinguishable for the red-green colour blindness
+ * that a green/red pairing would erase — and the chip still names the type, so
+ * colour is never the only carrier of the difference.
+ */
+const TYPE_RINGS: Record<BankAccountType, { from: string; to: string }> = {
+  checking: { from: "#38bdf8", to: "#6366f1" },
+  savings: { from: "#fbbf24", to: "#fb7185" },
+}
+
 export interface BankAccountCardLabels {
   accountHolder: string
   accountType: string
@@ -63,7 +92,15 @@ export interface BankAccountCardProps
   visibleDigits?: number
   /** Set false for a card that never reveals the full number. */
   revealable?: boolean
-  /** Accent rings. Default to theme tokens so the card follows the palette. */
+  /**
+   * Rings the region a form is editing, so the operator can see which part of
+   * the card the field they are in corresponds to. Omit for a display-only card.
+   */
+  highlight?: BankAccountField | null
+  /**
+   * Accent rings. Default to the pair for the account type — override only
+   * when a product needs the card to follow its own palette instead.
+   */
   ringFrom?: string
   ringTo?: string
 }
@@ -84,8 +121,9 @@ const BankAccountCard = React.forwardRef<HTMLDivElement, BankAccountCardProps>(
       labels,
       visibleDigits = 4,
       revealable = true,
-      ringFrom = "var(--primary)",
-      ringTo = "var(--accent)",
+      highlight = null,
+      ringFrom,
+      ringTo,
       size,
       className,
       ...props
@@ -93,8 +131,14 @@ const BankAccountCard = React.forwardRef<HTMLDivElement, BankAccountCardProps>(
     ref,
   ) => {
     const [revealed, setRevealed] = React.useState(false)
+    // Editing wins over the reveal: the highlight lives on the front, so a card
+    // left flipped would hide the very region it is pointing at.
+    const showingBack = revealed && highlight === null
     const text = { ...DEFAULT_LABELS, ...labels }
     const typeLabel = accountType === "checking" ? text.checking : text.savings
+    const rings = TYPE_RINGS[accountType]
+    const from = ringFrom ?? rings.from
+    const to = ringTo ?? rings.to
 
     return (
       <div
@@ -105,7 +149,7 @@ const BankAccountCard = React.forwardRef<HTMLDivElement, BankAccountCardProps>(
         <div
           className={cn(
             "relative transition-transform duration-700 [transform-style:preserve-3d]",
-            revealed && "[transform:rotateY(180deg)]",
+            showingBack && "[transform:rotateY(180deg)]",
           )}
         >
           {/* Front */}
@@ -115,22 +159,44 @@ const BankAccountCard = React.forwardRef<HTMLDivElement, BankAccountCardProps>(
               "bg-gradient-to-br from-slate-700 to-slate-950",
             )}
           >
-            <Rings from={ringFrom} to={ringTo} />
+            <Rings from={from} to={to} />
 
             <div className="relative z-10 flex h-full flex-col justify-between">
               <div className="flex items-start justify-between gap-2">
-                <span className="font-semibold">{bankName}</span>
-                <span className="bg-white/15 rounded-full px-2 py-0.5 text-xs font-medium">
+                <span
+                  className={cn(
+                    "px-1 font-semibold",
+                    highlight === "bankName" && HIGHLIGHT,
+                  )}
+                >
+                  {bankName}
+                </span>
+                <span
+                  className={cn(
+                    "bg-white/15 rounded-full px-2 py-0.5 text-xs font-medium",
+                    highlight === "accountType" && HIGHLIGHT,
+                  )}
+                >
                   {typeLabel}
                 </span>
               </div>
 
               {/* tabular-nums keeps the digits from shifting when they change */}
-              <div className="font-mono text-xl tabular-nums tracking-widest">
+              <div
+                className={cn(
+                  "px-1 font-mono text-xl tabular-nums tracking-widest",
+                  highlight === "accountNumber" && HIGHLIGHT,
+                )}
+              >
                 {maskAccountNumber(accountNumber, visibleDigits)}
               </div>
 
-              <div className="min-w-0">
+              <div
+                className={cn(
+                  "min-w-0 px-1",
+                  highlight === "accountHolder" && HIGHLIGHT,
+                )}
+              >
                 <div className="text-xs font-semibold uppercase opacity-70">
                   {text.accountHolder}
                 </div>
@@ -149,9 +215,9 @@ const BankAccountCard = React.forwardRef<HTMLDivElement, BankAccountCardProps>(
               bankAccountCardVariants({ size }),
               "absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 [transform:rotateY(180deg)]",
             )}
-            aria-hidden={!revealed}
+            aria-hidden={!showingBack}
           >
-            <Rings from={ringTo} to={ringFrom} />
+            <Rings from={to} to={from} />
 
             <div className="relative z-10 flex h-full flex-col justify-center gap-2">
               <div className="text-xs font-semibold uppercase opacity-70">
@@ -172,7 +238,7 @@ const BankAccountCard = React.forwardRef<HTMLDivElement, BankAccountCardProps>(
             }}
             className="text-muted-foreground hover:text-foreground mt-2 text-xs underline underline-offset-4"
           >
-            {revealed ? text.hide : text.reveal}
+            {showingBack ? text.hide : text.reveal}
           </button>
         )}
       </div>

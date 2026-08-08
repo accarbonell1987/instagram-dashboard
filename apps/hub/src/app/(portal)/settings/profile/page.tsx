@@ -2,11 +2,12 @@
 
 import { Button, Input, Label } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState, type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
 import { z } from 'zod';
 
-import { useSession } from '@/modules/iam/identity/hooks/use-session';
+import { apiFetchWithInterceptors } from '@/lib/api/interceptors';
+import type { SchemaUser } from '@/lib/api/types';
 import { updateProfile } from '@/modules/iam/invitations/services/invitation.service';
 import { PhoneCompositeInput } from '@/modules/iam/onboarding/steps/step-2-representative/phone-composite-input';
 
@@ -27,7 +28,6 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ProfilePage(): JSX.Element {
-  const { session } = useSession();
   const [apiError, setApiError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -35,14 +35,31 @@ export default function ProfilePage(): JSX.Element {
     register,
     control,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      fullName: session?.user.fullName ?? '',
-      phone: session?.user.phone ?? '',
-    },
+    defaultValues: { fullName: '', phone: '' },
   });
+
+  // El perfil se lee del endpoint, no de los claims del JWT: el token lleva
+  // identidad y autorización, no datos de perfil editables. Leerlo del token
+  // dejaba el teléfono vacío hasta que el usuario lo guardaba de nuevo.
+  useEffect(() => {
+    let cancelled = false;
+    apiFetchWithInterceptors<{ user: SchemaUser }>('/auth/me')
+      .then(({ user }) => {
+        if (cancelled) return;
+        reset({ fullName: user.fullName, phone: user.phone ?? '' });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setApiError('No pudimos cargar tu perfil. Recargá la página.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reset]);
 
   const onSubmit: SubmitHandler<ProfileFormData> = async (data) => {
     setApiError(null);

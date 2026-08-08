@@ -5,5 +5,6 @@ export {
 export type {
   BankAccountCardProps,
   BankAccountCardLabels,
+  BankAccountField,
   BankAccountType,
 } from "./bank-account-card"

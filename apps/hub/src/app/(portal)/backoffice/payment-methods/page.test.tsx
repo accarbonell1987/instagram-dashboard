@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -112,7 +112,7 @@ describe('PaymentMethodsPage', () => {
     });
   });
 
-  it('adds a bank account and saves it through the edit dialog', async () => {
+  it('adds a bank account and saves it through the inline account panel', async () => {
     const user = userEvent.setup();
     setupHandlers();
     render(<PaymentMethodsPage />);
@@ -121,19 +121,69 @@ describe('PaymentMethodsPage', () => {
     await user.click(editButtons[1]!); // bank_transfer row
 
     await user.click(screen.getByRole('button', { name: 'Agregar cuenta' }));
-    await user.type(screen.getByLabelText(/nombre del banco/i), account.bankName);
-    await user.type(screen.getByLabelText(/número de cuenta/i), account.accountNumber);
-    await user.type(screen.getByLabelText(/titular de la cuenta/i), account.accountHolder);
+    await user.type(screen.getByLabelText('Banco'), account.bankName);
+    await user.type(screen.getByLabelText('Número de cuenta'), account.accountNumber);
+    await user.type(screen.getByLabelText('Titular'), account.accountHolder);
+    await user.click(screen.getByRole('button', { name: 'Guardar cuenta' }));
 
-    await user.click(screen.getByRole('button', { name: 'Guardar' }));
-
-    // The saved account is rendered as a card rather than counted in a sentence,
-    // so assert the operator can actually read it back: bank, holder and type.
+    // The account panel closes and the account is now a read-only row.
     await waitFor(() => {
-      expect(screen.getByText(account.bankName)).toBeInTheDocument();
+      expect(screen.queryByLabelText('Banco')).not.toBeInTheDocument();
     });
+    expect(screen.getByText(account.bankName)).toBeInTheDocument();
     expect(screen.getByText(account.accountHolder)).toBeInTheDocument();
     expect(screen.getByText('Cuenta corriente')).toBeInTheDocument();
+
+    // Persisting still sends the whole accounts array through the PATCH endpoint.
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => {
+      expect(toastSuccess).toHaveBeenCalledWith('Transferencia bancaria actualizado');
+    });
+  });
+
+  it('edits an existing bank account through the inline panel', async () => {
+    const user = userEvent.setup();
+    setupHandlers([
+      { method: 'bancard', enabled: true, displayName: 'Bancard', accounts: [] },
+      { method: 'bank_transfer', enabled: true, displayName: 'Bank transfer', accounts: [account] },
+    ]);
+    render(<PaymentMethodsPage />);
+
+    const editButtons = await screen.findAllByRole('button', { name: 'Editar' });
+    await user.click(editButtons[1]!); // bank_transfer row
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(await within(dialog).findByRole('button', { name: `Editar cuenta de ${account.bankName}` }));
+
+    const accountHolderInput = within(dialog).getByLabelText('Titular');
+    await user.clear(accountHolderInput);
+    await user.type(accountHolderInput, 'Nuevo Titular S.A.');
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar cuenta' }));
+
+    await waitFor(() => {
+      expect(within(dialog).getByText('Nuevo Titular S.A.')).toBeInTheDocument();
+    });
+    expect(within(dialog).queryByText(account.accountHolder)).not.toBeInTheDocument();
+  });
+
+  it('deletes a bank account row', async () => {
+    const user = userEvent.setup();
+    setupHandlers([
+      { method: 'bancard', enabled: true, displayName: 'Bancard', accounts: [] },
+      { method: 'bank_transfer', enabled: true, displayName: 'Bank transfer', accounts: [account] },
+    ]);
+    render(<PaymentMethodsPage />);
+
+    const editButtons = await screen.findAllByRole('button', { name: 'Editar' });
+    await user.click(editButtons[1]!); // bank_transfer row
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(await within(dialog).findByRole('button', { name: `Eliminar cuenta de ${account.bankName}` }));
+
+    await waitFor(() => {
+      expect(within(dialog).queryByText(account.bankName)).not.toBeInTheDocument();
+    });
+    expect(within(dialog).getByText('Todavía no hay cuentas bancarias configuradas.')).toBeInTheDocument();
   });
 
   it('requires a display name in the edit dialog', async () => {
