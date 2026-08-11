@@ -23,6 +23,7 @@
     "dev:docs": "turbo dev --filter=@internal/docs",
     "///// BUILD /////": "",
     "build": "turbo build",
+    "verify": "turbo build test --concurrency=4",
     "build:apps": "turbo build --filter=./apps/*",
     "build:internal": "turbo build --filter=./internal/*",
     "build:webapp": "turbo build --filter=@internal/webapp-example",
@@ -49,14 +50,15 @@
     "db:push": "turbo db:push",
     "db:studio": "pnpm --filter=@core/database exec prisma studio",
     "db:reset": "pnpm --filter=@corehub/api-iam exec prisma migrate reset --force && pnpm --filter=@corehub/api-instagram-analytics exec prisma db push --force-reset && pnpm --filter=@corehub/api-iam exec prisma generate && pnpm --filter=@corehub/api-instagram-analytics exec prisma generate",
-    "db:seed": "pnpm --filter=@corehub/api-iam db:seed && echo '\n✅ BD lista — tenants, usuarios y planes creados.'",
+    "db:seed": "pnpm --filter=@corehub/api-iam db:seed && echo '\n\u2705 BD lista \u2014 tenants, usuarios y planes creados.'",
     "db:fresh": "pnpm db:reset && pnpm db:seed",
     "///// CLI GENERATOR /////": "",
     "core": "turbo build --filter=@core/cli && pnpm --filter=@core/cli start",
     "///// UTILITIES /////": "",
     "ui:add": "pnpm --filter=@core/ui exec shadcn add",
     "clean": "turbo clean && rm -rf node_modules",
-    "clean-absolute": "find . -name 'node_modules' -type d -prune -exec rm -rf {} + && find . -name 'dist' -type d -prune -exec rm -rf {} + && find . -name '.turbo' -type d -prune -exec rm -rf {} + && find . -name '.storybook-static' -type d -prune -exec rm -rf {} + && rm -rf 'package-lock.json' && rm -rf 'bun.lockb'"
+    "clean-absolute": "find . -name 'node_modules' -type d -prune -exec rm -rf {} + && find . -name 'dist' -type d -prune -exec rm -rf {} + && find . -name '.turbo' -type d -prune -exec rm -rf {} + && find . -name '.storybook-static' -type d -prune -exec rm -rf {} + && rm -rf 'package-lock.json' && rm -rf 'bun.lockb'",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
     "@core/config": "workspace:*",

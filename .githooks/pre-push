@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Refuses to push code that does not build.
+#
+# This exists because the production build sat broken for days without anyone
+# noticing: `type-check` and `vitest` were both green, and neither of them runs
+# `next lint` — which is what the build fails on. Green tests were not proof
+# that the thing could be built.
+#
+# Only `build` runs here, not `test`. The gate has to be hermetic: part of the
+# suite talks to a real Postgres, so including it would turn every push red
+# whenever the stack happens to be down — and a gate that cries wolf is a gate
+# people bypass. Run `pnpm verify` for build + tests before opening a PR, with
+# the stack up.
+#
+# --concurrency=4 on a 10-core machine: each turbo task spawns its own worker
+# pool, so the default of 10 oversubscribes the CPU and slow tests start
+# blowing their timeouts.
+#
+# Turbo caches, so an unchanged tree costs seconds. Real emergency:
+#   git push --no-verify
+
+set -e
+
+echo "pre-push: verificando que compile..."
+
+if ! pnpm turbo build --concurrency=4; then
+  echo ""
+  echo "  ✗ El push se detuvo: el build está en rojo."
+  echo "    Arreglalo, o usá 'git push --no-verify' si es una urgencia real."
+  echo ""
+  exit 1
+fi
+
+echo "pre-push: build verde."
