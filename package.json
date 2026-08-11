@@ -23,6 +23,7 @@
     "dev:docs": "turbo dev --filter=@internal/docs",
     "///// BUILD /////": "",
     "build": "turbo build",
+    "tokens:build": "turbo tokens:build",
     "verify": "turbo build test --concurrency=4",
     "build:apps": "turbo build --filter=./apps/*",
     "build:internal": "turbo build --filter=./internal/*",
@@ -43,6 +44,7 @@
     "lint": "turbo lint",
     "lint:fix": "turbo lint -- --fix",
     "type-check": "turbo type-check",
+    "check:architecture": "node scripts/check-webapp-architecture.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
     "///// DATABASE /////": "",
@@ -56,8 +58,8 @@
     "core": "turbo build --filter=@core/cli && pnpm --filter=@core/cli start",
     "///// UTILITIES /////": "",
     "ui:add": "pnpm --filter=@core/ui exec shadcn add",
-    "clean": "turbo clean && rm -rf node_modules",
-    "clean-absolute": "find . -name 'node_modules' -type d -prune -exec rm -rf {} + && find . -name 'dist' -type d -prune -exec rm -rf {} + && find . -name '.turbo' -type d -prune -exec rm -rf {} + && find . -name '.storybook-static' -type d -prune -exec rm -rf {} + && rm -rf 'package-lock.json' && rm -rf 'bun.lockb'",
+    "clean": "turbo daemon stop && rm -rf node_modules .turbo",
+    "clean-absolute": "find . -name 'node_modules' -type d -prune -exec rm -rf {} + && find . -name 'dist' -type d -prune -exec rm -rf {} + && find . -name '.next' -type d -prune -exec rm -rf {} + && find . -name '.turbo' -type d -prune -exec rm -rf {} +",
     "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
