@@ -59,22 +59,24 @@ src/
 - `.claude/context/PATTERNS.md` — Patrones de código y convenciones reales del proyecto
 - `.claude/context/STACK.md` — Stack completo, dependencias clave y scripts
 
-Si los archivos de contexto no existen o parecen desactualizados, ejecuta `/analyze`.
+Si los archivos de contexto no existen o parecen desactualizados, actualizalos a mano
+o vía `/sdd-explore` — no hay comando `/analyze`.
 
 ## Agentes para este proyecto
 
 Usa estos agentes según la tarea:
 
+Viven en `~/.claude/agents/`, no en este repo. Verificá que existan antes de listarlos: `ls ~/.claude/agents/`.
+
 - **architecture-oracle** → Decisiones arquitectónicas, añadir módulos, refactors grandes
 - **analysis-specialist** → Auditoría de calidad, deuda técnica, seguridad, rendimiento
+- **architect-reviewer** → Consistencia arquitectónica, SOLID, capas
 - **qa-tester** → Escribir tests, revisar cobertura, estrategia de testing
-- **frontend-developer** → Componentes UI, estado, accesibilidad, Next.js
-- **nextjs-architecture-expert** → App Router, Server Components, rendimiento Next.js
-- **typescript-pro** → Tipos complejos, generics, configuración TypeScript
+- **uiux-designer** → Componentes UI, accesibilidad, design system
 
 ## Convenciones específicas de este proyecto
 
-> Detectadas por /analyze el 2026-03-16. Ver detalles en `.claude/context/PATTERNS.md`.
+> Ver detalles en `.claude/context/PATTERNS.md`.
 
 ### Screaming Architecture
 
