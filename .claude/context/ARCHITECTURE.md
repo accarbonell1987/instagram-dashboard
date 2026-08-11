@@ -154,6 +154,7 @@ Components use **shadcn/ui patterns** — Radix primitives + CVA variants + `cn(
 - `./eslint/node` — for Node.js apps (api-example)
 - `./prettier` — prettier config
 - `./tailwind` — tailwind.config.ts (Tailwind v3 config with shadcn tokens)
+- `./vitest` — createVitestConfig() preset compartido (thresholds y exclusiones de coverage en un solo lugar)
 - `./typescript/base`, `nextjs`, `library`, `node` — TSConfig variants
 
 **Design Token System** (Style Dictionary 4.x):
