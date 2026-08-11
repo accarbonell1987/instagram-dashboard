@@ -52,7 +52,10 @@ export function PublishConfirmDialog({
     setIsLoadingReconnect(true)
     try {
       const url = await getOAuthUrl()
-      window.top!.location.href = url
+      // OAuth has to leave the hub's iframe — Instagram refuses to be framed.
+      // window.top is only null without a browsing context, and then this
+      // window is already the top one.
+      ;(window.top ?? window).location.href = url
     } catch {
       setIsLoadingReconnect(false)
     }

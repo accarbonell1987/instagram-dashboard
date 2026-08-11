@@ -132,7 +132,7 @@ function TenantPaymentsSection({ tenantId }: { tenantId: string }): JSX.Element 
               </div>
               <div className="text-muted-foreground mt-1">
                 {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method} ·{' '}
-                {PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}
+                {PAYMENT_STATUS_LABELS[payment.status]}
                 {payment.settlementKind != null &&
                   ` · ${SETTLEMENT_KIND_LABELS[payment.settlementKind] ?? payment.settlementKind}`}
               </div>
