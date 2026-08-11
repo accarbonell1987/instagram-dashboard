@@ -111,7 +111,9 @@ describe('StepPayment — initiate view', () => {
     renderStep(makeDraft());
     expect(screen.getByRole('heading', { name: /pago/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /pagar con bancard/i })).toBeInTheDocument();
-    await waitFor(() => expect(draftService.listPaymentMethods).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(draftService.listPaymentMethods).toHaveBeenCalled();
+    });
   });
 
   it('clicking Pagar calls initiatePayment and redirects', async () => {

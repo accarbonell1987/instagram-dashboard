@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 
 // Mock next/link and next/navigation
@@ -118,5 +119,34 @@ describe('Header — Backoffice link visibility', () => {
     renderHeaderWithRole(null)
     const backofficeLink = screen.queryByLabelText('Backoffice')
     expect(backofficeLink).toBeNull()
+  })
+})
+
+describe('Header — Mi Perfil entry point', () => {
+  // The gear button is admin-only. If the profile is not reachable from this
+  // dropdown, a regular user has no way to open their own settings at all.
+  it.each(['SuperAdmin', 'TenantAdmin', 'User'])('links to /profile for %s', async (role) => {
+    const user = userEvent.setup()
+    renderHeaderWithRole(role)
+
+    await user.click(screen.getByRole('button', { name: /Admin User/ }))
+
+    expect(await screen.findByRole('menuitem', { name: /Mi Perfil/ })).toHaveAttribute(
+      'href',
+      '/profile'
+    )
+  })
+
+  it('does NOT show the settings gear for a regular User', () => {
+    renderHeaderWithRole('User')
+    expect(screen.queryByLabelText('Configuración')).toBeNull()
+  })
+
+  it('shows the settings gear for a TenantAdmin', () => {
+    renderHeaderWithRole('TenantAdmin')
+    expect(screen.getByLabelText('Configuración').closest('a')).toHaveAttribute(
+      'href',
+      '/settings'
+    )
   })
 })

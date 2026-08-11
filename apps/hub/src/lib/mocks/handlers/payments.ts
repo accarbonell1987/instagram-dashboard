@@ -1,12 +1,12 @@
 import { http, HttpResponse } from 'msw';
 
-import { SETTLEABLE_STATUSES } from '@/modules/backoffice/payments';
-
 import { db } from '../db';
 import { SEED } from '../seed';
 import { stableNow } from '../seed-utils';
 
 import { conflict, notFound, unprocessable } from './problem';
+
+import { SETTLEABLE_STATUSES } from '@/modules/backoffice/payments';
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080';
 

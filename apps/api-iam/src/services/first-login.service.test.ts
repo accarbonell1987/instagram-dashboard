@@ -37,6 +37,7 @@ const makeTenant = (): Tenant => ({
   schemaName: 'tenant_acme',
   planId: 'plan-1',
   status: 'active',
+  colorTheme: undefined,
   createdAt: new Date(),
   updatedAt: new Date(),
 });
@@ -103,6 +104,7 @@ describe('FirstLoginService', () => {
       create: vi.fn(),
       updateStatus: vi.fn(),
       updateName: vi.fn(),
+      updateColorTheme: vi.fn(),
       findAllPaginated: vi.fn(),
       findByIdWithDetail: vi.fn(),
       sweepUnpaidPending: vi.fn(),

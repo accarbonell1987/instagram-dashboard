@@ -155,8 +155,7 @@ export const adminHandlers = [
 
   // PATCH /tenants/current — update tenant name
   http.patch(`${BASE}/tenants/current`, async ({ request }) => {
-    const body = (await request.json()) as { name?: string };
-    const name = body.name ?? '';
+    const body = (await request.json()) as { name?: string; colorTheme?: string };
 
     const tenant = db.tenant.findFirst({
       where: { id: { equals: SEED.tenantId } },
@@ -166,9 +165,15 @@ export const adminHandlers = [
       return notFound('Tenant not found');
     }
 
+    // Both fields are optional and independent — the settings screen saves the
+    // name and the visual style separately.
+    const data: { name?: string; colorTheme?: string } = {};
+    if (body.name !== undefined) data.name = body.name;
+    if (body.colorTheme !== undefined) data.colorTheme = body.colorTheme;
+
     const updated = db.tenant.update({
       where: { id: { equals: SEED.tenantId } },
-      data: { name },
+      data,
     });
 
     return HttpResponse.json(updated);

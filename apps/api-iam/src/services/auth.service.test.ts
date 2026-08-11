@@ -51,6 +51,7 @@ const makeTenant = (overrides?: Partial<Tenant>): Tenant => ({
   schemaName: 'tenant_acme',
   planId: 'professional',
   status: 'active',
+  colorTheme: undefined,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
@@ -138,6 +139,7 @@ describe('AuthService', () => {
       create: vi.fn(),
       updateStatus: vi.fn(),
       updateName: vi.fn(),
+      updateColorTheme: vi.fn(),
       findAllPaginated: vi.fn(),
       findByIdWithDetail: vi.fn(),
       sweepUnpaidPending: vi.fn(),
@@ -526,6 +528,18 @@ describe('AuthService', () => {
       const result = await service.me('user-2');
 
       expect(result.user.status).toBe('pending_first_login');
+    });
+
+    // El teléfono no viaja en el JWT: /auth/me es la única fuente. Si deja de
+    // devolverlo, la pantalla de perfil vuelve a mostrarse vacía.
+    it('returns the stored phone so the profile screen can render it', async () => {
+      vi.mocked(userRepo.findById).mockResolvedValue(makeUser({ phone: '+595981000000' }));
+      vi.mocked(tenantRepo.findByUuid).mockResolvedValue(makeTenant());
+
+      const service = makeService();
+      const result = await service.me('user-3');
+
+      expect(result.user.phone).toBe('+595981000000');
     });
   });
 });

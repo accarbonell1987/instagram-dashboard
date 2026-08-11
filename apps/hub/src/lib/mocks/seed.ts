@@ -112,6 +112,7 @@ function seedHappyBase(): void {
     id: SEED.userId,
     email: 'test@corehub.com',
     fullName: 'Ana Pereira',
+    phone: '+595981000000',
     picture: null,
     role: 'TenantAdmin',
     tenantId: SEED.tenantId,

@@ -210,7 +210,7 @@ export default function RolesPage(): JSX.Element {
                       <Puzzle className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="ghost-warning"
                       size="icon-sm"
                       onClick={() => { openEdit(role); }}
                       aria-label={`Editar ${role.name}`}
@@ -218,12 +218,12 @@ export default function RolesPage(): JSX.Element {
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="ghost-destructive"
                       size="icon-sm"
                       onClick={() => void handleDelete(role)}
                       aria-label={`Eliminar ${role.name}`}
                     >
-                      <Trash2 className="h-4 w-4 text-red-600" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </td>
                 </tr>

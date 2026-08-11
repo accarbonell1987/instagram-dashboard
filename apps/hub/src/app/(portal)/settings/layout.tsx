@@ -17,8 +17,9 @@ interface NavLink {
 }
 
 const NAV_LINKS: NavLink[] = [
+  // "Mi perfil" no vive acá: es configuración personal y se entra por el
+  // dropdown del avatar. Esta sección es configuración de la organización.
   { href: '/settings', label: 'Resumen' },
-  { href: '/settings/profile', label: 'Mi perfil' },
   { href: '/settings/team', label: 'Equipo' },
   { href: '/settings/organization', label: 'Organización' },
   { href: '/settings/billing', label: 'Facturación', requiresRole: ['TenantAdmin', 'SuperAdmin'] },

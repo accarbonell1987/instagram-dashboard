@@ -69,7 +69,7 @@ export function InlineEditField({ label, value, onSave }: InlineEditFieldProps):
         <span className="text-foreground text-sm font-medium">{value}</span>
         <Button
           type="button"
-          variant="ghost"
+          variant="ghost-warning"
           size="icon-sm"
           onClick={startEdit}
           aria-label={`Editar ${label}`}

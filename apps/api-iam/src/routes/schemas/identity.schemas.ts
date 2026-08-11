@@ -6,6 +6,7 @@ export const TenantSchema = z.object({
   name: z.string(),
   planId: z.string(),
   status: z.enum(['pending', 'active', 'suspended']),
+  colorTheme: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -23,9 +24,21 @@ export const MemberListResponseSchema = z.object({
   items: z.array(MemberListItemSchema),
 })
 
-export const UpdateTenantNameRequestSchema = z.object({
-  name: z.string().min(1).max(200),
-})
+// Both fields optional so the settings page can save either one on its own,
+// but an empty body is a client bug, not a no-op 204.
+// colorTheme is shape-checked only: the frontend theme registry owns the list
+// of real names and falls back to the default for anything unknown.
+export const UpdateTenantNameRequestSchema = z
+  .object({
+    name: z.string().min(1).max(200).optional(),
+    colorTheme: z
+      .string()
+      .regex(/^[a-z][a-z0-9-]{1,39}$/, 'Must be a lowercase theme slug')
+      .optional(),
+  })
+  .refine((body) => body.name !== undefined || body.colorTheme !== undefined, {
+    message: 'At least one field must be provided',
+  })
 
 export const UpdateMemberStatusRequestSchema = z.object({
   status: z.enum(['active', 'suspended']),

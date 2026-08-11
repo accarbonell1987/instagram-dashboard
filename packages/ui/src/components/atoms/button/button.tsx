@@ -11,6 +11,17 @@ const buttonVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm',
+        warning: 'bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm',
+        success: 'bg-success text-success-foreground hover:bg-success/90 shadow-sm',
+        // Tinted variants for icon-only row actions. A solid swatch per row
+        // turns a ten-row table into a wall of colour, so the surface stays
+        // transparent and the meaning is carried by the icon itself.
+        // Delete uses destructive-accent, not destructive: the latter is a
+        // background colour and is nearly invisible as an icon in dark mode.
+        'ghost-warning': 'text-warning hover:bg-warning/10 hover:text-warning',
+        'ghost-success': 'text-success hover:bg-success/10 hover:text-success',
+        'ghost-destructive':
+          'text-destructive-accent hover:bg-destructive-accent/10 hover:text-destructive-accent',
         outline:
           'border-input bg-background hover:bg-accent hover:text-accent-foreground border shadow-sm',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm',

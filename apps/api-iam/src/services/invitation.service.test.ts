@@ -59,6 +59,7 @@ function makeDeps(overrides: Partial<InvitationServiceDeps> = {}): InvitationSer
       create: vi.fn(),
       updateStatus: vi.fn(),
       updateName: vi.fn(),
+      updateColorTheme: vi.fn(),
       findAllPaginated: vi.fn(),
       findByIdWithDetail: vi.fn(),
       sweepUnpaidPending: vi.fn(),

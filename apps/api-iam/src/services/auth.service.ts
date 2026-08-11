@@ -63,6 +63,7 @@ export type MeResult = {
     id: string;
     email: string;
     fullName: string;
+    phone: string | undefined;
     picture: string | undefined;
     role: UserRole;
     status: UserStatus;
@@ -73,6 +74,7 @@ export type MeResult = {
     name: string;
     planId: string;
     status: TenantStatus;
+    colorTheme: string | undefined;
   };
   role: UserRole;
 };
@@ -300,6 +302,7 @@ export function createAuthService(deps: AuthServiceDeps) {
         id: user.id,
         email: user.email,
         fullName: user.fullName ?? '',
+        phone: user.phone ?? undefined,
         picture: user.picture ?? undefined,
         role: user.role,
         status: user.status,
@@ -310,6 +313,7 @@ export function createAuthService(deps: AuthServiceDeps) {
         name: tenant.name,
         planId: tenant.planId,
         status: tenant.status,
+        colorTheme: tenant.colorTheme,
       },
       role: user.role,
     };

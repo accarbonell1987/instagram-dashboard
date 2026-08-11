@@ -37,6 +37,7 @@ export type TenantMinAggregateOutputType = {
   schemaName: string | null
   planId: string | null
   status: $Enums.TenantStatus | null
+  colorTheme: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -54,6 +55,7 @@ export type TenantMaxAggregateOutputType = {
   schemaName: string | null
   planId: string | null
   status: $Enums.TenantStatus | null
+  colorTheme: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -71,6 +73,7 @@ export type TenantCountAggregateOutputType = {
   schemaName: number
   planId: number
   status: number
+  colorTheme: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -90,6 +93,7 @@ export type TenantMinAggregateInputType = {
   schemaName?: true
   planId?: true
   status?: true
+  colorTheme?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -107,6 +111,7 @@ export type TenantMaxAggregateInputType = {
   schemaName?: true
   planId?: true
   status?: true
+  colorTheme?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -124,6 +129,7 @@ export type TenantCountAggregateInputType = {
   schemaName?: true
   planId?: true
   status?: true
+  colorTheme?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -214,6 +220,7 @@ export type TenantGroupByOutputType = {
   schemaName: string
   planId: string
   status: $Enums.TenantStatus
+  colorTheme: string | null
   createdAt: Date
   updatedAt: Date
   _count: TenantCountAggregateOutputType | null
@@ -252,6 +259,7 @@ export type TenantWhereInput = {
   schemaName?: Prisma.StringFilter<"Tenant"> | string
   planId?: Prisma.StringFilter<"Tenant"> | string
   status?: Prisma.EnumTenantStatusFilter<"Tenant"> | $Enums.TenantStatus
+  colorTheme?: Prisma.StringNullableFilter<"Tenant"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
   plan?: Prisma.XOR<Prisma.PlanScalarRelationFilter, Prisma.PlanWhereInput>
@@ -279,6 +287,7 @@ export type TenantOrderByWithRelationInput = {
   schemaName?: Prisma.SortOrder
   planId?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  colorTheme?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   plan?: Prisma.PlanOrderByWithRelationInput
@@ -309,6 +318,7 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   phone?: Prisma.StringNullableFilter<"Tenant"> | string | null
   planId?: Prisma.StringFilter<"Tenant"> | string
   status?: Prisma.EnumTenantStatusFilter<"Tenant"> | $Enums.TenantStatus
+  colorTheme?: Prisma.StringNullableFilter<"Tenant"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
   plan?: Prisma.XOR<Prisma.PlanScalarRelationFilter, Prisma.PlanWhereInput>
@@ -336,6 +346,7 @@ export type TenantOrderByWithAggregationInput = {
   schemaName?: Prisma.SortOrder
   planId?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  colorTheme?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.TenantCountOrderByAggregateInput
@@ -359,6 +370,7 @@ export type TenantScalarWhereWithAggregatesInput = {
   schemaName?: Prisma.StringWithAggregatesFilter<"Tenant"> | string
   planId?: Prisma.StringWithAggregatesFilter<"Tenant"> | string
   status?: Prisma.EnumTenantStatusWithAggregatesFilter<"Tenant"> | $Enums.TenantStatus
+  colorTheme?: Prisma.StringNullableWithAggregatesFilter<"Tenant"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Tenant"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Tenant"> | Date | string
 }
@@ -375,6 +387,7 @@ export type TenantCreateInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -402,6 +415,7 @@ export type TenantUncheckedCreateInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -427,6 +441,7 @@ export type TenantUpdateInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -454,6 +469,7 @@ export type TenantUncheckedUpdateInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -480,6 +496,7 @@ export type TenantCreateManyInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -496,6 +513,7 @@ export type TenantUpdateManyMutationInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -513,6 +531,7 @@ export type TenantUncheckedUpdateManyInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -540,6 +559,7 @@ export type TenantCountOrderByAggregateInput = {
   schemaName?: Prisma.SortOrder
   planId?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  colorTheme?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -557,6 +577,7 @@ export type TenantMaxOrderByAggregateInput = {
   schemaName?: Prisma.SortOrder
   planId?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  colorTheme?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -574,6 +595,7 @@ export type TenantMinOrderByAggregateInput = {
   schemaName?: Prisma.SortOrder
   planId?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  colorTheme?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -776,6 +798,7 @@ export type TenantCreateWithoutPlanInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
@@ -801,6 +824,7 @@ export type TenantUncheckedCreateWithoutPlanInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -856,6 +880,7 @@ export type TenantScalarWhereInput = {
   schemaName?: Prisma.StringFilter<"Tenant"> | string
   planId?: Prisma.StringFilter<"Tenant"> | string
   status?: Prisma.EnumTenantStatusFilter<"Tenant"> | $Enums.TenantStatus
+  colorTheme?: Prisma.StringNullableFilter<"Tenant"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
 }
@@ -872,6 +897,7 @@ export type TenantCreateWithoutUsersInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -898,6 +924,7 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutTenantInput
@@ -938,6 +965,7 @@ export type TenantUpdateWithoutUsersInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -964,6 +992,7 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutTenantNestedInput
@@ -988,6 +1017,7 @@ export type TenantCreateWithoutDraftsInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -1014,6 +1044,7 @@ export type TenantUncheckedCreateWithoutDraftsInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -1054,6 +1085,7 @@ export type TenantUpdateWithoutDraftsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -1080,6 +1112,7 @@ export type TenantUncheckedUpdateWithoutDraftsInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1104,6 +1137,7 @@ export type TenantCreateWithoutPaymentsInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -1130,6 +1164,7 @@ export type TenantUncheckedCreateWithoutPaymentsInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -1170,6 +1205,7 @@ export type TenantUpdateWithoutPaymentsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -1196,6 +1232,7 @@ export type TenantUncheckedUpdateWithoutPaymentsInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1220,6 +1257,7 @@ export type TenantCreateWithoutInvitationsInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -1246,6 +1284,7 @@ export type TenantUncheckedCreateWithoutInvitationsInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -1286,6 +1325,7 @@ export type TenantUpdateWithoutInvitationsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -1312,6 +1352,7 @@ export type TenantUncheckedUpdateWithoutInvitationsInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1336,6 +1377,7 @@ export type TenantCreateWithoutDocumentsInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -1362,6 +1404,7 @@ export type TenantUncheckedCreateWithoutDocumentsInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -1402,6 +1445,7 @@ export type TenantUpdateWithoutDocumentsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -1428,6 +1472,7 @@ export type TenantUncheckedUpdateWithoutDocumentsInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1452,6 +1497,7 @@ export type TenantCreateWithoutPlanChangeRequestsInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -1478,6 +1524,7 @@ export type TenantUncheckedCreateWithoutPlanChangeRequestsInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -1518,6 +1565,7 @@ export type TenantUpdateWithoutPlanChangeRequestsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -1544,6 +1592,7 @@ export type TenantUncheckedUpdateWithoutPlanChangeRequestsInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1568,6 +1617,7 @@ export type TenantCreateWithoutModuleOverridesInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -1594,6 +1644,7 @@ export type TenantUncheckedCreateWithoutModuleOverridesInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -1634,6 +1685,7 @@ export type TenantUpdateWithoutModuleOverridesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -1660,6 +1712,7 @@ export type TenantUncheckedUpdateWithoutModuleOverridesInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1684,6 +1737,7 @@ export type TenantCreateWithoutProductSubscriptionsInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -1710,6 +1764,7 @@ export type TenantUncheckedCreateWithoutProductSubscriptionsInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -1750,6 +1805,7 @@ export type TenantUpdateWithoutProductSubscriptionsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -1776,6 +1832,7 @@ export type TenantUncheckedUpdateWithoutProductSubscriptionsInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1800,6 +1857,7 @@ export type TenantCreateWithoutEntitlementsInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   plan: Prisma.PlanCreateNestedOneWithoutTenantsInput
@@ -1826,6 +1884,7 @@ export type TenantUncheckedCreateWithoutEntitlementsInput = {
   schemaName: string
   planId: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -1866,6 +1925,7 @@ export type TenantUpdateWithoutEntitlementsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plan?: Prisma.PlanUpdateOneRequiredWithoutTenantsNestedInput
@@ -1892,6 +1952,7 @@ export type TenantUncheckedUpdateWithoutEntitlementsInput = {
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   planId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1916,6 +1977,7 @@ export type TenantCreateManyPlanInput = {
   phone?: string | null
   schemaName: string
   status?: $Enums.TenantStatus
+  colorTheme?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1932,6 +1994,7 @@ export type TenantUpdateWithoutPlanInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
@@ -1957,6 +2020,7 @@ export type TenantUncheckedUpdateWithoutPlanInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -1982,6 +2046,7 @@ export type TenantUncheckedUpdateManyWithoutPlanInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   schemaName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  colorTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -2102,6 +2167,7 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   schemaName?: boolean
   planId?: boolean
   status?: boolean
+  colorTheme?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
@@ -2130,6 +2196,7 @@ export type TenantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   schemaName?: boolean
   planId?: boolean
   status?: boolean
+  colorTheme?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
@@ -2148,6 +2215,7 @@ export type TenantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   schemaName?: boolean
   planId?: boolean
   status?: boolean
+  colorTheme?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
@@ -2166,11 +2234,12 @@ export type TenantSelectScalar = {
   schemaName?: boolean
   planId?: boolean
   status?: boolean
+  colorTheme?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type TenantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "name" | "legalName" | "ruc" | "address" | "city" | "country" | "phone" | "schemaName" | "planId" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["tenant"]>
+export type TenantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "name" | "legalName" | "ruc" | "address" | "city" | "country" | "phone" | "schemaName" | "planId" | "status" | "colorTheme" | "createdAt" | "updatedAt", ExtArgs["result"]["tenant"]>
 export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
   users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
@@ -2218,6 +2287,7 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     schemaName: string
     planId: string
     status: $Enums.TenantStatus
+    colorTheme: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["tenant"]>
@@ -2665,6 +2735,7 @@ export interface TenantFieldRefs {
   readonly schemaName: Prisma.FieldRef<"Tenant", 'String'>
   readonly planId: Prisma.FieldRef<"Tenant", 'String'>
   readonly status: Prisma.FieldRef<"Tenant", 'TenantStatus'>
+  readonly colorTheme: Prisma.FieldRef<"Tenant", 'String'>
   readonly createdAt: Prisma.FieldRef<"Tenant", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Tenant", 'DateTime'>
 }

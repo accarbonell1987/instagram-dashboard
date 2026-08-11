@@ -2380,6 +2380,7 @@ export const TenantScalarFieldEnum = {
   schemaName: 'schemaName',
   planId: 'planId',
   status: 'status',
+  colorTheme: 'colorTheme',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

@@ -44,7 +44,7 @@ export function CopyButton({ url, label }: CopyButtonProps): JSX.Element {
         onClick={handleCopy}
         aria-label={copied ? 'Copiado' : 'Copiar enlace'}
       >
-        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        {copied ? <Check className="text-success h-4 w-4" /> : <Copy className="h-4 w-4" />}
       </Button>
     </div>
   );

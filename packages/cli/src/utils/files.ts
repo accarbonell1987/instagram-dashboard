@@ -17,23 +17,14 @@ import { processTemplate, processPathTemplate } from './templates.js';
  * Get the root directory of the monorepo
  */
 export function getMonorepoRoot(): string {
-  // Walk up from current directory to find package.json with "mono-template" name
+  // Walk up looking for pnpm-workspace.yaml — that file is what defines the
+  // workspace root. Matching on the root package's name would break the moment
+  // a project renames it, which is the first thing every project does.
   let currentDir = process.cwd();
 
   while (currentDir !== path.parse(currentDir).root) {
-    const packageJsonPath = path.join(currentDir, 'package.json');
-
-    if (fs.existsSync(packageJsonPath)) {
-      try {
-        const packageJson = fs.readJsonSync(packageJsonPath) as {
-          name?: string;
-        };
-        if (packageJson.name === 'mono-template') {
-          return currentDir;
-        }
-      } catch {
-        // Continue searching
-      }
+    if (fs.existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
+      return currentDir;
     }
 
     currentDir = path.dirname(currentDir);

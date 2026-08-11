@@ -40,6 +40,19 @@ export function PhoneCompositeInput({
     splitPhone(value).localNumber.replace(/\D/g, '')
   );
 
+  // The initialisers above only run on the first render, but `value` often
+  // arrives later — the profile fetches it from /auth/me and the wizard loads
+  // it from a saved draft. Without this the field stays empty even though the
+  // form holds the number. Re-splitting on our own echo is a no-op, since
+  // setting state to an identical value bails out.
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    const split = splitPhone(value);
+    setLastValue(value);
+    setDialCode(split.dialCode);
+    setLocalNumber(split.localNumber.replace(/\D/g, ''));
+  }
+
   function assemble(newDialCode: DialCode, newLocalNumber: string): void {
     onChange(newDialCode + newLocalNumber.replace(/\D/g, ''));
   }
@@ -53,7 +66,11 @@ export function PhoneCompositeInput({
   }, []);
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    // min-w-0 is what keeps this inside its card. The number is drawn as one
+    // box per digit, so its intrinsic width is fixed and large; a flex child
+    // will not shrink below that without min-w-0, and the row spilled out of
+    // the container instead of wrapping.
+    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
       {/* ── Country code ── */}
       <Select
         value={dialCode}
@@ -100,7 +117,12 @@ export function PhoneCompositeInput({
         aria-label="Número local"
         aria-invalid={error}
         aria-describedby={errorId}
-        containerClassName={cn('flex-1', error === true && 'ring-destructive/40 rounded-md ring-2')}
+        containerClassName={cn(
+          // flex-wrap lets the digit groups drop to a second line on a narrow
+          // card rather than pushing the row past its container.
+          'min-w-0 flex-1 flex-wrap',
+          error === true && 'ring-destructive/40 rounded-md ring-2'
+        )}
       >
         {fmt.groups.map((groupSize, groupIndex) => (
           <React.Fragment key={groupIndex}>

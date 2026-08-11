@@ -259,6 +259,10 @@ model Tenant {
   schemaName String       @unique @map("schema_name") @db.VarChar(60)
   planId     String       @map("plan_id")
   status     TenantStatus @default(pending)
+  // Visual style applied to every user of this tenant. Stored as the theme
+  // slug; the frontend theme registry is the authority on which names exist,
+  // so this column only constrains shape, not membership.
+  colorTheme String?      @map("color_theme") @db.VarChar(40)
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
 

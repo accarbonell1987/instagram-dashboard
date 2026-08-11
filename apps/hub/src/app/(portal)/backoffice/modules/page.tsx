@@ -478,7 +478,7 @@ export default function ModulesPage(): JSX.Element {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button
-                        variant="ghost"
+                        variant="ghost-warning"
                         size="icon-sm"
                         onClick={() => {
                           handleEdit(mod);
@@ -488,14 +488,14 @@ export default function ModulesPage(): JSX.Element {
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="ghost-destructive"
                         size="icon-sm"
                         onClick={() => {
                           setDeletingModule(mod);
                         }}
                         aria-label={`Eliminar ${mod.name}`}
                       >
-                        <Trash2 className="h-4 w-4 text-red-600" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
                   </tr>

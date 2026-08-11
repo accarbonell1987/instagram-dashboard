@@ -63,8 +63,14 @@ describe('SettingsLayout — billing nav link', () => {
     renderWithRole('User');
     // Base links should always be visible
     expect(screen.getByRole('link', { name: 'Resumen' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Mi perfil' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Equipo' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Organización' })).toBeInTheDocument();
+  });
+
+  // Personal settings moved to the avatar dropdown; this section is about the
+  // organisation. See header.test.tsx for the entry point that replaced it.
+  it('does not list the personal profile among the organisation links', () => {
+    renderWithRole('User');
+    expect(screen.queryByRole('link', { name: 'Mi perfil' })).toBeNull();
   });
 });

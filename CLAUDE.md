@@ -56,25 +56,25 @@ front-corehub-core/
 
 ## Agentes para este proyecto
 
-### Agentes locales (incluidos en este repo)
+Este repo **no define agentes propios**. Los que siguen viven en `~/.claude/agents/`
+y están disponibles en cualquier proyecto de esta máquina.
 
-| Agente                 | Usar para...                                   |
-| ---------------------- | ---------------------------------------------- |
-| **hono-api-developer** | Cualquier tarea en `internal/api-example/`     |
-| **webapp-developer**   | Cualquier tarea en `internal/webapp-example/`  |
-| **monorepo-architect** | Packages, Turborepo, workspace, CLI, templates |
+| Agente                  | Usar para...                                                |
+| ----------------------- | ----------------------------------------------------------- |
+| **architecture-oracle** | Decisiones arquitectónicas cross-cutting, refactors grandes |
+| **analysis-specialist** | Auditoría de calidad, deuda técnica, seguridad, rendimiento |
+| **architect-reviewer**  | Revisión de consistencia arquitectónica, SOLID, capas       |
+| **qa-tester**           | Tests Vitest/Playwright, cobertura, estrategia de testing   |
+| **devops-specialist**   | CI/CD, Docker, deployment, GitHub Actions                   |
+| **uiux-designer**       | Diseño, wireframes, design system                           |
 
-### Agentes globales (requieren instalación en `~/.config/opencode/agents/`)
+Además están las familias `sdd-*` (flujo Spec-Driven Development) y `review-*`
+más `jd-*` (revisión adversarial), que se invocan a través de sus comandos —
+no directamente.
 
-| Agente                         | Usar para...                                                |
-| ------------------------------ | ----------------------------------------------------------- |
-| **architecture-oracle**        | Decisiones arquitectónicas cross-cutting, refactors grandes |
-| **analysis-specialist**        | Auditoría de calidad, deuda técnica, seguridad, rendimiento |
-| **qa-tester**                  | Tests Vitest/Playwright, cobertura, estrategia de testing   |
-| **devops-specialist**          | CI/CD, Docker, deployment, GitHub Actions                   |
-| **typescript-pro**             | Tipos complejos, generics, configuración TypeScript         |
-| **uiux-designer**              | Diseño con Pencil MCP, wireframes, design system            |
-| **nextjs-architecture-expert** | App Router, Server vs Client Components, performance        |
+> Antes de agregar un agente a esta tabla, verificá que exista:
+> `ls ~/.claude/agents/`. Una tabla que lista agentes inexistentes manda a
+> buscar herramientas que no están.
 
 ## Arquitectura obligatoria de webapps
 

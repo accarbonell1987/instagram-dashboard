@@ -142,6 +142,7 @@ Seguir todas las convenciones de `CLAUDE.md` en la raíz. Adicionalmente:
   Siempre devolver 200 a Bancard, incluso en error (ver §13 de backend-requirements.md).
 - **Draft recovery**: `PATCH /onboarding/draft/:draftId/recover` — public (no auth, no idempotency). Guards: `status=payment_confirmed` AND `tenantId=null`. Clears `data.company` from draft JSON. Allows re-entry into the wizard from the company step after a provisioning conflict.
 - **JWT claims obligatorios**: `sub`, `tenant_id`, `tenant_uuid`, `role`, `exp`, `iat`, `jti`, `iss`, `aud`.
+- **Datos mutables NO van en el JWT**: perfil (`phone`) y ajustes de tenant (`colorTheme`) se leen de `GET /auth/me`. Un claim queda viejo hasta que el token se renueve — es lo que hacía que el teléfono apareciera vacío tras cada login.
 - **Soft delete de usuarios**: `users.deleted_at` — jamás se borran filas. `listByTenant` filtra `{ deletedAt: null }` (incluye suspendidos). Refresh guard: si `user.deletedAt !== undefined` → 401 `auth.account_deleted`.
 - **Eliminar miembro — transacción atómica**: `prisma.$transaction` hace inline `tx.user.update(deletedAt)` + `refreshTokenRepo.invalidateAllForUser(userId, tx)`. NO llamar a `userRepo.softDelete()` desde la transacción — el repo tiene su propia referencia a prisma.
 - **Último admin guard**: `updateMemberStatus` cuenta admins activos con `userRepo.countActiveAdmins(tenantId)`. Si es 1 y se intenta suspender/eliminar → 409 `identity.last_admin`.
@@ -210,6 +211,7 @@ Flujos de administración de organización implementados en el SDD `admin-org-fl
 |---|---|---|
 | `20260513200000_fix_schema_drift` | 2026-05-13 | Added `activation_token_hash` (VARCHAR 64, unique), `activation_token_expires_at` (TIMESTAMP 3), `activation_token_used` (BOOLEAN DEFAULT false) to `users` table. Changed `refresh_tokens.family_id` from UUID to VARCHAR(32) to accept nanoid() values. |
 | `admin-org-flows` | 2026-05-14 | Added `users.deleted_at` (TIMESTAMP 3, nullable) for soft delete. Added `PlanChangeRequest` model + `PlanChangeRequestStatus` enum. Added `status` field to `users`. |
+| `20260808120000_add_tenant_color_theme` | 2026-08-08 | Added `tenants.color_theme` (VARCHAR 40, nullable) — visual style applied to every user of the tenant. Null = platform default. |
 
 **Rule**: `refresh_tokens.family_id` is `@db.VarChar(32)` — use `nanoid()` (21 chars), NOT `crypto.randomUUID()` (36 chars). Using UUID caused P2022 overflow errors on submit.
 

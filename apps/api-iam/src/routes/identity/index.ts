@@ -45,6 +45,7 @@ export function createIdentityRouter(
         name: tenant.name,
         planId: tenant.planId,
         status: tenant.status,
+        colorTheme: tenant.colorTheme ?? null,
         createdAt: tenant.createdAt.toISOString(),
         updatedAt: tenant.updatedAt.toISOString(),
       },
@@ -92,6 +93,9 @@ export function createIdentityRouter(
     method: 'patch',
     path: '/tenants/current',
     operationId: 'updateTenantName',
+    // operationId kept for contract compatibility; this updates tenant
+    // settings in general, not just the name.
+    summary: 'Update tenant settings (name, visual style)',
     tags: ['identity'],
     request: {
       body: {
@@ -100,18 +104,19 @@ export function createIdentityRouter(
       },
     },
     responses: {
-      204: { description: 'Tenant name updated' },
+      204: { description: 'Tenant settings updated' },
       401: commonErrorResponses[401],
       403: commonErrorResponses[403],
     },
   })
 
   router.openapi(updateTenantNameRoute, async (c) => {
-    const { name } = c.req.valid('json')
+    const { name, colorTheme } = c.req.valid('json')
     try {
       await identityService.updateTenant({
         tenantUuid: c.var.user.tenantUuid,
         name,
+        colorTheme,
         requesterRole: c.var.user.role,
       })
     } catch (err) {

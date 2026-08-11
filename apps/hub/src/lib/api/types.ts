@@ -1795,6 +1795,7 @@ export interface components {
          *       "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
          *       "email": "ana@empresa-acme.com",
          *       "fullName": "Ana Pereira",
+         *       "phone": "+595981000000",
          *       "picture": null,
          *       "status": "active"
          *     }
@@ -1805,6 +1806,7 @@ export interface components {
             /** Format: email */
             email: string;
             fullName: string;
+            phone?: string | null;
             /** Format: uri */
             picture?: string | null;
             status: components["schemas"]["MemberStatus"];
@@ -1816,6 +1818,7 @@ export interface components {
          *       "name": "Empresa Acme S.A.",
          *       "planId": "professional",
          *       "status": "active",
+         *       "colorTheme": "violet",
          *       "createdAt": "2025-04-30T00:00:00Z",
          *       "updatedAt": "2025-05-10T12:00:00Z"
          *     }
@@ -1828,6 +1831,7 @@ export interface components {
             planId: string;
             /** @enum {string} */
             status: "pending" | "active" | "suspended";
+            colorTheme?: string | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -2393,7 +2397,8 @@ export interface components {
             items: components["schemas"]["MemberListItem"][];
         };
         UpdateTenantNameRequest: {
-            name: string;
+            name?: string;
+            colorTheme?: string;
         };
         UpdateMemberStatusRequest: {
             /** @enum {string} */

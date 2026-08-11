@@ -17,6 +17,7 @@ import {
   SelectValue,
   Textarea,
 } from '@core/ui';
+import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
 import { ApiError } from '@/lib/api/errors';
@@ -74,9 +75,7 @@ function StatusBadge({ status }: { status: TenantStatus }) {
     pending: 'Pendiente',
   };
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${colors[status]}`}
-    >
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${colors[status]}`}>
       {labels[status]}
     </span>
   );
@@ -127,11 +126,13 @@ function TenantPaymentsSection({ tenantId }: { tenantId: string }): JSX.Element 
                 <span className="font-medium">
                   {payment.amount.toLocaleString()} {payment.currency}
                 </span>
-                <span className="text-muted-foreground">{formatPaymentDate(payment.createdAt)}</span>
+                <span className="text-muted-foreground">
+                  {formatPaymentDate(payment.createdAt)}
+                </span>
               </div>
               <div className="text-muted-foreground mt-1">
                 {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method} ·{' '}
-                {PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}
+                {PAYMENT_STATUS_LABELS[payment.status]}
                 {payment.settlementKind != null &&
                   ` · ${SETTLEMENT_KIND_LABELS[payment.settlementKind] ?? payment.settlementKind}`}
               </div>
@@ -190,7 +191,8 @@ function ActivationDialog({
         <DialogHeader>
           <DialogTitle>Activar tenant</DialogTitle>
           <DialogDescription>
-            Esto queda como registro de auditoría y es lo que el cliente ve en su historial de pagos.
+            Esto queda como registro de auditoría y es lo que el cliente ve en su historial de
+            pagos.
           </DialogDescription>
         </DialogHeader>
 
@@ -231,9 +233,11 @@ function ActivationDialog({
           </Button>
           <Button
             type="button"
+            variant="success"
             onClick={() => void handleSubmit()}
             disabled={isSaving || !noteIsValid}
           >
+            {!isSaving && <Check className="h-4 w-4" />}
             {isSaving ? 'Activando...' : 'Activar'}
           </Button>
         </DialogFooter>
@@ -334,8 +338,7 @@ function TenantDetailPanel({
           <div>
             <p className="text-muted-foreground text-xs">Plan</p>
             <p className="font-medium">
-              {detail.plan.name} — {detail.plan.price.toLocaleString()}{' '}
-              {detail.plan.currency}/
+              {detail.plan.name} — {detail.plan.price.toLocaleString()} {detail.plan.currency}/
               {detail.plan.billingInterval === 'month' ? 'mes' : 'año'}
             </p>
           </div>
@@ -354,9 +357,12 @@ function TenantDetailPanel({
             <div className="flex gap-2">
               <Button
                 size="sm"
-                variant={detail.status === 'active' ? 'default' : 'ghost'}
-                onClick={() => { setActivationOpen(true); }}
+                variant={detail.status === 'active' ? 'success' : 'ghost-success'}
+                onClick={() => {
+                  setActivationOpen(true);
+                }}
               >
+                <Check className="h-4 w-4" />
                 Activar
               </Button>
               <Button
@@ -441,7 +447,9 @@ export default function TenantsPage(): JSX.Element {
           <Input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
             placeholder="Buscar por nombre..."
             className="w-48"
           />
@@ -494,14 +502,12 @@ export default function TenantsPage(): JSX.Element {
                     {tenants.map((tenant) => (
                       <tr
                         key={tenant.id}
-                        className={`border-border cursor-pointer border-t transition-colors hover:bg-muted/50 ${
+                        className={`border-border hover:bg-muted/50 cursor-pointer border-t transition-colors ${
                           selectedTenantId === tenant.id ? 'bg-muted' : ''
                         }`}
-                        onClick={() =>
-                          { setSelectedTenantId(
-                            selectedTenantId === tenant.id ? null : tenant.id,
-                          ); }
-                        }
+                        onClick={() => {
+                          setSelectedTenantId(selectedTenantId === tenant.id ? null : tenant.id);
+                        }}
                       >
                         <td className="px-4 py-3 font-medium">{tenant.name}</td>
                         <td className="px-4 py-3">{tenant.planName}</td>
@@ -522,7 +528,9 @@ export default function TenantsPage(): JSX.Element {
                     variant="ghost"
                     size="sm"
                     disabled={page <= 1}
-                    onClick={() => { setPage((p) => Math.max(1, p - 1)); }}
+                    onClick={() => {
+                      setPage((p) => Math.max(1, p - 1));
+                    }}
                   >
                     Anterior
                   </Button>
@@ -533,7 +541,9 @@ export default function TenantsPage(): JSX.Element {
                     variant="ghost"
                     size="sm"
                     disabled={page >= totalPages}
-                    onClick={() => { setPage((p) => p + 1); }}
+                    onClick={() => {
+                      setPage((p) => p + 1);
+                    }}
                   >
                     Siguiente
                   </Button>
@@ -547,7 +557,9 @@ export default function TenantsPage(): JSX.Element {
         <div className="w-80 shrink-0">
           <TenantDetailPanel
             tenantId={selectedTenantId}
-            onClose={() => { setSelectedTenantId(null); }}
+            onClose={() => {
+              setSelectedTenantId(null);
+            }}
             onStatusChanged={() => void loadTenants()}
           />
         </div>

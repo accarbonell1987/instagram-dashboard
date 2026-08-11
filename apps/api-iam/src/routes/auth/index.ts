@@ -636,7 +636,7 @@ export function createAuthRouter(
     return c.json(
       {
         user: me.user,
-        tenant: me.tenant,
+        tenant: { ...me.tenant, colorTheme: me.tenant.colorTheme ?? null },
         role: me.role,
       },
       200

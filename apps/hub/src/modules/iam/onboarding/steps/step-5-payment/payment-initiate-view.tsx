@@ -131,7 +131,7 @@ export function PaymentInitiateView({
 
       <StepErrorBanner message={initError} className="mx-auto w-full max-w-lg" />
 
-      {showPicker && methods !== null && (
+      {showPicker && (
         <div className="border-border bg-muted/30 mx-auto w-full max-w-lg rounded-xl border p-6">
           <h2 id="payment-method-picker-label" className="text-foreground mb-4 text-base font-semibold">
             Elegí cómo pagar
@@ -139,7 +139,9 @@ export function PaymentInitiateView({
           <RadioGroup
             aria-labelledby="payment-method-picker-label"
             value={selectedMethod ?? undefined}
-            onValueChange={(value) => setSelectedMethod(value as PaymentMethodKind)}
+            onValueChange={(value) => {
+              setSelectedMethod(value as PaymentMethodKind);
+            }}
           >
             {methods.map((option) => (
               <div key={option.method} className="flex items-center gap-2">

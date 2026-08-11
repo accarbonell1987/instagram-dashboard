@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
+import { subscribeToToken } from '../lib/hub-token'
 import {
   getDashboardData,
   getConnectionStatus,
@@ -13,7 +14,6 @@ import {
   getReelDetail,
   getDemographics,
 } from '../services/instagram.service'
-import { subscribeToToken } from '../lib/hub-token'
 import type {
   ConnectionStatus,
   DashboardData,

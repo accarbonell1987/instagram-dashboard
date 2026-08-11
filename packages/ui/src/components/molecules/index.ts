@@ -1,6 +1,7 @@
 // Molecules - Compositions of 2+ atoms
 
 export * from "./alert-dialog"
+export * from "./bank-account-card"
 export * from "./breadcrumb"
 export * from "./button-group"
 export * from "./calendar"

@@ -34,6 +34,15 @@ export default [
         },
       ],
       "import-x/no-duplicates": "error",
+      // The rule guards against objects and null stringifying into garbage.
+      // Numbers are unambiguous, and forbidding them breaks typed field paths
+      // like `accounts.${index}.bankName` — wrapping the index in String()
+      // widens the template literal type and React Hook Form stops matching it
+      // against Path<T>.
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        { allowNumber: true },
+      ],
       "@typescript-eslint/no-unused-vars": [
         "error",
         {

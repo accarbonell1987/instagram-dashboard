@@ -8,6 +8,7 @@ export const UserSchema = z.object({
   id: z.string(),
   email: z.string(),
   fullName: z.string(),
+  phone: z.string().nullable().optional(),
   picture: z.string().nullable().optional(),
   role: z.enum(['SuperAdmin', 'TenantAdmin', 'User']),
   status: z.enum(['pending_first_login', 'active', 'suspended']),
@@ -19,6 +20,7 @@ export const TenantInSessionSchema = z.object({
   name: z.string(),
   planId: z.string(),
   status: z.enum(['active', 'suspended', 'pending']),
+  colorTheme: z.string().nullable().optional(),
 });
 
 export const SessionSchema = z.object({
