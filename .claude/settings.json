@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "extraKnownMarketplaces": {
+    "engram": {
+      "source": {
+        "source": "github",
+        "repo": "Gentleman-Programming/engram"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "engram@engram": true,
+    "ponytail@ponytail": true,
+    "code-review@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm build*)",
+      "Bash(pnpm dev*)",
+      "Bash(pnpm start*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm verify*)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm type-check*)",
+      "Bash(pnpm format*)",
+      "Bash(pnpm check:architecture*)",
+      "Bash(pnpm tokens:build*)",
+      "Bash(pnpm core*)",
+      "Bash(pnpm db:generate*)",
+      "Bash(turbo *)",
+      "Bash(node scripts/*)",
+      "Bash(docker compose ps*)",
+      "Bash(docker compose logs*)",
+      "Bash(docker compose up*)",
+      "Bash(docker compose stop*)",
+      "Bash(docker compose restart*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(rg *)",
+      "Bash(fd *)",
+      "Bash(bat *)",
+      "Bash(eza *)",
+      "Bash(jq *)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fdx*)",
+      "Bash(rm -rf *)",
+      "Bash(npm *)",
+      "Bash(yarn *)",
+      "Bash(docker system prune*)",
+      "Bash(docker volume rm*)",
+      "Bash(docker volume prune*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Edit(./apps/hub/src/lib/api/types.ts)",
+      "Edit(./apps/api-iam/src/generated/**)",
+      "Edit(./packages/database/src/generated/**)",
+      "Edit(./packages/config/styles/generated/**)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(gh pr create*)",
+      "Bash(gh pr merge*)",
+      "Bash(pnpm db:push*)",
+      "Bash(pnpm db:reset*)",
+      "Bash(pnpm db:fresh*)",
+      "Bash(docker compose down*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/scripts/claude-code-standard-hook.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
