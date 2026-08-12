@@ -1,11 +1,11 @@
 'use client';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@core/ui';
 import { type JSX } from 'react';
 
 import { MemberActionsMenu } from './member-actions-menu';
 import { MemberStatusBadge } from './member-status-badge';
 
+import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import type { components } from '@/lib/api/types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ type MemberListItem = components['schemas']['MemberListItem'];
 
 export interface MembersListProps {
   members: MemberListItem[];
-  isLoading?: boolean;
+  isLoading?: boolean | undefined;
   currentUserId: string;
   onSuspend: (memberId: string) => void;
   onActivate: (memberId: string) => void;
@@ -25,12 +25,26 @@ export interface MembersListProps {
 
 // ─── Skeleton ──────────────────────────────────────────────────────────────────
 
-function MemberSkeleton(): JSX.Element {
+/**
+ * A row, not a loose div: the skeleton sits inside the same table as the data,
+ * so the header stays put and the layout does not jump when the members land.
+ */
+function MemberSkeletonRow(): JSX.Element {
   return (
-    <div className="flex items-center gap-4 py-3" aria-hidden="true">
-      <div className="bg-muted h-4 w-40 animate-pulse rounded" />
-      <div className="bg-muted h-4 w-20 animate-pulse rounded" />
-    </div>
+    <Tr aria-hidden>
+      <Td>
+        <div className="bg-muted h-4 w-40 animate-pulse rounded" />
+      </Td>
+      <Td>
+        <div className="bg-muted h-4 w-20 animate-pulse rounded" />
+      </Td>
+      <Td>
+        <div className="bg-muted h-5 w-16 animate-pulse rounded-full" />
+      </Td>
+      <Td>
+        <div className="bg-muted h-7 w-7 animate-pulse rounded" />
+      </Td>
+    </Tr>
   );
 }
 
@@ -44,66 +58,55 @@ export function MembersList({
   onActivate,
   onDelete,
 }: MembersListProps): JSX.Element {
-  if (isLoading) {
-    return (
-      <div className="divide-border divide-y">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <MemberSkeleton key={i} />
-        ))}
-      </div>
-    );
-  }
-
-  if (members.length === 0) {
-    return <p className="text-muted-foreground py-4 text-sm">No hay miembros</p>;
-  }
-
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nombre / Email</TableHead>
-            <TableHead>Rol</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.map((member) => {
-            const status = member.status;
-            return (
-              <TableRow key={member.id}>
-                <TableCell>
-                  <div className="font-medium">
-                    {member.fullName != null && member.fullName.length > 0
-                      ? member.fullName
-                      : member.email}
-                  </div>
-                  {member.fullName != null && member.fullName.length > 0 && (
-                    <div className="text-muted-foreground text-xs">{member.email}</div>
-                  )}
-                </TableCell>
-                <TableCell className="text-muted-foreground">{member.role}</TableCell>
-                <TableCell>
-                  <MemberStatusBadge status={status} />
-                </TableCell>
-                <TableCell>
-                  <MemberActionsMenu
-                    memberId={member.id}
-                    memberEmail={member.email}
-                    currentStatus={status}
-                    isSelf={member.id === currentUserId}
-                    onSuspend={onSuspend}
-                    onActivate={onActivate}
-                    onDelete={onDelete}
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+    <DataTable
+      variant="bare"
+      isLoading={isLoading}
+      loadingLabel="Cargando miembros"
+      loadingRows={Array.from({ length: 3 }).map((_, i) => (
+        <MemberSkeletonRow key={i} />
+      ))}
+      isEmpty={members.length === 0}
+      empty={{ text: 'No hay miembros' }}
+      caption="Miembros del equipo"
+      head={
+        <>
+          <Th>Nombre / Email</Th>
+          <Th>Rol</Th>
+          <Th>Estado</Th>
+          <Th>Acciones</Th>
+        </>
+      }
+    >
+      {members.map((member) => (
+        <Tr key={member.id}>
+          <Td>
+            <div className="font-medium">
+              {member.fullName != null && member.fullName.length > 0
+                ? member.fullName
+                : member.email}
+            </div>
+            {member.fullName != null && member.fullName.length > 0 && (
+              <div className="text-muted-foreground text-xs">{member.email}</div>
+            )}
+          </Td>
+          <Td className="text-muted-foreground">{member.role}</Td>
+          <Td>
+            <MemberStatusBadge status={member.status} />
+          </Td>
+          <Td>
+            <MemberActionsMenu
+              memberId={member.id}
+              memberEmail={member.email}
+              currentStatus={member.status}
+              isSelf={member.id === currentUserId}
+              onSuspend={onSuspend}
+              onActivate={onActivate}
+              onDelete={onDelete}
+            />
+          </Td>
+        </Tr>
+      ))}
+    </DataTable>
   );
 }
