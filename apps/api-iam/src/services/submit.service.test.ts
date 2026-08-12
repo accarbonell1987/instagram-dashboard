@@ -322,6 +322,42 @@ describe('SubmitService', () => {
       })
     })
 
+    /**
+     * The wizard asks the representative for a phone and it has to survive to
+     * the profile screen, which reads users.phone. It was written only onto the
+     * tenant — where it doubles as the company's contact number, since the
+     * company step pre-fills from it and stores none of its own — so the owner
+     * opened "Mi perfil" and found the field they had just filled in empty.
+     */
+    it('puts the representative phone on the user as well as the tenant', async () => {
+      const deps = makeDeps('approved')
+      deps.draftRepo.findByIdForUpdate.mockResolvedValue(
+        makeDraft({
+          data: {
+            company: { slug: 'acme', legalName: 'ACME Corp' },
+            representative: {
+              email: 'ana@acme.com',
+              fullName: 'Ana Pérez',
+              phone: '+595992922432',
+            },
+          },
+        }),
+      )
+
+      await createSubmitService(deps as never).submit({ draftId: 'draft-1', version: 5 })
+
+      expect(deps.tx.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ phone: '+595992922432' }),
+        }),
+      )
+      expect(deps.tx.tenant.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ phone: '+595992922432' }),
+        }),
+      )
+    })
+
     it('invokes settlePayment.finalize only after the provisioning transaction commits', async () => {
       const deps = makeDeps('approved')
       const finalize = vi.fn().mockResolvedValue(undefined)
