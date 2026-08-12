@@ -26,6 +26,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
+import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import { ApiError, ConflictError } from '@/lib/api/errors';
 import {
   listPaymentMethods,
@@ -253,37 +254,42 @@ function EditMethodDialog({
                   account number pushed the table past the container and
                   overflow-hidden simply clipped it. */}
               {fields.some((_, index) => editing?.index !== index) && (
-                <div className="border-border overflow-hidden rounded-lg border">
-                  <table className="w-full table-fixed text-left text-sm">
-                    <caption className="sr-only">Cuentas bancarias configuradas</caption>
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="px-3 py-2 font-medium">Banco</th>
-                        <th className="w-24 px-3 py-2 font-medium">Tipo</th>
-                        <th className="px-3 py-2 font-medium">Número de cuenta</th>
-                        <th className="px-3 py-2 font-medium">Titular</th>
-                        <th className="w-24 px-3 py-2 text-right font-medium">
-                          <span className="sr-only">Acciones</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-border divide-y">
+                <DataTable
+                  caption="Cuentas bancarias configuradas"
+                  density="dense"
+                  tableClassName="table-fixed"
+                  // Emptiness is decided above, and it is a different question:
+                  // "no accounts configured" is not the same as "the only account
+                  // is currently open in the edit panel", which also shows no rows.
+                  isEmpty={false}
+                  head={
+                    <>
+                      <Th>Banco</Th>
+                      <Th width="w-24">Tipo</Th>
+                      <Th>Número de cuenta</Th>
+                      <Th>Titular</Th>
+                      <Th width="w-24" align="right">
+                        <span className="sr-only">Acciones</span>
+                      </Th>
+                    </>
+                  }
+                >
                       {fields.map((field, index) => {
                         if (editing?.index === index) return null;
                         const account = form.getValues(`accounts.${index}`);
                         return (
-                          <tr key={field.id}>
-                            <td className="truncate px-3 py-2" title={account.bankName}>
+                          <Tr key={field.id}>
+                            <Td className="truncate" title={account.bankName}>
                               {account.bankName}
-                            </td>
-                            <td className="px-3 py-2">{accountTypeLabel(account.accountType)}</td>
-                            <td className="truncate px-3 py-2" title={account.accountNumber}>
+                            </Td>
+                            <Td>{accountTypeLabel(account.accountType)}</Td>
+                            <Td className="truncate" title={account.accountNumber}>
                               {account.accountNumber}
-                            </td>
-                            <td className="truncate px-3 py-2" title={account.accountHolder}>
+                            </Td>
+                            <Td className="truncate" title={account.accountHolder}>
                               {account.accountHolder}
-                            </td>
-                            <td className="px-3 py-2 text-right">
+                            </Td>
+                            <Td align="right">
                               <div className="flex justify-end gap-1">
                                 <Button
                                   type="button"
@@ -310,13 +316,11 @@ function EditMethodDialog({
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
-                            </td>
-                          </tr>
+                            </Td>
+                          </Tr>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
+                </DataTable>
               )}
 
               {editing !== null && (
