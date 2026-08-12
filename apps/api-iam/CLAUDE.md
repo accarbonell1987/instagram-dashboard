@@ -189,7 +189,7 @@ pnpm --filter @corehub/api-iam test:watch    # Watch mode
 | Billing | 5 | GET /billing/payment-method (**stub**→null), POST /billing/payment-method (**stub**→202), GET /billing/invoices (**stub**→vacío), GET /billing/invoices/:id/signed-url (**stub**→404), GET /billing/documents/:id/signed-url (real) |
 | Webhooks | 1 | POST /webhooks/bancard |
 | Well-known | 1 | GET /.well-known/jwks.json |
-| Health | 1 | GET /health |
+| Health | 1 | GET /healthz |
 
 > **Billing stubs**: Los 4 endpoints nuevos de billing retornan estado vacío/nulo. Son placeholders para cuando se implemente la tokenización de tarjetas vía Bancard y la generación de facturas reales.
 
