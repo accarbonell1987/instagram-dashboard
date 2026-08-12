@@ -334,7 +334,7 @@ export default function PaymentsQueuePage(): JSX.Element {
         loadingText="Cargando pagos..."
         empty={{ text: 'No hay pagos que coincidan con este filtro.' }}
         caption="Cola de pagos pendientes"
-        density="dense"
+        variant="dense"
         tableClassName="table-fixed"
         head={
           <>

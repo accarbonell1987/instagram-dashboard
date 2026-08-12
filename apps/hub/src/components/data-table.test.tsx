@@ -98,3 +98,92 @@ describe('TablePagination', () => {
     expect(onPageChange).toHaveBeenCalledWith(1);
   });
 });
+
+/**
+ * The bare variant exists for tables already sitting inside a settings card,
+ * where the default bordered frame would draw a box inside a box. It has to
+ * drop the chrome everywhere, states included — a boxed "no hay facturas" in
+ * the middle of a card is the same mistake in miniature.
+ */
+describe('DataTable bare variant', () => {
+  it('drops the bordered container and the filled header', () => {
+    const { container } = render(
+      <DataTable variant="bare" head={<Th>Email</Th>} isEmpty={false}>
+        <Tr>
+          <Td>ana@empresa.com</Td>
+        </Tr>
+      </DataTable>
+    );
+    const wrapper = container.firstElementChild;
+    expect(wrapper?.className).not.toMatch(/rounded-lg/);
+    expect(container.querySelector('thead')?.className).not.toMatch(/bg-muted/);
+  });
+
+  it('reports empty as plain text, not a boxed panel', () => {
+    const { container } = render(
+      <DataTable variant="bare" head={<Th>Email</Th>} isEmpty empty={{ text: 'No hay invitaciones' }}>
+        <></>
+      </DataTable>
+    );
+    const node = screen.getByText('No hay invitaciones');
+    expect(node.tagName).toBe('P');
+    expect(container.querySelector('.rounded-lg')).toBeNull();
+  });
+
+  it('keeps the bordered panel for the default variant', () => {
+    const { container } = render(
+      <DataTable head={<Th>Email</Th>} isEmpty empty={{ text: 'No hay nada' }}>
+        <></>
+      </DataTable>
+    );
+    expect(container.querySelector('.rounded-lg')).not.toBeNull();
+  });
+});
+
+describe('DataTable loading rows', () => {
+  it('renders skeleton rows under the real header instead of the loading text', () => {
+    render(
+      <DataTable
+        head={<Th>Fecha</Th>}
+        isEmpty={false}
+        isLoading
+        loadingRows={
+          <Tr>
+            <Td>esqueleto</Td>
+          </Tr>
+        }
+      >
+        <Tr>
+          <Td>real</Td>
+        </Tr>
+      </DataTable>
+    );
+    expect(screen.getByRole('columnheader', { name: 'Fecha' })).toBeInTheDocument();
+    expect(screen.getByText('esqueleto')).toBeInTheDocument();
+    expect(screen.queryByText('real')).toBeNull();
+    expect(screen.queryByText('Cargando...')).toBeNull();
+  });
+
+  // Skeletons announce nothing on their own, so the container has to.
+  it('marks the frame busy and labels it while skeletons are showing', () => {
+    const { container } = render(
+      <DataTable
+        head={<Th>Fecha</Th>}
+        isEmpty={false}
+        isLoading
+        loadingLabel="Cargando facturas"
+        loadingRows={
+          <Tr>
+            <Td>esqueleto</Td>
+          </Tr>
+        }
+      >
+        <></>
+      </DataTable>
+    );
+    const busy = container.querySelector('[aria-busy="true"]');
+    expect(busy).not.toBeNull();
+    expect(busy).toHaveAttribute('aria-label', 'Cargando facturas');
+  });
+});
+

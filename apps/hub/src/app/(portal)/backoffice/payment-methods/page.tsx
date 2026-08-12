@@ -256,7 +256,7 @@ function EditMethodDialog({
               {fields.some((_, index) => editing?.index !== index) && (
                 <DataTable
                   caption="Cuentas bancarias configuradas"
-                  density="dense"
+                  variant="dense"
                   tableClassName="table-fixed"
                   // Emptiness is decided above, and it is a different question:
                   // "no accounts configured" is not the same as "the only account

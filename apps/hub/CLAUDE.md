@@ -80,7 +80,18 @@ apps/hub/
 - **Port**: 3001 (hub posee este puerto). `@internal/api-example` se movió a 3005, así que ya no colisionan.
 - **Providers render**: `providers.tsx` retorna `<></>` mientras MSW arranca — es intencional (no spinner).
 - **Per-section loading**: Cada sección de settings (OrganizationCard, PaymentMethodSection, InvoicesSection) gestiona su propio `useEffect` + estado de carga. No hay loading global de página.
-- **Plain `<table>` para listas tabulares**: Facturas e invitaciones usan `<table>` nativo (no componentes Table de `@core/ui`). Ver `invitations-list.tsx` y `invoices-section.tsx` como referencia.
+- **Nunca escribas un `<table>` a mano**: usá `DataTable` + `Th`/`Tr`/`Td` de
+  `@/components/data-table`, y `TablePagination` si hay paginado. El componente aporta el
+  marco (contenedor, header, bordes, padding) y los estados de carga, vacío y error; las
+  filas las escribe cada pantalla, porque las celdas son heterogéneas. El único `<table>`
+  del hub vive dentro de ese componente.
+  - `variant="default"` — pantallas del backoffice.
+  - `variant="dense"` — tablas de muchas columnas (ver la cola de pagos).
+  - `variant="bare"` — tablas dentro de una tarjeta de settings: sin contenedor con borde
+    y con los estados en texto plano, para no dibujar una caja dentro de otra caja.
+    Ver `invitations-list.tsx` e `invoices-section.tsx`.
+  - **El error gana sobre el vacío**: una request fallida también deja la lista vacía, y
+    anunciar "no hay resultados" por una carga rota manda a buscar datos que nunca llegaron.
 - **Billing stubs**: Los endpoints de billing en `api-iam` son stubs que retornan estado vacío (`paymentMethod: null`, `items: []`). La integración real con Bancard para tokenización de tarjetas es trabajo futuro.
 - **`session.role`**: El rol está en `session.role` (no en `session.user.role`). Usar `useSession()` para leer el rol en componentes.
 - **RequireRole**: `<RequireRole role={['TenantAdmin', 'SuperAdmin']}>` — envuelve secciones y rutas que solo son visibles para admins. Redirige a `/` si el rol no está autorizado.
