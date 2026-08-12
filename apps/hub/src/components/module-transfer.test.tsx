@@ -31,6 +31,15 @@ function TransformedDialog({ children }: { children: React.ReactNode }) {
   );
 }
 
+async function dragOnto(handle: Element, target: Element): Promise<void> {
+  const user = userEvent.setup();
+  await user.pointer([
+    { keys: '[MouseLeft>]', target: handle, coords: { x: 0, y: 0 } },
+    { target, coords: { x: 10, y: 10 } },
+    { keys: '[/MouseLeft]', target },
+  ]);
+}
+
 async function startDragOn(handle: Element): Promise<void> {
   const user = userEvent.setup();
   // The sensor has a 5px activation constraint, so the press has to be
@@ -72,5 +81,45 @@ describe('ModuleTransfer drag overlay', () => {
       'the overlay copy must live outside the transformed dialog, or fixed positioning is measured from the dialog box'
     ).toBeDefined();
     expect(document.body.contains(overlayCopy as Node)).toBe(true);
+  });
+});
+
+/**
+ * The empty column has to accept the drop.
+ *
+ * SortableContext registers the rows inside a column, not the column itself, so
+ * with nothing assigned yet there was no droppable to aim at: `over` came back
+ * null and handleDragEnd bailed out before calling onAssign. Assigning the very
+ * first module — the one case that matters on a fresh role — silently did
+ * nothing.
+ *
+ * Only the unassign direction is asserted. The mirrored case is the same
+ * invariant, but jsdom reports every rect as 0×0, so @dnd-kit's closestCenter
+ * cannot tell the columns apart when the source column still has rows and
+ * resolves the drop arbitrarily. Forcing it would mean stubbing geometry for
+ * every node, and a test that elaborate is likelier to break on a dnd-kit
+ * upgrade than to catch a real regression. This one already goes red when the
+ * column stops being a droppable, which is the thing that broke.
+ */
+describe('ModuleTransfer drop targets', () => {
+  it('unassigns a module dropped back on the empty available column', async () => {
+    const onUnassign = vi.fn();
+    render(
+      <ModuleTransfer
+        available={[]}
+        assigned={MODULES}
+        onAssign={vi.fn()}
+        onUnassign={onUnassign}
+      />
+    );
+
+    await dragOnto(
+      screen.getByRole('button', { name: 'Arrastrar Publicaciones' }),
+      screen.getByText('Todos asignados')
+    );
+
+    await waitFor(() => {
+      expect(onUnassign).toHaveBeenCalledWith('ig-publications');
+    });
   });
 });

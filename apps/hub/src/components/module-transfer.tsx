@@ -6,6 +6,7 @@ import {
   DragOverlay,
   PointerSensor,
   closestCenter,
+  useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -39,6 +40,37 @@ interface ModuleTransferProps {
 
 const CONTAINER_AVAILABLE = 'available';
 const CONTAINER_ASSIGNED = 'assigned';
+
+/**
+ * The column itself has to be a registered droppable, not just a div carrying
+ * an `id`. SortableContext registers the items inside it and nothing else, so
+ * an empty column offered dnd-kit no drop target at all: `over` came back null
+ * and handleDragEnd returned before assigning anything. Dropping only worked
+ * once a column already had a row to aim at, which is the opposite of what an
+ * empty "Asignados (0)" needs.
+ */
+function DroppableColumn({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  const { setNodeRef, isOver } = useDroppable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        'bg-muted/30 min-h-[100px] space-y-1 rounded-lg border p-2 transition-colors',
+        // Without this the column gives no sign it will accept the drop.
+        isOver && 'border-primary bg-primary/5'
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 
 function SortableModule({
   module,
@@ -181,10 +213,7 @@ export function ModuleTransfer({
           <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase">
             Disponibles ({available.length})
           </h4>
-          <div
-            id={CONTAINER_AVAILABLE}
-            className="bg-muted/30 min-h-[100px] space-y-1 rounded-lg border p-2"
-          >
+          <DroppableColumn id={CONTAINER_AVAILABLE}>
             <SortableContext items={availableIds} strategy={verticalListSortingStrategy}>
               {available.length === 0 ? (
                 <p className="text-muted-foreground py-4 text-center text-xs">Todos asignados</p>
@@ -194,7 +223,7 @@ export function ModuleTransfer({
                 ))
               )}
             </SortableContext>
-          </div>
+          </DroppableColumn>
         </div>
 
         {/* Assigned column */}
@@ -202,10 +231,7 @@ export function ModuleTransfer({
           <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase">
             Asignados ({assigned.length})
           </h4>
-          <div
-            id={CONTAINER_ASSIGNED}
-            className="bg-muted/30 min-h-[100px] space-y-1 rounded-lg border p-2"
-          >
+          <DroppableColumn id={CONTAINER_ASSIGNED}>
             <SortableContext items={assignedIds} strategy={verticalListSortingStrategy}>
               {assigned.length === 0 ? (
                 <p className="text-muted-foreground py-4 text-center text-xs">
@@ -222,7 +248,7 @@ export function ModuleTransfer({
                 ))
               )}
             </SortableContext>
-          </div>
+          </DroppableColumn>
         </div>
       </div>
 
