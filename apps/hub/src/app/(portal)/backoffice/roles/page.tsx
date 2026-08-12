@@ -20,6 +20,7 @@ import { Plus, Pencil, Trash2, Puzzle } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 import { toast } from 'sonner';
 
+import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import { ModuleTransfer } from '@/components/module-transfer';
 import { ApiError } from '@/lib/api/errors';
 import { listModules, type AdminModule } from '@/modules/backoffice/modulo-admin/services/module-admin.service';
@@ -179,28 +180,23 @@ export default function RolesPage(): JSX.Element {
 
       {error !== '' && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
-      {loading ? (
-        <p className="text-muted-foreground text-sm">Cargando...</p>
-      ) : roles.length === 0 ? (
-        <div className="border-border bg-card rounded-lg border p-8 text-center">
-          <p className="text-muted-foreground text-sm">No hay roles para este producto.</p>
-        </div>
-      ) : (
-        <div className="border-border overflow-hidden rounded-lg border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">Clave</th>
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 text-right font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+      <DataTable
+        isLoading={loading}
+        isEmpty={roles.length === 0}
+        empty={{ text: 'No hay roles para este producto.' }}
+        head={
+          <>
+            <Th>Clave</Th>
+            <Th>Nombre</Th>
+            <Th align="right">Acciones</Th>
+          </>
+        }
+      >
               {roles.map((role) => (
-                <tr key={role.id} className="border-border border-t">
-                  <td className="px-4 py-3 font-mono text-xs">{role.key}</td>
-                  <td className="px-4 py-3">{role.name}</td>
-                  <td className="px-4 py-3 text-right">
+                <Tr key={role.id}>
+                  <Td className="font-mono text-xs">{role.key}</Td>
+                  <Td>{role.name}</Td>
+                  <Td align="right">
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -225,13 +221,10 @@ export default function RolesPage(): JSX.Element {
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </td>
-                </tr>
+                  </Td>
+                </Tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      </DataTable>
 
       {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>

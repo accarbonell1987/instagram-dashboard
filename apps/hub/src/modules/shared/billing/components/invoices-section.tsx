@@ -9,6 +9,7 @@ import { listInvoices, getInvoiceSignedUrl } from '../services/billing.service';
 
 import { InvoiceStatusBadge } from './invoice-status-badge';
 
+import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import type { components } from '@/lib/api/types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -40,20 +41,20 @@ function formatAmount(total: number, currency: string): string {
 
 function InvoiceSkeletonRow(): JSX.Element {
   return (
-    <tr aria-hidden="true">
-      <td className="py-3 pr-4">
+    <Tr aria-hidden>
+      <Td>
         <div className="bg-muted h-4 w-24 animate-pulse rounded" />
-      </td>
-      <td className="py-3 pr-4 text-right">
+      </Td>
+      <Td align="right">
         <div className="bg-muted ml-auto h-4 w-20 animate-pulse rounded" />
-      </td>
-      <td className="py-3 pr-4">
+      </Td>
+      <Td>
         <div className="bg-muted h-5 w-20 animate-pulse rounded-full" />
-      </td>
-      <td className="py-3 text-right">
+      </Td>
+      <Td align="right">
         <div className="bg-muted ml-auto h-7 w-7 animate-pulse rounded" />
-      </td>
-    </tr>
+      </Td>
+    </Tr>
   );
 }
 
@@ -115,55 +116,40 @@ export function InvoicesSection(): JSX.Element {
         <CardTitle>Historial de facturas</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoadingInitial ? (
-          <div
-            aria-busy="true"
-            aria-label="Cargando facturas"
-            className="overflow-x-auto"
-          >
-            <table className="w-full text-sm">
-              <tbody>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <InvoiceSkeletonRow key={i} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : loadError !== null ? (
-          <p role="alert" className="text-destructive text-sm">
-            {loadError} Intenta recargar la página.
-          </p>
-        ) : items.length === 0 ? (
-          <p className="text-muted-foreground py-4 text-sm">
-            Todavía no tenés facturas emitidas.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <caption className="sr-only">Historial de facturas</caption>
-              <thead>
-                <tr className="border-border border-b">
-                  <th className="text-muted-foreground py-2 pr-4 text-left font-medium">Fecha</th>
-                  <th className="text-muted-foreground py-2 pr-4 text-right font-medium">Total</th>
-                  <th className="text-muted-foreground py-2 pr-4 text-left font-medium">Estado</th>
-                  <th className="text-muted-foreground py-2 text-right font-medium">
-                    <span className="sr-only">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+        <DataTable
+          variant="bare"
+          isLoading={isLoadingInitial}
+          loadingRows={Array.from({ length: 3 }).map((_, i) => (
+            <InvoiceSkeletonRow key={i} />
+          ))}
+          loadingLabel="Cargando facturas"
+          error={loadError !== null ? `${loadError} Intenta recargar la página.` : ''}
+          isEmpty={items.length === 0}
+          empty={{ text: 'Todavía no tenés facturas emitidas.' }}
+          caption="Historial de facturas"
+          head={
+            <>
+              <Th>Fecha</Th>
+              <Th align="right">Total</Th>
+              <Th>Estado</Th>
+              <Th align="right">
+                <span className="sr-only">Acciones</span>
+              </Th>
+            </>
+          }
+        >
                 {items.map((invoice) => {
                   const formattedDate = formatDate(invoice.issuedAt);
                   return (
-                    <tr key={invoice.id} className="border-border border-b last:border-0">
-                      <td className="py-3 pr-4 font-medium">{formattedDate}</td>
-                      <td className="text-foreground py-3 pr-4 text-right tabular-nums">
+                    <Tr key={invoice.id}>
+                      <Td className="font-medium">{formattedDate}</Td>
+                      <Td align="right" className="text-foreground tabular-nums">
                         {formatAmount(invoice.total, invoice.currency)}
-                      </td>
-                      <td className="py-3 pr-4">
+                      </Td>
+                      <Td>
                         <InvoiceStatusBadge status={invoice.status} />
-                      </td>
-                      <td className="py-3 text-right">
+                      </Td>
+                      <Td align="right">
                         {invoice.documentId !== null ? (
                           <Button
                             type="button"
@@ -179,14 +165,11 @@ export function InvoicesSection(): JSX.Element {
                         ) : (
                           <span className="text-muted-foreground text-xs">—</span>
                         )}
-                      </td>
-                    </tr>
+                      </Td>
+                    </Tr>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        </DataTable>
 
         {!isLoadingInitial && loadError === null && hasMore && (
           <div className="mt-4">

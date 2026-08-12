@@ -16,6 +16,11 @@
     "./eslint/node": "./eslint/node.js",
     "./prettier": "./prettier/prettier.config.js",
     "./tailwind": "./tailwind/tailwind.config.ts",
+    "./vitest": {
+      "types": "./vitest/base.ts",
+      "import": "./vitest/base.ts",
+      "default": "./vitest/base.ts"
+    },
     "./typescript/base": "./typescript/base.json",
     "./typescript/nextjs": "./typescript/nextjs.json",
     "./typescript/library": "./typescript/library.json",
@@ -62,10 +67,17 @@
     "style-dictionary": "^4.2.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
   },
   "peerDependencies": {
     "eslint": "^9.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
   }
 }

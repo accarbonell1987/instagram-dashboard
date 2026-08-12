@@ -150,15 +150,15 @@ apps/{app}/src/
 
 Some apps legitimately diverge from these rules. The current exemption list lives in `.atl/webapp-architecture-exemptions.json`. Any new exemption MUST:
 
-1. Add an entry to that file with `app`, `rules` (list of rule IDs from this doc, e.g. `["§1.3", "§4"]`), `reason`, and `since` (date).
+1. Add an entry to that file with `app`, `rules` (list of rule IDs from this doc, e.g. `["§1.3", "§4"]`), `reason`, and `reviewBy` (ISO date). `since` and `owner` are optional. The shape is enforced by `.atl/webapp-architecture-exemptions.schema.json`.
 2. Update the app's local `CLAUDE.md` to point to the exemption and explain consumer-facing implications.
-3. Be reviewed by the architecture-oracle agent or a human reviewer before merge.
+3. Be reviewed by a human before merge. An exemption is a debt with an expiry date, not a permanent carve-out — `reviewBy: null` is reserved for divergences that are structural and will never be resolved.
 
 Current known divergences (already exempt):
 
 | App                 | Rules diverged | Why                                                              |
 | ------------------- | -------------- | ---------------------------------------------------------------- |
-| `apps/hub`          | §1, §4         | OAuth / cookie httpOnly + tokenHolder; ServicesProvider replaced by `auth-context`; custom Bearer interceptor on `coreServices.httpClient`. Domain services not yet defined — review by 2026-08-01. |
+| `apps/hub`          | §1, §4         | OAuth / cookie httpOnly + tokenHolder; ServicesProvider replaced by `auth-context`; custom Bearer interceptor on `coreServices.httpClient`. Domain services not yet defined — review by 2026-11-11. |
 | `apps/landing-page` | §1, §4, §5     | Marketing site — does not consume services or expose CRUD.        |
 
 ---

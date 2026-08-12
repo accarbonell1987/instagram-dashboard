@@ -43,6 +43,7 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { DataTable, Th } from '@/components/data-table';
 import { ModuleTransfer } from '@/components/module-transfer';
 import { ApiError } from '@/lib/api/errors';
 import {
@@ -969,35 +970,38 @@ export default function PlansPage(): JSX.Element {
 
       {error !== '' && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
-      {plans.length === 0 ? (
-        <div className="border-border bg-card rounded-lg border p-8 text-center">
-          <p className="text-muted-foreground text-sm">
-            {filter === 'all'
-              ? 'No hay planes configurados.'
-              : `No hay planes ${filter === 'active' ? 'activos' : 'archivados'}.`}
-          </p>
-          {filter !== 'archived' && (
-            <Button variant="ghost" size="sm" className="mt-2" onClick={handleCreate}>
-              Crear el primer plan
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div className="border-border overflow-hidden rounded-lg border">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="w-10 px-2 py-3" aria-label="Reordenar" />
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Precio</th>
-                <th className="px-4 py-3 font-medium">Ciclo</th>
-                <th className="px-4 py-3 font-medium">Tenants</th>
-                <th className="px-4 py-3 font-medium">Estado</th>
-                <th className="px-4 py-3 text-right font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+      {/* DndContext wraps the table from outside: it renders no DOM of its own,
+          so the shared frame stays intact while rows remain sortable. */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DataTable
+          isEmpty={plans.length === 0}
+          empty={{
+            text:
+              filter === 'all'
+                ? 'No hay planes configurados.'
+                : `No hay planes ${filter === 'active' ? 'activos' : 'archivados'}.`,
+            ...(filter !== 'archived'
+              ? {
+                  action: (
+                    <Button variant="ghost" size="sm" onClick={handleCreate}>
+                      Crear el primer plan
+                    </Button>
+                  ),
+                }
+              : {}),
+          }}
+          head={
+            <>
+              <Th width="w-10" className="px-2" aria-label="Reordenar" />
+              <Th>Nombre</Th>
+              <Th>Precio</Th>
+              <Th>Ciclo</Th>
+              <Th>Tenants</Th>
+              <Th>Estado</Th>
+              <Th align="right">Acciones</Th>
+            </>
+          }
+        >
               <SortableContext
                 items={plans.map((p) => p.id)}
                 strategy={verticalListSortingStrategy}
@@ -1020,11 +1024,8 @@ export default function PlansPage(): JSX.Element {
                   />
                 ))}
               </SortableContext>
-            </tbody>
-          </table>
-          </DndContext>
-        </div>
-      )}
+        </DataTable>
+      </DndContext>
 
       <PlanFormDialog
         open={formOpen}

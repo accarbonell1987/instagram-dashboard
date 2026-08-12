@@ -21,6 +21,7 @@ import { RotateCcw, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 import { toast } from 'sonner';
 
+import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import { ApiError } from '@/lib/api/errors';
 import {
   listModules,
@@ -340,29 +341,26 @@ export default function TrialsPage(): JSX.Element {
         </div>
       )}
 
-      {loading ? (
-        <p className="text-muted-foreground p-4 text-sm">Cargando...</p>
-      ) : trials.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No hay trials activos.</p>
-      ) : (
-        <div className="border-border overflow-hidden rounded-lg border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">Tenant</th>
-                <th className="px-4 py-3 font-medium">Módulo</th>
-                <th className="px-4 py-3 font-medium">Consumido</th>
-                <th className="px-4 py-3 font-medium">Restante</th>
-                <th className="px-4 py-3 text-right font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+      <DataTable
+        isLoading={loading}
+        isEmpty={trials.length === 0}
+        empty={{ text: 'No hay trials activos.' }}
+        head={
+          <>
+            <Th>Tenant</Th>
+            <Th>Módulo</Th>
+            <Th>Consumido</Th>
+            <Th>Restante</Th>
+            <Th align="right">Acciones</Th>
+          </>
+        }
+      >
               {trials.map((t) => (
-                <tr key={t.id} className="border-border border-t">
-                  <td className="px-4 py-3 font-mono text-xs">{t.tenantId.slice(0, 8)}...</td>
-                  <td className="px-4 py-3">{t.moduleName ?? 'Producto completo'}</td>
-                  <td className="px-4 py-3">{t.consumedDays ?? '—'} días</td>
-                  <td className="px-4 py-3">
+                <Tr key={t.id}>
+                  <Td className="font-mono text-xs">{t.tenantId.slice(0, 8)}...</Td>
+                  <Td>{t.moduleName ?? 'Producto completo'}</Td>
+                  <Td>{t.consumedDays ?? '—'} días</Td>
+                  <Td>
                     <span
                       className={
                         t.remainingDays !== null && t.remainingDays <= 3
@@ -372,8 +370,8 @@ export default function TrialsPage(): JSX.Element {
                     >
                       {t.remainingDays ?? '—'} días
                     </span>
-                  </td>
-                  <td className="space-x-1 px-4 py-3 text-right">
+                  </Td>
+                  <Td align="right" className="space-x-1">
                     <Button
                       size="sm"
                       variant="ghost"
@@ -407,13 +405,10 @@ export default function TrialsPage(): JSX.Element {
                     >
                       <RotateCcw className="h-3 w-3" />
                     </Button>
-                  </td>
-                </tr>
+                  </Td>
+                </Tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      </DataTable>
 
       <GrantTrialDialog
         open={grantOpen}

@@ -6,6 +6,7 @@ import {
   DragOverlay,
   PointerSensor,
   closestCenter,
+  useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -18,7 +19,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import { useState, type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
+import { createPortal } from 'react-dom';
 
 import { moduleVisuals } from '@/lib/apps-config';
 
@@ -38,6 +40,37 @@ interface ModuleTransferProps {
 
 const CONTAINER_AVAILABLE = 'available';
 const CONTAINER_ASSIGNED = 'assigned';
+
+/**
+ * The column itself has to be a registered droppable, not just a div carrying
+ * an `id`. SortableContext registers the items inside it and nothing else, so
+ * an empty column offered dnd-kit no drop target at all: `over` came back null
+ * and handleDragEnd returned before assigning anything. Dropping only worked
+ * once a column already had a row to aim at, which is the opposite of what an
+ * empty "Asignados (0)" needs.
+ */
+function DroppableColumn({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  const { setNodeRef, isOver } = useDroppable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        'bg-muted/30 min-h-[100px] space-y-1 rounded-lg border p-2 transition-colors',
+        // Without this the column gives no sign it will accept the drop.
+        isOver && 'border-primary bg-primary/5'
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 
 function SortableModule({
   module,
@@ -139,6 +172,34 @@ export function ModuleTransfer({
     ? [...available, ...assigned].find((m) => activeId.endsWith(m.id)) ?? null
     : null;
 
+  // The overlay is portalled to <body>, and document only exists after mount.
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  /**
+   * DragOverlay positions itself with `position: fixed` in viewport coordinates.
+   * This component is rendered inside DialogContent, which centres itself with
+   * `translate-x-[-50%] translate-y-[-50%]` — and a transformed ancestor becomes
+   * the containing block for its fixed descendants. The overlay's coordinates
+   * were therefore measured from the dialog's box instead of the viewport, which
+   * is why the dragged card landed offset by half the dialog and outside it.
+   *
+   * Portalling to <body> puts the overlay back above every transform, so it
+   * tracks the cursor again.
+   */
+  const overlay = (
+    <DragOverlay>
+      {activeModule !== null ? (
+        <div className="bg-card flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-xl">
+          <GripVertical className="text-muted-foreground h-4 w-4" />
+          <span>{activeModule.name}</span>
+        </div>
+      ) : null}
+    </DragOverlay>
+  );
+
   return (
     <DndContext
       sensors={sensors}
@@ -152,10 +213,7 @@ export function ModuleTransfer({
           <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase">
             Disponibles ({available.length})
           </h4>
-          <div
-            id={CONTAINER_AVAILABLE}
-            className="bg-muted/30 min-h-[100px] space-y-1 rounded-lg border p-2"
-          >
+          <DroppableColumn id={CONTAINER_AVAILABLE}>
             <SortableContext items={availableIds} strategy={verticalListSortingStrategy}>
               {available.length === 0 ? (
                 <p className="text-muted-foreground py-4 text-center text-xs">Todos asignados</p>
@@ -165,7 +223,7 @@ export function ModuleTransfer({
                 ))
               )}
             </SortableContext>
-          </div>
+          </DroppableColumn>
         </div>
 
         {/* Assigned column */}
@@ -173,10 +231,7 @@ export function ModuleTransfer({
           <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase">
             Asignados ({assigned.length})
           </h4>
-          <div
-            id={CONTAINER_ASSIGNED}
-            className="bg-muted/30 min-h-[100px] space-y-1 rounded-lg border p-2"
-          >
+          <DroppableColumn id={CONTAINER_ASSIGNED}>
             <SortableContext items={assignedIds} strategy={verticalListSortingStrategy}>
               {assigned.length === 0 ? (
                 <p className="text-muted-foreground py-4 text-center text-xs">
@@ -193,18 +248,11 @@ export function ModuleTransfer({
                 ))
               )}
             </SortableContext>
-          </div>
+          </DroppableColumn>
         </div>
       </div>
 
-      <DragOverlay>
-        {activeModule !== null ? (
-          <div className="bg-card flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-xl">
-            <GripVertical className="text-muted-foreground h-4 w-4" />
-            <span>{activeModule.name}</span>
-          </div>
-        ) : null}
-      </DragOverlay>
+      {isMounted ? createPortal(overlay, document.body) : null}
     </DndContext>
   );
 }

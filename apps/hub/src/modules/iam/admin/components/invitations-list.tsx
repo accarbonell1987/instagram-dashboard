@@ -3,6 +3,7 @@
 import { Badge, Button } from '@core/ui';
 import { type JSX } from 'react';
 
+import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import type { components } from '@/lib/api/types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -72,40 +73,36 @@ export function InvitationsList({
     );
   }
 
-  if (invitations.length === 0) {
-    return (
-      <p className="text-muted-foreground py-4 text-sm">No hay invitaciones</p>
-    );
-  }
-
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-border border-b">
-            <th className="text-muted-foreground py-2 pr-4 text-left font-medium">Email</th>
-            <th className="text-muted-foreground py-2 pr-4 text-left font-medium">Rol</th>
-            <th className="text-muted-foreground py-2 pr-4 text-left font-medium">Estado</th>
-            <th className="text-muted-foreground py-2 pr-4 text-left font-medium">Vence</th>
-            <th className="text-muted-foreground py-2 text-left font-medium">Acciones</th>
-          </tr>
-        </thead>
-        <tbody className="divide-border divide-y">
+    <DataTable
+      variant="bare"
+      isEmpty={invitations.length === 0}
+      empty={{ text: 'No hay invitaciones' }}
+      head={
+        <>
+          <Th>Email</Th>
+          <Th>Rol</Th>
+          <Th>Estado</Th>
+          <Th>Vence</Th>
+          <Th>Acciones</Th>
+        </>
+      }
+    >
           {invitations.map((inv) => (
-            <tr key={inv.id}>
-              <td className="py-3 pr-4 font-medium">{inv.email}</td>
-              <td className="text-muted-foreground py-3 pr-4">{inv.role}</td>
-              <td className="py-3 pr-4">
+            <Tr key={inv.id}>
+              <Td className="font-medium">{inv.email}</Td>
+              <Td className="text-muted-foreground">{inv.role}</Td>
+              <Td>
                 <StatusBadge status={inv.status} />
-              </td>
-              <td className="text-muted-foreground py-3 pr-4">
+              </Td>
+              <Td className="text-muted-foreground">
                 {new Date(inv.expiresAt).toLocaleDateString('es-PY', {
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric',
                 })}
-              </td>
-              <td className="py-3">
+              </Td>
+              <Td>
                 {inv.status === 'pending' && (
                   <Button
                     type="button"
@@ -117,11 +114,9 @@ export function InvitationsList({
                     Revocar
                   </Button>
                 )}
-              </td>
-            </tr>
+              </Td>
+            </Tr>
           ))}
-        </tbody>
-      </table>
-    </div>
+    </DataTable>
   );
 }

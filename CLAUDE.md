@@ -56,8 +56,8 @@ front-corehub-core/
 
 ## Agentes para este proyecto
 
-Este repo **no define agentes propios**. Los que siguen viven en `~/.claude/agents/`
-y están disponibles en cualquier proyecto de esta máquina.
+Estos seis viven **en el repo**, en `.claude/agents/`. Un clon los tiene sin
+instalar nada.
 
 | Agente                  | Usar para...                                                |
 | ----------------------- | ----------------------------------------------------------- |
@@ -68,13 +68,22 @@ y están disponibles en cualquier proyecto de esta máquina.
 | **devops-specialist**   | CI/CD, Docker, deployment, GitHub Actions                   |
 | **uiux-designer**       | Diseño, wireframes, design system                           |
 
-Además están las familias `sdd-*` (flujo Spec-Driven Development) y `review-*`
-más `jd-*` (revisión adversarial), que se invocan a través de sus comandos —
-no directamente.
+Las familias `sdd-*`, `review-*` y `jd-*` **no** están vendorizadas y son opt-in:
+viven solo en `~/.claude/agents/` de esta máquina. Los `sdd-*` y `jd-*` declaran
+herramientas del MCP de engram y rutas `~/.claude/skills/_shared/`; los `review-*`
+solo los invoca el CLI `gentle-ai`. Ninguno de los tres grupos funciona en un clon,
+por eso quedaron afuera en vez de copiarse rotos.
 
 > Antes de agregar un agente a esta tabla, verificá que exista:
-> `ls ~/.claude/agents/`. Una tabla que lista agentes inexistentes manda a
+> `ls .claude/agents/`. Una tabla que lista agentes inexistentes manda a
 > buscar herramientas que no están.
+
+## Estándar de código
+
+`.atl/code-standard.md` define **cómo** se escribe el código acá; `.atl/webapp-architecture.md`
+define **qué** debe existir y lo verifica `pnpm check:architecture`. El hook PreToolUse de
+`.claude/settings.json` inyecta el estándar en contexto antes de cada Write/Edit de un
+archivo fuente, así que no depende de que alguien se acuerde de abrirlo.
 
 ## Arquitectura obligatoria de webapps
 

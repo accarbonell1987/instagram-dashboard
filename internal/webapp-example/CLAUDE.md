@@ -66,7 +66,7 @@ o vía `/sdd-explore` — no hay comando `/analyze`.
 
 Usa estos agentes según la tarea:
 
-Viven en `~/.claude/agents/`, no en este repo. Verificá que existan antes de listarlos: `ls ~/.claude/agents/`.
+Los seis agentes portables viven en `.claude/agents/`, dentro del repo. Verificá antes de listarlos: `ls .claude/agents/`. Las familias `sdd-*`, `review-*` y `jd-*` no están vendorizadas — dependen de engram o del CLI `gentle-ai` y no funcionan en un clon.
 
 - **architecture-oracle** → Decisiones arquitectónicas, añadir módulos, refactors grandes
 - **analysis-specialist** → Auditoría de calidad, deuda técnica, seguridad, rendimiento

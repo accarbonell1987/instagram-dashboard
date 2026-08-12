@@ -27,6 +27,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import { ApiError } from '@/lib/api/errors';
 import {
   moduleFormSchema,
@@ -434,40 +435,40 @@ export default function ModulesPage(): JSX.Element {
 
       {error !== '' && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
-      {modules.length === 0 ? (
-        <div className="border-border bg-card rounded-lg border p-8 text-center">
-          <p className="text-muted-foreground text-sm">No hay módulos configurados.</p>
-          <Button variant="ghost" size="sm" className="mt-2" onClick={handleCreate}>
-            Crear el primer módulo
-          </Button>
-        </div>
-      ) : (
-        <div className="border-border overflow-hidden rounded-lg border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Jerarquía</th>
-                <th className="px-4 py-3 font-medium">Estado</th>
-                <th className="px-4 py-3 text-right font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+      <DataTable
+        isEmpty={modules.length === 0}
+        empty={{
+          text: 'No hay módulos configurados.',
+          action: (
+            <Button variant="ghost" size="sm" onClick={handleCreate}>
+              Crear el primer módulo
+            </Button>
+          ),
+        }}
+        head={
+          <>
+            <Th>ID</Th>
+            <Th>Nombre</Th>
+            <Th>Jerarquía</Th>
+            <Th>Estado</Th>
+            <Th align="right">Acciones</Th>
+          </>
+        }
+      >
               {modules.map((mod) => {
                 const isChild = mod.parentId !== null;
                 const parent = isChild ? modules.find((m) => m.id === mod.parentId) : null;
                 return (
-                  <tr key={mod.id} className="border-border border-t">
-                    <td className="px-4 py-3 font-mono text-xs">{mod.id}</td>
-                    <td className={`px-4 py-3 ${isChild ? 'text-muted-foreground pl-8' : ''}`}>
+                  <Tr key={mod.id}>
+                    <Td className="font-mono text-xs">{mod.id}</Td>
+                    <Td className={isChild ? 'text-muted-foreground pl-8' : ''}>
                       {isChild ? '└ ' : ''}
                       {mod.name}
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3 text-xs">
+                    </Td>
+                    <Td className="text-muted-foreground text-xs">
                       {isChild && parent ? `hijo de ${parent.name}` : '—'}
-                    </td>
-                    <td className="px-4 py-3">
+                    </Td>
+                    <Td>
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                           mod.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -475,8 +476,8 @@ export default function ModulesPage(): JSX.Element {
                       >
                         {mod.active ? 'Activo' : 'Inactivo'}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                    </Td>
+                    <Td align="right">
                       <Button
                         variant="ghost-warning"
                         size="icon-sm"
@@ -497,14 +498,11 @@ export default function ModulesPage(): JSX.Element {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </td>
-                  </tr>
+                    </Td>
+                  </Tr>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      </DataTable>
 
       <ModuleFormDialog
         open={formOpen}

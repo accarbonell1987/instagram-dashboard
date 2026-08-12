@@ -3,15 +3,21 @@
   "exemptions": [
     {
       "app": "apps/hub",
-      "rules": ["§1"],
+      "rules": [
+        "\u00a71"
+      ],
       "reason": "Auth flow uses fetch-layer (lib/api/) + httpOnly refresh cookie instead of AuthStrategy from @core/core. Bearer token bridged into Axios via request interceptor on coreServices.httpClient. Domain services (plans, onboardingDraft, invitation, document) follow canonical pattern.",
       "since": "2026-05-04",
       "owner": "feature/hub",
-      "reviewBy": "2026-08-01"
+      "reviewBy": "2026-11-11"
     },
     {
       "app": "apps/landing-page",
-      "rules": ["§1", "§4", "§5"],
+      "rules": [
+        "\u00a71",
+        "\u00a74",
+        "\u00a75"
+      ],
       "reason": "Marketing site. No services, no CRUD, no providers. Keeps only ThemeProvider for visual consistency.",
       "since": "2026-04-26",
       "owner": "marketing",
@@ -19,8 +25,10 @@
     },
     {
       "app": "products/instagram-dashboard/web",
-      "rules": ["§1"],
-      "reason": "Standalone Instagram analytics app. Consumes a separate analytics API over its own bespoke fetch layer with postMessage-based auth, not @core/core CRUD/AuthStrategy — so no createCoreServices/domain-services/ServicesProvider. Same class of exemption as apps/hub. Keeps ThemeProvider + TooltipProvider + Toaster shell.",
+      "rules": [
+        "\u00a71"
+      ],
+      "reason": "Standalone Instagram analytics app. Consumes a separate analytics API over its own bespoke fetch layer with postMessage-based auth, not @core/core CRUD/AuthStrategy \u2014 so no createCoreServices/domain-services/ServicesProvider. Same class of exemption as apps/hub. Keeps ThemeProvider + TooltipProvider + Toaster shell.",
       "since": "2026-08-02",
       "owner": "feat/product-ig-extraction",
       "reviewBy": "2026-11-02"

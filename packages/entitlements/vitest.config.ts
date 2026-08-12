@@ -1,20 +1,5 @@
-import { defineConfig } from 'vitest/config';
+import { createVitestConfig } from '@core/config/vitest';
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
-    coverage: {
-      provider: 'v8',
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/index.ts', 'src/react/index.ts'],
-      thresholds: {
-        statements: 80,
-        branches: 75,
-        functions: 80,
-        lines: 80,
-      },
-    },
-  },
-});
+// index barrels are re-exports only; the preset already excludes src/**/index.ts,
+// which covers both this package's root barrel and src/react/index.ts.
+export default createVitestConfig({ environment: 'jsdom' });
