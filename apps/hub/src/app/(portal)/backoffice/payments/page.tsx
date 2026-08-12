@@ -16,8 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@core/ui';
-import { Check } from 'lucide-react';
+import { Check, X, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent, type JSX } from 'react';
 
 import { ApiError } from '@/lib/api/errors';
@@ -62,6 +65,39 @@ function StatusBadge({ status }: { status: AdminPaymentStatus }): JSX.Element {
     >
       {STATUS_LABELS[status]}
     </span>
+  );
+}
+
+/**
+ * Icon-only action for a queue row, with the label in a tooltip.
+ *
+ * The tooltip is a convenience, not the accessible name: it only appears on
+ * hover or focus, so `label` also lands on aria-label. A screen reader and a
+ * keyboard user get the full reference ("Confirmar pago REF-123"); the tooltip
+ * shows the short form, since the row already says which payment it is.
+ */
+function RowAction({
+  label,
+  tooltip,
+  variant,
+  icon: Icon,
+  onClick,
+}: {
+  label: string;
+  tooltip: string;
+  variant: 'ghost-success' | 'ghost-destructive';
+  icon: LucideIcon;
+  onClick: () => void;
+}): JSX.Element {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button size="icon-sm" variant={variant} onClick={onClick} aria-label={label}>
+          <Icon className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -344,28 +380,29 @@ export default function PaymentsQueuePage(): JSX.Element {
                     </td>
                     <td className="px-3 py-3 text-right">
                       {isSettleable(payment.status) ? (
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="success"
+                        <div className="flex justify-end gap-1">
+                          {/* Icon-only row actions: tinted, not solid — a solid
+                              swatch on every row turns the queue into a wall of
+                              colour. The label moves into the tooltip, and the
+                              aria-label keeps it reachable without hovering. */}
+                          <RowAction
+                            label={`Confirmar pago ${payment.reference ?? payment.id}`}
+                            tooltip="Confirmar pago"
+                            variant="ghost-success"
+                            icon={Check}
                             onClick={() => {
                               setActionTarget({ payment, action: 'confirm' });
                             }}
-                            aria-label={`Confirmar pago ${payment.reference ?? payment.id}`}
-                          >
-                            <Check className="h-4 w-4" />
-                            Confirmar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
+                          />
+                          <RowAction
+                            label={`Rechazar pago ${payment.reference ?? payment.id}`}
+                            tooltip="Rechazar pago"
+                            variant="ghost-destructive"
+                            icon={X}
                             onClick={() => {
                               setActionTarget({ payment, action: 'reject' });
                             }}
-                            aria-label={`Rechazar pago ${payment.reference ?? payment.id}`}
-                          >
-                            Rechazar
-                          </Button>
+                          />
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-xs">{payment.note ?? '—'}</span>

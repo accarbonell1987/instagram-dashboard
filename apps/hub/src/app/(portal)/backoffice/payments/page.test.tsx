@@ -1,3 +1,4 @@
+import { TooltipProvider } from '@core/ui';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -6,6 +7,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PaymentsQueuePage from './page';
 
 import { server } from '@/lib/mocks/server';
+
+// The row actions are icon-only with the label in a tooltip, and Radix requires
+// a TooltipProvider ancestor. The real tree gets one from the root layout; a
+// test that renders the page on its own has to supply it or the page throws.
+function renderPage() {
+  return render(
+    <TooltipProvider>
+      <PaymentsQueuePage />
+    </TooltipProvider>
+  );
+}
 
 // Mock sonner toast (unused directly by this page, but keeps parity with other backoffice pages)
 vi.mock('sonner', () => ({
@@ -66,7 +78,7 @@ describe('PaymentsQueuePage', () => {
 
   it('renders payment rows from the MSW handler', async () => {
     setupHandlers();
-    render(<PaymentsQueuePage />);
+    renderPage();
 
     expect(await screen.findByText('CH-7K2M4Q')).toBeInTheDocument();
     expect(screen.getByText('Empresa Acme S.A.')).toBeInTheDocument();
@@ -77,7 +89,7 @@ describe('PaymentsQueuePage', () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
     setupHandlers({ confirm: onConfirm });
-    render(<PaymentsQueuePage />);
+    renderPage();
 
     await user.click(await screen.findByRole('button', { name: /confirmar pago/i }));
 
@@ -102,12 +114,30 @@ describe('PaymentsQueuePage', () => {
   it('tells the operator the customer keeps the same reference when rejecting', async () => {
     const user = userEvent.setup();
     setupHandlers();
-    render(<PaymentsQueuePage />);
+    renderPage();
 
     await user.click(await screen.findByRole('button', { name: /rechazar pago/i }));
 
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/conserva la misma referencia y puede reintentar/i)).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Rechazar pago' })).toBeDisabled();
+  });
+
+  /**
+   * The queue is dense, so the row actions carry no visible label — the text
+   * lives in a tooltip. Two things have to hold together: nothing spells out
+   * "Confirmar" in the row, and the button is still reachable by name for a
+   * screen reader or a keyboard user, who never see a hover.
+   */
+  it('shows the row actions as icons only, with the label in a tooltip', async () => {
+    const user = userEvent.setup();
+    setupHandlers();
+    renderPage();
+
+    const confirm = await screen.findByRole('button', { name: `Confirmar pago CH-7K2M4Q` });
+    expect(confirm).toHaveTextContent('');
+
+    await user.hover(confirm);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Confirmar pago');
   });
 });
