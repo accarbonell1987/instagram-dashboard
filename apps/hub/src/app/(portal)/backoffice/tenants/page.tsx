@@ -15,6 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   Textarea,
 } from '@core/ui';
 import { Check } from 'lucide-react';
@@ -61,6 +62,18 @@ const PAYMENT_STATUS_LABELS: Record<AdminPaymentStatus, string> = {
 function formatPaymentDate(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
+
+/**
+ * What an off switch means, which is not one thing: a tenant can be off because
+ * an operator suspended it or because it never finished paying. Both look
+ * identical on a boolean control, and the difference decides whether anyone
+ * should be chased about it.
+ */
+const STATUS_HELP: Record<TenantStatus, string> = {
+  active: 'Tiene acceso a los productos de su plan.',
+  suspended: 'Suspendido: no puede entrar hasta que lo actives.',
+  pending: 'Todavía no completó el pago, así que no tiene acceso.',
+};
 
 // ─── Status badge ──────────────────────────────────────────────────────────────
 
@@ -262,6 +275,9 @@ function TenantDetailPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activationOpen, setActivationOpen] = useState(false);
+  // A switch can be flipped far faster than two buttons could be clicked, so the
+  // request in flight has to lock it — otherwise a double toggle races itself.
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
 
   const loadDetail = useCallback(async (id: string) => {
     setLoading(true);
@@ -291,6 +307,7 @@ function TenantDetailPanel({
   if (!tenantId) return null;
 
   const handleStatusChange = async (status: TenantStatus) => {
+    setIsChangingStatus(true);
     try {
       await changeTenantStatus(tenantId, status);
       await loadDetail(tenantId);
@@ -301,13 +318,23 @@ function TenantDetailPanel({
       } else {
         setError('Error al cambiar estado');
       }
+    } finally {
+      setIsChangingStatus(false);
     }
   };
 
+  // Throws on purpose: ActivationDialog owns the error message for this path,
+  // because the note the operator typed is still in the dialog and it is the
+  // only place that can keep it on screen for a retry.
   const handleActivate = async (note: string) => {
-    await changeTenantStatus(tenantId, 'active', note);
-    await loadDetail(tenantId);
-    onStatusChanged?.();
+    setIsChangingStatus(true);
+    try {
+      await changeTenantStatus(tenantId, 'active', note);
+      await loadDetail(tenantId);
+      onStatusChanged?.();
+    } finally {
+      setIsChangingStatus(false);
+    }
   };
 
   return (
@@ -352,27 +379,36 @@ function TenantDetailPanel({
             <p className="text-sm">{new Date(detail.createdAt).toLocaleDateString()}</p>
           </div>
 
-          {/* Status actions */}
+          {/* Status
+              One switch rather than two buttons, because the states are not two
+              independent actions: a tenant is active or it is not. The pair let
+              you press "Activar" on an already-active tenant, which asked for a
+              note and changed nothing.
+              The asymmetry underneath survives: switching on opens the dialog
+              because activation requires a note the customer will read in their
+              payment history, while suspending needs none. */}
           <div className="border-border border-t pt-4">
-            <p className="text-muted-foreground mb-2 text-xs">Cambiar estado</p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={detail.status === 'active' ? 'success' : 'ghost-success'}
-                onClick={() => {
-                  setActivationOpen(true);
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <Label htmlFor="tenant-active" className="text-sm">
+                  Tenant activo
+                </Label>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  {STATUS_HELP[detail.status]}
+                </p>
+              </div>
+              <Switch
+                id="tenant-active"
+                checked={detail.status === 'active'}
+                disabled={isChangingStatus}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setActivationOpen(true);
+                  } else {
+                    void handleStatusChange('suspended');
+                  }
                 }}
-              >
-                <Check className="h-4 w-4" />
-                Activar
-              </Button>
-              <Button
-                size="sm"
-                variant={detail.status === 'suspended' ? 'default' : 'ghost'}
-                onClick={() => handleStatusChange('suspended')}
-              >
-                Suspender
-              </Button>
+              />
             </div>
           </div>
 
@@ -436,7 +472,6 @@ export default function TenantsPage(): JSX.Element {
     setCommittedSearch(search);
   };
 
-
   return (
     <div>
       <h2 className="mb-4 text-lg font-semibold">Tenants</h2>
@@ -479,7 +514,7 @@ export default function TenantsPage(): JSX.Element {
       {error !== '' && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-6">
-        <div className="min-w-0 flex-1">
+        <div className="w-full min-w-0 flex-1">
           <DataTable
             isLoading={loading}
             isEmpty={tenants.length === 0}
