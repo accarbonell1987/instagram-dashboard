@@ -18,7 +18,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import { useState, type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
+import { createPortal } from 'react-dom';
 
 import { moduleVisuals } from '@/lib/apps-config';
 
@@ -139,6 +140,34 @@ export function ModuleTransfer({
     ? [...available, ...assigned].find((m) => activeId.endsWith(m.id)) ?? null
     : null;
 
+  // The overlay is portalled to <body>, and document only exists after mount.
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  /**
+   * DragOverlay positions itself with `position: fixed` in viewport coordinates.
+   * This component is rendered inside DialogContent, which centres itself with
+   * `translate-x-[-50%] translate-y-[-50%]` — and a transformed ancestor becomes
+   * the containing block for its fixed descendants. The overlay's coordinates
+   * were therefore measured from the dialog's box instead of the viewport, which
+   * is why the dragged card landed offset by half the dialog and outside it.
+   *
+   * Portalling to <body> puts the overlay back above every transform, so it
+   * tracks the cursor again.
+   */
+  const overlay = (
+    <DragOverlay>
+      {activeModule !== null ? (
+        <div className="bg-card flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-xl">
+          <GripVertical className="text-muted-foreground h-4 w-4" />
+          <span>{activeModule.name}</span>
+        </div>
+      ) : null}
+    </DragOverlay>
+  );
+
   return (
     <DndContext
       sensors={sensors}
@@ -197,14 +226,7 @@ export function ModuleTransfer({
         </div>
       </div>
 
-      <DragOverlay>
-        {activeModule !== null ? (
-          <div className="bg-card flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-xl">
-            <GripVertical className="text-muted-foreground h-4 w-4" />
-            <span>{activeModule.name}</span>
-          </div>
-        ) : null}
-      </DragOverlay>
+      {isMounted ? createPortal(overlay, document.body) : null}
     </DndContext>
   );
 }
