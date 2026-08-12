@@ -20,6 +20,7 @@ import {
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
+import { DataTable, TablePagination, Td, Th, Tr } from '@/components/data-table';
 import { ApiError } from '@/lib/api/errors';
 import {
   listTenantPayments,
@@ -435,7 +436,6 @@ export default function TenantsPage(): JSX.Element {
     setCommittedSearch(search);
   };
 
-  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div>
@@ -480,77 +480,39 @@ export default function TenantsPage(): JSX.Element {
 
       <div className="flex gap-6">
         <div className="min-w-0 flex-1">
-          {loading ? (
-            <p className="text-muted-foreground p-4 text-sm">Cargando tenants...</p>
-          ) : tenants.length === 0 ? (
-            <div className="border-border bg-card rounded-lg border p-8 text-center">
-              <p className="text-muted-foreground text-sm">No se encontraron tenants.</p>
-            </div>
-          ) : (
-            <>
-              <div className="border-border overflow-hidden rounded-lg border">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Nombre</th>
-                      <th className="px-4 py-3 font-medium">Plan</th>
-                      <th className="px-4 py-3 font-medium">Estado</th>
-                      <th className="px-4 py-3 font-medium">Usuarios</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tenants.map((tenant) => (
-                      <tr
-                        key={tenant.id}
-                        className={`border-border hover:bg-muted/50 cursor-pointer border-t transition-colors ${
-                          selectedTenantId === tenant.id ? 'bg-muted' : ''
-                        }`}
-                        onClick={() => {
-                          setSelectedTenantId(selectedTenantId === tenant.id ? null : tenant.id);
-                        }}
-                      >
-                        <td className="px-4 py-3 font-medium">{tenant.name}</td>
-                        <td className="px-4 py-3">{tenant.planName}</td>
-                        <td className="px-4 py-3">
-                          <StatusBadge status={tenant.status} />
-                        </td>
-                        <td className="px-4 py-3">{tenant.userCount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          <DataTable
+            isLoading={loading}
+            isEmpty={tenants.length === 0}
+            loadingText="Cargando tenants..."
+            empty={{ text: 'No se encontraron tenants.' }}
+            head={
+              <>
+                <Th>Nombre</Th>
+                <Th>Plan</Th>
+                <Th>Estado</Th>
+                <Th>Usuarios</Th>
+              </>
+            }
+          >
+            {tenants.map((tenant) => (
+              <Tr
+                key={tenant.id}
+                className={selectedTenantId === tenant.id ? 'bg-muted' : ''}
+                onClick={() => {
+                  setSelectedTenantId(selectedTenantId === tenant.id ? null : tenant.id);
+                }}
+              >
+                <Td className="font-medium">{tenant.name}</Td>
+                <Td>{tenant.planName}</Td>
+                <Td>
+                  <StatusBadge status={tenant.status} />
+                </Td>
+                <Td>{tenant.userCount}</Td>
+              </Tr>
+            ))}
+          </DataTable>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => {
-                      setPage((p) => Math.max(1, p - 1));
-                    }}
-                  >
-                    Anterior
-                  </Button>
-                  <span className="text-sm">
-                    Página {page} de {totalPages}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={page >= totalPages}
-                    onClick={() => {
-                      setPage((p) => p + 1);
-                    }}
-                  >
-                    Siguiente
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
+          <TablePagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         </div>
 
         {/* Detail panel */}

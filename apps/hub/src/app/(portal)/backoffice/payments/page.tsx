@@ -23,6 +23,7 @@ import {
 import { Check, X, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent, type JSX } from 'react';
 
+import { DataTable, TablePagination, Td, Th, Tr } from '@/components/data-table';
 import { ApiError } from '@/lib/api/errors';
 import {
   listAdminPayments,
@@ -278,7 +279,6 @@ export default function PaymentsQueuePage(): JSX.Element {
     setCommittedReference(reference);
   }
 
-  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div>
@@ -324,61 +324,52 @@ export default function PaymentsQueuePage(): JSX.Element {
         </Select>
       </div>
 
-      {error !== '' && (
-        <p role="alert" className="mb-4 text-sm text-red-600">
-          {error}
-        </p>
-      )}
-
-      {loading ? (
-        <p className="text-muted-foreground p-4 text-sm">Cargando pagos...</p>
-      ) : payments.length === 0 ? (
-        <div className="border-border bg-card rounded-lg border p-8 text-center">
-          <p className="text-muted-foreground text-sm">
-            No hay pagos que coincidan con este filtro.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* overflow-hidden, not overflow-x-auto: every other backoffice table
-              fits its container rather than scrolling sideways, and an operator
-              comparing rows should not have to scroll to see the amount. The two
-              free-text columns truncate instead, with the full value on hover. */}
-          <div className="border-border overflow-hidden rounded-lg border">
-            <table className="w-full table-fixed text-left text-sm">
-              <caption className="sr-only">Cola de pagos pendientes</caption>
-              <thead className="bg-muted">
-                <tr>
-                  <th className="w-[6.5rem] px-3 py-3 font-medium">Fecha</th>
-                  <th className="w-[8rem] px-3 py-3 font-medium">Monto</th>
-                  <th className="px-3 py-3 font-medium">Referencia</th>
-                  <th className="px-3 py-3 font-medium">Tenant</th>
-                  <th className="w-[9rem] px-3 py-3 font-medium">Método</th>
-                  <th className="w-[7rem] px-3 py-3 font-medium">Estado</th>
-                  <th className="w-[11rem] px-3 py-3 text-right font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
+      {/* table-fixed with explicit widths, not overflow-x-auto: an operator
+          comparing rows should not have to scroll sideways to see the amount.
+          The two free-text columns truncate instead, with the value on hover. */}
+      <DataTable
+        isLoading={loading}
+        error={error}
+        isEmpty={payments.length === 0}
+        loadingText="Cargando pagos..."
+        empty={{ text: 'No hay pagos que coincidan con este filtro.' }}
+        caption="Cola de pagos pendientes"
+        density="dense"
+        tableClassName="table-fixed"
+        head={
+          <>
+            <Th width="w-[6.5rem]">Fecha</Th>
+            <Th width="w-[8rem]">Monto</Th>
+            <Th>Referencia</Th>
+            <Th>Tenant</Th>
+            <Th width="w-[9rem]">Método</Th>
+            <Th width="w-[7rem]">Estado</Th>
+            <Th width="w-[11rem]" align="right">
+              Acciones
+            </Th>
+          </>
+        }
+      >
                 {payments.map((payment) => (
-                  <tr key={payment.id} className="border-border border-t">
-                    <td className="px-3 py-3">{formatDate(payment.createdAt)}</td>
-                    <td className="px-3 py-3">{formatAmount(payment.amount, payment.currency)}</td>
-                    <td
-                      className="truncate px-3 py-3 font-mono text-xs"
+                  <Tr key={payment.id}>
+                    <Td>{formatDate(payment.createdAt)}</Td>
+                    <Td>{formatAmount(payment.amount, payment.currency)}</Td>
+                    <Td
+                      className="truncate font-mono text-xs"
                       title={payment.reference ?? undefined}
                     >
                       {payment.reference ?? '—'}
-                    </td>
-                    <td className="truncate px-3 py-3" title={payment.tenantName ?? undefined}>
+                    </Td>
+                    <Td className="truncate" title={payment.tenantName ?? undefined}>
                       {payment.tenantName ?? '—'}
-                    </td>
-                    <td className="truncate px-3 py-3">
+                    </Td>
+                    <Td className="truncate">
                       {METHOD_LABELS[payment.method] ?? payment.method}
-                    </td>
-                    <td className="px-3 py-3">
+                    </Td>
+                    <Td>
                       <StatusBadge status={payment.status} />
-                    </td>
-                    <td className="px-3 py-3 text-right">
+                    </Td>
+                    <Td align="right">
                       {isSettleable(payment.status) ? (
                         <div className="flex justify-end gap-1">
                           {/* Icon-only row actions: tinted, not solid — a solid
@@ -407,42 +398,12 @@ export default function PaymentsQueuePage(): JSX.Element {
                       ) : (
                         <span className="text-muted-foreground text-xs">{payment.note ?? '—'}</span>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </Td>
+                  </Tr>
+        ))}
+      </DataTable>
 
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => {
-                  setPage((p) => Math.max(1, p - 1));
-                }}
-              >
-                Anterior
-              </Button>
-              <span className="text-sm">
-                Página {page} de {totalPages}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => {
-                  setPage((p) => p + 1);
-                }}
-              >
-                Siguiente
-              </Button>
-            </div>
-          )}
-        </>
-      )}
+      <TablePagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
 
       <SettlementDialog
         payment={actionTarget?.payment ?? null}
