@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, CardContent, CardHeader, CardTitle } from '@core/ui';
 import { useEffect, useState, type JSX } from 'react';
 
 import { PaymentStatusBadge } from './payment-status-badge';
@@ -80,13 +81,14 @@ export function PaymentsSection(): JSX.Element {
   }, []);
 
   return (
-    <section className="border-border bg-card rounded-lg border p-6">
-      <h3 className="text-foreground text-lg font-medium">Pagos</h3>
-      <p className="text-muted-foreground mt-1 text-sm">
-        Todo lo que pagaste, con la fecha y el medio que usaste.
-      </p>
-
-      <div className="mt-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>Pagos</CardTitle>
+        <p className="text-muted-foreground text-sm">
+          Todo lo que pagaste, con la fecha y el medio que usaste.
+        </p>
+      </CardHeader>
+      <CardContent>
         <DataTable
           variant="bare"
           isLoading={isLoading}
@@ -137,7 +139,7 @@ export function PaymentsSection(): JSX.Element {
             </Tr>
           ))}
         </DataTable>
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   );
 }

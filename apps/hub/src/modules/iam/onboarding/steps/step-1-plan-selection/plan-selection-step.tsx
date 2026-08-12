@@ -11,8 +11,9 @@ import { patchDraft, resetDraftStepKey } from '../../services/draft.service';
 import { listPlans, type Plan } from '../../services/plans.service';
 import { StepErrorBanner } from '../shared/step-error-banner';
 
-import { PlanCard } from './plan-card';
 import { PlanDetailsDialog } from './plan-details-dialog';
+
+import { PlanCard } from '@/modules/shared/billing/components/plan-card';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

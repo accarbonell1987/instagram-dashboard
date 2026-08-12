@@ -1,40 +1,34 @@
 'use client';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@core/ui';
-import { CheckIcon } from 'lucide-react';
+import { Badge, Button } from '@core/ui';
 import type { JSX } from 'react';
 
-import type { components } from '@/lib/api/types';
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-type Plan = components['schemas']['Plan'];
+import type { Plan } from '@/lib/api/plans';
+import { PlanCard } from '@/modules/shared/billing/components/plan-card';
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
 export interface CurrentPlanCardProps {
   plan: Plan | null;
-  isLoading?: boolean;
+  isLoading?: boolean | undefined;
   onChangePlan: () => void;
 }
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-
-const CURRENCY_SYMBOL: Record<Plan['currency'], string> = {
-  PYG: 'Gs.',
-  USD: 'USD',
-};
 
 // ─── Skeleton ──────────────────────────────────────────────────────────────────
 
 function CardSkeleton(): JSX.Element {
   return (
-    <div className="flex flex-col gap-4" aria-hidden="true">
-      <div className="bg-muted h-5 w-32 animate-pulse rounded" />
-      <div className="bg-muted h-7 w-24 animate-pulse rounded" />
-      <div className="flex flex-col gap-2">
+    <div
+      className="border-border bg-card flex flex-col gap-6 rounded-2xl border p-8"
+      aria-busy="true"
+      aria-label="Cargando el plan contratado"
+    >
+      <div className="bg-muted h-6 w-32 animate-pulse rounded" />
+      <div className="bg-muted h-10 w-40 animate-pulse rounded" />
+      <div className="border-border border-t" />
+      <div className="flex flex-col gap-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-muted h-3 w-full animate-pulse rounded" />
+          <div key={i} className="bg-muted h-4 w-full animate-pulse rounded" />
         ))}
       </div>
     </div>
@@ -43,78 +37,41 @@ function CardSkeleton(): JSX.Element {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
+/**
+ * The plan in force, drawn with the same card the customer chose it from.
+ *
+ * It used to be its own component with its own layout, and it described the
+ * plan differently: signup lists the modules the plan grants, this listed
+ * `features`, a free-text array. Comparing plans and then checking which one
+ * you are on showed two different accounts of the same thing.
+ */
 export function CurrentPlanCard({
   plan,
   isLoading = false,
   onChangePlan,
 }: CurrentPlanCardProps): JSX.Element {
+  if (isLoading || plan === null) {
+    return <CardSkeleton />;
+  }
+
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle>Plan contratado</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-6">
-        {isLoading || plan === null ? (
-          <CardSkeleton />
-        ) : (
-          <>
-            <div className="flex flex-col gap-3">
-              {/* Name + badges */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-foreground text-base font-semibold">{plan.name}</span>
-                {plan.popular && (
-                  <span className="bg-primary/15 text-primary rounded-full px-2 py-0.5 text-xs font-semibold">
-                    ✦ Popular
-                  </span>
-                )}
-                <Badge variant="outline" className="text-xs">
-                  Plan actual
-                </Badge>
-              </div>
-
-              {/* Price */}
-              <p className="text-foreground font-bold">
-                {plan.price === 0 ? (
-                  <span className="text-primary text-lg">Gratis</span>
-                ) : (
-                  <>
-                    <span className="text-lg">
-                      {CURRENCY_SYMBOL[plan.currency]} {plan.price.toLocaleString('es-PY')}
-                    </span>
-                    <span className="text-muted-foreground ml-1 text-xs font-normal">
-                      / {plan.billingCycle === 'monthly' ? 'mes' : 'año'}
-                    </span>
-                  </>
-                )}
-              </p>
-
-              {/* Features */}
-              {plan.features.length > 0 && (
-                <ul className="flex flex-col gap-1.5">
-                  {plan.features.map((feature) => (
-                    <li
-                      key={feature}
-                      className="text-muted-foreground flex items-start gap-1.5 text-xs leading-snug"
-                    >
-                      <CheckIcon
-                        className="text-primary mt-0.5 h-3 w-3 shrink-0"
-                        aria-hidden="true"
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="mt-auto">
-              <Button variant="outline" onClick={onChangePlan} className="w-full sm:w-auto">
-                Cambiar plan
-              </Button>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+    <PlanCard
+      plan={plan}
+      // Marked as chosen: this is the plan in force, and the card already has a
+      // visual language for that. It is not selectable — omitting onSelect is
+      // what makes it a presentation rather than a control.
+      isSelected
+      badge={
+        <Badge variant="outline" className="text-xs">
+          Plan actual
+        </Badge>
+      }
+      footer={
+        <Button variant="outline" onClick={onChangePlan} className="w-full sm:w-auto">
+          Cambiar plan
+        </Button>
+      }
+      className="max-w-md"
+    />
   );
 }
