@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.22.0
+  version: 1.23.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -1055,9 +1055,21 @@ components:
       type: string
       enum: [pending_first_login, active, suspended]
 
+    # El rol que un miembro tiene DENTRO de un producto. Es un eje distinto del
+    # rol de tenant: `role` dice qué puede hacer en el hub, esto dice qué puede
+    # abrir dentro de un producto al que se le dio acceso.
+    MemberProductRole:
+      type: object
+      required: [id, productId, key, name]
+      properties:
+        id: { type: string, format: uuid }
+        productId: { type: string }
+        key: { type: string }
+        name: { type: string }
+
     MemberListItem:
       type: object
-      required: [id, email, role, status, createdAt]
+      required: [id, email, role, status, createdAt, productRoles]
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
@@ -1066,6 +1078,52 @@ components:
         status:
           $ref: '#/components/schemas/MemberStatus'
         createdAt: { type: string, format: date-time }
+        productRoles:
+          type: array
+          description: Accesos a producto del miembro. Vacío = ve todo lo que otorga el plan.
+          items:
+            $ref: '#/components/schemas/MemberProductRole'
+
+    TenantProductRole:
+      allOf:
+        - $ref: '#/components/schemas/MemberProductRole'
+        - type: object
+          required: [moduleCount]
+          properties:
+            moduleCount:
+              type: integer
+              minimum: 0
+              description: |
+                Cuántos módulos abre el rol. Cero significa que asignarlo le quita el
+                producto al miembro: el resolver intersecta los módulos del plan con
+                los del rol.
+
+    TenantProductRolesResponse:
+      type: object
+      required: [products]
+      properties:
+        products:
+          type: array
+          items:
+            type: object
+            required: [productId, productName, roles]
+            properties:
+              productId: { type: string }
+              productName: { type: string }
+              roles:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TenantProductRole'
+
+    SetMemberProductRolesRequest:
+      type: object
+      required: [productRoleIds]
+      properties:
+        productRoleIds:
+          type: array
+          maxItems: 50
+          description: Conjunto completo, no delta. Un array vacío le quita todos los accesos.
+          items: { type: string, format: uuid }
 
     MemberListResponse:
       type: object
@@ -2750,6 +2808,90 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+
+  /tenants/current/product-roles:
+    get:
+      tags: [identity, Organización]
+      operationId: getTenantProductRoles
+      summary: Roles que el tenant puede repartir, agrupados por producto contratado
+      description: |
+        **Propósito**: Devuelve, por cada producto que el tenant tiene contratado, los roles
+        que ese producto define. Es el catálogo del que un `TenantAdmin` elige al dar acceso
+        a un miembro.
+
+        **Proceso**: Consultado por `Settings > Team` para poblar el selector de producto y rol
+        del diálogo de accesos.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
+
+        **Notas**: `moduleCount` es la cantidad de módulos que el rol abre. Un rol con
+        `moduleCount: 0` no da acceso a nada — asignarlo le quita el producto al miembro,
+        porque el resolver intersecta los módulos del plan con los del rol.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Assignable roles per contracted product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantProductRolesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tenants/current/members/{memberId}/product-roles:
+    put:
+      tags: [identity, Organización]
+      operationId: setMemberProductRoles
+      summary: Reemplazar los roles de producto de un miembro
+      description: |
+        **Propósito**: Define, de una sola vez, a qué productos accede un miembro y con qué rol
+        dentro de cada uno. El rol del tenant (`TenantAdmin` / `User`) decide qué puede hacer en
+        el hub; esto decide qué puede abrir dentro de un producto. Son ejes separados.
+
+        **Proceso**: Accionado desde `Settings > Team` al guardar el diálogo de accesos.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. El miembro debe
+        pertenecer al tenant del solicitante.
+
+        **Notas**:
+        - El body es el conjunto completo, no un delta: un array vacío le quita todos los accesos.
+        - Solo se aceptan roles de productos que el tenant tiene contratados (422
+          `product-roles.not_available`).
+        - Un solo rol por producto (422 `product-roles.duplicate_product`).
+        - Un miembro sin ningún rol de producto ve todo lo que el plan otorga. Asignar un rol
+          *restringe*; no amplía.
+        - Los `TenantAdmin` nunca quedan filtrados por su propio rol de producto — de lo
+          contrario podrían dejarse a sí mismos fuera del producto que administran.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetMemberProductRolesRequest'
+      responses:
+        '204':
+          description: Member product roles replaced
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
 
   /tenants/current/plan-change:
     post:

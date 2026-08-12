@@ -2,8 +2,17 @@ import type { PrismaClient } from '../../generated/prisma/client.js'
 import type { ProductRole, UserProductRole } from '../../domain/index.js'
 import { ConflictError } from '../../errors.js'
 
+/**
+ * A role plus how many modules it actually opens. Zero is the dangerous case:
+ * assigning such a role to someone takes the product away from them, because
+ * the resolver intersects the plan's modules with the role's. The count is
+ * what lets a screen warn about that before it happens.
+ */
+export type ProductRoleWithModuleCount = ProductRole & { moduleCount: number }
+
 export type ProductRoleRepository = {
   findAllByProduct(productId: string): Promise<ProductRole[]>
+  findAllByProducts(productIds: string[]): Promise<ProductRoleWithModuleCount[]>
   findById(id: string): Promise<ProductRole | null>
   create(data: { productId: string; key: string; name: string }): Promise<ProductRole>
   update(id: string, data: Partial<{ name: string }>): Promise<ProductRole>
@@ -11,6 +20,18 @@ export type ProductRoleRepository = {
   assignToUser(userId: string, productRoleId: string, assignedBy?: string): Promise<UserProductRole>
   unassignFromUser(userId: string, productRoleId: string): Promise<void>
   listByUser(userId: string): Promise<UserProductRole[]>
+  // The team screen shows every member's access at once. One query for the
+  // whole list, not one per row.
+  listRolesByUsers(userIds: string[]): Promise<{ userId: string; role: ProductRole }[]>
+  // Replaces a user's roles across the given products in one transaction, and
+  // touches nothing outside them — a tenant may only rewrite the access it
+  // administers.
+  replaceUserRoles(
+    userId: string,
+    withinProductIds: string[],
+    productRoleIds: string[],
+    assignedBy?: string,
+  ): Promise<void>
   // c2 (8.1, PR9): (productId, roleKey) pairs for the JWT `product_roles`
   // claim — productId doubles as the product key (Product.id is the slug).
   listRoleKeysByUser(userId: string): Promise<{ productId: string; roleKey: string }[]>
@@ -23,6 +44,16 @@ export function createProductRoleRepository(prisma: PrismaClient): ProductRoleRe
     async findAllByProduct(productId) {
       const rows = await prisma.productRole.findMany({ where: { productId }, orderBy: { key: 'asc' } })
       return rows.map(toProductRole)
+    },
+
+    async findAllByProducts(productIds) {
+      if (productIds.length === 0) return []
+      const rows = await prisma.productRole.findMany({
+        where: { productId: { in: productIds } },
+        orderBy: [{ productId: 'asc' }, { key: 'asc' }],
+        include: { _count: { select: { moduleAccess: true } } },
+      })
+      return rows.map((row) => ({ ...toProductRole(row), moduleCount: row._count.moduleAccess }))
     },
 
     async findById(id) {
@@ -69,6 +100,32 @@ export function createProductRoleRepository(prisma: PrismaClient): ProductRoleRe
     async listByUser(userId) {
       const rows = await prisma.userProductRole.findMany({ where: { userId } })
       return rows.map(toUserProductRole)
+    },
+
+    async listRolesByUsers(userIds) {
+      if (userIds.length === 0) return []
+      const rows = await prisma.userProductRole.findMany({
+        where: { userId: { in: userIds } },
+        include: { productRole: true },
+        orderBy: { createdAt: 'asc' },
+      })
+      return rows.map((row) => ({ userId: row.userId, role: toProductRole(row.productRole) }))
+    },
+
+    async replaceUserRoles(userId, withinProductIds, productRoleIds, assignedBy) {
+      await prisma.$transaction([
+        // Scoped to the caller's products on purpose: clearing every row would
+        // let one tenant's screen wipe access granted under a product it does
+        // not administer.
+        prisma.userProductRole.deleteMany({
+          where: { userId, productRole: { productId: { in: withinProductIds } } },
+        }),
+        ...productRoleIds.map((productRoleId) =>
+          prisma.userProductRole.create({
+            data: { userId, productRoleId, assignedBy: assignedBy ?? null },
+          }),
+        ),
+      ])
     },
 
     async listRoleKeysByUser(userId) {

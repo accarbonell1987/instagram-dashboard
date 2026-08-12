@@ -10,6 +10,9 @@ export const SEED = {
   userActiveMemberId: 'user-0002-0000-0000-000000000002',
   userSuspendedMemberId: 'user-0003-0000-0000-000000000003',
   userPendingMemberId: 'user-0004-0000-0000-000000000004',
+  productRoleAnalystId: 'prole-001-0000-0000-000000000001',
+  productRoleViewerId: 'prole-002-0000-0000-000000000002',
+  productRoleNoModulesId: 'prole-003-0000-0000-000000000003',
   tenantId: 'tenant-001-0000-0000-000000000001',
   tenantSlug: 'acme',
   invitationToken: 'mock-invitation-token-happy',
@@ -272,7 +275,38 @@ function seedPayments(): void {
   });
 }
 
+function seedProductRoles(): void {
+  db.productRole.create({
+    id: SEED.productRoleAnalystId,
+    productId: 'instagram-dashboard',
+    productName: 'Instagram Dashboard',
+    key: 'analyst',
+    name: 'Analista',
+    moduleCount: 3,
+  });
+  db.productRole.create({
+    id: SEED.productRoleViewerId,
+    productId: 'instagram-dashboard',
+    productName: 'Instagram Dashboard',
+    key: 'viewer',
+    name: 'Solo lectura',
+    moduleCount: 1,
+  });
+  // Deliberately empty: the one role that takes the product away, so the
+  // warning in the access dialog is reachable in mock mode.
+  db.productRole.create({
+    id: SEED.productRoleNoModulesId,
+    productId: 'instagram-dashboard',
+    productName: 'Instagram Dashboard',
+    key: 'pending-setup',
+    name: 'Sin módulos asignados',
+    moduleCount: 0,
+  });
+}
+
 function seedAdminData(): void {
+  seedProductRoles();
+
   // Additional members with different statuses
   db.user.create({
     id: SEED.userActiveMemberId,
@@ -303,6 +337,14 @@ function seedAdminData(): void {
     tenantId: SEED.tenantId,
     passwordHash: null,
     status: 'pending_first_login',
+  });
+
+  // Carlos is scoped to the Analyst role; the others hold none, which is what
+  // an untouched tenant looks like — no role means the whole plan.
+  db.userProductRole.create({
+    id: 'upr-001',
+    userId: SEED.userActiveMemberId,
+    productRoleId: SEED.productRoleAnalystId,
   });
 
   // 2 pending invitations

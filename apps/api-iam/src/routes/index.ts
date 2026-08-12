@@ -111,7 +111,12 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
   );
   // Webhooks: no authGuard, no global idempotency — uses internal idempotency
   const webhooksRouter = createWebhooksRouter(services.webhookService);
-  const identityRouter = createIdentityRouter(services.identityService, authGuard, idempotency);
+  const identityRouter = createIdentityRouter(
+    services.identityService,
+    services.productRoleService,
+    authGuard,
+    idempotency,
+  );
   const planChangeRouter = createPlanChangeRouter(services.planChangeService, authGuard);
   const billingRouter = createBillingRouter(services.billingService, authGuard);
   const invitationsRouter = createInvitationsRouter(

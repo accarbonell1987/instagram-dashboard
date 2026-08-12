@@ -1040,6 +1040,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tenants/current/product-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Roles que el tenant puede repartir, agrupados por producto contratado
+         * @description **Propósito**: Devuelve, por cada producto que el tenant tiene contratado, los roles
+         *     que ese producto define. Es el catálogo del que un `TenantAdmin` elige al dar acceso
+         *     a un miembro.
+         *
+         *     **Proceso**: Consultado por `Settings > Team` para poblar el selector de producto y rol
+         *     del diálogo de accesos.
+         *
+         *     **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
+         *
+         *     **Notas**: `moduleCount` es la cantidad de módulos que el rol abre. Un rol con
+         *     `moduleCount: 0` no da acceso a nada — asignarlo le quita el producto al miembro,
+         *     porque el resolver intersecta los módulos del plan con los del rol.
+         */
+        get: operations["getTenantProductRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tenants/current/members/{memberId}/product-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reemplazar los roles de producto de un miembro
+         * @description **Propósito**: Define, de una sola vez, a qué productos accede un miembro y con qué rol
+         *     dentro de cada uno. El rol del tenant (`TenantAdmin` / `User`) decide qué puede hacer en
+         *     el hub; esto decide qué puede abrir dentro de un producto. Son ejes separados.
+         *
+         *     **Proceso**: Accionado desde `Settings > Team` al guardar el diálogo de accesos.
+         *
+         *     **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. El miembro debe
+         *     pertenecer al tenant del solicitante.
+         *
+         *     **Notas**:
+         *     - El body es el conjunto completo, no un delta: un array vacío le quita todos los accesos.
+         *     - Solo se aceptan roles de productos que el tenant tiene contratados (422
+         *       `product-roles.not_available`).
+         *     - Un solo rol por producto (422 `product-roles.duplicate_product`).
+         *     - Un miembro sin ningún rol de producto ve todo lo que el plan otorga. Asignar un rol
+         *       *restringe*; no amplía.
+         *     - Los `TenantAdmin` nunca quedan filtrados por su propio rol de producto — de lo
+         *       contrario podrían dejarse a sí mismos fuera del producto que administran.
+         */
+        put: operations["setMemberProductRoles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tenants/current/plan-change": {
         parameters: {
             query?: never;
@@ -2381,6 +2449,13 @@ export interface components {
         };
         /** @enum {string} */
         MemberStatus: "pending_first_login" | "active" | "suspended";
+        MemberProductRole: {
+            /** Format: uuid */
+            id: string;
+            productId: string;
+            key: string;
+            name: string;
+        };
         MemberListItem: {
             /** Format: uuid */
             id: string;
@@ -2392,6 +2467,27 @@ export interface components {
             status: components["schemas"]["MemberStatus"];
             /** Format: date-time */
             createdAt: string;
+            /** @description Accesos a producto del miembro. Vacío = ve todo lo que otorga el plan. */
+            productRoles: components["schemas"]["MemberProductRole"][];
+        };
+        TenantProductRole: components["schemas"]["MemberProductRole"] & {
+            /**
+             * @description Cuántos módulos abre el rol. Cero significa que asignarlo le quita el
+             *     producto al miembro: el resolver intersecta los módulos del plan con
+             *     los del rol.
+             */
+            moduleCount: number;
+        };
+        TenantProductRolesResponse: {
+            products: {
+                productId: string;
+                productName: string;
+                roles: components["schemas"]["TenantProductRole"][];
+            }[];
+        };
+        SetMemberProductRolesRequest: {
+            /** @description Conjunto completo, no delta. Un array vacío le quita todos los accesos. */
+            productRoleIds: string[];
         };
         MemberListResponse: {
             items: components["schemas"]["MemberListItem"][];
@@ -2800,7 +2896,11 @@ export type SchemaInvitationStatus = components['schemas']['InvitationStatus'];
 export type SchemaInvitationListItem = components['schemas']['InvitationListItem'];
 export type SchemaInvitationListResponse = components['schemas']['InvitationListResponse'];
 export type SchemaMemberStatus = components['schemas']['MemberStatus'];
+export type SchemaMemberProductRole = components['schemas']['MemberProductRole'];
 export type SchemaMemberListItem = components['schemas']['MemberListItem'];
+export type SchemaTenantProductRole = components['schemas']['TenantProductRole'];
+export type SchemaTenantProductRolesResponse = components['schemas']['TenantProductRolesResponse'];
+export type SchemaSetMemberProductRolesRequest = components['schemas']['SetMemberProductRolesRequest'];
 export type SchemaMemberListResponse = components['schemas']['MemberListResponse'];
 export type SchemaUpdateTenantNameRequest = components['schemas']['UpdateTenantNameRequest'];
 export type SchemaUpdateMemberStatusRequest = components['schemas']['UpdateMemberStatusRequest'];
@@ -3932,6 +4032,64 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    getTenantProductRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Assignable roles per contracted product */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantProductRolesResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    setMemberProductRoles: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description UUID v4. Requerido en todos los endpoints de mutación que no sean GET. El backend almacena
+                 *     (key, request_hash, response_body, status_code, created_at) durante 24 h.
+                 *     Misma key → respuesta cacheada. Cuerpo de request diferente con la misma key → 422.
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKeyHeader"];
+            };
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMemberProductRolesRequest"];
+            };
+        };
+        responses: {
+            /** @description Member product roles replaced */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
         };
     };
     requestPlanChange: {

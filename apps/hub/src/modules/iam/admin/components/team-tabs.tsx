@@ -26,6 +26,7 @@ interface TeamTabsProps {
   onSuspend: (memberId: string) => void;
   onActivate: (memberId: string) => void;
   onDelete: (memberId: string, email: string) => void;
+  onEditAccess: (memberId: string) => void;
   // Invitations
   invitations: InvitationListItem[];
   isLoadingInvitations: boolean;
@@ -44,6 +45,7 @@ export function TeamTabs({
   onSuspend,
   onActivate,
   onDelete,
+  onEditAccess,
   invitations,
   isLoadingInvitations,
   onRevoke,
@@ -69,6 +71,7 @@ export function TeamTabs({
           onSuspend={onSuspend}
           onActivate={onActivate}
           onDelete={onDelete}
+          onEditAccess={onEditAccess}
         />
       </TabsContent>
 

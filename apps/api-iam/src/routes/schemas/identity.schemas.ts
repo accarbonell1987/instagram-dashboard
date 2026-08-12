@@ -11,6 +11,18 @@ export const TenantSchema = z.object({
   updatedAt: z.string(),
 })
 
+/**
+ * A role a member holds inside one product. The tenant role (TenantAdmin /
+ * User) says what they may do in the hub; this says what they may open inside
+ * a product they were given access to. The two are deliberately separate.
+ */
+export const MemberProductRoleSchema = z.object({
+  id: z.string().uuid(),
+  productId: z.string(),
+  key: z.string(),
+  name: z.string(),
+})
+
 export const MemberListItemSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
@@ -18,10 +30,34 @@ export const MemberListItemSchema = z.object({
   role: z.enum(['SuperAdmin', 'TenantAdmin', 'User']),
   status: z.enum(['pending_first_login', 'active', 'suspended']),
   createdAt: z.string().datetime(),
+  productRoles: z.array(MemberProductRoleSchema),
 })
 
 export const MemberListResponseSchema = z.object({
   items: z.array(MemberListItemSchema),
+})
+
+// ── Tenant-scoped product roles ──────────────────────────────────────────────
+
+export const TenantProductRoleSchema = MemberProductRoleSchema.extend({
+  // How many modules the role opens. Zero means assigning it takes the product
+  // away from the member, so the screen warns before saving.
+  moduleCount: z.number().int().nonnegative(),
+})
+
+export const TenantProductRolesResponseSchema = z.object({
+  products: z.array(
+    z.object({
+      productId: z.string(),
+      productName: z.string(),
+      roles: z.array(TenantProductRoleSchema),
+    }),
+  ),
+})
+
+export const SetMemberProductRolesRequestSchema = z.object({
+  // The complete set, not a delta: an empty array clears the member's access.
+  productRoleIds: z.array(z.string().uuid()).max(50),
 })
 
 // Both fields optional so the settings page can save either one on its own,

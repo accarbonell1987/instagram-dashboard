@@ -179,6 +179,24 @@ export const db = factory({
     filename: String,
     uploadedAt: String,
   },
+
+  // A role a product defines, and who holds it. Two models rather than an
+  // array on user: the team screen reads them per member and the catalogue
+  // per tenant, and @mswjs/data has no array column.
+  productRole: {
+    id: primaryKey(String),
+    productId: String,
+    productName: String,
+    key: String,
+    name: String,
+    moduleCount: Number,
+  },
+
+  userProductRole: {
+    id: primaryKey(String),
+    userId: String,
+    productRoleId: String,
+  },
 });
 
 export type Db = typeof db;
@@ -201,6 +219,8 @@ export function resetDb(): void {
   db.paymentRecord.deleteMany({ where: {} });
   db.paymentMethodConfig.deleteMany({ where: {} });
   db.paymentProof.deleteMany({ where: {} });
+  db.productRole.deleteMany({ where: {} });
+  db.userProductRole.deleteMany({ where: {} });
   // Also clear the in-memory idempotency Map (separate from db for performance)
   clearIdempotencyCache();
 }

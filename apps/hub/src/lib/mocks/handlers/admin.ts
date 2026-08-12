@@ -25,6 +25,22 @@ function computeStatus(inv: {
 
 // ─── Admin handlers ───────────────────────────────────────────────────────────
 
+/** The roles a member holds, shaped as MemberProductRole. */
+function rolesHeldBy(userId: string) {
+  return db.userProductRole
+    .findMany({ where: { userId: { equals: userId } } })
+    .map((assignment) =>
+      db.productRole.findFirst({ where: { id: { equals: assignment.productRoleId } } }),
+    )
+    .filter((role) => role !== null)
+    .map((role) => ({
+      id: role.id,
+      productId: role.productId,
+      key: role.key,
+      name: role.name,
+    }));
+}
+
 export const adminHandlers = [
   // POST /invitations — create invitation (TenantAdmin only)
   http.post(`${BASE}/invitations`, async ({ request }) => {
@@ -148,10 +164,65 @@ export const adminHandlers = [
       role: user.role,
       status: user.status,
       createdAt: stableNow(),
+      productRoles: rolesHeldBy(user.id),
     }));
 
     return HttpResponse.json({ items });
   }),
+
+  // GET /tenants/current/product-roles — the catalogue an admin hands out
+  http.get(`${BASE}/tenants/current/product-roles`, () => {
+    const roles = db.productRole.findMany({ where: {} });
+    const byProduct = new Map<string, { productName: string; roles: typeof roles }>();
+
+    for (const role of roles) {
+      const entry = byProduct.get(role.productId) ?? { productName: role.productName, roles: [] };
+      entry.roles.push(role);
+      byProduct.set(role.productId, entry);
+    }
+
+    return HttpResponse.json({
+      products: Array.from(byProduct.entries()).map(([productId, entry]) => ({
+        productId,
+        productName: entry.productName,
+        roles: entry.roles.map((role) => ({
+          id: role.id,
+          productId: role.productId,
+          key: role.key,
+          name: role.name,
+          moduleCount: role.moduleCount,
+        })),
+      })),
+    });
+  }),
+
+  // PUT /tenants/current/members/:memberId/product-roles — replace the whole set
+  http.put(
+    `${BASE}/tenants/current/members/:memberId/product-roles`,
+    async ({ request, params }) => {
+      const memberId = params['memberId'] as string;
+      const body = (await request.json()) as { productRoleIds?: string[] };
+      const productRoleIds = body.productRoleIds ?? [];
+
+      const user = db.user.findFirst({
+        where: { id: { equals: memberId }, tenantId: { equals: SEED.tenantId } },
+      });
+      if (user === null) {
+        return notFound('Member not found');
+      }
+
+      db.userProductRole.deleteMany({ where: { userId: { equals: memberId } } });
+      productRoleIds.forEach((productRoleId, index) => {
+        db.userProductRole.create({
+          id: `upr-${memberId}-${String(index)}`,
+          userId: memberId,
+          productRoleId,
+        });
+      });
+
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
 
   // PATCH /tenants/current — update tenant name
   http.patch(`${BASE}/tenants/current`, async ({ request }) => {

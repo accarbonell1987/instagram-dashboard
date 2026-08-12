@@ -246,6 +246,7 @@ export async function createTestApp(): Promise<TestApp> {
 
   const productRoleService = createProductRoleService({
     productRoleRepository: repos.productRoleRepository,
+    moduleRepository: repos.moduleRepository,
     userRepo: repos.userRepo,
     logger,
   })

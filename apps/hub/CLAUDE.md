@@ -95,6 +95,23 @@ apps/hub/
 - **Billing stubs**: Los endpoints de billing en `api-iam` son stubs que retornan estado vacío (`paymentMethod: null`, `items: []`). La integración real con Bancard para tokenización de tarjetas es trabajo futuro.
 - **`session.role`**: El rol está en `session.role` (no en `session.user.role`). Usar `useSession()` para leer el rol en componentes.
 - **RequireRole**: `<RequireRole role={['TenantAdmin', 'SuperAdmin']}>` — envuelve secciones y rutas que solo son visibles para admins. Redirige a `/` si el rol no está autorizado.
+- **Dos ejes de permisos, no uno**: el rol de tenant (`TenantAdmin` / `User`) decide qué se
+  puede hacer *en el hub*; el rol de producto decide qué se puede abrir *dentro* de un producto.
+  La invitación fija el primero; `/settings/team` → botón de llave por miembro fija el segundo
+  (`MemberAccessDialog`, un rol por producto).
+  - **Sin rol de producto = ve todo lo que otorga el plan.** El resolver solo empieza a filtrar
+    cuando el usuario tiene al menos un rol. Asignar un rol *restringe*, nunca amplía.
+  - Un rol con `moduleCount: 0` deja al miembro sin nada — el diálogo avisa antes de guardar.
+  - Los `TenantAdmin` nunca quedan filtrados por su propio rol de producto
+    (`roleFilterSubject` en `api-iam/routes/modules/tenant-modules.ts`): si no, podrían
+    dejarse a sí mismos fuera del producto que administran y solo un SuperAdmin lo desharía.
+  - El botón de accesos vive **fuera** de `MemberActionsMenu` a propósito: ese menú se oculta
+    para el usuario actual, y un tenant cuyo admin es su único miembro igual tiene que poder
+    configurarse a sí mismo.
+- **Radix `Select` dentro de un Radix `Dialog` cuelga jsdom** — los dos focus scopes se pasan el
+  foco para siempre y el runner se traba sin timeout. Por eso `MemberAccessForm` está separado de
+  `MemberAccessDialog`: la interacción se testea con el form suelto. Además Radix `Select` necesita
+  stubs de `hasPointerCapture` / `scrollIntoView`, locales al test que los usa.
 
 ## Scripts disponibles
 
@@ -125,7 +142,7 @@ Note: Backend currently only supports recovering to `'company'` step. For `repre
 ## Contrato API
 
 - Archivo: `.atl/api-contract.yaml` (OpenAPI 3.1)
-- Versión actual: **1.6.0**
+- Versión actual: **1.23.0**
 - Lint: `pnpm --package=@redocly/cli dlx redocly lint .atl/api-contract.yaml`
 - Cambios al contrato requieren PR coordinado con el equipo backend (`apps/api-iam`).
 

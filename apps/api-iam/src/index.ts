@@ -215,6 +215,7 @@ async function main(): Promise<void> {
 
   const productRoleService = createProductRoleService({
     productRoleRepository: repos.productRoleRepository,
+    moduleRepository: repos.moduleRepository,
     userRepo: repos.userRepo,
     logger: rootLogger,
   });

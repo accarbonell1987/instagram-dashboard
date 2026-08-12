@@ -146,6 +146,20 @@ Seguir todas las convenciones de `CLAUDE.md` en la raíz. Adicionalmente:
 - **Soft delete de usuarios**: `users.deleted_at` — jamás se borran filas. `listByTenant` filtra `{ deletedAt: null }` (incluye suspendidos). Refresh guard: si `user.deletedAt !== undefined` → 401 `auth.account_deleted`.
 - **Eliminar miembro — transacción atómica**: `prisma.$transaction` hace inline `tx.user.update(deletedAt)` + `refreshTokenRepo.invalidateAllForUser(userId, tx)`. NO llamar a `userRepo.softDelete()` desde la transacción — el repo tiene su propia referencia a prisma.
 - **Último admin guard**: `updateMemberStatus` cuenta admins activos con `userRepo.countActiveAdmins(tenantId)`. Si es 1 y se intenta suspender/eliminar → 409 `identity.last_admin`.
+- **Roles de producto a nivel tenant**: `GET /tenants/current/product-roles` y
+  `PUT /tenants/current/members/:memberId/product-roles` dejan que un `TenantAdmin` reparta acceso
+  dentro de su propia organización — el equivalente tenant-scoped de los `/admin/*` que ya existían
+  y siguen siendo SuperAdmin-only. Guards en `productRoleService.setMemberRoles`: miembro de otro
+  tenant → **404** (nunca 403: decir que el id existe en otro lado es un oráculo de existencia),
+  rol de un producto no contratado → 422, dos roles del mismo producto → 422.
+  `replaceUserRoles` borra solo dentro de los productos del tenant, no todas las filas del usuario.
+- **El filtro por rol de producto no aplica a admins**: `roleFilterSubject` en
+  `routes/modules/tenant-modules.ts` pasa `userId` solo cuando el rol es `User`. Un `TenantAdmin`
+  es quien reparte los roles; filtrarlo por el suyo le permitiría dejarse afuera del producto que
+  administra sin forma de volver. `GET /internal/tenants/:id/entitlements` sigue filtrando por el
+  `userId` que le pasa el caller — no conoce el rol; es una inconsistencia conocida.
+- **Un usuario sin rol de producto ve todo lo que otorga el plan** (fail-open deliberado en
+  `resolveEffectiveModules`). Asignar un rol restringe; nunca amplía.
 - **Plan change contact-first**: `createPlanChangeService` verifica solicitud pendiente en BD antes de crear una nueva (409 si existe). Email a `PLAN_CHANGE_NOTIFY_TO` es fire-and-forget (error de email no falla el request).
 
 ## Coordinación con apps/hub
@@ -182,7 +196,7 @@ pnpm --filter @corehub/api-iam test:watch    # Watch mode
 |---|---|---|
 | Auth | 14 | POST /auth/login, POST /auth/login/complete, POST /auth/otp/send, POST /auth/otp/verify, POST /auth/otp/resend, POST /auth/refresh, POST /auth/logout, GET /auth/password/policy, POST /auth/password/recover/request, POST /auth/password/recover/complete, POST /auth/first-login/start, POST /auth/first-login/set-password, GET /auth/first-login/validate, GET /auth/me |
 | Onboarding | 9 | POST /onboarding/draft, GET/PATCH /onboarding/draft/:id, GET /onboarding/draft/resume/:token, POST /onboarding/draft/:id/resume-link, POST /onboarding/draft/:id/payment/initiate, GET /onboarding/draft/:id/payment/status, PATCH /onboarding/draft/:id/recover, POST /onboarding/draft/:id/submit |
-| Identity | 6 | GET /tenants/current, GET /tenants/current/members, PATCH /tenants/current, PATCH /tenants/current/members/:id/status, DELETE /tenants/current/members/:id, PATCH /users/me |
+| Identity | 8 | GET /tenants/current, GET /tenants/current/members, PATCH /tenants/current, PATCH /tenants/current/members/:id/status, DELETE /tenants/current/members/:id, GET /tenants/current/product-roles, PUT /tenants/current/members/:id/product-roles, PATCH /users/me |
 | Invitations | 2 | POST /invitations (crear), DELETE /invitations/:id (revocar) |
 | Plans | 2 | GET /plans, GET /plans/:id |
 | Plan Change | 1 | POST /tenants/current/plan-change |

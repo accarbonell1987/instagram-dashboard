@@ -31,6 +31,19 @@ function toModuleTree(modules: EffectiveModule[]) {
     }))
 }
 
+/**
+ * Whose product roles narrow the module list — nobody's, for an admin.
+ *
+ * The resolver intersects the plan's modules with the modules the user's
+ * product roles permit, and a user with no roles keeps everything. A tenant
+ * admin is the person who hands those roles out: filtering them by their own
+ * assignment would let them lock themselves out of the product they administer,
+ * with only a SuperAdmin able to undo it. So an admin resolves unfiltered.
+ */
+function roleFilterSubject(role: string, userId: string): string | undefined {
+  return role === 'User' ? userId : undefined
+}
+
 export function createTenantModulesRouter(
   moduleService: ModuleService,
   authGuard: MiddlewareHandler,
@@ -75,7 +88,10 @@ export function createTenantModulesRouter(
       )
     }
 
-    const effectiveModules = await moduleService.getEffectiveModulesForTenant(tenantUuid, userId)
+    const effectiveModules = await moduleService.getEffectiveModulesForTenant(
+      tenantUuid,
+      roleFilterSubject(role, userId),
+    )
 
     return c.json(
       {
@@ -114,7 +130,7 @@ export function createTenantModulesRouter(
 
     const products = await moduleService.getAvailableProductsForTenant(
       tenantUuid,
-      userId,
+      roleFilterSubject(role, userId),
       role === 'SuperAdmin',
     )
 
