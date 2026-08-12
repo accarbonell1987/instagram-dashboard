@@ -14,14 +14,16 @@ const MEMBERS: MemberListItem[] = [
     fullName: 'Ana Pereira',
     role: 'TenantAdmin',
     status: 'active',
-  } as MemberListItem,
+    createdAt: '2026-07-01T00:00:00.000Z',
+  },
+  // No fullName at all — the contract types it optional, not nullable.
   {
     id: 'user-2',
     email: 'beto@empresa.com',
-    fullName: null,
     role: 'User',
     status: 'suspended',
-  } as MemberListItem,
+    createdAt: '2026-07-02T00:00:00.000Z',
+  },
 ];
 
 function renderList(props: Partial<Parameters<typeof MembersList>[0]> = {}) {

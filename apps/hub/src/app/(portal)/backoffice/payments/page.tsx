@@ -33,41 +33,17 @@ import {
   type AdminPayment,
   type AdminPaymentStatus,
 } from '@/modules/backoffice/payments';
+import {
+  PaymentStatusBadge,
+  PAYMENT_STATUS_LABELS,
+} from '@/modules/shared/billing/components/payment-status-badge';
 
 // ─── Labels ─────────────────────────────────────────────────────────────────────
-
-const STATUS_LABELS: Record<AdminPaymentStatus, string> = {
-  pending: 'Pendiente',
-  in_review: 'En revisión',
-  approved: 'Aprobado',
-  declined: 'Rechazado',
-  cancelled: 'Cancelado',
-  timeout: 'Expirado',
-};
-
-const STATUS_COLORS: Record<AdminPaymentStatus, string> = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  in_review: 'bg-blue-100 text-blue-700',
-  approved: 'bg-green-100 text-green-700',
-  declined: 'bg-red-100 text-red-700',
-  cancelled: 'bg-gray-100 text-gray-700',
-  timeout: 'bg-orange-100 text-orange-700',
-};
 
 const METHOD_LABELS: Record<string, string> = {
   bancard: 'Bancard',
   bank_transfer: 'Transferencia bancaria',
 };
-
-function StatusBadge({ status }: { status: AdminPaymentStatus }): JSX.Element {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]}`}
-    >
-      {STATUS_LABELS[status]}
-    </span>
-  );
-}
 
 /**
  * Icon-only action for a queue row, with the label in a tooltip.
@@ -315,9 +291,9 @@ export default function PaymentsQueuePage(): JSX.Element {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
-            {(Object.keys(STATUS_LABELS) as AdminPaymentStatus[]).map((status) => (
+            {(Object.keys(PAYMENT_STATUS_LABELS) as AdminPaymentStatus[]).map((status) => (
               <SelectItem key={status} value={status}>
-                {STATUS_LABELS[status]}
+                {PAYMENT_STATUS_LABELS[status]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -367,7 +343,7 @@ export default function PaymentsQueuePage(): JSX.Element {
                       {METHOD_LABELS[payment.method] ?? payment.method}
                     </Td>
                     <Td>
-                      <StatusBadge status={payment.status} />
+                      <PaymentStatusBadge status={payment.status} />
                     </Td>
                     <Td align="right">
                       {isSettleable(payment.status) ? (
