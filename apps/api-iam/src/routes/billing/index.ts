@@ -10,7 +10,6 @@ import {
   PaymentListResponseSchema,
   commonErrorResponses,
 } from '../schemas/index.js'
-import { NotFoundError } from '../../errors.js'
 
 export function createBillingRouter(
   billingService: BillingService,
@@ -87,7 +86,11 @@ export function createBillingRouter(
 
   router.openapi(listInvoicesRoute, async (c) => {
     const { page, pageSize } = c.req.valid('query')
-    const result = await billingService.listInvoices({ page, pageSize })
+    const result = await billingService.listInvoices({
+      tenantUuid: c.var.user.tenantUuid,
+      page,
+      pageSize,
+    })
     return c.json(result, 200)
   })
 
@@ -135,8 +138,13 @@ export function createBillingRouter(
     },
   })
 
-  router.openapi(getInvoiceSignedUrlRoute, async (_c) => {
-    throw new NotFoundError('billing.invoice_document_not_found')
+  router.openapi(getInvoiceSignedUrlRoute, async (c) => {
+    const { invoiceId } = c.req.valid('param')
+    const result = await billingService.getInvoiceSignedUrl({
+      invoiceId,
+      tenantUuid: c.var.user.tenantUuid,
+    })
+    return c.json({ url: result.url, expiresAt: result.expiresAt.toISOString() }, 200)
   })
 
   // ─── GET /billing/documents/{documentId}/signed-url ──────────────────────────

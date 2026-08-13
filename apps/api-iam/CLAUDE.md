@@ -160,6 +160,21 @@ Seguir todas las convenciones de `CLAUDE.md` en la raíz. Adicionalmente:
   `userId` que le pasa el caller — no conoce el rol; es una inconsistencia conocida.
 - **Un usuario sin rol de producto ve todo lo que otorga el plan** (fail-open deliberado en
   `resolveEffectiveModules`). Asignar un rol restringe; nunca amplía.
+- **No existe subsistema de facturación**: nada emite un documento por ciclo, y ninguna fila lleva
+  número de factura ni fecha de vencimiento. Una "factura" es el cobro visto fiscalmente —
+  `listInvoices` proyecta los `Payment` del tenant a `InvoiceListItem` y les adjunta el PDF de
+  factura del tenant cuando `settlement.service` ya lo generó. Es una proyección, no un registro
+  inventado, y por eso la lista se solapa con `/billing/payments`: los mismos eventos vistos
+  operativamente (método, referencia, quién liquidó y por qué).
+  - `INVOICE_STATUS_MAP` en `lib/payment-mapper.ts`: `approved`→`paid`, `pending`/`in_review`→
+    `pending`, `declined`/`cancelled`/`reversed`→`cancelled`. **`overdue` nunca se emite** — sin
+    fecha de vencimiento en ninguna parte, no hay momento en que una factura se atrase.
+  - `documentId` es `null` salvo que el pago esté `approved` **y** exista un `Document` de tipo
+    `invoice` con `status: 'ready'`. `submit.service` crea la fila como placeholder `pending` con
+    `storageKey: 'pending'` — que la fila exista no significa que el archivo exista.
+  - `GET /billing/invoices/:id/signed-url` recibe un **id de pago** (la fila es una proyección de
+    ese pago), lo resuelve contra los pagos del propio tenant y delega en `getSignedDocumentUrl`.
+    Un id de otro tenant simplemente no aparece → 404, nunca 403.
 - **Plan change contact-first**: `createPlanChangeService` verifica solicitud pendiente en BD antes de crear una nueva (409 si existe). Email a `PLAN_CHANGE_NOTIFY_TO` es fire-and-forget (error de email no falla el request).
 
 ## Coordinación con apps/hub
@@ -200,12 +215,13 @@ pnpm --filter @corehub/api-iam test:watch    # Watch mode
 | Invitations | 2 | POST /invitations (crear), DELETE /invitations/:id (revocar) |
 | Plans | 2 | GET /plans, GET /plans/:id |
 | Plan Change | 1 | POST /tenants/current/plan-change |
-| Billing | 5 | GET /billing/payment-method (**stub**→null), POST /billing/payment-method (**stub**→202), GET /billing/invoices (**stub**→vacío), GET /billing/invoices/:id/signed-url (**stub**→404), GET /billing/documents/:id/signed-url (real) |
+| Billing | 6 | GET /billing/payment-method (**stub**→null), POST /billing/payment-method (**stub**→202), GET /billing/invoices (real), GET /billing/invoices/:id/signed-url (real), GET /billing/payments (real), GET /billing/documents/:id/signed-url (real) |
 | Webhooks | 1 | POST /webhooks/bancard |
 | Well-known | 1 | GET /.well-known/jwks.json |
 | Health | 1 | GET /healthz |
 
-> **Billing stubs**: Los 4 endpoints nuevos de billing retornan estado vacío/nulo. Son placeholders para cuando se implemente la tokenización de tarjetas vía Bancard y la generación de facturas reales.
+> **Billing stubs restantes**: solo los dos de `payment-method`. Son placeholders para cuando se
+> implemente la tokenización de tarjetas vía Bancard.
 
 ## Admin Org Management (2026-05-14)
 

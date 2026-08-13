@@ -12,6 +12,50 @@ export function mapPaymentStatus(
   return status
 }
 
+// Map domain PaymentStatus → the contract's InvoiceStatus.
+//
+// An invoice is the fiscal face of a payment: what was charged, and whether it
+// was settled. `in_review` reads as pending because the tenant has been billed
+// and the money has not been accepted yet — from their side it is unpaid.
+// Every terminal non-approval collapses to `cancelled`: the distinction between
+// declined, cancelled and reversed is operational, and lives in the payment
+// log, not on a fiscal document.
+//
+// `overdue` is never produced. Nothing in the system carries a due date, so
+// there is no moment at which an invoice could become late. Emitting it would
+// be a guess dressed as a fact.
+const INVOICE_STATUS_MAP: Record<PaymentStatus, 'paid' | 'pending' | 'cancelled'> = {
+  pending: 'pending',
+  in_review: 'pending',
+  approved: 'paid',
+  declined: 'cancelled',
+  cancelled: 'cancelled',
+  reversed: 'cancelled',
+}
+
+/**
+ * Reshape a payment into the contract's InvoiceListItem.
+ *
+ * `documentId` is the tenant's invoice PDF once settlement has generated it,
+ * and null until then — the frontend renders a dash rather than a dead
+ * download button. The same document is attached to every row because the
+ * system issues one invoice per tenant today; a payment that predates it, or
+ * never settled, simply has nothing to download.
+ */
+export function toInvoiceListItem(payment: Payment, documentId: string | null) {
+  return {
+    id: payment.id,
+    // The date the charge became real for the customer. confirmedAt is when the
+    // money landed; without it the payment is still open, so the date it was
+    // initiated is the only honest answer.
+    issuedAt: (payment.confirmedAt ?? payment.createdAt).toISOString(),
+    total: payment.amount,
+    currency: payment.currency as 'PYG' | 'USD',
+    status: INVOICE_STATUS_MAP[payment.status],
+    documentId,
+  }
+}
+
 const SETTLEMENT_KIND_MAP: Record<PaymentSettlementKind, 'webhook' | 'agent' | 'manual_admin'> = {
   gateway_webhook: 'webhook',
   agent_review: 'agent',

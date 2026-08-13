@@ -92,7 +92,13 @@ apps/hub/
     Ver `invitations-list.tsx` e `invoices-section.tsx`.
   - **El error gana sobre el vacío**: una request fallida también deja la lista vacía, y
     anunciar "no hay resultados" por una carga rota manda a buscar datos que nunca llegaron.
-- **Billing stubs**: Los endpoints de billing en `api-iam` son stubs que retornan estado vacío (`paymentMethod: null`, `items: []`). La integración real con Bancard para tokenización de tarjetas es trabajo futuro.
+- **Billing stubs**: ya solo `GET/POST /billing/payment-method` (retornan `paymentMethod: null`
+  y 202). La integración real con Bancard para tokenización de tarjetas es trabajo futuro.
+- **Pagos y Facturas son el mismo evento con dos lentes**: `PaymentsSection` es el registro
+  operativo (método, referencia, quién liquidó, la nota); `InvoicesSection` es el fiscal (qué se
+  cobró, cuándo, si se pagó, y el PDF). No hay subsistema de facturación: el backend proyecta los
+  pagos del tenant a facturas. Una factura solo ofrece descarga si el pago está aprobado y el PDF
+  ya se generó — si no, la fila muestra un guion.
 - **`session.role`**: El rol está en `session.role` (no en `session.user.role`). Usar `useSession()` para leer el rol en componentes.
 - **RequireRole**: `<RequireRole role={['TenantAdmin', 'SuperAdmin']}>` — envuelve secciones y rutas que solo son visibles para admins. Redirige a `/` si el rol no está autorizado.
 - **Dos ejes de permisos, no uno**: el rol de tenant (`TenantAdmin` / `User`) decide qué se
