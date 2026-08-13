@@ -21,6 +21,10 @@ export interface InstagramRepository {
     tokenExpiresAt: Date,
   ): Promise<InstagramAccount>;
   disconnectAccount(tenantId: string, userId: string): Promise<InstagramAccount>;
+  // Tenant administration: every account the organisation holds, and cutting
+  // one loose by its id rather than by whoever is asking.
+  listAccountsByTenantId(tenantId: string): Promise<InstagramAccount[]>;
+  disconnectAccountById(tenantId: string, accountId: string): Promise<InstagramAccount>;
   updateToken(
     accountId: string,
     accessTokenHash: string,

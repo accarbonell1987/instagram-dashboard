@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.23.0
+  version: 1.24.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -1083,6 +1083,35 @@ components:
           description: Accesos a producto del miembro. Vacío = ve todo lo que otorga el plan.
           items:
             $ref: '#/components/schemas/MemberProductRole'
+
+    TenantAdminSection:
+      type: object
+      required: [key, label, description, productId, productName, productUrl, path, moduleId]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        description:
+          oneOf: [{ type: string }, { type: 'null' }]
+        productId: { type: string }
+        productName: { type: string }
+        productUrl:
+          type: string
+          description: Dirección del producto. El hub le une `path` para obtener la URL final.
+        path:
+          type: string
+          description: Ruta relativa a `productUrl`.
+        moduleId:
+          oneOf: [{ type: string }, { type: 'null' }]
+          description: Módulo que la sección requiere, o null si es del producto entero.
+
+    TenantAdminSectionsResponse:
+      type: object
+      required: [sections]
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantAdminSection'
 
     TenantProductRole:
       allOf:
@@ -2971,6 +3000,44 @@ paths:
                 $ref: '#/components/schemas/AccessibleModuleList'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /tenants/current/admin-sections:
+    get:
+      tags: [modules, Módulos]
+      operationId: getTenantAdminSections
+      summary: Pantallas de configuración que aportan los productos del tenant
+      description: |
+        **Propósito**: Un producto puede aportar pantallas de administración al área de
+        configuración del tenant — por ejemplo, las cuentas de Instagram vinculadas y quién las
+        tiene tomadas. Este endpoint devuelve las que el llamante puede ver.
+
+        **Proceso**: El hub las agrega al nav de `/settings` y monta cada una en el mismo iframe
+        que ya usa para el producto (`ProductShell`), uniendo `productUrl` + `path`.
+
+        **Precondiciones**: Sesión activa. El filtro por rol es por sección.
+
+        **Notas**:
+        - `path` es **relativo** a `productUrl` a propósito: el hub une los dos, y eso le permite
+          sustituir la dirección del producto en desarrollo sin que este registro sepa nada de
+          entornos.
+        - Solo aparecen secciones de productos contratados. Si la sección declara `moduleId`, además
+          ese módulo tiene que estar habilitado para el tenant.
+        - **El filtro por rol es de presentación, no de autorización.** El hub decide qué entrada
+          dibuja; no está en el camino de la request y no puede proteger nada. La API del propio
+          producto DEBE verificar el claim `role` del JWT en cada acción privilegiada.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Admin sections the caller may see
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantAdminSectionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /tenants/current/products:
     get:

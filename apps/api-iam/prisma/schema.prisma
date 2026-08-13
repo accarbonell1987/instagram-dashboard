@@ -194,6 +194,7 @@ model Product {
   entitlements  Entitlement[]
   productRoles  ProductRole[]
   drafts        OnboardingDraft[]
+  adminSections ProductAdminSection[]
 
   @@map("products")
 }
@@ -545,6 +546,7 @@ model Module {
   tenantOverrides TenantModuleOverride[]
   entitlements    Entitlement[]
   roleModuleAccess RoleModuleAccess[]
+  adminSections   ProductAdminSection[]
 
   @@map("modules")
 }
@@ -618,6 +620,42 @@ model Entitlement {
   @@unique([tenantId, productId, moduleId, source])
   @@index([expiresAt])
   @@map("entitlements")
+}
+
+// A screen a product contributes to the tenant's own settings area — "the
+// linked Instagram accounts and who holds them", say. The hub mounts it in the
+// same iframe it already uses for the product itself: the product owns the UI
+// and the API behind it, the hub owns only where it appears.
+//
+// A table rather than a column on Product because a product will have several,
+// and because turning one off should not need a deploy.
+model ProductAdminSection {
+  id          String   @id @default(uuid()) @db.Uuid
+  productId   String   @map("product_id")
+  // Set when the screen only makes sense with that module entitled; null means
+  // it belongs to the product as a whole.
+  moduleId    String?  @map("module_id")
+  key         String
+  label       String   @db.VarChar(80)
+  description String?  @db.VarChar(300)
+  // Relative to the product's defaultUrl, so the per-product env override
+  // resolveProductUrl applies in development keeps working.
+  path        String   @db.VarChar(200)
+  // Display only, and named so nobody mistakes it for authorisation: it decides
+  // which nav entry the hub draws. The hub is not in the request path and
+  // cannot protect anything — the product's own API must check the JWT role on
+  // every privileged call.
+  visibleToRole UserRole @default(TenantAdmin) @map("visible_to_role")
+  displayOrder  Int      @default(0) @map("display_order")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  module  Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, key])
+  @@map("product_admin_sections")
 }
 
 model ProductRole {

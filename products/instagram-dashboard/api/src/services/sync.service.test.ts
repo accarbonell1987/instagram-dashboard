@@ -23,6 +23,8 @@ function createMockRepo(): {
     instagram: {
       findAccountByTenantId: vi.fn(),
       disconnectAccount: vi.fn(),
+  listAccountsByTenantId: vi.fn(),
+  disconnectAccountById: vi.fn(),
       upsertAccount: vi.fn(),
       updateToken: vi.fn(),
       updateSyncStatus: vi.fn(),

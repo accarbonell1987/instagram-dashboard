@@ -406,6 +406,7 @@ export const ModelName = {
   TenantModuleOverride: 'TenantModuleOverride',
   TenantProductSubscription: 'TenantProductSubscription',
   Entitlement: 'Entitlement',
+  ProductAdminSection: 'ProductAdminSection',
   ProductRole: 'ProductRole',
   UserProductRole: 'UserProductRole',
   RoleModuleAccess: 'RoleModuleAccess'
@@ -424,7 +425,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "product" | "plan" | "planQuota" | "tenant" | "user" | "refreshToken" | "deviceTrust" | "otpCode" | "passwordResetToken" | "onboardingDraft" | "payment" | "paymentMethodConfig" | "webhookEvent" | "idempotencyRecord" | "invitation" | "document" | "planChangeRequest" | "module" | "planModule" | "tenantModuleOverride" | "tenantProductSubscription" | "entitlement" | "productRole" | "userProductRole" | "roleModuleAccess"
+    modelProps: "product" | "plan" | "planQuota" | "tenant" | "user" | "refreshToken" | "deviceTrust" | "otpCode" | "passwordResetToken" | "onboardingDraft" | "payment" | "paymentMethodConfig" | "webhookEvent" | "idempotencyRecord" | "invitation" | "document" | "planChangeRequest" | "module" | "planModule" | "tenantModuleOverride" | "tenantProductSubscription" | "entitlement" | "productAdminSection" | "productRole" | "userProductRole" | "roleModuleAccess"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2056,6 +2057,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ProductAdminSection: {
+      payload: Prisma.$ProductAdminSectionPayload<ExtArgs>
+      fields: Prisma.ProductAdminSectionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProductAdminSectionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProductAdminSectionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>
+        }
+        findFirst: {
+          args: Prisma.ProductAdminSectionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProductAdminSectionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>
+        }
+        findMany: {
+          args: Prisma.ProductAdminSectionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>[]
+        }
+        create: {
+          args: Prisma.ProductAdminSectionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>
+        }
+        createMany: {
+          args: Prisma.ProductAdminSectionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProductAdminSectionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>[]
+        }
+        delete: {
+          args: Prisma.ProductAdminSectionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>
+        }
+        update: {
+          args: Prisma.ProductAdminSectionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProductAdminSectionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProductAdminSectionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProductAdminSectionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProductAdminSectionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductAdminSectionPayload>
+        }
+        aggregate: {
+          args: Prisma.ProductAdminSectionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProductAdminSection>
+        }
+        groupBy: {
+          args: Prisma.ProductAdminSectionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductAdminSectionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProductAdminSectionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductAdminSectionCountAggregateOutputType> | number
+        }
+      }
+    }
     ProductRole: {
       payload: Prisma.$ProductRolePayload<ExtArgs>
       fields: Prisma.ProductRoleFieldRefs
@@ -2656,6 +2731,24 @@ export const EntitlementScalarFieldEnum = {
 export type EntitlementScalarFieldEnum = (typeof EntitlementScalarFieldEnum)[keyof typeof EntitlementScalarFieldEnum]
 
 
+export const ProductAdminSectionScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  moduleId: 'moduleId',
+  key: 'key',
+  label: 'label',
+  description: 'description',
+  path: 'path',
+  visibleToRole: 'visibleToRole',
+  displayOrder: 'displayOrder',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductAdminSectionScalarFieldEnum = (typeof ProductAdminSectionScalarFieldEnum)[keyof typeof ProductAdminSectionScalarFieldEnum]
+
+
 export const ProductRoleScalarFieldEnum = {
   id: 'id',
   productId: 'productId',
@@ -3215,6 +3308,7 @@ export type GlobalOmitConfig = {
   tenantModuleOverride?: Prisma.TenantModuleOverrideOmit
   tenantProductSubscription?: Prisma.TenantProductSubscriptionOmit
   entitlement?: Prisma.EntitlementOmit
+  productAdminSection?: Prisma.ProductAdminSectionOmit
   productRole?: Prisma.ProductRoleOmit
   userProductRole?: Prisma.UserProductRoleOmit
   roleModuleAccess?: Prisma.RoleModuleAccessOmit

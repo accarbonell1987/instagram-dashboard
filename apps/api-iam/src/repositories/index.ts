@@ -15,6 +15,7 @@ import { PrismaDocumentRepository } from './document/index.js'
 import { PrismaPlanChangeRepository } from './plan-change/index.js'
 import { createModuleRepository } from './module/index.js'
 import { createProductRoleRepository } from './product-role/index.js'
+import { createProductAdminSectionRepository } from './product-admin-section/index.js'
 import { PrismaPlanQuotaRepository } from './plan-quota/index.js'
 
 export type { UserRepository, CreateUserInput } from './user/index.js'
@@ -33,6 +34,10 @@ export type { DocumentRepository, CreateDocumentInput } from './document/index.j
 export type { PlanChangeRepository, CreatePlanChangeInput, PlanChangeRepositoryItem } from './plan-change/index.js'
 export type { ModuleRepository } from './module/index.js'
 export type { ProductRoleRepository } from './product-role/index.js'
+export type {
+  ProductAdminSection,
+  ProductAdminSectionRepository,
+} from './product-admin-section/index.js'
 export type { PlanQuotaRepository, PlanQuotaData, CreatePlanQuotaInput, UpsertPlanQuotaInput } from './plan-quota/index.js'
 
 export {
@@ -71,6 +76,7 @@ export function createRepositories(prisma: PrismaClient) {
     planChangeRepo: new PrismaPlanChangeRepository(prisma),
     moduleRepository: createModuleRepository(prisma),
     productRoleRepository: createProductRoleRepository(prisma),
+    productAdminSectionRepository: createProductAdminSectionRepository(prisma),
     planQuotaRepo: new PrismaPlanQuotaRepository(prisma),
   }
 }

@@ -52,6 +52,24 @@ const IG_MODULES = [
 ];
 
 export const modulesHandlers = [
+  // GET /tenants/current/admin-sections — settings screens products contribute
+  http.get(`${BASE}/tenants/current/admin-sections`, () =>
+    HttpResponse.json({
+      sections: [
+        {
+          key: 'linked-accounts',
+          label: 'Cuentas de Instagram',
+          description: 'Las cuentas vinculadas de tu organización y quién las tiene tomadas.',
+          productId: 'instagram-dashboard',
+          productName: 'Dashboard Instagram',
+          productUrl: 'http://localhost:3004',
+          path: '/admin/linked-accounts',
+          moduleId: null,
+        },
+      ],
+    }),
+  ),
+
   http.get(`${BASE}/tenants/current/products`, () => {
     return HttpResponse.json({
       products: [

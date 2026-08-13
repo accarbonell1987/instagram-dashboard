@@ -7,6 +7,7 @@ export {
   useSyncStatus,
 } from './hooks/use-instagram-dashboard'
 export { getDashboardData, getPostDetail } from './services/instagram.service'
-export { initHubToken, getHubToken, clearHubToken } from './lib/hub-token'
+export { LinkedAccountsAdminPage } from './linked-accounts-admin-page'
+export { initHubToken, getHubToken, clearHubToken, reportHeightToHub } from './lib/hub-token'
 export * from './components'
 export type * from './types/instagram.types'

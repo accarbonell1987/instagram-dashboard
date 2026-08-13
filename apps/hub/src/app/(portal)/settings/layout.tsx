@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode, JSX } from 'react';
 
 import { useSession } from '@/modules/iam/identity/hooks/use-session';
+import { useAdminSections } from '@/modules/shared/modules/hooks/use-admin-sections';
 
 // ─── Nav links ─────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,12 @@ export default function SettingsLayout({ children }: SettingsLayoutProps): JSX.E
       (userRole !== null && link.requiresRole.includes(userRole as AllowedRole))
   );
 
+  // Screens the tenant's own products contribute. Appended rather than
+  // interleaved: the platform's own settings keep a stable order no matter
+  // which products the tenant has, and the API has already filtered these by
+  // contracted product, entitled module and role.
+  const { sections } = useAdminSections();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-6">
@@ -78,6 +85,34 @@ export default function SettingsLayout({ children }: SettingsLayoutProps): JSX.E
                     aria-current={isActive ? 'page' : undefined}
                   >
                     {label}
+                  </Link>
+                </li>
+              );
+            })}
+
+            {sections.length > 0 && (
+              <li className="mt-2 border-t pt-2" role="presentation">
+                <span className="text-muted-foreground px-3 text-xs font-medium uppercase">
+                  Productos
+                </span>
+              </li>
+            )}
+
+            {sections.map((section) => {
+              const href = `/settings/products/${section.key}`;
+              const isActive = isLinkActive(href, pathname);
+              return (
+                <li key={section.key}>
+                  <Link
+                    href={href}
+                    className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {section.label}
                   </Link>
                 </li>
               );

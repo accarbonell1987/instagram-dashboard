@@ -5,6 +5,7 @@ import type { EffectiveModule } from '../../domain/index.js'
 import {
   GetTenantModulesResponseSchema,
   GetTenantProductsResponseSchema,
+  TenantAdminSectionsResponseSchema,
 } from './modules.schemas.js'
 import { commonErrorResponses } from '../schemas/index.js'
 
@@ -52,6 +53,7 @@ export function createTenantModulesRouter(
 
   router.use('/tenants/current/modules', authGuard)
   router.use('/tenants/current/products', authGuard)
+  router.use('/tenants/current/admin-sections', authGuard)
 
   const getTenantModulesRoute = createRoute({
     method: 'get',
@@ -142,6 +144,50 @@ export function createTenantModulesRouter(
           description: product.description,
           defaultUrl: product.defaultUrl,
           modules: toModuleTree(product.modules),
+        })),
+      },
+      200,
+    )
+  })
+
+  // ── GET /tenants/current/admin-sections ──────────────────────────────────
+
+  const getTenantAdminSectionsRoute = createRoute({
+    method: 'get',
+    path: '/tenants/current/admin-sections',
+    operationId: 'getTenantAdminSections',
+    summary: 'Settings screens contributed by the tenant products',
+    tags: ['modules'],
+    responses: {
+      200: {
+        content: { 'application/json': { schema: TenantAdminSectionsResponseSchema } },
+        description: 'Admin sections the caller may see',
+      },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+    },
+  })
+
+  router.openapi(getTenantAdminSectionsRoute, async (c) => {
+    const { tenantUuid, role, sub: userId } = c.var.user
+
+    const sections = await moduleService.listAdminSectionsForTenant(
+      tenantUuid,
+      role,
+      roleFilterSubject(role, userId),
+    )
+
+    return c.json(
+      {
+        sections: sections.map((section) => ({
+          key: section.key,
+          label: section.label,
+          description: section.description,
+          productId: section.productId,
+          productName: section.productName,
+          productUrl: section.productUrl,
+          path: section.path,
+          moduleId: section.moduleId,
         })),
       },
       200,

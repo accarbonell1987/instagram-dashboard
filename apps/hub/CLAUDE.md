@@ -119,6 +119,22 @@ apps/hub/
   `MemberAccessDialog`: la interacción se testea con el form suelto. Además Radix `Select` necesita
   stubs de `hasPointerCapture` / `scrollIntoView`, locales al test que los usa.
 
+- **Los productos aportan pantallas a `/settings`**: un producto declara sus secciones en
+  `product_admin_sections` (api-iam) y el hub las agrega al nav de settings y las monta en
+  `ModuleFrame`, el mismo iframe con handshake de token que usa `ProductShell`.
+  - `GET /tenants/current/admin-sections` ya filtra por producto contratado, módulo habilitado
+    y rol. La página solo dibuja lo que recibe.
+  - `path` es **relativo** a `productUrl` (`resolveSectionUrl`), así el override por env que
+    apunta a un producto local en desarrollo también aplica a sus pantallas de settings.
+  - `sizing="content"` hace que el iframe crezca con el mensaje `corehub.module.v1.resize`,
+    **acotado entre 160 y 4000px**: la altura viene de una página que el hub no controla.
+  - **El filtro por rol es de presentación.** El hub no está en el camino de la request; la API
+    del producto tiene que verificar el claim `role` (ver `assertTenantAdmin` en
+    `products/instagram-dashboard/api/src/routes/admin/admin.routes.ts`).
+  - Un `page.tsx` de Next **no admite exports nombrados**: el panel vive en
+    `modules/shared/modules/components/product-settings-section.tsx` y la ruta solo desempaqueta
+    los params con `use()`.
+
 ## Scripts disponibles
 
 | Script             | Comando                                    |
@@ -148,7 +164,7 @@ Note: Backend currently only supports recovering to `'company'` step. For `repre
 ## Contrato API
 
 - Archivo: `.atl/api-contract.yaml` (OpenAPI 3.1)
-- Versión actual: **1.23.0**
+- Versión actual: **1.24.0**
 - Lint: `pnpm --package=@redocly/cli dlx redocly lint .atl/api-contract.yaml`
 - Cambios al contrato requieren PR coordinado con el equipo backend (`apps/api-iam`).
 

@@ -25,6 +25,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { createAgentRoutes } from './routes/agent/agent.routes.js';
 import { createAuthRoutes } from './routes/auth/auth.routes.js';
 import { createCarouselRoutes } from './routes/carousels/carousels.routes.js';
+import { createAdminRoutes } from './routes/admin/admin.routes.js';
 import { createChatRoutes } from './routes/chat/chat.routes.js';
 import { createDashboardRoutes } from './routes/dashboard/dashboard.routes.js';
 import { createHealthRoutes } from './routes/health/health.routes.js';
@@ -130,6 +131,9 @@ async function bootstrap() {
   api.route('/agent', createAgentRoutes(repos.instagram, usageTracker, config.ENABLE_USAGE_TRACKING));
   // Carousel routes
   api.route('/carousels', createCarouselRoutes(carouselService));
+  // Tenant administration contributed to the hub's settings area. Guarded on
+  // the JWT role inside the router — the hub cannot protect this.
+  api.route('/admin', createAdminRoutes(repos.instagram));
 
   // Protected auth routes: need JWT so authGuard has already set tenant context
   api.get('/auth/instagram/authorize', async (c) => {

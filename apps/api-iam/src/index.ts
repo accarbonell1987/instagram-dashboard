@@ -209,6 +209,7 @@ async function main(): Promise<void> {
 
   const moduleService = createModuleService({
     moduleRepository: repos.moduleRepository,
+    productAdminSectionRepository: repos.productAdminSectionRepository,
     tenantRepository: repos.tenantRepo,
     logger: rootLogger,
   });

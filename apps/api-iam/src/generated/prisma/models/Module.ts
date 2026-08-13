@@ -221,6 +221,7 @@ export type ModuleWhereInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideListRelationFilter
   entitlements?: Prisma.EntitlementListRelationFilter
   roleModuleAccess?: Prisma.RoleModuleAccessListRelationFilter
+  adminSections?: Prisma.ProductAdminSectionListRelationFilter
 }
 
 export type ModuleOrderByWithRelationInput = {
@@ -240,6 +241,7 @@ export type ModuleOrderByWithRelationInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideOrderByRelationAggregateInput
   entitlements?: Prisma.EntitlementOrderByRelationAggregateInput
   roleModuleAccess?: Prisma.RoleModuleAccessOrderByRelationAggregateInput
+  adminSections?: Prisma.ProductAdminSectionOrderByRelationAggregateInput
 }
 
 export type ModuleWhereUniqueInput = Prisma.AtLeast<{
@@ -262,6 +264,7 @@ export type ModuleWhereUniqueInput = Prisma.AtLeast<{
   tenantOverrides?: Prisma.TenantModuleOverrideListRelationFilter
   entitlements?: Prisma.EntitlementListRelationFilter
   roleModuleAccess?: Prisma.RoleModuleAccessListRelationFilter
+  adminSections?: Prisma.ProductAdminSectionListRelationFilter
 }, "id">
 
 export type ModuleOrderByWithAggregationInput = {
@@ -309,6 +312,7 @@ export type ModuleCreateInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateInput = {
@@ -326,6 +330,7 @@ export type ModuleUncheckedCreateInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUpdateInput = {
@@ -343,6 +348,7 @@ export type ModuleUpdateInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateInput = {
@@ -360,6 +366,7 @@ export type ModuleUncheckedUpdateInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleCreateManyInput = {
@@ -596,6 +603,22 @@ export type ModuleUpdateOneWithoutEntitlementsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ModuleUpdateToOneWithWhereWithoutEntitlementsInput, Prisma.ModuleUpdateWithoutEntitlementsInput>, Prisma.ModuleUncheckedUpdateWithoutEntitlementsInput>
 }
 
+export type ModuleCreateNestedOneWithoutAdminSectionsInput = {
+  create?: Prisma.XOR<Prisma.ModuleCreateWithoutAdminSectionsInput, Prisma.ModuleUncheckedCreateWithoutAdminSectionsInput>
+  connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutAdminSectionsInput
+  connect?: Prisma.ModuleWhereUniqueInput
+}
+
+export type ModuleUpdateOneWithoutAdminSectionsNestedInput = {
+  create?: Prisma.XOR<Prisma.ModuleCreateWithoutAdminSectionsInput, Prisma.ModuleUncheckedCreateWithoutAdminSectionsInput>
+  connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutAdminSectionsInput
+  upsert?: Prisma.ModuleUpsertWithoutAdminSectionsInput
+  disconnect?: Prisma.ModuleWhereInput | boolean
+  delete?: Prisma.ModuleWhereInput | boolean
+  connect?: Prisma.ModuleWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ModuleUpdateToOneWithWhereWithoutAdminSectionsInput, Prisma.ModuleUpdateWithoutAdminSectionsInput>, Prisma.ModuleUncheckedUpdateWithoutAdminSectionsInput>
+}
+
 export type ModuleCreateNestedOneWithoutRoleModuleAccessInput = {
   create?: Prisma.XOR<Prisma.ModuleCreateWithoutRoleModuleAccessInput, Prisma.ModuleUncheckedCreateWithoutRoleModuleAccessInput>
   connectOrCreate?: Prisma.ModuleCreateOrConnectWithoutRoleModuleAccessInput
@@ -624,6 +647,7 @@ export type ModuleCreateWithoutProductInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutProductInput = {
@@ -640,6 +664,7 @@ export type ModuleUncheckedCreateWithoutProductInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutProductInput = {
@@ -697,6 +722,7 @@ export type ModuleCreateWithoutChildrenInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutChildrenInput = {
@@ -713,6 +739,7 @@ export type ModuleUncheckedCreateWithoutChildrenInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutChildrenInput = {
@@ -734,6 +761,7 @@ export type ModuleCreateWithoutParentInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutParentInput = {
@@ -750,6 +778,7 @@ export type ModuleUncheckedCreateWithoutParentInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutParentInput = {
@@ -787,6 +816,7 @@ export type ModuleUpdateWithoutChildrenInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutChildrenInput = {
@@ -803,6 +833,7 @@ export type ModuleUncheckedUpdateWithoutChildrenInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUpsertWithWhereUniqueWithoutParentInput = {
@@ -835,6 +866,7 @@ export type ModuleCreateWithoutPlanModulesInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutPlanModulesInput = {
@@ -851,6 +883,7 @@ export type ModuleUncheckedCreateWithoutPlanModulesInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutPlanModulesInput = {
@@ -883,6 +916,7 @@ export type ModuleUpdateWithoutPlanModulesInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutPlanModulesInput = {
@@ -899,6 +933,7 @@ export type ModuleUncheckedUpdateWithoutPlanModulesInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleCreateWithoutTenantOverridesInput = {
@@ -915,6 +950,7 @@ export type ModuleCreateWithoutTenantOverridesInput = {
   planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutTenantOverridesInput = {
@@ -931,6 +967,7 @@ export type ModuleUncheckedCreateWithoutTenantOverridesInput = {
   planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutTenantOverridesInput = {
@@ -963,6 +1000,7 @@ export type ModuleUpdateWithoutTenantOverridesInput = {
   planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutTenantOverridesInput = {
@@ -979,6 +1017,7 @@ export type ModuleUncheckedUpdateWithoutTenantOverridesInput = {
   planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleCreateWithoutEntitlementsInput = {
@@ -995,6 +1034,7 @@ export type ModuleCreateWithoutEntitlementsInput = {
   planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutEntitlementsInput = {
@@ -1011,6 +1051,7 @@ export type ModuleUncheckedCreateWithoutEntitlementsInput = {
   planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutEntitlementsInput = {
@@ -1043,6 +1084,7 @@ export type ModuleUpdateWithoutEntitlementsInput = {
   planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutEntitlementsInput = {
@@ -1058,6 +1100,91 @@ export type ModuleUncheckedUpdateWithoutEntitlementsInput = {
   children?: Prisma.ModuleUncheckedUpdateManyWithoutParentNestedInput
   planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
+  roleModuleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutModuleNestedInput
+}
+
+export type ModuleCreateWithoutAdminSectionsInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl: string
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  product?: Prisma.ProductCreateNestedOneWithoutModulesInput
+  parent?: Prisma.ModuleCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ModuleCreateNestedManyWithoutParentInput
+  planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
+  tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
+  roleModuleAccess?: Prisma.RoleModuleAccessCreateNestedManyWithoutModuleInput
+}
+
+export type ModuleUncheckedCreateWithoutAdminSectionsInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl: string
+  active?: boolean
+  productId?: string | null
+  parentId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  children?: Prisma.ModuleUncheckedCreateNestedManyWithoutParentInput
+  planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
+  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
+  roleModuleAccess?: Prisma.RoleModuleAccessUncheckedCreateNestedManyWithoutModuleInput
+}
+
+export type ModuleCreateOrConnectWithoutAdminSectionsInput = {
+  where: Prisma.ModuleWhereUniqueInput
+  create: Prisma.XOR<Prisma.ModuleCreateWithoutAdminSectionsInput, Prisma.ModuleUncheckedCreateWithoutAdminSectionsInput>
+}
+
+export type ModuleUpsertWithoutAdminSectionsInput = {
+  update: Prisma.XOR<Prisma.ModuleUpdateWithoutAdminSectionsInput, Prisma.ModuleUncheckedUpdateWithoutAdminSectionsInput>
+  create: Prisma.XOR<Prisma.ModuleCreateWithoutAdminSectionsInput, Prisma.ModuleUncheckedCreateWithoutAdminSectionsInput>
+  where?: Prisma.ModuleWhereInput
+}
+
+export type ModuleUpdateToOneWithWhereWithoutAdminSectionsInput = {
+  where?: Prisma.ModuleWhereInput
+  data: Prisma.XOR<Prisma.ModuleUpdateWithoutAdminSectionsInput, Prisma.ModuleUncheckedUpdateWithoutAdminSectionsInput>
+}
+
+export type ModuleUpdateWithoutAdminSectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneWithoutModulesNestedInput
+  parent?: Prisma.ModuleUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ModuleUpdateManyWithoutParentNestedInput
+  planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
+  roleModuleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutModuleNestedInput
+}
+
+export type ModuleUncheckedUpdateWithoutAdminSectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  productId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  children?: Prisma.ModuleUncheckedUpdateManyWithoutParentNestedInput
+  planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
+  tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
+  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutModuleNestedInput
 }
 
@@ -1075,6 +1202,7 @@ export type ModuleCreateWithoutRoleModuleAccessInput = {
   planModules?: Prisma.PlanModuleCreateNestedManyWithoutModuleInput
   tenantOverrides?: Prisma.TenantModuleOverrideCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleUncheckedCreateWithoutRoleModuleAccessInput = {
@@ -1091,6 +1219,7 @@ export type ModuleUncheckedCreateWithoutRoleModuleAccessInput = {
   planModules?: Prisma.PlanModuleUncheckedCreateNestedManyWithoutModuleInput
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedCreateNestedManyWithoutModuleInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutModuleInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutModuleInput
 }
 
 export type ModuleCreateOrConnectWithoutRoleModuleAccessInput = {
@@ -1123,6 +1252,7 @@ export type ModuleUpdateWithoutRoleModuleAccessInput = {
   planModules?: Prisma.PlanModuleUpdateManyWithoutModuleNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutRoleModuleAccessInput = {
@@ -1139,6 +1269,7 @@ export type ModuleUncheckedUpdateWithoutRoleModuleAccessInput = {
   planModules?: Prisma.PlanModuleUncheckedUpdateManyWithoutModuleNestedInput
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleCreateManyProductInput = {
@@ -1166,6 +1297,7 @@ export type ModuleUpdateWithoutProductInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutProductInput = {
@@ -1182,6 +1314,7 @@ export type ModuleUncheckedUpdateWithoutProductInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateManyWithoutProductInput = {
@@ -1220,6 +1353,7 @@ export type ModuleUpdateWithoutParentInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateWithoutParentInput = {
@@ -1236,6 +1370,7 @@ export type ModuleUncheckedUpdateWithoutParentInput = {
   tenantOverrides?: Prisma.TenantModuleOverrideUncheckedUpdateManyWithoutModuleNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutModuleNestedInput
   roleModuleAccess?: Prisma.RoleModuleAccessUncheckedUpdateManyWithoutModuleNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutModuleNestedInput
 }
 
 export type ModuleUncheckedUpdateManyWithoutParentInput = {
@@ -1260,6 +1395,7 @@ export type ModuleCountOutputType = {
   tenantOverrides: number
   entitlements: number
   roleModuleAccess: number
+  adminSections: number
 }
 
 export type ModuleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1268,6 +1404,7 @@ export type ModuleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   tenantOverrides?: boolean | ModuleCountOutputTypeCountTenantOverridesArgs
   entitlements?: boolean | ModuleCountOutputTypeCountEntitlementsArgs
   roleModuleAccess?: boolean | ModuleCountOutputTypeCountRoleModuleAccessArgs
+  adminSections?: boolean | ModuleCountOutputTypeCountAdminSectionsArgs
 }
 
 /**
@@ -1315,6 +1452,13 @@ export type ModuleCountOutputTypeCountRoleModuleAccessArgs<ExtArgs extends runti
   where?: Prisma.RoleModuleAccessWhereInput
 }
 
+/**
+ * ModuleCountOutputType without action
+ */
+export type ModuleCountOutputTypeCountAdminSectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProductAdminSectionWhereInput
+}
+
 
 export type ModuleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1333,6 +1477,7 @@ export type ModuleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   tenantOverrides?: boolean | Prisma.Module$tenantOverridesArgs<ExtArgs>
   entitlements?: boolean | Prisma.Module$entitlementsArgs<ExtArgs>
   roleModuleAccess?: boolean | Prisma.Module$roleModuleAccessArgs<ExtArgs>
+  adminSections?: boolean | Prisma.Module$adminSectionsArgs<ExtArgs>
   _count?: boolean | Prisma.ModuleCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["module"]>
 
@@ -1385,6 +1530,7 @@ export type ModuleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   tenantOverrides?: boolean | Prisma.Module$tenantOverridesArgs<ExtArgs>
   entitlements?: boolean | Prisma.Module$entitlementsArgs<ExtArgs>
   roleModuleAccess?: boolean | Prisma.Module$roleModuleAccessArgs<ExtArgs>
+  adminSections?: boolean | Prisma.Module$adminSectionsArgs<ExtArgs>
   _count?: boolean | Prisma.ModuleCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ModuleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1406,6 +1552,7 @@ export type $ModulePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     tenantOverrides: Prisma.$TenantModuleOverridePayload<ExtArgs>[]
     entitlements: Prisma.$EntitlementPayload<ExtArgs>[]
     roleModuleAccess: Prisma.$RoleModuleAccessPayload<ExtArgs>[]
+    adminSections: Prisma.$ProductAdminSectionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1818,6 +1965,7 @@ export interface Prisma__ModuleClient<T, Null = never, ExtArgs extends runtime.T
   tenantOverrides<T extends Prisma.Module$tenantOverridesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$tenantOverridesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantModuleOverridePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   entitlements<T extends Prisma.Module$entitlementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$entitlementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntitlementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   roleModuleAccess<T extends Prisma.Module$roleModuleAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$roleModuleAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoleModuleAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  adminSections<T extends Prisma.Module$adminSectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Module$adminSectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductAdminSectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2412,6 +2560,30 @@ export type Module$roleModuleAccessArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.RoleModuleAccessScalarFieldEnum | Prisma.RoleModuleAccessScalarFieldEnum[]
+}
+
+/**
+ * Module.adminSections
+ */
+export type Module$adminSectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProductAdminSection
+   */
+  select?: Prisma.ProductAdminSectionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProductAdminSection
+   */
+  omit?: Prisma.ProductAdminSectionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProductAdminSectionInclude<ExtArgs> | null
+  where?: Prisma.ProductAdminSectionWhereInput
+  orderBy?: Prisma.ProductAdminSectionOrderByWithRelationInput | Prisma.ProductAdminSectionOrderByWithRelationInput[]
+  cursor?: Prisma.ProductAdminSectionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProductAdminSectionScalarFieldEnum | Prisma.ProductAdminSectionScalarFieldEnum[]
 }
 
 /**

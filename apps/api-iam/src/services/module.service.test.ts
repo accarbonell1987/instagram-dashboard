@@ -33,6 +33,9 @@ function makeDeps(overrides: Partial<ModuleServiceDeps> = {}): ModuleServiceDeps
       grantTrial: vi.fn(),
       sweepExpiredTrials: vi.fn().mockResolvedValue([]),
     },
+    productAdminSectionRepository: {
+      findActiveByProducts: vi.fn().mockResolvedValue([]),
+    },
     tenantRepository: {
       findBySlug: vi.fn(),
       findByUuid: vi.fn().mockResolvedValue({ id: 'tenant-uuid-1' }),
@@ -166,7 +169,10 @@ describe('ModuleService — grantTrial (b1, 5.1)', () => {
 
   it('throws NotFoundError (via tenantRepository.findByUuid) for an unknown tenant', async () => {
     const deps = makeDeps({
-      tenantRepository: {
+      productAdminSectionRepository: {
+      findActiveByProducts: vi.fn().mockResolvedValue([]),
+    },
+    tenantRepository: {
         findBySlug: vi.fn(),
         findByUuid: vi.fn().mockRejectedValue(new Error('tenant.not_found')),
         create: vi.fn(),
@@ -212,5 +218,127 @@ describe('ModuleService — sweepExpiredTrials (b1, 5.2)', () => {
     const result = await service.sweepExpiredTrials()
 
     expect(result).toEqual(pairs)
+  })
+})
+
+// ─── Admin sections ────────────────────────────────────────────────────────────
+
+describe('ModuleService.listAdminSectionsForTenant', () => {
+  const IG_PRODUCT = {
+    id: 'instagram-dashboard',
+    name: 'Instagram Dashboard',
+    description: null,
+    defaultUrl: 'https://ig.corehub.test',
+  }
+
+  function section(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'sec-1',
+      productId: 'instagram-dashboard',
+      moduleId: null,
+      key: 'linked-accounts',
+      label: 'Cuentas de Instagram',
+      description: null,
+      path: '/admin/linked-accounts',
+      visibleToRole: 'TenantAdmin',
+      displayOrder: 0,
+      ...overrides,
+    }
+  }
+
+  function depsWith(sections: Record<string, unknown>[], products = [IG_PRODUCT]) {
+    const deps = makeDeps()
+    deps.moduleRepository.findAvailableProducts = vi.fn().mockResolvedValue(products)
+    deps.productAdminSectionRepository.findActiveByProducts = vi.fn().mockResolvedValue(sections)
+    return deps
+  }
+
+  it('returns the sections of the products the tenant contracted', async () => {
+    const deps = depsWith([section()])
+    const service = createModuleService(deps)
+
+    const result = await service.listAdminSectionsForTenant('tenant-uuid-1', 'TenantAdmin')
+
+    expect(deps.productAdminSectionRepository.findActiveByProducts).toHaveBeenCalledWith([
+      'instagram-dashboard',
+    ])
+    expect(result).toHaveLength(1)
+    expect(result[0]?.productName).toBe('Instagram Dashboard')
+    expect(result[0]?.productUrl).toBe('https://ig.corehub.test')
+  })
+
+  it('asks for nothing when the tenant has no products', async () => {
+    const deps = depsWith([section()], [])
+    const service = createModuleService(deps)
+
+    const result = await service.listAdminSectionsForTenant('tenant-uuid-1', 'TenantAdmin')
+
+    expect(result).toEqual([])
+    expect(deps.productAdminSectionRepository.findActiveByProducts).not.toHaveBeenCalled()
+  })
+
+  /**
+   * visibleToRole is a display rule, and it is a floor rather than an exact
+   * match: a SuperAdmin sees what a TenantAdmin sees.
+   */
+  it.each([
+    ['TenantAdmin', 'TenantAdmin', true],
+    ['TenantAdmin', 'SuperAdmin', true],
+    ['TenantAdmin', 'User', false],
+    ['User', 'User', true],
+    ['User', 'TenantAdmin', true],
+  ])('a %s section is %s-visible: %s', async (visibleToRole, callerRole, expected) => {
+    const deps = depsWith([section({ visibleToRole })])
+    const service = createModuleService(deps)
+
+    const result = await service.listAdminSectionsForTenant('tenant-uuid-1', callerRole)
+
+    expect(result.length > 0).toBe(expected)
+  })
+
+  it('hides a module-scoped section when the module is not entitled', async () => {
+    const deps = depsWith([section({ moduleId: 'ig-ai-agent' })])
+    deps.moduleRepository.resolveEffectiveModules = vi
+      .fn()
+      .mockResolvedValue([{ id: 'ig-basic-metrics' }])
+    const service = createModuleService(deps)
+
+    const result = await service.listAdminSectionsForTenant('tenant-uuid-1', 'TenantAdmin')
+
+    expect(result).toEqual([])
+  })
+
+  it('shows a module-scoped section when the module is entitled', async () => {
+    const deps = depsWith([section({ moduleId: 'ig-ai-agent' })])
+    deps.moduleRepository.resolveEffectiveModules = vi
+      .fn()
+      .mockResolvedValue([{ id: 'ig-ai-agent' }])
+    const service = createModuleService(deps)
+
+    const result = await service.listAdminSectionsForTenant('tenant-uuid-1', 'TenantAdmin')
+
+    expect(result).toHaveLength(1)
+  })
+
+  // Most sections belong to the product as a whole; resolving entitlements for
+  // them would be a query per product for an answer nobody reads.
+  it('resolves no modules when every section is product-scoped', async () => {
+    const deps = depsWith([section()])
+    const service = createModuleService(deps)
+
+    await service.listAdminSectionsForTenant('tenant-uuid-1', 'TenantAdmin')
+
+    expect(deps.moduleRepository.resolveEffectiveModules).not.toHaveBeenCalled()
+  })
+
+  // A nav entry that leads nowhere is worse than a missing one.
+  it('drops a section whose product has no address', async () => {
+    const legacyProduct = { ...IG_PRODUCT, defaultUrl: null as unknown as string }
+    const deps = depsWith([section()], [legacyProduct])
+    const service = createModuleService(deps)
+
+    const result = await service.listAdminSectionsForTenant('tenant-uuid-1', 'TenantAdmin')
+
+    expect(result).toEqual([])
   })
 })

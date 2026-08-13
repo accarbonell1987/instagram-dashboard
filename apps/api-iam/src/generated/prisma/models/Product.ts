@@ -262,6 +262,7 @@ export type ProductWhereInput = {
   entitlements?: Prisma.EntitlementListRelationFilter
   productRoles?: Prisma.ProductRoleListRelationFilter
   drafts?: Prisma.OnboardingDraftListRelationFilter
+  adminSections?: Prisma.ProductAdminSectionListRelationFilter
 }
 
 export type ProductOrderByWithRelationInput = {
@@ -281,6 +282,7 @@ export type ProductOrderByWithRelationInput = {
   entitlements?: Prisma.EntitlementOrderByRelationAggregateInput
   productRoles?: Prisma.ProductRoleOrderByRelationAggregateInput
   drafts?: Prisma.OnboardingDraftOrderByRelationAggregateInput
+  adminSections?: Prisma.ProductAdminSectionOrderByRelationAggregateInput
 }
 
 export type ProductWhereUniqueInput = Prisma.AtLeast<{
@@ -303,6 +305,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   entitlements?: Prisma.EntitlementListRelationFilter
   productRoles?: Prisma.ProductRoleListRelationFilter
   drafts?: Prisma.OnboardingDraftListRelationFilter
+  adminSections?: Prisma.ProductAdminSectionListRelationFilter
 }, "id">
 
 export type ProductOrderByWithAggregationInput = {
@@ -356,6 +359,7 @@ export type ProductCreateInput = {
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateInput = {
@@ -375,6 +379,7 @@ export type ProductUncheckedCreateInput = {
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductUpdateInput = {
@@ -394,6 +399,7 @@ export type ProductUpdateInput = {
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateInput = {
@@ -413,6 +419,7 @@ export type ProductUncheckedUpdateInput = {
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateManyInput = {
@@ -611,6 +618,20 @@ export type ProductUpdateOneRequiredWithoutEntitlementsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProductUpdateToOneWithWhereWithoutEntitlementsInput, Prisma.ProductUpdateWithoutEntitlementsInput>, Prisma.ProductUncheckedUpdateWithoutEntitlementsInput>
 }
 
+export type ProductCreateNestedOneWithoutAdminSectionsInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutAdminSectionsInput, Prisma.ProductUncheckedCreateWithoutAdminSectionsInput>
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutAdminSectionsInput
+  connect?: Prisma.ProductWhereUniqueInput
+}
+
+export type ProductUpdateOneRequiredWithoutAdminSectionsNestedInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutAdminSectionsInput, Prisma.ProductUncheckedCreateWithoutAdminSectionsInput>
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutAdminSectionsInput
+  upsert?: Prisma.ProductUpsertWithoutAdminSectionsInput
+  connect?: Prisma.ProductWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProductUpdateToOneWithWhereWithoutAdminSectionsInput, Prisma.ProductUpdateWithoutAdminSectionsInput>, Prisma.ProductUncheckedUpdateWithoutAdminSectionsInput>
+}
+
 export type ProductCreateNestedOneWithoutProductRolesInput = {
   create?: Prisma.XOR<Prisma.ProductCreateWithoutProductRolesInput, Prisma.ProductUncheckedCreateWithoutProductRolesInput>
   connectOrCreate?: Prisma.ProductCreateOrConnectWithoutProductRolesInput
@@ -641,6 +662,7 @@ export type ProductCreateWithoutPlansInput = {
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutPlansInput = {
@@ -659,6 +681,7 @@ export type ProductUncheckedCreateWithoutPlansInput = {
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutPlansInput = {
@@ -693,6 +716,7 @@ export type ProductUpdateWithoutPlansInput = {
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutPlansInput = {
@@ -711,6 +735,7 @@ export type ProductUncheckedUpdateWithoutPlansInput = {
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateWithoutDraftsInput = {
@@ -729,6 +754,7 @@ export type ProductCreateWithoutDraftsInput = {
   subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutDraftsInput = {
@@ -747,6 +773,7 @@ export type ProductUncheckedCreateWithoutDraftsInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutDraftsInput = {
@@ -781,6 +808,7 @@ export type ProductUpdateWithoutDraftsInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutDraftsInput = {
@@ -799,6 +827,7 @@ export type ProductUncheckedUpdateWithoutDraftsInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateWithoutModulesInput = {
@@ -817,6 +846,7 @@ export type ProductCreateWithoutModulesInput = {
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutModulesInput = {
@@ -835,6 +865,7 @@ export type ProductUncheckedCreateWithoutModulesInput = {
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutModulesInput = {
@@ -869,6 +900,7 @@ export type ProductUpdateWithoutModulesInput = {
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutModulesInput = {
@@ -887,6 +919,7 @@ export type ProductUncheckedUpdateWithoutModulesInput = {
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateWithoutSubscriptionsInput = {
@@ -905,6 +938,7 @@ export type ProductCreateWithoutSubscriptionsInput = {
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutSubscriptionsInput = {
@@ -923,6 +957,7 @@ export type ProductUncheckedCreateWithoutSubscriptionsInput = {
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutSubscriptionsInput = {
@@ -957,6 +992,7 @@ export type ProductUpdateWithoutSubscriptionsInput = {
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutSubscriptionsInput = {
@@ -975,6 +1011,7 @@ export type ProductUncheckedUpdateWithoutSubscriptionsInput = {
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateWithoutEntitlementsInput = {
@@ -993,6 +1030,7 @@ export type ProductCreateWithoutEntitlementsInput = {
   subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutEntitlementsInput = {
@@ -1011,6 +1049,7 @@ export type ProductUncheckedCreateWithoutEntitlementsInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
   productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutEntitlementsInput = {
@@ -1045,6 +1084,7 @@ export type ProductUpdateWithoutEntitlementsInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutEntitlementsInput = {
@@ -1061,6 +1101,99 @@ export type ProductUncheckedUpdateWithoutEntitlementsInput = {
   modules?: Prisma.ModuleUncheckedUpdateManyWithoutProductNestedInput
   plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
+  productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutProductNestedInput
+}
+
+export type ProductCreateWithoutAdminSectionsInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl?: string | null
+  active?: boolean
+  billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  modules?: Prisma.ModuleCreateNestedManyWithoutProductInput
+  plans?: Prisma.PlanCreateNestedManyWithoutProductInput
+  subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
+  entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
+  productRoles?: Prisma.ProductRoleCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
+}
+
+export type ProductUncheckedCreateWithoutAdminSectionsInput = {
+  id: string
+  name: string
+  description?: string | null
+  defaultUrl?: string | null
+  active?: boolean
+  billingRef?: string | null
+  trialEnabled?: boolean
+  trialDurationDays?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  modules?: Prisma.ModuleUncheckedCreateNestedManyWithoutProductInput
+  plans?: Prisma.PlanUncheckedCreateNestedManyWithoutProductInput
+  subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
+  entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
+  productRoles?: Prisma.ProductRoleUncheckedCreateNestedManyWithoutProductInput
+  drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
+}
+
+export type ProductCreateOrConnectWithoutAdminSectionsInput = {
+  where: Prisma.ProductWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProductCreateWithoutAdminSectionsInput, Prisma.ProductUncheckedCreateWithoutAdminSectionsInput>
+}
+
+export type ProductUpsertWithoutAdminSectionsInput = {
+  update: Prisma.XOR<Prisma.ProductUpdateWithoutAdminSectionsInput, Prisma.ProductUncheckedUpdateWithoutAdminSectionsInput>
+  create: Prisma.XOR<Prisma.ProductCreateWithoutAdminSectionsInput, Prisma.ProductUncheckedCreateWithoutAdminSectionsInput>
+  where?: Prisma.ProductWhereInput
+}
+
+export type ProductUpdateToOneWithWhereWithoutAdminSectionsInput = {
+  where?: Prisma.ProductWhereInput
+  data: Prisma.XOR<Prisma.ProductUpdateWithoutAdminSectionsInput, Prisma.ProductUncheckedUpdateWithoutAdminSectionsInput>
+}
+
+export type ProductUpdateWithoutAdminSectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  modules?: Prisma.ModuleUpdateManyWithoutProductNestedInput
+  plans?: Prisma.PlanUpdateManyWithoutProductNestedInput
+  subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
+  entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
+  productRoles?: Prisma.ProductRoleUpdateManyWithoutProductNestedInput
+  drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
+}
+
+export type ProductUncheckedUpdateWithoutAdminSectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  billingRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trialEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  trialDurationDays?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  modules?: Prisma.ModuleUncheckedUpdateManyWithoutProductNestedInput
+  plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
+  subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
+  entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   productRoles?: Prisma.ProductRoleUncheckedUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
 }
@@ -1081,6 +1214,7 @@ export type ProductCreateWithoutProductRolesInput = {
   subscriptions?: Prisma.TenantProductSubscriptionCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutProductRolesInput = {
@@ -1099,6 +1233,7 @@ export type ProductUncheckedCreateWithoutProductRolesInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedCreateNestedManyWithoutProductInput
   entitlements?: Prisma.EntitlementUncheckedCreateNestedManyWithoutProductInput
   drafts?: Prisma.OnboardingDraftUncheckedCreateNestedManyWithoutProductInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutProductRolesInput = {
@@ -1133,6 +1268,7 @@ export type ProductUpdateWithoutProductRolesInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutProductRolesInput = {
@@ -1151,6 +1287,7 @@ export type ProductUncheckedUpdateWithoutProductRolesInput = {
   subscriptions?: Prisma.TenantProductSubscriptionUncheckedUpdateManyWithoutProductNestedInput
   entitlements?: Prisma.EntitlementUncheckedUpdateManyWithoutProductNestedInput
   drafts?: Prisma.OnboardingDraftUncheckedUpdateManyWithoutProductNestedInput
+  adminSections?: Prisma.ProductAdminSectionUncheckedUpdateManyWithoutProductNestedInput
 }
 
 
@@ -1165,6 +1302,7 @@ export type ProductCountOutputType = {
   entitlements: number
   productRoles: number
   drafts: number
+  adminSections: number
 }
 
 export type ProductCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1174,6 +1312,7 @@ export type ProductCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   entitlements?: boolean | ProductCountOutputTypeCountEntitlementsArgs
   productRoles?: boolean | ProductCountOutputTypeCountProductRolesArgs
   drafts?: boolean | ProductCountOutputTypeCountDraftsArgs
+  adminSections?: boolean | ProductCountOutputTypeCountAdminSectionsArgs
 }
 
 /**
@@ -1228,6 +1367,13 @@ export type ProductCountOutputTypeCountDraftsArgs<ExtArgs extends runtime.Types.
   where?: Prisma.OnboardingDraftWhereInput
 }
 
+/**
+ * ProductCountOutputType without action
+ */
+export type ProductCountOutputTypeCountAdminSectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProductAdminSectionWhereInput
+}
+
 
 export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1246,6 +1392,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   entitlements?: boolean | Prisma.Product$entitlementsArgs<ExtArgs>
   productRoles?: boolean | Prisma.Product$productRolesArgs<ExtArgs>
   drafts?: boolean | Prisma.Product$draftsArgs<ExtArgs>
+  adminSections?: boolean | Prisma.Product$adminSectionsArgs<ExtArgs>
   _count?: boolean | Prisma.ProductCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["product"]>
 
@@ -1296,6 +1443,7 @@ export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   entitlements?: boolean | Prisma.Product$entitlementsArgs<ExtArgs>
   productRoles?: boolean | Prisma.Product$productRolesArgs<ExtArgs>
   drafts?: boolean | Prisma.Product$draftsArgs<ExtArgs>
+  adminSections?: boolean | Prisma.Product$adminSectionsArgs<ExtArgs>
   _count?: boolean | Prisma.ProductCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProductIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1310,6 +1458,7 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     entitlements: Prisma.$EntitlementPayload<ExtArgs>[]
     productRoles: Prisma.$ProductRolePayload<ExtArgs>[]
     drafts: Prisma.$OnboardingDraftPayload<ExtArgs>[]
+    adminSections: Prisma.$ProductAdminSectionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1722,6 +1871,7 @@ export interface Prisma__ProductClient<T, Null = never, ExtArgs extends runtime.
   entitlements<T extends Prisma.Product$entitlementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$entitlementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntitlementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   productRoles<T extends Prisma.Product$productRolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$productRolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductRolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   drafts<T extends Prisma.Product$draftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$draftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OnboardingDraftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  adminSections<T extends Prisma.Product$adminSectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$adminSectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductAdminSectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2295,6 +2445,30 @@ export type Product$draftsArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.OnboardingDraftScalarFieldEnum | Prisma.OnboardingDraftScalarFieldEnum[]
+}
+
+/**
+ * Product.adminSections
+ */
+export type Product$adminSectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProductAdminSection
+   */
+  select?: Prisma.ProductAdminSectionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProductAdminSection
+   */
+  omit?: Prisma.ProductAdminSectionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProductAdminSectionInclude<ExtArgs> | null
+  where?: Prisma.ProductAdminSectionWhereInput
+  orderBy?: Prisma.ProductAdminSectionOrderByWithRelationInput | Prisma.ProductAdminSectionOrderByWithRelationInput[]
+  cursor?: Prisma.ProductAdminSectionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProductAdminSectionScalarFieldEnum | Prisma.ProductAdminSectionScalarFieldEnum[]
 }
 
 /**

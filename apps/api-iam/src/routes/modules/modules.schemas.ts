@@ -123,3 +123,27 @@ export const UpsertTenantModuleOverrideRequestSchema = z.object({
 })
 
 export type UpsertTenantModuleOverrideRequest = z.infer<typeof UpsertTenantModuleOverrideRequestSchema>
+
+// ── GET /tenants/current/admin-sections ───────────────────────────────────
+
+/**
+ * A settings screen contributed by one of the tenant's products.
+ *
+ * `path` is relative to `productUrl` on purpose: the hub joins the two, and
+ * joining lets it substitute a local address for the product in development
+ * without this record knowing anything about environments.
+ */
+export const TenantAdminSectionSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  description: z.string().nullable(),
+  productId: z.string(),
+  productName: z.string(),
+  productUrl: z.string(),
+  path: z.string(),
+  moduleId: z.string().nullable(),
+})
+
+export const TenantAdminSectionsResponseSchema = z.object({
+  sections: z.array(TenantAdminSectionSchema),
+})

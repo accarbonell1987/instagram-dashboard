@@ -129,6 +129,30 @@ export class PrismaInstagramRepository implements InstagramRepository {
     return this.toAccountDomain(record);
   }
 
+  async listAccountsByTenantId(tenantId: string): Promise<InstagramAccount[]> {
+    const records = await this.prisma.instagramAccount.findMany({
+      where: { tenantId },
+      orderBy: { connectedAt: 'asc' },
+    });
+    return records.map((record) => this.toAccountDomain(record));
+  }
+
+  // Scoped by tenantId as well as id: an admin acts on a row of their own
+  // organisation's list, and an id from anywhere else must read as absent.
+  async disconnectAccountById(tenantId: string, accountId: string): Promise<InstagramAccount> {
+    const existing = await this.prisma.instagramAccount.findFirst({
+      where: { id: accountId, tenantId, syncStatus: { not: 'disconnected' } },
+    });
+    if (!existing) {
+      throw new NotFoundError('InstagramAccount', accountId);
+    }
+    const record = await this.prisma.instagramAccount.update({
+      where: { id: existing.id },
+      data: { syncStatus: 'disconnected' },
+    });
+    return this.toAccountDomain(record);
+  }
+
   async findAccountsExpiringSoon(
     daysThreshold: number,
   ): Promise<{ id: string; tenantId: string; igUserId: string; tokenEncrypted: string }[]> {

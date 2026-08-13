@@ -1,5 +1,9 @@
 import type { Logger } from 'pino'
 import type { ModuleRepository } from '../repositories/module/index.js'
+import type {
+  ProductAdminSection,
+  ProductAdminSectionRepository,
+} from '../repositories/product-admin-section/index.js'
 import type { TenantRepository } from '../repositories/tenant/index.js'
 import type { AvailableProductWithModules, EffectiveModule, Module } from '../domain/index.js'
 import { DEFAULT_PRODUCT_ID, DEFAULT_TRIAL_DURATION_DAYS } from '../domain/index.js'
@@ -7,9 +11,21 @@ import { NotFoundError } from '../errors.js'
 
 export type ModuleServiceDeps = {
   moduleRepository: ModuleRepository
+  productAdminSectionRepository: ProductAdminSectionRepository
   tenantRepository: TenantRepository
   logger: Logger
 }
+
+/** A section plus the product name the hub groups it under. */
+export type TenantAdminSection = ProductAdminSection & {
+  productName: string
+  /** Absolute for the caller: the product's own URL joined with the section path. */
+  productUrl: string
+}
+
+// User < TenantAdmin < SuperAdmin. A section marked for TenantAdmin is also
+// reachable by a SuperAdmin; one marked for User is reachable by everyone.
+const ROLE_RANK: Record<string, number> = { User: 0, TenantAdmin: 1, SuperAdmin: 2 }
 
 export type ModuleService = {
   getEffectiveModulesForTenant(tenantUuid: string, userId?: string): Promise<EffectiveModule[]>
@@ -49,10 +65,16 @@ export type ModuleService = {
   // b1 (5.2): cron sweep of expired trials — returns affected (tenant,
   // product) pairs for the caller to fan out a cache purge.
   sweepExpiredTrials(): Promise<{ tenantId: string; productId: string }[]>
+  // The settings screens the tenant's own products contribute.
+  listAdminSectionsForTenant(
+    tenantUuid: string,
+    role: string,
+    userId?: string,
+  ): Promise<TenantAdminSection[]>
 }
 
 export function createModuleService(deps: ModuleServiceDeps): ModuleService {
-  const { moduleRepository, tenantRepository, logger } = deps
+  const { moduleRepository, productAdminSectionRepository, tenantRepository, logger } = deps
   const log = logger.child({ component: 'module-service' })
 
   return {
@@ -161,6 +183,59 @@ export function createModuleService(deps: ModuleServiceDeps): ModuleService {
     async sweepExpiredTrials() {
       log.debug({}, 'sweeping expired trials')
       return moduleRepository.sweepExpiredTrials()
+    },
+
+    async listAdminSectionsForTenant(tenantUuid, role, userId) {
+      const products = await moduleRepository.findAvailableProducts(tenantUuid)
+      if (products.length === 0) return []
+
+      const sections = await productAdminSectionRepository.findActiveByProducts(
+        products.map((product) => product.id),
+      )
+      const visible = sections.filter(
+        (section) => (ROLE_RANK[role] ?? -1) >= (ROLE_RANK[section.visibleToRole] ?? 99),
+      )
+      if (visible.length === 0) return []
+
+      // Only resolve modules for the products that actually have a
+      // module-scoped section — most sections belong to the product as a whole
+      // and need no entitlement lookup at all.
+      const productsNeedingModules = new Set(
+        visible.filter((section) => section.moduleId !== null).map((s) => s.productId),
+      )
+      const entitledByProduct = new Map<string, Set<string>>()
+      await Promise.all(
+        Array.from(productsNeedingModules).map(async (productId) => {
+          const modules = await moduleRepository.resolveEffectiveModules(
+            tenantUuid,
+            productId,
+            userId,
+          )
+          entitledByProduct.set(productId, new Set(modules.map((module) => module.id)))
+        }),
+      )
+
+      const byId = new Map(products.map((product) => [product.id, product]))
+
+      return visible
+        .filter(
+          (section) =>
+            section.moduleId === null ||
+            (entitledByProduct.get(section.productId)?.has(section.moduleId) ?? false),
+        )
+        .flatMap((section) => {
+          const product = byId.get(section.productId)
+          // A product with no address has nowhere to mount the screen. Dropping
+          // it beats handing the hub a nav entry that leads nowhere.
+          if (!product?.defaultUrl) return []
+          return [
+            {
+              ...section,
+              productName: product.name,
+              productUrl: product.defaultUrl,
+            },
+          ]
+        })
     },
   }
 }

@@ -1174,6 +1174,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tenants/current/admin-sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pantallas de configuración que aportan los productos del tenant
+         * @description **Propósito**: Un producto puede aportar pantallas de administración al área de
+         *     configuración del tenant — por ejemplo, las cuentas de Instagram vinculadas y quién las
+         *     tiene tomadas. Este endpoint devuelve las que el llamante puede ver.
+         *
+         *     **Proceso**: El hub las agrega al nav de `/settings` y monta cada una en el mismo iframe
+         *     que ya usa para el producto (`ProductShell`), uniendo `productUrl` + `path`.
+         *
+         *     **Precondiciones**: Sesión activa. El filtro por rol es por sección.
+         *
+         *     **Notas**:
+         *     - `path` es **relativo** a `productUrl` a propósito: el hub une los dos, y eso le permite
+         *       sustituir la dirección del producto en desarrollo sin que este registro sepa nada de
+         *       entornos.
+         *     - Solo aparecen secciones de productos contratados. Si la sección declara `moduleId`, además
+         *       ese módulo tiene que estar habilitado para el tenant.
+         *     - **El filtro por rol es de presentación, no de autorización.** El hub decide qué entrada
+         *       dibuja; no está en el camino de la request y no puede proteger nada. La API del propio
+         *       producto DEBE verificar el claim `role` del JWT en cada acción privilegiada.
+         */
+        get: operations["getTenantAdminSections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tenants/current/products": {
         parameters: {
             query?: never;
@@ -2470,6 +2507,22 @@ export interface components {
             /** @description Accesos a producto del miembro. Vacío = ve todo lo que otorga el plan. */
             productRoles: components["schemas"]["MemberProductRole"][];
         };
+        TenantAdminSection: {
+            key: string;
+            label: string;
+            description: string | null;
+            productId: string;
+            productName: string;
+            /** @description Dirección del producto. El hub le une `path` para obtener la URL final. */
+            productUrl: string;
+            /** @description Ruta relativa a `productUrl`. */
+            path: string;
+            /** @description Módulo que la sección requiere, o null si es del producto entero. */
+            moduleId: string | null;
+        };
+        TenantAdminSectionsResponse: {
+            sections: components["schemas"]["TenantAdminSection"][];
+        };
         TenantProductRole: components["schemas"]["MemberProductRole"] & {
             /**
              * @description Cuántos módulos abre el rol. Cero significa que asignarlo le quita el
@@ -2898,6 +2951,8 @@ export type SchemaInvitationListResponse = components['schemas']['InvitationList
 export type SchemaMemberStatus = components['schemas']['MemberStatus'];
 export type SchemaMemberProductRole = components['schemas']['MemberProductRole'];
 export type SchemaMemberListItem = components['schemas']['MemberListItem'];
+export type SchemaTenantAdminSection = components['schemas']['TenantAdminSection'];
+export type SchemaTenantAdminSectionsResponse = components['schemas']['TenantAdminSectionsResponse'];
 export type SchemaTenantProductRole = components['schemas']['TenantProductRole'];
 export type SchemaTenantProductRolesResponse = components['schemas']['TenantProductRolesResponse'];
 export type SchemaSetMemberProductRolesRequest = components['schemas']['SetMemberProductRolesRequest'];
@@ -4147,6 +4202,28 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getTenantAdminSections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Admin sections the caller may see */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantAdminSectionsResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getAvailableProducts: {

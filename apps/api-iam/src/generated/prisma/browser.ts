@@ -128,6 +128,11 @@ export type TenantProductSubscription = Prisma.TenantProductSubscriptionModel
  */
 export type Entitlement = Prisma.EntitlementModel
 /**
+ * Model ProductAdminSection
+ * 
+ */
+export type ProductAdminSection = Prisma.ProductAdminSectionModel
+/**
  * Model ProductRole
  * 
  */

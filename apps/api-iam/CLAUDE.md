@@ -175,6 +175,17 @@ Seguir todas las convenciones de `CLAUDE.md` en la raíz. Adicionalmente:
   - `GET /billing/invoices/:id/signed-url` recibe un **id de pago** (la fila es una proyección de
     ese pago), lo resuelve contra los pagos del propio tenant y delega en `getSignedDocumentUrl`.
     Un id de otro tenant simplemente no aparece → 404, nunca 403.
+- **Secciones de administración que aportan los productos**: `product_admin_sections`
+  (`productId`, `moduleId?`, `key`, `label`, `path`, `visibleToRole`, `displayOrder`, `active`) +
+  `GET /tenants/current/admin-sections`. Una tabla y no una columna en `Product` porque un producto
+  va a tener varias y apagarlas no debería requerir deploy.
+  - `path` es relativo al `defaultUrl` del producto: el hub une los dos y así el override por env
+    de desarrollo sigue aplicando.
+  - `listAdminSectionsForTenant` filtra por producto contratado, por módulo habilitado cuando la
+    sección declara `moduleId`, y por rol (`User` < `TenantAdmin` < `SuperAdmin`). Solo resuelve
+    módulos para los productos que tienen alguna sección module-scoped.
+  - **`visibleToRole` se llama así a propósito: es presentación, no autorización.** Decide qué
+    entrada dibuja el hub. El hub no está en el camino de la request y no puede proteger nada.
 - **Plan change contact-first**: `createPlanChangeService` verifica solicitud pendiente en BD antes de crear una nueva (409 si existe). Email a `PLAN_CHANGE_NOTIFY_TO` es fire-and-forget (error de email no falla el request).
 
 ## Coordinación con apps/hub
@@ -218,6 +229,7 @@ pnpm --filter @corehub/api-iam test:watch    # Watch mode
 | Billing | 6 | GET /billing/payment-method (**stub**→null), POST /billing/payment-method (**stub**→202), GET /billing/invoices (real), GET /billing/invoices/:id/signed-url (real), GET /billing/payments (real), GET /billing/documents/:id/signed-url (real) |
 | Webhooks | 1 | POST /webhooks/bancard |
 | Well-known | 1 | GET /.well-known/jwks.json |
+| Modules | 3 | GET /tenants/current/modules, GET /tenants/current/products, GET /tenants/current/admin-sections |
 | Health | 1 | GET /healthz |
 
 > **Billing stubs restantes**: solo los dos de `payment-method`. Son placeholders para cuando se
