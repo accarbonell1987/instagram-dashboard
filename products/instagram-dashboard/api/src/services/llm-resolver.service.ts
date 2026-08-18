@@ -1,7 +1,7 @@
 import { config } from '../config.js';
+import type { Owner } from '../domain/owner.js';
 import { decryptToken } from '../lib/crypto.js';
 import { LLM_PROVIDERS, LlmClient, isLlmProvider } from '../lib/llm-client.js';
-import type { Owner } from '../domain/owner.js';
 import type { InstagramRepository } from '../repositories/instagram/index.js';
 
 /** What an account stored about which model to talk to. */

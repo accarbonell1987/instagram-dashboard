@@ -6,8 +6,9 @@ import type { JSX } from 'react'
 import { useState, useRef, useEffect } from 'react'
 
 
+import type { UseGrowthAgentResult } from '../hooks/use-growth-agent'
+
 import { ChatMessageBubble } from './chat-message'
-import type { UseGrowthAgentResult } from './chat-panel.types'
 
 interface ChatPanelProps {
   hook: UseGrowthAgentResult

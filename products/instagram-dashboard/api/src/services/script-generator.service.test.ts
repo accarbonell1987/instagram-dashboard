@@ -5,8 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { QuotaExceededError } from '../errors.js';
-import type { LlmResolver } from './llm-resolver.service.js';
 
+import type { LlmResolver } from './llm-resolver.service.js';
 import { ScriptGeneratorService } from './script-generator.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
 

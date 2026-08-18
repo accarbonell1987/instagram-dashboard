@@ -1,10 +1,10 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 
-import type { Owner } from '../../domain/owner.js';
 
 import type { InstagramAccount, ConnectAccountInput, AgentConfig } from '../../domain/account.js';
 import type { AccountInsight, DashboardData, FormatBreakdown, HeatmapCell, InsightResult, InsightSnapshot, NorthStarMetric, NorthStarMetrics } from '../../domain/insight.js';
 import type { InstagramMedia, MediaMetrics, MediaWithMetrics, PaginatedMedia } from '../../domain/media.js';
+import type { Owner } from '../../domain/owner.js';
 import { NotFoundError } from '../../errors.js';
 import type { FilterParams } from '../repository.interface.js';
 

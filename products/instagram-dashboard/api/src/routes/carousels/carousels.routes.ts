@@ -1,6 +1,6 @@
-import { ownerOf } from '../../domain/owner.js';
 import { Hono } from 'hono';
 
+import { ownerOf } from '../../domain/owner.js';
 import { AppError, InsufficientScopeError } from '../../errors.js';
 import type { CarouselService } from '../../services/carousel.service.js';
 

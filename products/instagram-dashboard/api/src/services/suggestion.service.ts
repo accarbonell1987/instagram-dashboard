@@ -1,13 +1,13 @@
 import type { Owner } from '../domain/owner.js';
 import { InternalError, QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
-import type { LlmResolver } from './llm-resolver.service.js';
 import type {
   ContentSuggestion,
   SuggestionBatch,
   SuggestionStatus, SuggestionCategory 
 } from '../repositories/suggestion.repository.js';
 
+import type { LlmResolver } from './llm-resolver.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
 
 // ─── Service ─────────────────────────────────────────────────────────────────

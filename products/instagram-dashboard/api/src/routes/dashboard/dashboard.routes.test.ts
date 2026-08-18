@@ -1,4 +1,3 @@
-import { ownerOf } from '../../domain/owner.js';
 /**
  * Integration tests for growth route.
  *
@@ -6,6 +5,8 @@ import { ownerOf } from '../../domain/owner.js';
  */
 import { Hono } from 'hono';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { ownerOf } from '../../domain/owner.js';
 
 vi.mock('../../lib/jwt-verifier.js', () => ({
   verifyAccessToken: vi.fn(),

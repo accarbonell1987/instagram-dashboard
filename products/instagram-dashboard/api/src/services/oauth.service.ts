@@ -1,8 +1,8 @@
-import type { Owner } from '../domain/owner.js';
 import { createHash } from 'node:crypto';
 
 import { config } from '../config.js';
 import type { ConnectAccountInput, ConnectionStatus } from '../domain/account.js';
+import type { Owner } from '../domain/owner.js';
 import { NotFoundError, ValidationError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
 import { encryptToken, decryptToken } from '../lib/crypto.js';

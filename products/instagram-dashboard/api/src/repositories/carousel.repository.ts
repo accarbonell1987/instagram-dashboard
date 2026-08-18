@@ -1,8 +1,7 @@
 import { CarouselStatus, SlideStatus, type PrismaClient, type SlideRole } from '@prisma/client';
 
-import type { Owner } from '../domain/owner.js';
-
 import type { Carousel, CarouselSlide, CarouselStatus as DomainCarouselStatus, SlideStatus as DomainSlideStatus, SlideRole as DomainSlideRole, ImageMode, CarouselType, PublishStatus } from '../domain/carousel.js';
+import type { Owner } from '../domain/owner.js';
 import { NotFoundError } from '../errors.js';
 
 export type { CarouselStatus, SlideStatus };

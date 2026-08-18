@@ -1,8 +1,8 @@
 import type { GeneratedSlide, SlideRole } from '../domain/carousel.js';
-import { QuotaExceededError } from '../errors.js';
 import type { Owner } from '../domain/owner.js';
-import type { LlmResolver } from './llm-resolver.service.js';
+import { QuotaExceededError } from '../errors.js';
 
+import type { LlmResolver } from './llm-resolver.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
 
 

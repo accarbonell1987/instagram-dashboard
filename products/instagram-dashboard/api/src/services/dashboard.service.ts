@@ -1,6 +1,6 @@
-import type { Owner } from '../domain/owner.js';
 import type { DashboardData, DemographicsData } from '../domain/insight.js';
 import type { MediaWithMetrics, PaginatedMedia } from '../domain/media.js';
+import type { Owner } from '../domain/owner.js';
 import { AccountNotConnectedError, NotFoundError } from '../errors.js';
 import { getCached, setCache } from '../lib/cache.js';
 import type { Repositories } from '../lib/create-repositories.js';

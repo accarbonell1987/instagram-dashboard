@@ -1,4 +1,3 @@
-import { ownerOf } from '../../domain/owner.js';
 /**
  * Integration tests for the disconnect route.
  *
@@ -14,6 +13,8 @@ import { ownerOf } from '../../domain/owner.js';
  */
 import { Hono } from 'hono';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { ownerOf } from '../../domain/owner.js';
 
 // Mock jwt-verifier so authGuard works without a real JWKS endpoint
 vi.mock('../../lib/jwt-verifier.js', () => ({

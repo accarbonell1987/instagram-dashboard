@@ -1,4 +1,3 @@
-import type { Owner } from '../domain/owner.js';
 import { config } from '../config.js';
 import type {
   Carousel,
@@ -10,6 +9,7 @@ import type {
   RegenerateCarouselInput,
   CreateUploadCarouselInput,
 } from '../domain/carousel.js';
+import type { Owner } from '../domain/owner.js';
 import { NotFoundError, InsufficientScopeError, InstagramAPIError, AppError, QuotaExceededError } from '../errors.js';
 import { decryptToken } from '../lib/crypto.js';
 import type { ImageProvider } from '../lib/image/image-provider.js';

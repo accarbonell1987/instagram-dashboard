@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import type { InstagramRepository } from '../repositories/instagram/index.js';
+
 import { LlmResolver } from './llm-resolver.service.js';
 
-import type { InstagramRepository } from '../repositories/instagram/index.js';
 
 vi.mock('../config.js', () => ({
   config: {

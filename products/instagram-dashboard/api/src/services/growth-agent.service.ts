@@ -1,4 +1,3 @@
-import type { Owner } from '../domain/owner.js';
 import type {
   ChatCompletionMessageFunctionToolCall,
   ChatCompletionMessageParam,
@@ -16,13 +15,14 @@ import type {
   SuggestionOutcomeResult,
   ToolCall,
 } from '../domain/growth-agent.js';
+import type { Owner } from '../domain/owner.js';
 import { InternalError, QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
-import type { LlmResolver } from './llm-resolver.service.js';
 import { TOOL_DEFINITIONS } from '../lib/tool-definitions.js';
 import type { ContentSuggestion } from '../repositories/suggestion.repository.js';
 
 import type { DashboardService } from './dashboard.service.js';
+import type { LlmResolver } from './llm-resolver.service.js';
 import type { SuggestionService } from './suggestion.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
 

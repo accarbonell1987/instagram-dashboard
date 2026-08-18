@@ -1,6 +1,6 @@
-import { ownerOf } from '../../domain/owner.js';
 import { Hono } from 'hono';
 
+import { ownerOf } from '../../domain/owner.js';
 import type { SuggestionService } from '../../services/suggestion.service.js';
 
 import { SuggestionsQuerySchema, MarkUsedRequestSchema, GenerateIdeaBodySchema } from './suggestions.schemas.js';

@@ -6,10 +6,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { InternalError, QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
-import type { LlmResolver } from './llm-resolver.service.js';
+
 
 import type { DashboardService } from './dashboard.service.js';
 import { GrowthAgentService, normalizeCategory } from './growth-agent.service.js';
+import type { LlmResolver } from './llm-resolver.service.js';
 import type { SuggestionService } from './suggestion.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
 
