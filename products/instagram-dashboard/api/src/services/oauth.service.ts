@@ -99,7 +99,12 @@ export class OAuthService {
     );
 
     return {
-      redirectUrl: `${config.POST_AUTH_REDIRECT_URL}/apps/dashboard-instagram?connected=true`,
+      // The hub routes /apps/:slug by PRODUCT id, and this product is
+      // 'instagram-dashboard'. 'dashboard-instagram' was a legacy *module* id,
+      // retired by api-iam's seed (retireLegacyInstagramModule) — sending the
+      // browser there lands on "no tenés acceso al producto", because no
+      // product answers to that name.
+      redirectUrl: `${config.POST_AUTH_REDIRECT_URL}/apps/instagram-dashboard?connected=true`,
       accountId: account.id,
     };
   }

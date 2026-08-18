@@ -35,6 +35,11 @@ export type ProductRoleService = {
   // ── Tenant-scoped: a TenantAdmin administering their own organisation ──
   listRolesForTenant(tenantUuid: string): Promise<TenantProductRoles[]>
   listRolesForMembers(userIds: string[]): Promise<Map<string, ProductRole[]>>
+  /** The caller's own roles, named for display alongside their product. */
+  listRolesForUser(
+    tenantUuid: string,
+    userId: string,
+  ): Promise<(ProductRole & { productName: string })[]>
   setMemberRoles(params: {
     tenantUuid: string
     memberId: string
@@ -118,6 +123,20 @@ export function createProductRoleService(deps: ProductRoleServiceDeps): ProductR
         byUser.set(userId, list)
       }
       return byUser
+    },
+
+    async listRolesForUser(tenantUuid, userId) {
+      const [rows, products] = await Promise.all([
+        productRoleRepository.listRolesByUsers([userId]),
+        moduleRepository.findAvailableProducts(tenantUuid),
+      ])
+      const nameById = new Map(products.map((product) => [product.id, product.name]))
+
+      // A role whose product the tenant no longer has is not worth naming: the
+      // assignment survives a cancelled subscription, the access does not.
+      return rows
+        .filter(({ role }) => nameById.has(role.productId))
+        .map(({ role }) => ({ ...role, productName: nameById.get(role.productId) ?? role.productId }))
     },
 
     async setMemberRoles({ tenantUuid, memberId, productRoleIds, requesterRole, assignedBy }) {

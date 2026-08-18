@@ -8,6 +8,7 @@ import type {
   OtpService,
   FirstLoginService,
   PasswordService,
+  ProductRoleService,
 } from '../../services/index.js';
 import type { KeyProvider } from '../../adapters/index.js';
 import type { OnboardingDraftRepository } from '../../repositories/index.js';
@@ -75,7 +76,8 @@ export function createAuthRouter(
   idempotency: MiddlewareHandler,
   authGuard: MiddlewareHandler,
   draftRepo: OnboardingDraftRepository,
-  prisma: PrismaClient
+  prisma: PrismaClient,
+  productRoleService: ProductRoleService
 ) {
   const router = new OpenAPIHono();
 
@@ -622,6 +624,19 @@ export function createAuthRouter(
               user: UserSchema,
               tenant: TenantInSessionSchema,
               role: z.enum(['SuperAdmin', 'TenantAdmin', 'User']),
+              // What the caller may open inside each contracted product. The
+              // tenant role above says what they may do in the hub; this is the
+              // other axis, and it is the one that decides what a product shows
+              // them — so "why can't I see the agent?" is answerable from here.
+              productRoles: z.array(
+                z.object({
+                  id: z.string().uuid(),
+                  productId: z.string(),
+                  productName: z.string(),
+                  key: z.string(),
+                  name: z.string(),
+                })
+              ),
             }),
           },
         },
@@ -633,11 +648,23 @@ export function createAuthRouter(
 
   router.openapi(meRoute, async (c) => {
     const me = await authService.me(c.var.user.sub);
+    const productRoles = await productRoleService.listRolesForUser(
+      c.var.user.tenantUuid,
+      c.var.user.sub
+    );
+
     return c.json(
       {
         user: me.user,
         tenant: { ...me.tenant, colorTheme: me.tenant.colorTheme ?? null },
         role: me.role,
+        productRoles: productRoles.map((role) => ({
+          id: role.id,
+          productId: role.productId,
+          productName: role.productName,
+          key: role.key,
+          name: role.name,
+        })),
       },
       200
     );

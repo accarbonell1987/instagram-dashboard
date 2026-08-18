@@ -84,3 +84,61 @@ describe('ProfilePage', () => {
     );
   });
 });
+
+function respondWith(overrides: Record<string, unknown>) {
+  server.use(
+    http.get(`${BASE}/auth/me`, () =>
+      HttpResponse.json({
+        user: { id: 'u1', email: 'ana@empresa.com', fullName: 'Ana Pereira', phone: '+595981000000' },
+        tenant: { id: 't1', slug: 'acme', name: 'Acme', planId: 'professional', status: 'active' },
+        role: 'User',
+        productRoles: [],
+        ...overrides,
+      })
+    )
+  );
+}
+
+describe('ProfilePage — roles', () => {
+  /**
+   * Nobody edits their own role, but everybody needs to read it: "why can't I
+   * see the agent?" is answered here instead of by asking an administrator.
+   */
+  it('names the tenant role rather than showing the enum', async () => {
+    respondWith({ role: 'TenantAdmin' });
+    render(<ProfilePage />);
+
+    expect(await screen.findByText('Administrador de la organización')).toBeInTheDocument();
+    expect(screen.queryByText('TenantAdmin')).toBeNull();
+  });
+
+  it('names each product role beside its product', async () => {
+    respondWith({
+      productRoles: [
+        {
+          id: 'r1',
+          productId: 'instagram-dashboard',
+          productName: 'Instagram Dashboard',
+          key: 'content-analist',
+          name: 'Analista de Contenido',
+        },
+      ],
+    });
+    render(<ProfilePage />);
+
+    expect(await screen.findByText('Analista de Contenido')).toBeInTheDocument();
+    expect(screen.getByText(/Instagram Dashboard/)).toBeInTheDocument();
+  });
+
+  /**
+   * No product role means the resolver never narrows anything — the member sees
+   * the whole plan. Reading "sin accesos" would send them to an administrator
+   * for something they already have.
+   */
+  it('says no role means the whole plan, not no access', async () => {
+    respondWith({ productRoles: [] });
+    render(<ProfilePage />);
+
+    expect(await screen.findByText(/ves todo lo que incluye el plan/)).toBeInTheDocument();
+  });
+});

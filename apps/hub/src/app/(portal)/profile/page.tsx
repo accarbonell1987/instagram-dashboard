@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Input, Label } from '@core/ui';
+import { Badge, Button, Input, Label } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState, type JSX } from 'react';
 import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
@@ -25,11 +25,30 @@ const profileSchema = z.object({
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
+// ─── Identity ─────────────────────────────────────────────────────────────────
+
+type TenantRole = 'SuperAdmin' | 'TenantAdmin' | 'User';
+
+interface ProductRole {
+  id: string;
+  productName: string;
+  name: string;
+}
+
+/** What each tenant role is called on screen. The enum is not for reading. */
+const ROLE_LABELS: Record<TenantRole, string> = {
+  SuperAdmin: 'Administrador de la plataforma',
+  TenantAdmin: 'Administrador de la organización',
+  User: 'Usuario',
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ProfilePage(): JSX.Element {
   const [apiError, setApiError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [role, setRole] = useState<TenantRole | null>(null);
+  const [productRoles, setProductRoles] = useState<ProductRole[]>([]);
 
   const {
     register,
@@ -47,10 +66,18 @@ export default function ProfilePage(): JSX.Element {
   // dejaba el teléfono vacío hasta que el usuario lo guardaba de nuevo.
   useEffect(() => {
     let cancelled = false;
-    apiFetchWithInterceptors<{ user: SchemaUser }>('/auth/me')
-      .then(({ user }) => {
+    apiFetchWithInterceptors<{
+      user: SchemaUser;
+      role: TenantRole;
+      productRoles?: ProductRole[];
+    }>('/auth/me')
+      .then((me) => {
         if (cancelled) return;
-        reset({ fullName: user.fullName, phone: user.phone ?? '' });
+        reset({ fullName: me.user.fullName, phone: me.user.phone ?? '' });
+        setRole(me.role);
+        // Tolerated as absent: the contract requires it, but a server mid-deploy
+        // may not send it yet, and a missing list should not blank the page.
+        setProductRoles(me.productRoles ?? []);
       })
       .catch(() => {
         if (cancelled) return;
@@ -87,6 +114,49 @@ export default function ProfilePage(): JSX.Element {
           Actualizá tu nombre completo y teléfono de contacto.
         </p>
       </div>
+
+      {/* Read-only, and above the form on purpose: nobody edits their own role,
+          and "why can't I see X?" is answered here rather than by asking an
+          admin. The two axes are shown apart because they are apart — the
+          organisation role governs the hub, the product role governs what a
+          product opens. */}
+      {role !== null && (
+        <section className="border-border mb-6 flex flex-col gap-3 rounded-lg border p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-muted-foreground text-xs font-medium uppercase">
+              Rol en la organización
+            </span>
+            <span className="text-foreground text-sm font-medium">{ROLE_LABELS[role]}</span>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-muted-foreground text-xs font-medium uppercase">
+              Accesos a productos
+            </span>
+            {productRoles.length === 0 ? (
+              // No role does not mean no access: access is only narrowed once a
+              // role exists, so saying "sin accesos" would be a lie.
+              <span className="text-muted-foreground text-sm">
+                Sin rol asignado — ves todo lo que incluye el plan.
+              </span>
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {productRoles.map((productRole) => (
+                  <li key={productRole.id} className="flex items-center gap-2 text-sm">
+                    <Badge variant="secondary" className="text-xs">
+                      {productRole.name}
+                    </Badge>
+                    <span className="text-muted-foreground">en {productRole.productName}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-muted-foreground text-xs">
+              Los define un administrador de tu organización. Si necesitás otro acceso, pedíselo.
+            </p>
+          </div>
+        </section>
+      )}
 
       {apiError !== null && (
         <div

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 2.0.0
+  version: 2.1.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -2105,11 +2105,27 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [user, tenant, role]
+                required: [user, tenant, role, productRoles]
                 properties:
                   user: { $ref: '#/components/schemas/User' }
                   tenant: { $ref: '#/components/schemas/Tenant' }
                   role: { $ref: '#/components/schemas/Role' }
+                  productRoles:
+                    type: array
+                    description: |
+                      Lo que el llamante puede abrir dentro de cada producto contratado. `role`
+                      dice qué puede hacer en el hub; esto es el otro eje, y es el que decide qué
+                      le muestra un producto — así "¿por qué no veo el agente?" se responde acá.
+                      Vacío significa que ve todo lo que otorga el plan.
+                    items:
+                      type: object
+                      required: [id, productId, productName, key, name]
+                      properties:
+                        id: { type: string, format: uuid }
+                        productId: { type: string }
+                        productName: { type: string }
+                        key: { type: string }
+                        name: { type: string }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   # ==================== PLANS ====================

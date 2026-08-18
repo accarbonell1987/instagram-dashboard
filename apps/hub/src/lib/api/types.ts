@@ -3414,6 +3414,20 @@ export interface operations {
                         user: components["schemas"]["User"];
                         tenant: components["schemas"]["Tenant"];
                         role: components["schemas"]["Role"];
+                        /**
+                         * @description Lo que el llamante puede abrir dentro de cada producto contratado. `role`
+                         *     dice qué puede hacer en el hub; esto es el otro eje, y es el que decide qué
+                         *     le muestra un producto — así "¿por qué no veo el agente?" se responde acá.
+                         *     Vacío significa que ve todo lo que otorga el plan.
+                         */
+                        productRoles: {
+                            /** Format: uuid */
+                            id: string;
+                            productId: string;
+                            productName: string;
+                            key: string;
+                            name: string;
+                        }[];
                     };
                 };
             };

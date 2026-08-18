@@ -287,6 +287,21 @@ export const authHandlers = [
             }
           : null,
       role: user.role,
+      // The caller's own product roles, named — the profile shows these so a
+      // user can see why a product hides something from them.
+      productRoles: db.userProductRole
+        .findMany({ where: { userId: { equals: user.id } } })
+        .map((assignment) =>
+          db.productRole.findFirst({ where: { id: { equals: assignment.productRoleId } } }),
+        )
+        .filter((role) => role !== null)
+        .map((role) => ({
+          id: role.id,
+          productId: role.productId,
+          productName: role.productName,
+          key: role.key,
+          name: role.name,
+        })),
     } as Record<string, unknown>);
   }),
 

@@ -96,7 +96,8 @@ export function registerRoutes(app: OpenAPIHono, services: Services, deps: Route
     idempotency,
     authGuard,
     draftRepo,
-    prisma
+    prisma,
+    services.productRoleService
   );
   const onboardingRouter = createOnboardingRouter(
     services.draftService,
