@@ -13,6 +13,9 @@ coverage/
 
 # next.js
 .next/
+# Development build output — kept apart so `next build` cannot
+# overwrite a running dev server's manifests (see next.config.ts).
+.next-dev/
 out/
 
 # production

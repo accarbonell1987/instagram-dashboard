@@ -140,6 +140,14 @@ apps/hub/
     `modules/shared/modules/components/product-settings-section.tsx` y la ruta solo desempaqueta
     los params con `use()`.
 
+- **`next dev` y `next build` ya no comparten carpeta**: `distDir` es `.next-dev` en desarrollo y
+  `.next` en el resto (`next.config.ts`). Antes ambos escribían en `.next`, así que verificar un
+  build con el dev server levantado le pisaba los manifests y el server moría con
+  *"Could not find the module … in the React Client Manifest"* — que parece un bug del bundler y
+  es una colisión de carpetas. Producción sigue en `.next`, que es lo que copia el Dockerfile.
+  - Next reescribe `tsconfig.json` para incluir `.next-dev/types`. Dejalo: si lo revertís, lo
+    vuelve a escribir en cada arranque.
+
 ## Scripts disponibles
 
 | Script             | Comando                                    |
