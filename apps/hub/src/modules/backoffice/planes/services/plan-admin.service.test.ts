@@ -124,14 +124,14 @@ describe('plan-admin.service — savePlanQuotas', () => {
     )
 
     await savePlanQuotas('plan-1', [
-      { resourceType: 'deepseek_tokens', limit: 100000, period: 'month' },
+      { resourceType: 'llm_tokens', limit: 100000, period: 'month' },
       { resourceType: 'fal_images', limit: 50, period: 'month' },
     ])
 
     expect(capturedUrl).toContain('/admin/plans/plan-1/quotas')
     expect(capturedBody).toEqual({
       quotas: [
-        { resourceType: 'deepseek_tokens', limit: 100000, period: 'month' },
+        { resourceType: 'llm_tokens', limit: 100000, period: 'month' },
         { resourceType: 'fal_images', limit: 50, period: 'month' },
       ],
     })
@@ -158,7 +158,7 @@ describe('plan-admin.service — getPlanQuotas', () => {
         expect(params['planId']).toBe('plan-1')
         return HttpResponse.json({
           quotas: [
-            { resourceType: 'deepseek_tokens', limit: 100000, period: 'month' },
+            { resourceType: 'llm_tokens', limit: 100000, period: 'month' },
             { resourceType: 'fal_images', limit: 50, period: 'month' },
           ],
         }, { status: 200 })
@@ -168,7 +168,7 @@ describe('plan-admin.service — getPlanQuotas', () => {
     const result = await getPlanQuotas('plan-1')
     expect(result).toHaveLength(2)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(result[0]!.resourceType).toBe('deepseek_tokens')
+    expect(result[0]!.resourceType).toBe('llm_tokens')
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result[0]!.limit).toBe(100000)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

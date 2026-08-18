@@ -9,7 +9,7 @@ interface UsageMeterProps {
   isLoading: boolean
 }
 
-type ResourceLabel = 'deepseek_tokens' | 'fal_images'
+type ResourceLabel = 'llm_tokens' | 'fal_images'
 
 function formatNumber(n: number): string {
   if (n >= 1000) {
@@ -39,7 +39,7 @@ function getTextColorClass(used: number, limit: number): string {
 }
 
 const RESOURCE_LABELS: Record<ResourceLabel, string> = {
-  deepseek_tokens: 'Tokens',
+  llm_tokens: 'Tokens',
   fal_images: 'Imágenes',
 }
 
@@ -56,7 +56,7 @@ export function UsageMeter({ usage, isLoading }: UsageMeterProps): JSX.Element |
 
   if (usage === null) return null
 
-  const resources: ResourceLabel[] = ['deepseek_tokens', 'fal_images']
+  const resources: ResourceLabel[] = ['llm_tokens', 'fal_images']
 
   return (
     <div className="flex items-center gap-2" aria-label="Medidor de uso de recursos">

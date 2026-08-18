@@ -74,7 +74,7 @@ function PlanFormDialog({
       price: 0,
       currency: 'PYG',
       billingInterval: 'month',
-      deepseekTokensLimit: undefined,
+      llmTokensLimit: undefined,
       falImagesLimit: undefined,
       chatSessionsLimit: undefined,
     },
@@ -90,7 +90,7 @@ function PlanFormDialog({
           price: editingPlan.price,
           currency: editingPlan.currency,
           billingInterval: editingPlan.billingInterval as 'month' | 'year',
-          deepseekTokensLimit: undefined,
+          llmTokensLimit: undefined,
           falImagesLimit: undefined,
           chatSessionsLimit: undefined,
         });
@@ -101,7 +101,7 @@ function PlanFormDialog({
           price: 0,
           currency: 'PYG',
           billingInterval: 'month',
-          deepseekTokensLimit: undefined,
+          llmTokensLimit: undefined,
           falImagesLimit: undefined,
           chatSessionsLimit: undefined,
         });
@@ -115,10 +115,10 @@ function PlanFormDialog({
     if (open && editingPlan) {
       getPlanQuotas(editingPlan.id)
         .then((quotas) => {
-          const deepseekQuota = quotas.find((q) => q.resourceType === 'deepseek_tokens');
+          const llmQuota = quotas.find((q) => q.resourceType === 'llm_tokens');
           const falQuota = quotas.find((q) => q.resourceType === 'fal_images');
           const chatQuota = quotas.find((q) => q.resourceType === 'chat_sessions');
-          form.setValue('deepseekTokensLimit', deepseekQuota?.limit);
+          form.setValue('llmTokensLimit', llmQuota?.limit);
           form.setValue('falImagesLimit', falQuota?.limit);
           form.setValue('chatSessionsLimit', chatQuota?.limit);
         })
@@ -151,10 +151,10 @@ function PlanFormDialog({
 
       // Build quotas array from form fields (skip empty/zero = unlimited)
       const quotas: { resourceType: string; limit: number; period: string }[] = [];
-      if (data.deepseekTokensLimit != null && data.deepseekTokensLimit > 0) {
+      if (data.llmTokensLimit != null && data.llmTokensLimit > 0) {
         quotas.push({
-          resourceType: 'deepseek_tokens',
-          limit: data.deepseekTokensLimit,
+          resourceType: 'llm_tokens',
+          limit: data.llmTokensLimit,
           period: 'month',
         });
       }
@@ -295,16 +295,16 @@ function PlanFormDialog({
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="deepseekTokensLimit" className="text-xs">
-                    Tokens DeepSeek / mes
+                  <Label htmlFor="llmTokensLimit" className="text-xs">
+                    Tokens LLM / mes
                   </Label>
                   <Input
-                    id="deepseekTokensLimit"
+                    id="llmTokensLimit"
                     type="number"
                     min={0}
                     placeholder="Ej: 100000"
                     disabled={isLoading}
-                    {...form.register('deepseekTokensLimit', { valueAsNumber: true })}
+                    {...form.register('llmTokensLimit', { valueAsNumber: true })}
                   />
                 </div>
 

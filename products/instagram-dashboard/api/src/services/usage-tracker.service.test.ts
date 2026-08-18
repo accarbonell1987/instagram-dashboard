@@ -47,7 +47,7 @@ describe('UsageTracker', () => {
   describe('when enabled = false', () => {
     it('checkQuota always returns allowed:true', async () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', false);
-      const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
+      const result = await tracker.checkQuota('tenant-1', 'llm_tokens');
       expect(result).toEqual({ allowed: true });
     });
 
@@ -135,7 +135,7 @@ describe('UsageTracker', () => {
 
   describe('checkQuota (enabled)', () => {
     const mockQuotasResponse = [
-      { resourceType: 'deepseek_tokens', limit: 100000, period: 'month' },
+      { resourceType: 'llm_tokens', limit: 100000, period: 'month' },
       { resourceType: 'fal_images', limit: 50, period: 'month' },
       { resourceType: 'chat_sessions', limit: 30, period: 'month' },
     ];
@@ -149,7 +149,7 @@ describe('UsageTracker', () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
       internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(mockQuotasResponse);
 
-      const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
+      const result = await tracker.checkQuota('tenant-1', 'llm_tokens');
       expect(result.allowed).toBe(true);
       expect(result.remaining).toBeGreaterThan(0);
       expect(result.limit).toBe(100000);
@@ -163,7 +163,7 @@ describe('UsageTracker', () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
       internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(mockQuotasResponse);
 
-      const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
+      const result = await tracker.checkQuota('tenant-1', 'llm_tokens');
       expect(result.allowed).toBe(false);
       expect(result.limit).toBe(100000);
       expect(result.resetsAt).toBeDefined();
@@ -171,13 +171,13 @@ describe('UsageTracker', () => {
 
     it('returns allowed:true when quota period is unlimited', async () => {
       const unlimitedQuotas = [
-        { resourceType: 'deepseek_tokens', limit: 500000, period: 'unlimited' },
+        { resourceType: 'llm_tokens', limit: 500000, period: 'unlimited' },
       ];
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
       internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(unlimitedQuotas);
 
-      const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
+      const result = await tracker.checkQuota('tenant-1', 'llm_tokens');
       expect(result.allowed).toBe(true);
       expect(result.limit).toBe(500000);
     });
@@ -185,7 +185,7 @@ describe('UsageTracker', () => {
     it('returns allowed:true when no quota is configured for the resource', async () => {
       // Plan has no fal_images quota
       const partialQuotas = [
-        { resourceType: 'deepseek_tokens', limit: 10000, period: 'month' },
+        { resourceType: 'llm_tokens', limit: 10000, period: 'month' },
       ];
 
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
@@ -212,7 +212,7 @@ describe('UsageTracker', () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
       // Override getPlanQuotas to return quotas
       internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue([
-        { resourceType: 'deepseek_tokens', limit: 100000, period: 'month' },
+        { resourceType: 'llm_tokens', limit: 100000, period: 'month' },
         { resourceType: 'fal_images', limit: 50, period: 'month' },
         { resourceType: 'chat_sessions', limit: 30, period: 'month' },
       ]);
@@ -256,7 +256,7 @@ describe('UsageTracker', () => {
   describe('cache TTL', () => {
     it('returns cached data when within TTL', async () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
-      const quotas = [{ resourceType: 'deepseek_tokens', limit: 5000, period: 'month' }];
+      const quotas = [{ resourceType: 'llm_tokens', limit: 5000, period: 'month' }];
 
       // Pre-populate cache
       internals(tracker).cache.set('plan-pro', {
@@ -272,7 +272,7 @@ describe('UsageTracker', () => {
       const getPlanQuotasSpy = vi.fn().mockResolvedValue(quotas);
       internals(tracker).getPlanQuotas = getPlanQuotasSpy;
 
-      const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
+      const result = await tracker.checkQuota('tenant-1', 'llm_tokens');
       expect(result.allowed).toBe(true);
       expect(result.limit).toBe(5000);
     });
@@ -282,7 +282,7 @@ describe('UsageTracker', () => {
 
       // Pre-populate expired cache
       internals(tracker).cache.set('plan-pro', {
-        quotas: [{ resourceType: 'deepseek_tokens', limit: 1000, period: 'month' }],
+        quotas: [{ resourceType: 'llm_tokens', limit: 1000, period: 'month' }],
         fetchedAt: Date.now() - 120_000, // 120s ago — expired
       });
 
@@ -292,10 +292,10 @@ describe('UsageTracker', () => {
 
       // fetchFn will fail because we didn't set up real mocks — but cache is expired so it tries to fetch
       // Instead, mock getPlanQuotas to return different quotas
-      const newQuotas = [{ resourceType: 'deepseek_tokens', limit: 500000, period: 'month' }];
+      const newQuotas = [{ resourceType: 'llm_tokens', limit: 500000, period: 'month' }];
       internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue(newQuotas);
 
-      const result = await tracker.checkQuota('tenant-1', 'deepseek_tokens');
+      const result = await tracker.checkQuota('tenant-1', 'llm_tokens');
       // Should use the newly fetched (mocked) quotas
       expect(result.limit).toBe(500000);
     });

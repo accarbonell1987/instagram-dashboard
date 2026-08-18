@@ -347,7 +347,7 @@ describe('PlansPage — Quota Section', () => {
     expect(screen.getByText('Dejar vacío o 0 = ilimitado')).toBeInTheDocument()
 
     // Verify three quota inputs exist
-    expect(screen.getByLabelText('Tokens DeepSeek / mes')).toBeInTheDocument()
+    expect(screen.getByLabelText('Tokens LLM / mes')).toBeInTheDocument()
     expect(screen.getByLabelText('Imágenes fal.ai / mes')).toBeInTheDocument()
     expect(screen.getByLabelText('Scripts / mes')).toBeInTheDocument()
   })
@@ -400,12 +400,12 @@ describe('PlansPage — Quota Section', () => {
     expect(screen.getByText('Dejar vacío o 0 = ilimitado')).toBeInTheDocument()
 
     // Verify all three quota inputs exist with correct labels
-    expect(screen.getByLabelText('Tokens DeepSeek / mes')).toBeInTheDocument()
+    expect(screen.getByLabelText('Tokens LLM / mes')).toBeInTheDocument()
     expect(screen.getByLabelText('Imágenes fal.ai / mes')).toBeInTheDocument()
     expect(screen.getByLabelText('Scripts / mes')).toBeInTheDocument()
 
     // Fill quota values and verify they are accepted
-    const tokensInput = screen.getByLabelText('Tokens DeepSeek / mes')
+    const tokensInput = screen.getByLabelText('Tokens LLM / mes')
     const imagesInput = screen.getByLabelText('Imágenes fal.ai / mes')
     const scriptsInput = screen.getByLabelText('Scripts / mes')
 

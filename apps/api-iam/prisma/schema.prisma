@@ -133,7 +133,10 @@ enum PlanChangeRequestStatus {
 }
 
 enum ResourceType {
-  deepseek_tokens
+  // Named after the capability, not the vendor: an account can now point the
+  // agent at OpenAI, Groq or its own model, and a quota called after one
+  // provider would be describing something it no longer measures.
+  llm_tokens
   fal_images
   chat_sessions
 

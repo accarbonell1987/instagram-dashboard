@@ -81,15 +81,15 @@ async function seedPlans() {
 async function seedPlanQuotas() {
   const quotas = [
     // Starter
-    { planId: 'starter', resourceType: 'deepseek_tokens' as const, limit: 5000, period: 'month' as const },
+    { planId: 'starter', resourceType: 'llm_tokens' as const, limit: 5000, period: 'month' as const },
     { planId: 'starter', resourceType: 'fal_images' as const, limit: 10, period: 'month' as const },
     { planId: 'starter', resourceType: 'chat_sessions' as const, limit: 5, period: 'day' as const },
     // Professional
-    { planId: 'professional', resourceType: 'deepseek_tokens' as const, limit: 100000, period: 'month' as const },
+    { planId: 'professional', resourceType: 'llm_tokens' as const, limit: 100000, period: 'month' as const },
     { planId: 'professional', resourceType: 'fal_images' as const, limit: 50, period: 'month' as const },
     { planId: 'professional', resourceType: 'chat_sessions' as const, limit: 30, period: 'day' as const },
     // Enterprise
-    { planId: 'enterprise', resourceType: 'deepseek_tokens' as const, limit: 500000, period: 'month' as const },
+    { planId: 'enterprise', resourceType: 'llm_tokens' as const, limit: 500000, period: 'month' as const },
     { planId: 'enterprise', resourceType: 'fal_images' as const, limit: 200, period: 'month' as const },
     { planId: 'enterprise', resourceType: 'chat_sessions' as const, limit: -1, period: 'unlimited' as const },
   ];

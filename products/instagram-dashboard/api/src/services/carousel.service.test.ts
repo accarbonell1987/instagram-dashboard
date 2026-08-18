@@ -172,7 +172,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       await service.createCarousel({ tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic');
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
-      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'fal_images');
 
@@ -245,7 +245,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
   });
 
   describe('regenerateCarousel()', () => {
-    it('calls checkQuota for deepseek_tokens before regeneration', async () => {
+    it('calls checkQuota for llm_tokens before regeneration', async () => {
       mockCarouselRepo.findById.mockResolvedValue(
         makeCarousel({ publishStatus: 'draft', status: 'ready' }),
       );
@@ -254,7 +254,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       await service.regenerateCarousel('car-1', { tenantId: 'tenant-1', userId: 'user-1' }, { topic: 'New topic' });
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
-      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
     });
 
     it('throws QuotaExceededError when token quota exceeded', async () => {

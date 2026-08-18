@@ -4,17 +4,17 @@ import { QuotaExceededError, AppError  } from './errors.js';
 
 describe('QuotaExceededError', () => {
   it('extends AppError', () => {
-    const error = new QuotaExceededError('deepseek_tokens', 100000, '2026-07-01T00:00:00.000Z');
+    const error = new QuotaExceededError('llm_tokens', 100000, '2026-07-01T00:00:00.000Z');
     expect(error).toBeInstanceOf(AppError);
   });
 
   it('has statusCode 429', () => {
-    const error = new QuotaExceededError('deepseek_tokens', 100000, '2026-07-01T00:00:00.000Z');
+    const error = new QuotaExceededError('llm_tokens', 100000, '2026-07-01T00:00:00.000Z');
     expect(error.statusCode).toBe(429);
   });
 
   it('has code QUOTA_EXCEEDED', () => {
-    const error = new QuotaExceededError('deepseek_tokens', 100000, '2026-07-01T00:00:00.000Z');
+    const error = new QuotaExceededError('llm_tokens', 100000, '2026-07-01T00:00:00.000Z');
     expect(error.code).toBe('QUOTA_EXCEEDED');
   });
 
@@ -36,7 +36,7 @@ describe('QuotaExceededError', () => {
   });
 
   it('is distinguishable from other 429 errors (RateLimitError) by code', () => {
-    const quotaError = new QuotaExceededError('deepseek_tokens', 5000, '2026-07-01T00:00:00.000Z');
+    const quotaError = new QuotaExceededError('llm_tokens', 5000, '2026-07-01T00:00:00.000Z');
     expect(quotaError.code).toBe('QUOTA_EXCEEDED');
     expect(quotaError.statusCode).toBe(429);
   });

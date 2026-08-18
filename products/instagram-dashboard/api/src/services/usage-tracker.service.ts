@@ -51,7 +51,7 @@ export class UsageTracker {
 
   async checkQuota(
     tenantId: string,
-    resourceType: 'deepseek_tokens' | 'fal_images' | 'chat_sessions',
+    resourceType: 'llm_tokens' | 'fal_images' | 'chat_sessions',
   ): Promise<QuotaCheckResult> {
     if (!this.enabled) return { allowed: true };
 
@@ -145,7 +145,7 @@ export class UsageTracker {
       (tokenUsage._sum.promptTokens ?? 0) + (tokenUsage._sum.completionTokens ?? 0);
     const imageCount = imageUsage._sum.imageCount ?? 0;
 
-    const tokensQuota = quotas.find((q) => q.resourceType === 'deepseek_tokens');
+    const tokensQuota = quotas.find((q) => q.resourceType === 'llm_tokens');
     const imagesQuota = quotas.find((q) => q.resourceType === 'fal_images');
     const sessionsQuota = quotas.find((q) => q.resourceType === 'chat_sessions');
 

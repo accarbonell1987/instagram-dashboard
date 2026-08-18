@@ -60,10 +60,10 @@ export class CarouselService {
   ): Promise<{ id: string; status: string }> {
     // ── Pre-call quota enforcement ──
     if (this.usageTracker) {
-      const tokenCheck = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
+      const tokenCheck = await this.usageTracker.checkQuota(owner.tenantId, 'llm_tokens');
       if (!tokenCheck.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
-        throw new QuotaExceededError('deepseek_tokens', tokenCheck.limit!, tokenCheck.resetsAt!);
+        throw new QuotaExceededError('llm_tokens', tokenCheck.limit!, tokenCheck.resetsAt!);
       }
       const imageCheck = await this.usageTracker.checkQuota(owner.tenantId, 'fal_images');
       if (!imageCheck.allowed) {
@@ -223,10 +223,10 @@ export class CarouselService {
 
     // ── Pre-call quota enforcement ──
     if (this.usageTracker) {
-      const tokenCheck = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
+      const tokenCheck = await this.usageTracker.checkQuota(owner.tenantId, 'llm_tokens');
       if (!tokenCheck.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
-        throw new QuotaExceededError('deepseek_tokens', tokenCheck.limit!, tokenCheck.resetsAt!);
+        throw new QuotaExceededError('llm_tokens', tokenCheck.limit!, tokenCheck.resetsAt!);
       }
     }
 

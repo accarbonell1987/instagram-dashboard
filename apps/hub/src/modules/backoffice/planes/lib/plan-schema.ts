@@ -13,7 +13,7 @@ export const planFormSchema = z.object({
     errorMap: () => ({ message: 'El ciclo debe ser mensual o anual' }),
   }),
   // Quota fields (all optional for backward compat)
-  deepseekTokensLimit: z.number().int().min(0).optional(),
+  llmTokensLimit: z.number().int().min(0).optional(),
   falImagesLimit: z.number().int().min(0).optional(),
   chatSessionsLimit: z.number().int().min(0).optional(),
 });

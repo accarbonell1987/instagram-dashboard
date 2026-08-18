@@ -22,7 +22,7 @@ interface Quota {
 }
 
 interface UsageData {
-  quotas: { deepseek_tokens: Quota; fal_images: Quota };
+  quotas: { llm_tokens: Quota; fal_images: Quota };
   periodStart: string;
   periodEnd: string;
 }
@@ -250,10 +250,10 @@ describe('Agent routes', () => {
       expect(res.status).toBe(200);
       const body = await res.json() as { success: boolean; data: UsageData };
       expect(body.success).toBe(true);
-      expect(body.data.quotas.deepseek_tokens.used).toBe(12450);
-      expect(body.data.quotas.deepseek_tokens.limit).toBe(100000);
-      expect(body.data.quotas.deepseek_tokens.period).toBe('month');
-      expect(body.data.quotas.deepseek_tokens.resetsAt).toBeDefined();
+      expect(body.data.quotas.llm_tokens.used).toBe(12450);
+      expect(body.data.quotas.llm_tokens.limit).toBe(100000);
+      expect(body.data.quotas.llm_tokens.period).toBe('month');
+      expect(body.data.quotas.llm_tokens.resetsAt).toBeDefined();
       expect(body.data.quotas.fal_images.used).toBe(8);
       expect(body.data.quotas.fal_images.limit).toBe(50);
       expect(body.data.quotas.fal_images.period).toBe('month');
@@ -277,8 +277,8 @@ describe('Agent routes', () => {
       expect(res.status).toBe(200);
       const body = await res.json() as { success: boolean; data: UsageData };
       expect(body.success).toBe(true);
-      expect(body.data.quotas.deepseek_tokens.used).toBe(0);
-      expect(body.data.quotas.deepseek_tokens.limit).toBe(100000);
+      expect(body.data.quotas.llm_tokens.used).toBe(0);
+      expect(body.data.quotas.llm_tokens.limit).toBe(100000);
       expect(body.data.quotas.fal_images.used).toBe(0);
       expect(body.data.quotas.fal_images.limit).toBe(50);
     });
@@ -290,9 +290,9 @@ describe('Agent routes', () => {
       expect(res.status).toBe(200);
       const body = await res.json() as { success: boolean; data: UsageData };
       expect(body.success).toBe(true);
-      expect(body.data.quotas.deepseek_tokens.used).toBe(0);
-      expect(body.data.quotas.deepseek_tokens.limit).toBe(-1);
-      expect(body.data.quotas.deepseek_tokens.period).toBe('month');
+      expect(body.data.quotas.llm_tokens.used).toBe(0);
+      expect(body.data.quotas.llm_tokens.limit).toBe(-1);
+      expect(body.data.quotas.llm_tokens.period).toBe('month');
       expect(body.data.quotas.fal_images.used).toBe(0);
       expect(body.data.quotas.fal_images.limit).toBe(-1);
       expect(body.data.quotas.fal_images.period).toBe('month');
@@ -375,7 +375,7 @@ describe('Agent routes', () => {
       expect(body.data.periodStart).toBe(expectedStart);
       expect(body.data.periodEnd).toBe(expectedEnd);
       // resetsAt should match periodEnd
-      expect(body.data.quotas.deepseek_tokens.resetsAt).toBe(expectedEnd);
+      expect(body.data.quotas.llm_tokens.resetsAt).toBe(expectedEnd);
       expect(body.data.quotas.fal_images.resetsAt).toBe(expectedEnd);
     });
 
@@ -406,13 +406,13 @@ describe('Agent routes', () => {
 
       expect(res.status).toBe(200);
       const body = await res.json() as { success: boolean; data: UsageData };
-      expect(body.data.quotas.deepseek_tokens.used).toBe(0);
-      expect(body.data.quotas.deepseek_tokens.limit).toBe(100000);
+      expect(body.data.quotas.llm_tokens.used).toBe(0);
+      expect(body.data.quotas.llm_tokens.limit).toBe(100000);
       expect(body.data.quotas.fal_images.used).toBe(0);
       expect(body.data.quotas.fal_images.limit).toBe(50);
-      expect(body.data.quotas.deepseek_tokens.period).toBe('month');
+      expect(body.data.quotas.llm_tokens.period).toBe('month');
       expect(body.data.quotas.fal_images.period).toBe('month');
-      expect(body.data.quotas.deepseek_tokens.resetsAt).toBeDefined();
+      expect(body.data.quotas.llm_tokens.resetsAt).toBeDefined();
       expect(body.data.quotas.fal_images.resetsAt).toBeDefined();
     });
   });

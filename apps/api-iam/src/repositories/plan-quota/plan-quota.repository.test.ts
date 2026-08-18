@@ -14,7 +14,7 @@ const makeQuotaRaw = (overrides: Partial<{
 }> = {}) => ({
   id: overrides.id ?? 'q1',
   planId: overrides.planId ?? 'plan-1',
-  resourceType: overrides.resourceType ?? ('deepseek_tokens' as ResourceType),
+  resourceType: overrides.resourceType ?? ('llm_tokens' as ResourceType),
   limit: overrides.limit ?? 5000,
   period: overrides.period ?? ('month' as QuotaPeriod),
   createdAt: overrides.createdAt ?? new Date('2026-01-01'),
@@ -57,7 +57,7 @@ describe('PrismaPlanQuotaRepository', () => {
 
     it('returns all quotas for a given plan', async () => {
       const raws = [
-        makeQuotaRaw({ resourceType: 'deepseek_tokens' as ResourceType }),
+        makeQuotaRaw({ resourceType: 'llm_tokens' as ResourceType }),
         makeQuotaRaw({ id: 'q2', resourceType: 'fal_images' as ResourceType }),
       ];
       prisma.planQuota.findMany.mockResolvedValue(raws);
@@ -65,7 +65,7 @@ describe('PrismaPlanQuotaRepository', () => {
       const result = await repo.findByPlanId('plan-1');
 
       expect(result).toHaveLength(2);
-      expect(result[0]!.resourceType).toBe('deepseek_tokens');
+      expect(result[0]!.resourceType).toBe('llm_tokens');
       expect(result[1]!.resourceType).toBe('fal_images');
       expect(result[0]!.limit).toBe(5000);
     });
@@ -74,7 +74,7 @@ describe('PrismaPlanQuotaRepository', () => {
   describe('findAllByPlanIds', () => {
     it('returns quotas for multiple plans', async () => {
       const raws = [
-        makeQuotaRaw({ planId: 'plan-1', resourceType: 'deepseek_tokens' as ResourceType }),
+        makeQuotaRaw({ planId: 'plan-1', resourceType: 'llm_tokens' as ResourceType }),
         makeQuotaRaw({ id: 'q2', planId: 'plan-2', resourceType: 'fal_images' as ResourceType }),
       ];
       prisma.planQuota.findMany.mockResolvedValue(raws);
@@ -101,18 +101,18 @@ describe('PrismaPlanQuotaRepository', () => {
     it('creates a new PlanQuota when none exists for plan+resourceType', async () => {
       prisma.planQuota.findUnique.mockResolvedValue(null);
       prisma.planQuota.create.mockResolvedValue(
-        makeQuotaRaw({ resourceType: 'deepseek_tokens' as ResourceType, limit: 5000 }),
+        makeQuotaRaw({ resourceType: 'llm_tokens' as ResourceType, limit: 5000 }),
       );
 
       const result = await repo.upsert(
         'plan-1',
-        'deepseek_tokens' as ResourceType,
+        'llm_tokens' as ResourceType,
         5000,
         'month' as QuotaPeriod,
       );
 
       expect(result.planId).toBe('plan-1');
-      expect(result.resourceType).toBe('deepseek_tokens');
+      expect(result.resourceType).toBe('llm_tokens');
       expect(result.limit).toBe(5000);
       expect(result.period).toBe('month');
       expect(prisma.planQuota.create).toHaveBeenCalledTimes(1);
@@ -121,13 +121,13 @@ describe('PrismaPlanQuotaRepository', () => {
     it('updates an existing PlanQuota when one exists for plan+resourceType', async () => {
       const existing = makeQuotaRaw({
         id: 'existing-id',
-        resourceType: 'deepseek_tokens' as ResourceType,
+        resourceType: 'llm_tokens' as ResourceType,
         limit: 5000,
         period: 'month' as QuotaPeriod,
       });
       const updated = makeQuotaRaw({
         id: 'existing-id',
-        resourceType: 'deepseek_tokens' as ResourceType,
+        resourceType: 'llm_tokens' as ResourceType,
         limit: 100000,
         period: 'day' as QuotaPeriod,
       });
@@ -137,7 +137,7 @@ describe('PrismaPlanQuotaRepository', () => {
 
       const result = await repo.upsert(
         'plan-1',
-        'deepseek_tokens' as ResourceType,
+        'llm_tokens' as ResourceType,
         100000,
         'day' as QuotaPeriod,
       );
@@ -158,13 +158,13 @@ describe('PrismaPlanQuotaRepository', () => {
         .mockResolvedValueOnce(null);
       prisma.planQuota.create
         .mockResolvedValueOnce(
-          makeQuotaRaw({ id: 'q1', resourceType: 'deepseek_tokens' as ResourceType }),
+          makeQuotaRaw({ id: 'q1', resourceType: 'llm_tokens' as ResourceType }),
         )
         .mockResolvedValueOnce(
           makeQuotaRaw({ id: 'q2', resourceType: 'fal_images' as ResourceType }),
         );
 
-      const t = await repo.upsert('plan-1', 'deepseek_tokens' as ResourceType, 5000, 'month' as QuotaPeriod);
+      const t = await repo.upsert('plan-1', 'llm_tokens' as ResourceType, 5000, 'month' as QuotaPeriod);
       const i = await repo.upsert('plan-1', 'fal_images' as ResourceType, 10, 'month' as QuotaPeriod);
 
       expect(t.id).toBe('q1');

@@ -313,7 +313,7 @@ describe('SuggestionService', () => {
       await svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas');
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
-      expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledBefore(mockDeepSeekChat);
     });

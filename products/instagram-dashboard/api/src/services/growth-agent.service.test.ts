@@ -503,7 +503,7 @@ describe('GrowthAgentService', () => {
       });
     });
 
-    it('calls checkQuota(deepseek_tokens) before starting the loop', async () => {
+    it('calls checkQuota(llm_tokens) before starting the loop', async () => {
       mockUsageTracker = createMockTracker();
       const svc = createServiceWithTracker(mockUsageTracker);
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola'));
@@ -511,7 +511,7 @@ describe('GrowthAgentService', () => {
       await svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'Hola', history: [] });
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
-      expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledBefore(mockChat);
     });

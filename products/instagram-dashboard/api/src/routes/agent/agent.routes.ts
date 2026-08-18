@@ -126,7 +126,7 @@ export function createAgentRoutes(
           success: true,
           data: {
             quotas: {
-              deepseek_tokens: { used: 0, limit: -1, period: 'month', resetsAt: periodEnd },
+              llm_tokens: { used: 0, limit: -1, period: 'month', resetsAt: periodEnd },
               fal_images: { used: 0, limit: -1, period: 'month', resetsAt: periodEnd },
             },
             periodStart,
@@ -144,7 +144,7 @@ export function createAgentRoutes(
         success: true,
         data: {
           quotas: {
-            deepseek_tokens: {
+            llm_tokens: {
               used: usage.tokens.used,
               limit: usage.tokens.limit,
               period: 'month',

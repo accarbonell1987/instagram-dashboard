@@ -104,8 +104,9 @@ implementación de tool-calling y parseo para el mismo resultado.
   `flash` para chat). Con modelo configurable esa distinción no sobrevive; hay uno solo, y el
   registro de uso guarda `response.model` — **lo que respondió**, no lo que se pidió, porque un
   alias como `gpt-4o` resuelve a un build con fecha y la factura se escribe contra el build.
-- Pendiente: el recurso de cuota se sigue llamando `deepseek_tokens`. Renombrarlo a `llm_tokens`
-  toca `plan_quotas` en api-iam y necesita migración con backfill.
+- El recurso de cuota se llama `llm_tokens`, no `deepseek_tokens`: el nombre del proveedor metido
+  en la facturación describía algo que la cuota ya no mide. `ALTER TYPE ... RENAME VALUE` reescribe
+  la etiqueta en su lugar, así que las filas de `plan_quotas` no necesitan backfill.
 
 ### Guards de entitlements: producto y módulo
 

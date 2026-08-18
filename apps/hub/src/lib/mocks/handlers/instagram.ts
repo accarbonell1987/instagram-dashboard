@@ -378,7 +378,7 @@ export const instagramHandlers = [
       success: true,
       data: {
         quotas: {
-          deepseek_tokens: {
+          llm_tokens: {
             used: 12000,
             limit: 100000,
             period: 'month',

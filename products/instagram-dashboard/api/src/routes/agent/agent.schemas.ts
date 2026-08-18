@@ -57,7 +57,7 @@ export const QuotaEntrySchema = z.object({
 
 export const UsageResponseDataSchema = z.object({
   quotas: z.object({
-    deepseek_tokens: QuotaEntrySchema,
+    llm_tokens: QuotaEntrySchema,
     fal_images: QuotaEntrySchema,
   }),
   periodStart: z.string(),

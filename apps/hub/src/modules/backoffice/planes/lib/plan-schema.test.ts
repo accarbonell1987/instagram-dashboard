@@ -9,13 +9,13 @@ describe('planFormSchema — quota fields', () => {
       price: 100,
       currency: 'PYG',
       billingInterval: 'month',
-      deepseekTokensLimit: 100000,
+      llmTokensLimit: 100000,
       falImagesLimit: 50,
       chatSessionsLimit: 30,
     })
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.deepseekTokensLimit).toBe(100000)
+      expect(result.data.llmTokensLimit).toBe(100000)
       expect(result.data.falImagesLimit).toBe(50)
       expect(result.data.chatSessionsLimit).toBe(30)
     }
@@ -27,7 +27,7 @@ describe('planFormSchema — quota fields', () => {
       price: 0,
       currency: 'PYG',
       billingInterval: 'month',
-      deepseekTokensLimit: 0,
+      llmTokensLimit: 0,
       falImagesLimit: 0,
       chatSessionsLimit: 0,
     })
@@ -43,19 +43,19 @@ describe('planFormSchema — quota fields', () => {
     })
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.deepseekTokensLimit).toBeUndefined()
+      expect(result.data.llmTokensLimit).toBeUndefined()
       expect(result.data.falImagesLimit).toBeUndefined()
       expect(result.data.chatSessionsLimit).toBeUndefined()
     }
   })
 
-  it('rejects negative numbers for deepseekTokensLimit', () => {
+  it('rejects negative numbers for llmTokensLimit', () => {
     const result = planFormSchema.safeParse({
       name: 'Plan',
       price: 10,
       currency: 'PYG',
       billingInterval: 'month',
-      deepseekTokensLimit: -1,
+      llmTokensLimit: -1,
     })
     expect(result.success).toBe(false)
   })
@@ -88,7 +88,7 @@ describe('planFormSchema — quota fields', () => {
       price: 10,
       currency: 'PYG',
       billingInterval: 'month',
-      deepseekTokensLimit: 10.5,
+      llmTokensLimit: 10.5,
     })
     expect(result.success).toBe(false)
   })
@@ -99,11 +99,11 @@ describe('planFormSchema — quota fields', () => {
       price: 20,
       currency: 'PYG',
       billingInterval: 'month',
-      deepseekTokensLimit: 5000,
+      llmTokensLimit: 5000,
     })
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.deepseekTokensLimit).toBe(5000)
+      expect(result.data.llmTokensLimit).toBe(5000)
       expect(result.data.falImagesLimit).toBeUndefined()
       expect(result.data.chatSessionsLimit).toBeUndefined()
     }

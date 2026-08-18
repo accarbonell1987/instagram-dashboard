@@ -10,7 +10,7 @@ import { FloatingAgent } from './floating-agent'
 vi.mock('../services/instagram.service', () => ({
   getUsage: vi.fn().mockResolvedValue({
     quotas: {
-      deepseek_tokens: { used: 12000, limit: 100000, period: 'month', resetsAt: '2026-07-01T00:00:00.000Z' },
+      llm_tokens: { used: 12000, limit: 100000, period: 'month', resetsAt: '2026-07-01T00:00:00.000Z' },
       fal_images: { used: 8, limit: 50, period: 'month', resetsAt: '2026-07-01T00:00:00.000Z' },
     },
     periodStart: '2026-06-01T00:00:00.000Z',
@@ -155,7 +155,7 @@ describe('FloatingAgent', () => {
     // Should show the mock data: Tokens: 12K/100K and Imágenes: 8/50
     await waitFor(
       () => {
-        expect(screen.getByTestId('deepseek_tokens-label')).toHaveTextContent('Tokens: 12K/100K')
+        expect(screen.getByTestId('llm_tokens-label')).toHaveTextContent('Tokens: 12K/100K')
       },
       { timeout: 2000 },
     )

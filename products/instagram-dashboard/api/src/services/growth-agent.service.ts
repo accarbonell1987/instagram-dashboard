@@ -94,10 +94,10 @@ export class GrowthAgentService {
 
     // ── Pre-call quota enforcement ──
     if (this.usageTracker) {
-      const check = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
+      const check = await this.usageTracker.checkQuota(owner.tenantId, 'llm_tokens');
       if (!check.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
-        throw new QuotaExceededError('deepseek_tokens', check.limit!, check.resetsAt!);
+        throw new QuotaExceededError('llm_tokens', check.limit!, check.resetsAt!);
       }
     }
 
@@ -137,7 +137,7 @@ export class GrowthAgentService {
       if (response.finishReason === 'stop') {
         // ── Loop-end quota check ──
         if (this.usageTracker) {
-          const loopCheck = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
+          const loopCheck = await this.usageTracker.checkQuota(owner.tenantId, 'llm_tokens');
           const totalUsed = totalPromptTokens + totalCompletionTokens;
 
           if (loopCheck.remaining !== undefined && totalUsed > (loopCheck.remaining ?? 0)) {

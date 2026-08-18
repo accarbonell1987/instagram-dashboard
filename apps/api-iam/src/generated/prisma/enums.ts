@@ -145,7 +145,7 @@ export type PlanChangeRequestStatus = (typeof PlanChangeRequestStatus)[keyof typ
 
 
 export const ResourceType = {
-  deepseek_tokens: 'deepseek_tokens',
+  llm_tokens: 'llm_tokens',
   fal_images: 'fal_images',
   chat_sessions: 'chat_sessions'
 } as const

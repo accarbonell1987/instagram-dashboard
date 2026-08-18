@@ -149,7 +149,7 @@ export type AdminTenantStatusChangeRequest = z.infer<typeof AdminTenantStatusCha
 // ── Plan Quota schemas ──────────────────────────────────────────────────────
 
 export const PlanQuotaResourceTypeSchema = z.enum([
-  'deepseek_tokens',
+  'llm_tokens',
   'fal_images',
   'chat_sessions',
 ]);

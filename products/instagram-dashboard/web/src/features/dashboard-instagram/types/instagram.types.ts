@@ -470,7 +470,7 @@ export interface QuotaEntry {
 
 export interface UsageResponse {
   quotas: {
-    deepseek_tokens: QuotaEntry
+    llm_tokens: QuotaEntry
     fal_images: QuotaEntry
   }
   periodStart: string

@@ -93,7 +93,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
       await service.generateScript('Cómo crecer en Instagram', OWNER);
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
-      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledBefore(mockDeepSeekChat);
     });
@@ -159,7 +159,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
       await service.generateScript('Tema sin tenant', OWNER);
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
-      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
+      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.log).toHaveBeenCalled();
     });
@@ -190,20 +190,20 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     });
   });
 
-  describe('quota check on non-deepseek_tokens resource', () => {
+  describe('quota check on non-llm_tokens resource', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
       service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockTracker);
     });
 
-    it('passes deepseek_tokens as resourceType to checkQuota', async () => {
+    it('passes llm_tokens as resourceType to checkQuota', async () => {
       mockDeepSeekChat.mockResolvedValueOnce(makeScriptResponse(validScriptJson));
 
       await service.generateScript('topic', OWNER);
 
       const callArgs = (mockTracker.checkQuota as ReturnType<typeof vi.fn>).mock.calls[0];
-      expect(callArgs?.[1]).toBe('deepseek_tokens');
+      expect(callArgs?.[1]).toBe('llm_tokens');
     });
   });
 });
