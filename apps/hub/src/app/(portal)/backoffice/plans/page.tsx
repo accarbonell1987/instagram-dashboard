@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 
 import { ModuleTransfer } from '@/components/module-transfer';
 import { ApiError } from '@/lib/api/errors';
+import { sortByHierarchy } from '@/lib/module-hierarchy';
 import {
   listModules,
   getPlanModules,
@@ -614,7 +615,7 @@ function ModuleAssignmentDialog({
         listModules(productId),
         getPlanModules(planId).catch(() => ({ moduleIds: [] as string[] })),
       ]);
-      setAllModules(modulesResult.modules);
+      setAllModules(sortByHierarchy(modulesResult.modules));
       setSelectedIds(planModulesResult.moduleIds);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -624,7 +625,7 @@ function ModuleAssignmentDialog({
       }
       try {
         const modulesResult = await listModules(productId);
-        setAllModules(modulesResult.modules);
+        setAllModules(sortByHierarchy(modulesResult.modules));
       } catch {
         // Modules couldn't load either — UI will show error
       }

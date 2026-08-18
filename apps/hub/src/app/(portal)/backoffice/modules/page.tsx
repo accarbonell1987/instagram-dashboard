@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ApiError } from '@/lib/api/errors';
+import { sortByHierarchy } from '@/lib/module-hierarchy';
 import {
   moduleFormSchema,
   type ModuleFormData,
@@ -339,7 +340,7 @@ export default function ModulesPage(): JSX.Element {
     setError('');
     try {
       const result = await listModules(productFilter);
-      setModules(result.modules);
+      setModules(sortByHierarchy(result.modules));
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.message);
