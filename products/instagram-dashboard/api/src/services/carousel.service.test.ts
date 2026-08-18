@@ -46,6 +46,9 @@ const mockInstagramRepo = {
   findAccountByOwner: vi.fn().mockResolvedValue({ id: 'acc-1', userId: 'user-1' }),
   getAgentConfig: vi.fn().mockResolvedValue(null),
   getFalApiKeyEncrypted: vi.fn(),
+  hasLlmApiKey: vi.fn(),
+  saveLlmApiKey: vi.fn(),
+  getLlmApiKeyEncrypted: vi.fn().mockResolvedValue(null),
 };
 
 const mockScriptGenerator = {
@@ -301,7 +304,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
   });
 
   describe('previewScript()', () => {
-    it('passes tenantId to scriptGenerator.generateScript for quota enforcement', async () => {
+    it('passes the owner to scriptGenerator.generateScript for quota enforcement', async () => {
       mockScriptGenerator.generateScript.mockResolvedValue(makeGeneratedSlides());
 
       await service.previewScript({ tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic');
@@ -310,8 +313,8 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       // for the preview-script flow. Without this, previewScript bypasses quota enforcement.
       expect(mockScriptGenerator.generateScript).toHaveBeenCalledWith(
         'Test topic',
-        undefined,   // basePrompt — no agent config
-        'tenant-1',  // tenantId — required for quota enforcement
+        { tenantId: 'tenant-1', userId: 'user-1' }, // owner — resolves the model and the quota
+        undefined, // basePrompt — no agent config
       );
     });
 
@@ -325,8 +328,8 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       expect(result).toEqual(makeGeneratedSlides());
       expect(mockScriptGenerator.generateScript).toHaveBeenCalledWith(
         'Test topic',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         undefined,
-        'tenant-1',
       );
     });
   });

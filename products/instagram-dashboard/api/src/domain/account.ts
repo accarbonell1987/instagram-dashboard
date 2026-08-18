@@ -40,4 +40,14 @@ export interface AgentConfig {
   niche: string;
   tags: string[];
   customPrompt?: string;
+  /**
+   * Which model answers for this account. Absent means the deployment's
+   * default — the environment variables every tenant used before this was
+   * configurable. The API key lives in its own encrypted column, never here.
+   */
+  llm?: {
+    provider?: string;
+    baseUrl?: string;
+    model?: string;
+  };
 }

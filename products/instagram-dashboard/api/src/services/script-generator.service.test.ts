@@ -5,10 +5,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { QuotaExceededError } from '../errors.js';
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
+import type { LlmResolver } from './llm-resolver.service.js';
 
 import { ScriptGeneratorService } from './script-generator.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
+
+const OWNER = { tenantId: 'tenant-1', userId: 'user-1' };
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -29,6 +31,8 @@ function createMockUsageTracker(overrides: Partial<UsageTracker> = {}): UsageTra
 
 function makeScriptResponse(content: string) {
   return {
+    // The provider reports what actually answered; the usage log records it.
+    model: 'deepseek-v4-flash',
     content,
     usage: { promptTokens: 150, completionTokens: 300 },
     finishReason: 'stop' as const,
@@ -66,12 +70,12 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
   describe('constructor', () => {
     it('accepts UsageTracker as optional 2nd param', () => {
       const tracker = createMockUsageTracker();
-      const svc = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient, tracker);
+      const svc = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), tracker);
       expect(svc).toBeInstanceOf(ScriptGeneratorService);
     });
 
     it('works without UsageTracker (backward compat)', () => {
-      const svc = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient);
+      const svc = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver));
       expect(svc).toBeInstanceOf(ScriptGeneratorService);
     });
   });
@@ -80,13 +84,13 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient, mockTracker);
+      service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockTracker);
     });
 
     it('calls checkQuota before DeepSeek when tenantId is provided', async () => {
       mockDeepSeekChat.mockResolvedValueOnce(makeScriptResponse(validScriptJson));
 
-      await service.generateScript('Cómo crecer en Instagram', undefined, 'tenant-1');
+      await service.generateScript('Cómo crecer en Instagram', OWNER);
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
@@ -102,7 +106,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
       });
 
       await expect(
-        service.generateScript('Cómo crecer en Instagram', undefined, 'tenant-1'),
+        service.generateScript('Cómo crecer en Instagram', OWNER),
       ).rejects.toThrow(QuotaExceededError);
 
       // DeepSeek should NOT be called when quota is exceeded
@@ -112,15 +116,15 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     it('calls log after successful DeepSeek call with promptTokens and completionTokens', async () => {
       mockDeepSeekChat.mockResolvedValueOnce(makeScriptResponse(validScriptJson));
 
-      await service.generateScript('Tema de prueba', 'Contexto base', 'tenant-1');
+      await service.generateScript('Tema de prueba', OWNER, 'Contexto base');
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.log).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
         operation: 'script',
+        model: 'deepseek-v4-flash',
         promptTokens: 150,
         completionTokens: 300,
-        model: 'deepseek-v4-pro',
       });
     });
 
@@ -128,7 +132,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
       mockDeepSeekChat.mockRejectedValueOnce(new Error('API error'));
 
       await expect(
-        service.generateScript('Tema inválido', undefined, 'tenant-1'),
+        service.generateScript('Tema inválido', OWNER),
       ).rejects.toThrow('API error');
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
@@ -140,24 +144,30 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient, mockTracker);
+      service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockTracker);
     });
 
-    it('does NOT call checkQuota when tenantId is NOT provided', async () => {
+    /**
+     * There is no unmeasured path any more. Generating a script used to be
+     * possible without a tenant — the carousel flow passed none — and that call
+     * consumed tokens nobody counted. The owner is now required, so every
+     * generation is attributed.
+     */
+    it('enforces the quota on every generation, including the carousel flow', async () => {
       mockDeepSeekChat.mockResolvedValueOnce(makeScriptResponse(validScriptJson));
 
-      await service.generateScript('Tema sin tenant');
+      await service.generateScript('Tema sin tenant', OWNER);
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
-      expect(mockTracker.checkQuota).not.toHaveBeenCalled();
+      expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
-      expect(mockTracker.log).not.toHaveBeenCalled();
+      expect(mockTracker.log).toHaveBeenCalled();
     });
 
     it('still generates script normally without tenantId', async () => {
       mockDeepSeekChat.mockResolvedValueOnce(makeScriptResponse(validScriptJson));
 
-      const result = await service.generateScript('Tema sin tenant');
+      const result = await service.generateScript('Tema sin tenant', OWNER);
 
       expect(result).toHaveLength(3);
       expect(result[0]?.text).toBe('¿Querés más seguidores?');
@@ -167,13 +177,13 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
   describe('generateScript() with usageTracker undefined', () => {
     beforeEach(() => {
       vi.clearAllMocks();
-      service = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient);
+      service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver));
     });
 
     it('generates script normally without usageTracker and tenantId', async () => {
       mockDeepSeekChat.mockResolvedValueOnce(makeScriptResponse(validScriptJson));
 
-      const result = await service.generateScript('Tema sin tracker', undefined, 'tenant-1');
+      const result = await service.generateScript('Tema sin tracker', OWNER);
 
       expect(result).toHaveLength(3);
       // No errors — tracker absence is silently tolerated
@@ -184,13 +194,13 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(mockDeepseekClient as unknown as DeepSeekClient, mockTracker);
+      service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockTracker);
     });
 
     it('passes deepseek_tokens as resourceType to checkQuota', async () => {
       mockDeepSeekChat.mockResolvedValueOnce(makeScriptResponse(validScriptJson));
 
-      await service.generateScript('topic', undefined, 'tenant-1');
+      await service.generateScript('topic', OWNER);
 
       const callArgs = (mockTracker.checkQuota as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(callArgs?.[1]).toBe('deepseek_tokens');

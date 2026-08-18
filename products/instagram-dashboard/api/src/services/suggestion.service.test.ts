@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
+import type { LlmResolver } from './llm-resolver.service.js';
 
 import { SuggestionService } from './suggestion.service.js';
 import type { UsageTracker } from './usage-tracker.service.js';
@@ -298,6 +298,7 @@ describe('SuggestionService', () => {
 
     it('calls checkQuota before DeepSeek call', async () => {
       mockDeepSeekChat.mockResolvedValueOnce({
+        model: 'deepseek-v4-flash',
         content: 'Una idea genial para Instagram',
         usage: { promptTokens: 50, completionTokens: 100 },
         finishReason: 'stop',
@@ -307,7 +308,7 @@ describe('SuggestionService', () => {
       // Need to mock findEligibleForMeasurement and findByOwner on the suggestion repo
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
+      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockUsageTracker);
 
       await svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas');
 
@@ -326,7 +327,7 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
+      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockUsageTracker);
 
       await expect(
         svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),
@@ -337,6 +338,7 @@ describe('SuggestionService', () => {
 
     it('calls log after successful DeepSeek call', async () => {
       mockDeepSeekChat.mockResolvedValueOnce({
+        model: 'deepseek-v4-flash',
         content: 'Una idea genial para Instagram',
         usage: { promptTokens: 50, completionTokens: 100 },
         finishReason: 'stop',
@@ -345,7 +347,7 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
+      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockUsageTracker);
 
       await svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas');
 
@@ -353,9 +355,9 @@ describe('SuggestionService', () => {
       expect(mockUsageTracker.log).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
         operation: 'suggestion',
+        model: 'deepseek-v4-flash',
         promptTokens: 50,
         completionTokens: 100,
-        model: 'deepseek-v4-flash',
       });
     });
 
@@ -364,7 +366,7 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
+      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockUsageTracker);
 
       await expect(
         svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),
@@ -376,6 +378,7 @@ describe('SuggestionService', () => {
 
     it('works without usageTracker (backward compat)', async () => {
       mockDeepSeekChat.mockResolvedValueOnce({
+        model: 'deepseek-v4-flash',
         content: 'Una idea sin tracker',
         usage: { promptTokens: 30, completionTokens: 60 },
         finishReason: 'stop',
@@ -384,7 +387,7 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient);
+      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver));
 
       await expect(
         svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),

@@ -49,7 +49,7 @@ export class CarouselService {
       ? await this.instagramRepo.getAgentConfig(owner)
       : null;
     const basePrompt = (agentConfig as ImageGenConfig | null)?.imageGen?.basePrompt;
-    return this.scriptGenerator.generateScript(topic, basePrompt, owner.tenantId);
+    return this.scriptGenerator.generateScript(topic, owner, basePrompt);
   }
 
   async createCarousel(
@@ -507,7 +507,7 @@ export class CarouselService {
         );
       } else {
         await this.carouselRepo.updateStatus(carouselId, 'generating_script');
-        const generatedSlides = await this.scriptGenerator.generateScript(topic, basePrompt);
+        const generatedSlides = await this.scriptGenerator.generateScript(topic, owner, basePrompt);
         slides = await this.carouselRepo.createSlides(
           generatedSlides.map((s) => ({
             carouselId,

@@ -231,6 +231,29 @@ export class PrismaInstagramRepository implements InstagramRepository {
     return record?.falApiKeyEncrypted ?? null;
   }
 
+  async hasLlmApiKey(owner: Owner): Promise<boolean> {
+    const record = await this.prisma.instagramAccount.findFirst({
+      where: { ...owner },
+      select: { llmApiKeyEncrypted: true },
+    });
+    return record?.llmApiKeyEncrypted !== null && record?.llmApiKeyEncrypted !== undefined;
+  }
+
+  async saveLlmApiKey(owner: Owner, encryptedKey: string): Promise<void> {
+    await this.prisma.instagramAccount.update({
+      where: { tenantId_userId: owner },
+      data: { llmApiKeyEncrypted: encryptedKey },
+    });
+  }
+
+  async getLlmApiKeyEncrypted(owner: Owner): Promise<string | null> {
+    const record = await this.prisma.instagramAccount.findFirst({
+      where: { ...owner },
+      select: { llmApiKeyEncrypted: true },
+    });
+    return record?.llmApiKeyEncrypted ?? null;
+  }
+
   // ── Media ────────────────────────────────────────────────────────
 
   async findMediaByIgId(accountId: string, igMediaId: string): Promise<InstagramMedia | null> {

@@ -53,6 +53,9 @@ function createMockRepo(): {
       hasFalApiKey: vi.fn(),
       saveFalApiKey: vi.fn(),
       getFalApiKeyEncrypted: vi.fn(),
+  hasLlmApiKey: vi.fn(),
+  saveLlmApiKey: vi.fn(),
+  getLlmApiKeyEncrypted: vi.fn().mockResolvedValue(null),
     },
   };
 }

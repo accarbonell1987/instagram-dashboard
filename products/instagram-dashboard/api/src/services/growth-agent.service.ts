@@ -18,7 +18,7 @@ import type {
 } from '../domain/growth-agent.js';
 import { InternalError, QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
+import type { LlmResolver } from './llm-resolver.service.js';
 import { TOOL_DEFINITIONS } from '../lib/tool-definitions.js';
 import type { ContentSuggestion } from '../repositories/suggestion.repository.js';
 
@@ -83,7 +83,7 @@ export class GrowthAgentService {
   constructor(
     private readonly repos: Repositories,
     private readonly dashboardService: DashboardService,
-    private readonly deepseekClient: DeepSeekClient,
+    private readonly llm: LlmResolver,
     private readonly suggestionService: SuggestionService,
     private readonly usageTracker?: UsageTracker,
   ) {}
@@ -122,10 +122,9 @@ export class GrowthAgentService {
     while (iterations < MAX_ITERATIONS) {
       iterations++;
       const response = await withTimeout(
-        this.deepseekClient.chat({
+        (await this.llm.resolve(owner)).chat({
           messages,
           tools: TOOL_DEFINITIONS,
-          model: 'deepseek-v4-flash',
         }),
         60_000,
         'AGENT_TIMEOUT',
@@ -159,9 +158,9 @@ export class GrowthAgentService {
             await this.usageTracker.log({
               tenantId: owner.tenantId,
               operation: 'chat',
+              model: response.model,
               promptTokens: totalPromptTokens,
               completionTokens: totalCompletionTokens,
-              model: 'deepseek-v4-flash',
             });
 
             return {
@@ -195,9 +194,9 @@ export class GrowthAgentService {
           await this.usageTracker.log({
             tenantId: owner.tenantId,
             operation: 'chat',
+            model: response.model,
             promptTokens: totalPromptTokens,
             completionTokens: totalCompletionTokens,
-            model: 'deepseek-v4-flash',
           });
         }
 
@@ -246,12 +245,11 @@ export class GrowthAgentService {
     const suggestionPrompt = buildSuggestionPrompt(agentConfig);
 
     const response = await withTimeout(
-      this.deepseekClient.chat({
+      (await this.llm.resolve(owner)).chat({
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: suggestionPrompt },
         ],
-        model: 'deepseek-v4-flash',
       }),
       60_000,
       'AGENT_TIMEOUT',

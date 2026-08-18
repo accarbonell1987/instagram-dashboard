@@ -1,6 +1,7 @@
 import type { GeneratedSlide, SlideRole } from '../domain/carousel.js';
 import { QuotaExceededError } from '../errors.js';
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
+import type { Owner } from '../domain/owner.js';
+import type { LlmResolver } from './llm-resolver.service.js';
 
 import type { UsageTracker } from './usage-tracker.service.js';
 
@@ -41,15 +42,16 @@ function normalizeRole(value: unknown): SlideRole {
 
 export class ScriptGeneratorService {
   constructor(
-    private readonly deepseek: DeepSeekClient,
+    private readonly llm: LlmResolver,
     private readonly usageTracker?: UsageTracker,
   ) {}
 
   async generateScript(
     topic: string,
+    owner: Owner,
     basePromptContext?: string,
-    tenantId?: string,
   ): Promise<GeneratedSlide[]> {
+    const tenantId = owner.tenantId;
     // ── Pre-call quota enforcement (preview-script flow only) ──
     if (tenantId && this.usageTracker) {
       const check = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
@@ -63,8 +65,8 @@ export class ScriptGeneratorService {
       ? `Topic: ${topic}\nStyle context: ${basePromptContext}`
       : `Topic: ${topic}`;
 
-    const response = await this.deepseek.chat({
-      model: 'deepseek-v4-pro',
+    const client = await this.llm.resolve(owner);
+    const response = await client.chat({
       reasoningEffort: 'none',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -77,7 +79,7 @@ export class ScriptGeneratorService {
       await this.usageTracker.log({
         tenantId,
         operation: 'script',
-        model: 'deepseek-v4-pro',
+        model: response.model,
         promptTokens: response.usage.promptTokens,
         completionTokens: response.usage.completionTokens,
       });

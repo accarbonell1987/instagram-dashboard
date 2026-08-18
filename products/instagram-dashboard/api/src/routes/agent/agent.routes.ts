@@ -24,13 +24,16 @@ export function createAgentRoutes(
     const { tenantId, userId } = tenant;
     const owner = { tenantId, userId };
 
-    const [agentConfig, hasFalApiKey] = await Promise.all([
+    const [agentConfig, hasFalApiKey, hasLlmApiKey] = await Promise.all([
       repos.getAgentConfig(owner),
       repos.hasFalApiKey(owner),
+      repos.hasLlmApiKey(owner),
     ]);
 
+    // The keys themselves never come back — only whether one is set, which is
+    // all the screen needs to say "configurada" instead of showing a secret.
     return c.json(
-      { success: true, data: { agentConfig, hasFalApiKey } },
+      { success: true, data: { agentConfig, hasFalApiKey, hasLlmApiKey } },
       200,
     );
   });
@@ -75,6 +78,7 @@ export function createAgentRoutes(
           // Store imageGen and limits inside agentConfig JSON
           ...(body.imageGen !== undefined ? { imageGen: body.imageGen } : {}),
           ...(body.limits !== undefined ? { limits: body.limits } : {}),
+          ...(body.llm !== undefined ? { llm: body.llm } : {}),
         } as AgentConfig),
       ];
 
@@ -82,6 +86,10 @@ export function createAgentRoutes(
       if (body.falApiKey !== undefined) {
         const encrypted = encryptToken(body.falApiKey);
         savePromises.push(repos.saveFalApiKey(owner, encrypted));
+      }
+
+      if (body.llmApiKey !== undefined) {
+        savePromises.push(repos.saveLlmApiKey(owner, encryptToken(body.llmApiKey)));
       }
 
       await Promise.all(savePromises);

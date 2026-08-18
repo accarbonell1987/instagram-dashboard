@@ -1,7 +1,7 @@
 import type { Owner } from '../domain/owner.js';
 import { InternalError, QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
+import type { LlmResolver } from './llm-resolver.service.js';
 import type {
   ContentSuggestion,
   SuggestionBatch,
@@ -15,7 +15,7 @@ import type { UsageTracker } from './usage-tracker.service.js';
 export class SuggestionService {
   constructor(
     private readonly repos: Repositories,
-    private readonly deepseekClient?: DeepSeekClient,
+    private readonly llm?: LlmResolver,
     private readonly usageTracker?: UsageTracker,
   ) {}
 
@@ -73,9 +73,12 @@ export class SuggestionService {
       }
     }
 
-    if (!this.deepseekClient) throw new InternalError('AI client not configured');
+    if (!this.llm) throw new InternalError('AI client not configured');
 
-    const response = await this.deepseekClient.chat({
+    // Resolved per call: the model and key belong to the account, not to the
+    // process. See LlmResolver.
+    const client = await this.llm.resolve(owner);
+    const response = await client.chat({
       messages: [
         {
           role: 'system',
@@ -84,7 +87,6 @@ export class SuggestionService {
         },
         { role: 'user', content: prompt },
       ],
-      model: 'deepseek-v4-flash',
     });
 
     // ── Post-call logging ──
@@ -92,7 +94,7 @@ export class SuggestionService {
       await this.usageTracker.log({
         tenantId: owner.tenantId,
         operation: 'suggestion',
-        model: 'deepseek-v4-flash',
+        model: response.model,
         promptTokens: response.usage.promptTokens,
         completionTokens: response.usage.completionTokens,
       });

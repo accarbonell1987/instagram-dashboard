@@ -82,6 +82,9 @@ model InstagramAccount {
   connectedAt     DateTime  @map("connected_at") @default(now()) @db.Timestamptz
   agentConfig         Json?     @map("agent_config")
   falApiKeyEncrypted  String?   @map("fal_api_key_encrypted") @db.Text
+  // Its own column rather than a field inside agent_config: a secret should not
+  // travel in the JSON that the settings screen reads back.
+  llmApiKeyEncrypted  String?   @map("llm_api_key_encrypted") @db.Text
   createdAt           DateTime  @default(now()) @db.Timestamptz
   updatedAt           DateTime  @updatedAt @db.Timestamptz
 

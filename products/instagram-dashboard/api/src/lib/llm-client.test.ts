@@ -16,7 +16,7 @@ vi.mock('openai', () => {
 });
 
 // Import AFTER mock is set up
-const { DeepSeekClient } = await import('./deepseek-client.js');
+const { LlmClient } = await import('./llm-client.js');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -50,12 +50,12 @@ function makeCompletionResponse(overrides: {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('DeepSeekClient', () => {
-  let client: InstanceType<typeof DeepSeekClient>;
+describe('LlmClient', () => {
+  let client: InstanceType<typeof LlmClient>;
 
   beforeEach(() => {
     mockCreate.mockReset();
-    client = new DeepSeekClient();
+    client = new LlmClient({ apiKey: 'k', baseUrl: 'https://api.deepseek.com', model: 'deepseek-v4-flash', supportsReasoningEffort: true });
   });
 
   describe('chat()', () => {
@@ -125,7 +125,7 @@ describe('DeepSeekClient', () => {
       expect(result.content).toBe('');
     });
 
-    it('Test 3 — throws error when DeepSeek returns no choices', async () => {
+    it('Test 3 — throws when the model returns no choices', async () => {
       mockCreate.mockResolvedValueOnce({
         choices: [],
         usage: { prompt_tokens: 5, completion_tokens: 0 },
@@ -133,7 +133,7 @@ describe('DeepSeekClient', () => {
 
       await expect(
         client.chat({ messages: [{ role: 'user', content: 'test' }] }),
-      ).rejects.toThrow('DeepSeek returned no choices');
+      ).rejects.toThrow('The model returned no choices');
     });
 
     it('Test 4 — DEEPSEEK_API_KEY never appears in the response object', async () => {

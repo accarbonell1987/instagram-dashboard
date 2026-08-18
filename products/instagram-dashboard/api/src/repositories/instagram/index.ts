@@ -53,6 +53,10 @@ export interface InstagramRepository {
   hasFalApiKey(owner: Owner): Promise<boolean>;
   saveFalApiKey(owner: Owner, encryptedKey: string): Promise<void>;
   getFalApiKeyEncrypted(owner: Owner): Promise<string | null>;
+  // ── LLM key ───────────────────────────────────────────────────────
+  hasLlmApiKey(owner: Owner): Promise<boolean>;
+  saveLlmApiKey(owner: Owner, encryptedKey: string): Promise<void>;
+  getLlmApiKeyEncrypted(owner: Owner): Promise<string | null>;
 
   // Media
   findMediaByIgId(accountId: string, igMediaId: string): Promise<InstagramMedia | null>;

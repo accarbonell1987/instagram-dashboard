@@ -18,7 +18,7 @@ import { logger } from 'hono/logger';
 import { config } from './config.js';
 import { ConflictError } from './errors.js';
 import { createRepositories } from './lib/create-repositories.js';
-import { DeepSeekClient } from './lib/deepseek-client.js';
+import { LlmResolver } from './services/llm-resolver.service.js';
 import { DiskImageStorage } from './lib/image/disk-image-storage.js';
 import { FalAiImageProvider } from './lib/image/fal-ai-image-provider.js';
 import { authGuard } from './middleware/auth-guard.js';
@@ -59,7 +59,9 @@ async function bootstrap() {
   const syncService = new SyncService(repos);
   const dashboardService = new DashboardService(repos);
   const insightService = new InsightService();
-  const deepseekClient = new DeepSeekClient();
+  // One resolver, not one client: the model and key are read from the
+  // account on every call rather than fixed at boot.
+  const llmResolver = new LlmResolver(repos.instagram);
 
   // Usage tracking (feature-flagged — no-op when ENABLE_USAGE_TRACKING=false)
   // Must be instantiated before services that depend on it
@@ -71,11 +73,11 @@ async function bootstrap() {
 
   const moduleAccessService = new ModuleAccessService('instagram-dashboard', config.IAM_INTERNAL_URL);
 
-  const suggestionService = new SuggestionService(repos, deepseekClient, usageTracker);
+  const suggestionService = new SuggestionService(repos, llmResolver, usageTracker);
   // GrowthAgentService requires suggestionService to be instantiated first
-  const growthAgentService = new GrowthAgentService(repos, dashboardService, deepseekClient, suggestionService, usageTracker);
+  const growthAgentService = new GrowthAgentService(repos, dashboardService, llmResolver, suggestionService, usageTracker);
   // Carousel pipeline
-  const scriptGeneratorService = new ScriptGeneratorService(deepseekClient, usageTracker);
+  const scriptGeneratorService = new ScriptGeneratorService(llmResolver, usageTracker);
   const imageProvider = new FalAiImageProvider();
   const imageStorage = new DiskImageStorage(publicDir, config.PUBLIC_BASE_URL);
   const carouselService = new CarouselService(

@@ -34,11 +34,15 @@ const mockSaveAgentConfig = vi.fn();
 const mockHasFalApiKey = vi.fn().mockResolvedValue(false);
 const mockGetUsage = vi.fn();
 
+const mockHasLlmApiKey = vi.fn().mockResolvedValue(false);
+
 const mockRepos = {
   getAgentConfig: mockGetAgentConfig,
   saveAgentConfig: mockSaveAgentConfig,
   hasFalApiKey: mockHasFalApiKey,
   saveFalApiKey: vi.fn().mockResolvedValue(undefined),
+  hasLlmApiKey: mockHasLlmApiKey,
+  saveLlmApiKey: vi.fn().mockResolvedValue(undefined),
 };
 
 const mockUsageTracker = {

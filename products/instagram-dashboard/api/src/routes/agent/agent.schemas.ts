@@ -15,6 +15,21 @@ export const ImageGenConfigSchema = z.object({
   i2iModel: z.string().max(100).optional(),
 });
 
+/**
+ * Which model answers, and where it lives.
+ *
+ * One code path for every provider: they all speak the OpenAI chat-completions
+ * protocol. Anthropic and Google arrive through OpenRouter rather than
+ * natively — their own protocols would need a second implementation of tool
+ * calling for the same result.
+ */
+export const LlmConfigSchema = z.object({
+  provider: z.enum(['deepseek', 'openai', 'openrouter', 'groq', 'together', 'custom']).optional(),
+  // Only read for `custom`; every preset carries its own address.
+  baseUrl: z.string().url().max(300).optional(),
+  model: z.string().min(1).max(120).optional(),
+});
+
 export const AgentLimitsSchema = z.object({
   slideText: z.number().int().min(50).max(500).optional(),
   visualPrompt: z.number().int().min(50).max(1000).optional(),
@@ -25,8 +40,12 @@ export const SaveAgentSettingsBodySchema = z.object({
   tags: z.array(z.string().min(1).max(100)).min(0).max(30),
   customPrompt: z.string().max(2000).optional(),
   imageGen: ImageGenConfigSchema.optional(),
+  llm: LlmConfigSchema.optional(),
   limits: AgentLimitsSchema.optional(),
   falApiKey: z.string().min(1).optional(),
+  // Write-only, exactly like falApiKey: it goes into its own encrypted column
+  // and comes back only as a boolean.
+  llmApiKey: z.string().min(1).max(300).optional(),
 });
 
 export const QuotaEntrySchema = z.object({

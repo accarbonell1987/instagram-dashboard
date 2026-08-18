@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { InternalError, QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
-import type { DeepSeekClient } from '../lib/deepseek-client.js';
+import type { LlmResolver } from './llm-resolver.service.js';
 
 import type { DashboardService } from './dashboard.service.js';
 import { GrowthAgentService, normalizeCategory } from './growth-agent.service.js';
@@ -105,11 +105,12 @@ function createMockRepos(): Repositories {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function makeStopResponse(content: string) {
-  return { content, toolCalls: [], usage: { promptTokens: 10, completionTokens: 20 }, finishReason: 'stop' as const };
+  return { model: 'deepseek-v4-flash', content, toolCalls: [], usage: { promptTokens: 10, completionTokens: 20 }, finishReason: 'stop' as const };
 }
 
 function makeToolCallResponse(toolName: string, args: Record<string, unknown> = {}) {
   return {
+    model: 'deepseek-v4-flash',
     content: '',
     toolCalls: [{ id: 'tc-1', name: toolName, arguments: args }],
     usage: { promptTokens: 10, completionTokens: 5 },
@@ -127,7 +128,7 @@ describe('GrowthAgentService', () => {
     return new GrowthAgentService(
       repos,
       mockDashboardService as unknown as DashboardService,
-      mockDeepseekClient as unknown as DeepSeekClient,
+      ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver),
       mockSuggestionService as unknown as SuggestionService,
       tracker,
     );
@@ -548,9 +549,9 @@ describe('GrowthAgentService', () => {
         expect.objectContaining({
           tenantId: 'tenant-1',
           operation: 'chat',
+          model: 'deepseek-v4-flash',
           promptTokens: 20,   // 10 + 10
           completionTokens: 25, // 5 + 20
-          model: 'deepseek-v4-flash',
         }),
       );
     });
@@ -589,6 +590,7 @@ describe('GrowthAgentService', () => {
         expect.objectContaining({
           tenantId: 'tenant-1',
           operation: 'chat',
+          model: 'deepseek-v4-flash',
           promptTokens: 10,
           completionTokens: 20,
         }),
