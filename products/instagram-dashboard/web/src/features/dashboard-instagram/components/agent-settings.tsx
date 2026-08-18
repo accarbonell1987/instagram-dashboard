@@ -1,9 +1,8 @@
 'use client'
 
-import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from '@core/ui'
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from '@core/ui'
 import type { JSX } from 'react'
 import { useState } from 'react'
-import { createPortal } from 'react-dom'
 
 
 import type { AgentConfig, AgentLimits, AgentSecrets, ImageGenConfig, LlmConfig } from '../types/instagram.types'
@@ -250,28 +249,24 @@ export function AgentSettingsModal({
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- PROMPT_TABS is a non-empty constant array, so [0] is always defined
   const activePrompt = PROMPT_TABS.find((t) => t.key === activePromptTab) ?? PROMPT_TABS[0]!
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Configuración del agente"
-    >
-      <div className="bg-background border rounded-lg shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
-          <h2 className="text-lg font-semibold">Configurar Agente</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="text-muted-foreground"
-            aria-label="Cerrar"
-            type="button"
-          >
-            ✕
-          </Button>
-        </div>
+  return (
+    <Dialog open={isOpen} onOpenChange={(next) => { if (!next) onClose() }}>
+      {/*
+        The design system's Dialog, not a hand-rolled portal. The previous shell
+        sat at `z-[9999]`, which put it above every Radix popover: a Select
+        opened inside it rendered its list behind the panel and read as "the
+        dropdown doesn't work". Dialog and Select both live at `z-50` on
+        purpose — they are sibling portals, so DOM order decides, and whatever
+        opened last wins. Two Selects here had been patched with `z-[10000]`
+        to climb back out; that workaround dies with the shell that caused it.
+      */}
+      <DialogContent
+        className="flex max-h-[90vh] w-full max-w-lg flex-col gap-0 p-0"
+        closeLabel="Cerrar"
+      >
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+          <DialogTitle>Configurar Agente</DialogTitle>
+        </DialogHeader>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ActiveTab); }} className="flex flex-col flex-1 min-h-0">
@@ -420,7 +415,7 @@ export function AgentSettingsModal({
                     <SelectTrigger id="t2i-model" className="w-full h-9 rounded-md px-3 text-sm" aria-label="Modelo de generación texto a imagen">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="z-[10000]">
+                    <SelectContent>
                       {T2I_MODELS.map((m) => (
                         <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
                       ))}
@@ -439,7 +434,7 @@ export function AgentSettingsModal({
                     <SelectTrigger id="i2i-model" className="w-full h-9 rounded-md px-3 text-sm" aria-label="Modelo de transformación imagen a imagen">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="z-[10000]">
+                    <SelectContent>
                       {I2I_MODELS.map((m) => (
                         <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
                       ))}
@@ -635,8 +630,7 @@ export function AgentSettingsModal({
             {isSaving ? 'Guardando...' : 'Guardar'}
           </Button>
         </div>
-      </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   )
 }
