@@ -146,6 +146,39 @@ Seguir todas las convenciones de `CLAUDE.md` en la raíz. Adicionalmente:
 - **Soft delete de usuarios**: `users.deleted_at` — jamás se borran filas. `listByTenant` filtra `{ deletedAt: null }` (incluye suspendidos). Refresh guard: si `user.deletedAt !== undefined` → 401 `auth.account_deleted`.
 - **Eliminar miembro — transacción atómica**: `prisma.$transaction` hace inline `tx.user.update(deletedAt)` + `refreshTokenRepo.invalidateAllForUser(userId, tx)`. NO llamar a `userRepo.softDelete()` desde la transacción — el repo tiene su propia referencia a prisma.
 - **Último admin guard**: `updateMemberStatus` cuenta admins activos con `userRepo.countActiveAdmins(tenantId)`. Si es 1 y se intenta suspender/eliminar → 409 `identity.last_admin`.
+- **Roles de producto a nivel tenant**: `GET /tenants/current/product-roles` y
+  `PUT /tenants/current/members/:memberId/product-roles` dejan que un `TenantAdmin` reparta acceso
+  dentro de su propia organización — el equivalente tenant-scoped de los `/admin/*` que ya existían
+  y siguen siendo SuperAdmin-only. Guards en `productRoleService.setMemberRoles`: miembro de otro
+  tenant → **404** (nunca 403: decir que el id existe en otro lado es un oráculo de existencia),
+  rol de un producto no contratado → 422, dos roles del mismo producto → 422.
+  `replaceUserRoles` borra solo dentro de los productos del tenant, no todas las filas del usuario.
+- **El filtro por rol de producto no aplica a admins**: `roleFilterSubject` en
+  `routes/modules/tenant-modules.ts` pasa `userId` solo cuando el rol es `User`. Un `TenantAdmin`
+  es quien reparte los roles; filtrarlo por el suyo le permitiría dejarse afuera del producto que
+  administra sin forma de volver. `GET /internal/tenants/:id/entitlements` sigue filtrando por el
+  `userId` que le pasa el caller — no conoce el rol; es una inconsistencia conocida.
+- **Un usuario sin rol de producto ve todo lo que otorga el plan** (fail-open deliberado en
+  `resolveEffectiveModules`). Asignar un rol restringe; nunca amplía.
+- **No existe subsistema de facturación**: nada emite un documento por ciclo, y ninguna fila lleva
+  número de factura ni fecha de vencimiento. El cobro **es** el registro, y el PDF que generó
+  `settlement.service` cuelga de él: `listPayments` adjunta `documentId` a cada `Payment`.
+  - Es `null` salvo que el pago esté `approved` **y** exista un `Document` de tipo `invoice` con
+    `status: 'ready'`. `submit.service` crea la fila como placeholder con `storageKey: 'pending'`
+    — que la fila exista no significa que el archivo exista.
+  - Hubo un `GET /billing/invoices` que proyectaba los mismos pagos a `InvoiceListItem`. Se
+    eliminó junto con su `signed-url` en el contrato 2.0.0: dos vistas de una sola verdad.
+- **Secciones de administración que aportan los productos**: `product_admin_sections`
+  (`productId`, `moduleId?`, `key`, `label`, `path`, `visibleToRole`, `displayOrder`, `active`) +
+  `GET /tenants/current/admin-sections`. Una tabla y no una columna en `Product` porque un producto
+  va a tener varias y apagarlas no debería requerir deploy.
+  - `path` es relativo al `defaultUrl` del producto: el hub une los dos y así el override por env
+    de desarrollo sigue aplicando.
+  - `listAdminSectionsForTenant` filtra por producto contratado, por módulo habilitado cuando la
+    sección declara `moduleId`, y por rol (`User` < `TenantAdmin` < `SuperAdmin`). Solo resuelve
+    módulos para los productos que tienen alguna sección module-scoped.
+  - **`visibleToRole` se llama así a propósito: es presentación, no autorización.** Decide qué
+    entrada dibuja el hub. El hub no está en el camino de la request y no puede proteger nada.
 - **Plan change contact-first**: `createPlanChangeService` verifica solicitud pendiente en BD antes de crear una nueva (409 si existe). Email a `PLAN_CHANGE_NOTIFY_TO` es fire-and-forget (error de email no falla el request).
 
 ## Coordinación con apps/hub
@@ -182,16 +215,18 @@ pnpm --filter @corehub/api-iam test:watch    # Watch mode
 |---|---|---|
 | Auth | 14 | POST /auth/login, POST /auth/login/complete, POST /auth/otp/send, POST /auth/otp/verify, POST /auth/otp/resend, POST /auth/refresh, POST /auth/logout, GET /auth/password/policy, POST /auth/password/recover/request, POST /auth/password/recover/complete, POST /auth/first-login/start, POST /auth/first-login/set-password, GET /auth/first-login/validate, GET /auth/me |
 | Onboarding | 9 | POST /onboarding/draft, GET/PATCH /onboarding/draft/:id, GET /onboarding/draft/resume/:token, POST /onboarding/draft/:id/resume-link, POST /onboarding/draft/:id/payment/initiate, GET /onboarding/draft/:id/payment/status, PATCH /onboarding/draft/:id/recover, POST /onboarding/draft/:id/submit |
-| Identity | 6 | GET /tenants/current, GET /tenants/current/members, PATCH /tenants/current, PATCH /tenants/current/members/:id/status, DELETE /tenants/current/members/:id, PATCH /users/me |
+| Identity | 8 | GET /tenants/current, GET /tenants/current/members, PATCH /tenants/current, PATCH /tenants/current/members/:id/status, DELETE /tenants/current/members/:id, GET /tenants/current/product-roles, PUT /tenants/current/members/:id/product-roles, PATCH /users/me |
 | Invitations | 2 | POST /invitations (crear), DELETE /invitations/:id (revocar) |
 | Plans | 2 | GET /plans, GET /plans/:id |
 | Plan Change | 1 | POST /tenants/current/plan-change |
-| Billing | 5 | GET /billing/payment-method (**stub**→null), POST /billing/payment-method (**stub**→202), GET /billing/invoices (**stub**→vacío), GET /billing/invoices/:id/signed-url (**stub**→404), GET /billing/documents/:id/signed-url (real) |
+| Billing | 4 | GET /billing/payment-method (**stub**→null), POST /billing/payment-method (**stub**→202), GET /billing/payments (real, con `documentId`), GET /billing/documents/:id/signed-url (real) |
 | Webhooks | 1 | POST /webhooks/bancard |
 | Well-known | 1 | GET /.well-known/jwks.json |
+| Modules | 3 | GET /tenants/current/modules, GET /tenants/current/products, GET /tenants/current/admin-sections |
 | Health | 1 | GET /healthz |
 
-> **Billing stubs**: Los 4 endpoints nuevos de billing retornan estado vacío/nulo. Son placeholders para cuando se implemente la tokenización de tarjetas vía Bancard y la generación de facturas reales.
+> **Billing stubs restantes**: solo los dos de `payment-method`. Son placeholders para cuando se
+> implemente la tokenización de tarjetas vía Bancard.
 
 ## Admin Org Management (2026-05-14)
 

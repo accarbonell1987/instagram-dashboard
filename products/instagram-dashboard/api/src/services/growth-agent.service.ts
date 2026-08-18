@@ -1,3 +1,4 @@
+import type { Owner } from '../domain/owner.js';
 import type {
   ChatCompletionMessageFunctionToolCall,
   ChatCompletionMessageParam,
@@ -89,10 +90,11 @@ export class GrowthAgentService {
 
   async chat(params: ChatParams): Promise<ChatResult> {
     const { tenantId, userId, sessionId, userMessage, history } = params;
+    const owner = { tenantId, userId };
 
     // ── Pre-call quota enforcement ──
     if (this.usageTracker) {
-      const check = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
+      const check = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
       if (!check.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', check.limit!, check.resetsAt!);
@@ -100,9 +102,9 @@ export class GrowthAgentService {
     }
 
     // Read agent config to build dynamic system prompt
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     const agentConfig = account
-      ? await this.repos.instagram.getAgentConfig(tenantId, userId)
+      ? await this.repos.instagram.getAgentConfig(owner)
       : null;
     const systemPrompt = buildSystemPrompt(agentConfig);
 
@@ -136,7 +138,7 @@ export class GrowthAgentService {
       if (response.finishReason === 'stop') {
         // ── Loop-end quota check ──
         if (this.usageTracker) {
-          const loopCheck = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
+          const loopCheck = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
           const totalUsed = totalPromptTokens + totalCompletionTokens;
 
           if (loopCheck.remaining !== undefined && totalUsed > (loopCheck.remaining ?? 0)) {
@@ -147,15 +149,15 @@ export class GrowthAgentService {
 
             // Save messages even for partial result
             await this.repos.chatMessage.save({
-              tenantId, sessionId, role: 'user' as const, content: userMessage,
+              tenantId, userId, sessionId, role: 'user' as const, content: userMessage,
             });
             await this.repos.chatMessage.save({
-              tenantId, sessionId, role: 'assistant' as const, content: cleanedReply,
+              tenantId, userId, sessionId, role: 'assistant' as const, content: cleanedReply,
             });
 
             // Log accumulated usage
             await this.usageTracker.log({
-              tenantId,
+              tenantId: owner.tenantId,
               operation: 'chat',
               promptTokens: totalPromptTokens,
               completionTokens: totalCompletionTokens,
@@ -174,24 +176,24 @@ export class GrowthAgentService {
         }
 
         // Normal success path
-        const batch = await this.suggestionService.createBatch(tenantId, userMessage);
-        const suggestions = await this.parseSuggestionsBlock(tenantId, response.content, batch.id);
+        const batch = await this.suggestionService.createBatch(owner, userMessage);
+        const suggestions = await this.parseSuggestionsBlock(owner, response.content, batch.id);
 
         const cleanedReply = response.content
           .replace(/<suggestions>[\s\S]*?<\/suggestions>/g, '')
           .trim();
 
         await this.repos.chatMessage.save({
-          tenantId, sessionId, role: 'user' as const, content: userMessage,
+          tenantId, userId, sessionId, role: 'user' as const, content: userMessage,
         });
         await this.repos.chatMessage.save({
-          tenantId, sessionId, role: 'assistant' as const, content: cleanedReply,
+          tenantId, userId, sessionId, role: 'assistant' as const, content: cleanedReply,
         });
 
         // ── Post-call logging ──
         if (this.usageTracker) {
           await this.usageTracker.log({
-            tenantId,
+            tenantId: owner.tenantId,
             operation: 'chat',
             promptTokens: totalPromptTokens,
             completionTokens: totalCompletionTokens,
@@ -221,7 +223,7 @@ export class GrowthAgentService {
 
         // Dispatch each tool call
         for (const tc of response.toolCalls) {
-          const result = await this.dispatchTool(tenantId, userId, tc.name, tc.arguments);
+          const result = await this.dispatchTool(owner, tc.name, tc.arguments);
           toolCallsTrace.push({ name: tc.name, arguments: tc.arguments, result });
           messages.push({
             role: 'tool',
@@ -236,9 +238,9 @@ export class GrowthAgentService {
     throw new InternalError('AGENT_TIMEOUT');
   }
 
-  async generateSuggestions(tenantId: string, userId?: string): Promise<ContentSuggestion[]> {
-    const agentConfig = userId
-      ? await this.repos.instagram.getAgentConfig(tenantId, userId)
+  async generateSuggestions(owner: Owner): Promise<ContentSuggestion[]> {
+    const agentConfig = owner.userId
+      ? await this.repos.instagram.getAgentConfig(owner)
       : null;
     const systemPrompt = buildSystemPrompt(agentConfig);
     const suggestionPrompt = buildSuggestionPrompt(agentConfig);
@@ -255,33 +257,31 @@ export class GrowthAgentService {
       'AGENT_TIMEOUT',
     );
 
-    return this.parseSuggestionsBlock(tenantId, response.content /* no batchId for scheduled generation */);
+    return this.parseSuggestionsBlock(owner, response.content /* no batchId for scheduled generation */);
   }
 
   // ─── Tool dispatch ──────────────────────────────────────────────────────────
 
   private async dispatchTool(
-    tenantId: string,
-    userId: string,
+    owner: Owner,
     toolName: string,
     args: Record<string, unknown>,
   ): Promise<unknown> {
     switch (toolName) {
       case 'getDashboardContext':
-        return this.getDashboardContext(tenantId, userId);
+        return this.getDashboardContext(owner);
       case 'getTopPosts':
         return this.getTopPosts(
-          tenantId,
-          userId,
+          owner,
           (args['by'] as 'saves_shares' | 'reach' | 'engagement_rate' | undefined) ?? 'saves_shares',
           typeof args['n'] === 'number' ? args['n'] : 5,
         );
       case 'getFormatBreakdown':
-        return this.getFormatBreakdown(tenantId, userId);
+        return this.getFormatBreakdown(owner);
       case 'getPostingHeatmap':
-        return this.getPostingHeatmap(tenantId, userId);
+        return this.getPostingHeatmap(owner);
       case 'getSuggestionOutcomes':
-        return this.getSuggestionOutcomes(tenantId);
+        return this.getSuggestionOutcomes(owner);
       default:
         return { error: `Unknown tool: ${toolName}` };
     }
@@ -289,8 +289,8 @@ export class GrowthAgentService {
 
   // ─── Tool methods ───────────────────────────────────────────────────────────
 
-  async getDashboardContext(tenantId: string, userId: string): Promise<DashboardContext> {
-    const data = await this.dashboardService.getDashboardData(tenantId, userId);
+  async getDashboardContext(owner: Owner): Promise<DashboardContext> {
+    const data = await this.dashboardService.getDashboardData(owner);
     const topFormat = data.formatBreakdown.length > 0
       ? data.formatBreakdown.reduce((best, curr) =>
           (curr.avgSaves + curr.avgShares) > (best.avgSaves + best.avgShares) ? curr : best,
@@ -310,12 +310,11 @@ export class GrowthAgentService {
   }
 
   async getTopPosts(
-    tenantId: string,
-    userId: string,
+    owner: Owner,
     by: 'saves_shares' | 'reach' | 'engagement_rate',
     n: number,
   ): Promise<PostSummary[]> {
-    const data = await this.dashboardService.getDashboardData(tenantId, userId);
+    const data = await this.dashboardService.getDashboardData(owner);
     const ranking = data.ranking;
 
     // Sort ranking by the requested metric (ranking type has saves, shares, totalEngagement)
@@ -341,8 +340,8 @@ export class GrowthAgentService {
     });
   }
 
-  async getFormatBreakdown(tenantId: string, userId: string): Promise<FormatStats[]> {
-    const data = await this.dashboardService.getDashboardData(tenantId, userId);
+  async getFormatBreakdown(owner: Owner): Promise<FormatStats[]> {
+    const data = await this.dashboardService.getDashboardData(owner);
     // FormatBreakdown type: format, postCount, avgSaves, avgShares, avgLikes, avgComments
     return data.formatBreakdown.map((f) => ({
       format: f.format,
@@ -354,8 +353,8 @@ export class GrowthAgentService {
     }));
   }
 
-  async getPostingHeatmap(tenantId: string, userId: string): Promise<HeatmapData[]> {
-    const data = await this.dashboardService.getDashboardData(tenantId, userId);
+  async getPostingHeatmap(owner: Owner): Promise<HeatmapData[]> {
+    const data = await this.dashboardService.getDashboardData(owner);
     // HeatmapCell has: day, slot, totalSavesShares, postCount
     return data.heatmap.map((h) => ({
       dayOfWeek: this.dayNameToNumber(h.day),
@@ -364,8 +363,8 @@ export class GrowthAgentService {
     }));
   }
 
-  async getSuggestionOutcomes(tenantId: string): Promise<SuggestionOutcomeResult[]> {
-    const suggestions = await this.repos.suggestion.findByTenant(tenantId, 'used');
+  async getSuggestionOutcomes(owner: Owner): Promise<SuggestionOutcomeResult[]> {
+    const suggestions = await this.repos.suggestion.findByOwner(owner, 'used');
     return suggestions.slice(0, 20).map((s) => ({
       id: s.id,
       category: s.category,
@@ -378,7 +377,7 @@ export class GrowthAgentService {
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
   private async parseSuggestionsBlock(
-    tenantId: string,
+    owner: Owner,
     content: string,
     batchId?: string,
   ): Promise<ContentSuggestion[]> {
@@ -397,7 +396,7 @@ export class GrowthAgentService {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- parsed from untrusted JSON; fields may be absent at runtime despite the type
       if (item.category && item.content) {
         const suggestion = await this.suggestionService.createSuggestion(
-          tenantId,
+          owner,
           normalizeCategory(item.category),
           item.content,
           batchId,

@@ -38,7 +38,11 @@ export function BillingPlanSection(): JSX.Element {
   const currentPlan = plans.find((p) => p.id === tenant?.planId) ?? null;
 
   return (
-    <>
+    <section className="flex flex-col gap-3">
+      {/* The heading lives here, not inside the card: the card is the same one
+          the customer picked their plan from during signup, and wrapping it in
+          a second bordered panel would box a box. */}
+      <h3 className="text-foreground text-lg font-medium">Plan contratado</h3>
       <CurrentPlanCard
         plan={currentPlan}
         isLoading={isLoading}
@@ -50,6 +54,6 @@ export function BillingPlanSection(): JSX.Element {
         plans={plans}
         currentPlanId={tenant?.planId ?? ''}
       />
-    </>
+    </section>
   );
 }

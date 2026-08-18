@@ -4,12 +4,10 @@ import { describe, it, expect } from 'vitest';
 import {
   getPaymentMethod,
   requestPaymentMethodChange,
-  listInvoices,
-  getInvoiceSignedUrl,
 } from './billing.service';
 
 import { ConflictError, AuthError, ForbiddenError } from '@/lib/api/errors';
-import { seedDb, SEED } from '@/lib/mocks/seed';
+import { seedDb } from '@/lib/mocks/seed';
 import { server } from '@/lib/mocks/server';
 
 
@@ -88,66 +86,5 @@ describe('requestPaymentMethodChange', () => {
       )
     );
     await expect(requestPaymentMethodChange()).rejects.toBeInstanceOf(ForbiddenError);
-  });
-});
-
-// ─── listInvoices ─────────────────────────────────────────────────────────────
-
-describe('listInvoices', () => {
-  it('returns items, total, page, pageSize for default params', async () => {
-    seedDb('happy');
-    const result = await listInvoices();
-    expect(Array.isArray(result.items)).toBe(true);
-    expect(result.items.length).toBeGreaterThan(0);
-    expect(typeof result.total).toBe('number');
-    expect(result.page).toBe(1);
-    expect(result.pageSize).toBe(10);
-  });
-
-  it('respects page and pageSize query params', async () => {
-    seedDb('happy');
-    const result = await listInvoices({ page: 1, pageSize: 2 });
-    expect(result.items.length).toBeLessThanOrEqual(2);
-    expect(result.page).toBe(1);
-    expect(result.pageSize).toBe(2);
-  });
-
-  it('returns empty items array in billing-empty scenario', async () => {
-    seedDb('billing-empty');
-    const result = await listInvoices();
-    expect(result.items).toHaveLength(0);
-    expect(result.total).toBe(0);
-  });
-
-  it('throws AuthError on 401', async () => {
-    server.use(
-      http.get(`${BASE}/billing/invoices`, () =>
-        HttpResponse.json({ type: 'about:blank', title: 'Unauthorized', status: 401 }, { status: 401, headers: { 'Content-Type': 'application/problem+json' } })
-      )
-    );
-    await expect(listInvoices()).rejects.toBeInstanceOf(AuthError);
-  });
-});
-
-// ─── getInvoiceSignedUrl ──────────────────────────────────────────────────────
-
-describe('getInvoiceSignedUrl', () => {
-  it('returns url and expiresAt for a valid invoiceId with a documentId', async () => {
-    seedDb('happy');
-    const invoiceId = SEED.invoiceIds[0]; // paid invoice with documentId
-    const result = await getInvoiceSignedUrl(invoiceId);
-    expect(typeof result.url).toBe('string');
-    expect(typeof result.expiresAt).toBe('string');
-  });
-
-  it('throws ApiError with status 404 for a non-existent invoiceId', async () => {
-    seedDb('happy');
-    await expect(getInvoiceSignedUrl('non-existent-id')).rejects.toThrow();
-  });
-
-  it('throws ApiError with status 404 for an invoiceId whose documentId is null', async () => {
-    seedDb('happy');
-    const invoiceId = SEED.invoiceIds[2]; // pending invoice, no documentId
-    await expect(getInvoiceSignedUrl(invoiceId)).rejects.toThrow();
   });
 });

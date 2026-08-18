@@ -1,0 +1,185 @@
+'use client';
+
+import { Button, DataTable, Td, Th, Tr } from '@core/ui';
+import { Download } from 'lucide-react';
+import { useEffect, useState, type JSX } from 'react';
+
+import { PaymentStatusBadge } from './payment-status-badge';
+
+import type { components } from '@/lib/api/types';
+import { listTenantPayments } from '@/modules/shared/billing/services/billing.service';
+import { getDocumentSignedUrl } from '@/modules/shared/billing/services/document.service';
+
+type Payment = components['schemas']['Payment'];
+
+const METHOD_LABELS: Record<string, string> = {
+  bancard: 'Tarjeta',
+  bank_transfer: 'Transferencia bancaria',
+};
+
+/**
+ * How the payment came to be settled, in the customer's terms. The API also
+ * reports *who* settled it; that is an internal detail and is deliberately not
+ * shown here — the tenant needs to know a human reviewed it, not which one.
+ */
+const SETTLEMENT_LABELS: Record<string, string> = {
+  webhook: 'Confirmado automáticamente',
+  agent: 'Verificado por nuestro equipo',
+  manual_admin: 'Activado manualmente',
+};
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('es-PY', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function formatAmount(amount: number, currency: string): string {
+  return `${amount.toLocaleString('es-PY')} ${currency}`;
+}
+
+function PaymentSkeletonRow(): JSX.Element {
+  return (
+    <Tr aria-hidden>
+      <Td>
+        <div className="bg-muted h-4 w-20 animate-pulse rounded" />
+      </Td>
+      <Td align="right">
+        <div className="bg-muted ml-auto h-4 w-24 animate-pulse rounded" />
+      </Td>
+      <Td>
+        <div className="bg-muted h-4 w-32 animate-pulse rounded" />
+      </Td>
+      <Td>
+        <div className="bg-muted h-5 w-20 animate-pulse rounded-full" />
+      </Td>
+      <Td align="right">
+        <div className="bg-muted ml-auto h-7 w-7 animate-pulse rounded" />
+      </Td>
+    </Tr>
+  );
+}
+
+export function PaymentsSection(): JSX.Element {
+  const [items, setItems] = useState<Payment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  async function handleDownload(documentId: string): Promise<void> {
+    setDownloadingId(documentId);
+    try {
+      const result = await getDocumentSignedUrl(documentId);
+      window.open(result.url, '_blank');
+    } catch {
+      setError('No pudimos abrir la factura. Intentá de nuevo.');
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    listTenantPayments()
+      .then((result) => {
+        if (!cancelled) setItems(result.items);
+      })
+      .catch(() => {
+        if (!cancelled) setError('No pudimos cargar tus pagos. Recargá la página.');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h3 className="text-foreground text-lg font-medium">Pagos</h3>
+        <p className="text-muted-foreground text-sm">
+          Todo lo que pagaste, con la fecha, el medio que usaste y la factura.
+        </p>
+      </div>
+      <DataTable
+        isLoading={isLoading}
+        loadingLabel="Cargando pagos"
+        loadingRows={Array.from({ length: 3 }).map((_, i) => (
+          <PaymentSkeletonRow key={i} />
+        ))}
+        error={error}
+        isEmpty={items.length === 0}
+        empty={{ text: 'Todavía no registramos ningún pago.' }}
+        caption="Historial de pagos"
+        head={
+          <>
+            <Th>Fecha</Th>
+            <Th align="right">Monto</Th>
+            <Th>Medio</Th>
+            <Th>Estado</Th>
+            <Th align="right">Factura</Th>
+          </>
+        }
+      >
+        {items.map((payment) => {
+          // Bound to a const so the null check narrows inside the click handler:
+          // TypeScript will not carry a property narrowing into a closure.
+          const invoiceDocumentId = payment.documentId ?? null;
+          return (
+            <Tr key={payment.id}>
+              <Td className="font-medium">{formatDate(payment.createdAt)}</Td>
+              <Td align="right" className="tabular-nums">
+                {formatAmount(payment.amount, payment.currency)}
+              </Td>
+              <Td>
+                <div>{METHOD_LABELS[payment.method] ?? payment.method}</div>
+                {payment.reference != null && payment.reference !== '' && (
+                  <div className="text-muted-foreground font-mono text-xs">{payment.reference}</div>
+                )}
+              </Td>
+              <Td>
+                <PaymentStatusBadge status={payment.status} />
+                {payment.settlementKind != null && (
+                  <div className="text-muted-foreground mt-0.5 text-xs">
+                    {SETTLEMENT_LABELS[payment.settlementKind] ?? payment.settlementKind}
+                  </div>
+                )}
+                {/* The settlement note is written for the customer to read —
+                    it is what the agent saw, or why the payment was refused. */}
+                {payment.note != null && payment.note !== '' && (
+                  <p className="text-muted-foreground mt-0.5 text-xs italic">{payment.note}</p>
+                )}
+              </Td>
+              <Td align="right">
+                {/* Absent until the charge settles and settlement has actually
+                    written the PDF — a dash beats a button that downloads
+                    nothing. */}
+                {invoiceDocumentId !== null ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => {
+                      void handleDownload(invoiceDocumentId);
+                    }}
+                    disabled={downloadingId === invoiceDocumentId}
+                    aria-busy={downloadingId === invoiceDocumentId}
+                    aria-label={`Descargar la factura del ${formatDate(payment.createdAt)}`}
+                  >
+                    <Download className="h-4 w-4" aria-hidden />
+                  </Button>
+                ) : (
+                  <span className="text-muted-foreground text-xs">—</span>
+                )}
+              </Td>
+            </Tr>
+          );
+        })}
+      </DataTable>
+    </section>
+  );
+}

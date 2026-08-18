@@ -1,12 +1,9 @@
 'use client';
 
-import { Badge, Button } from '@core/ui';
+import { Badge, Button, DataTable, Td, Th, Tr } from '@core/ui';
 import { PencilIcon, TrashIcon } from 'lucide-react';
 
 import type { Role } from '../roles.types';
-
-import { DataTable } from '@/shared/components';
-import type { DataTableColumn } from '@/shared/components';
 
 export interface RolesTableProps {
   /** Roles to display */
@@ -45,80 +42,62 @@ function PermissionBadges({ permissions }: { permissions: string[] }) {
 }
 
 export function RolesTable({ roles, loading, onEdit, onDelete }: RolesTableProps) {
-  const columns: DataTableColumn<Role>[] = [
-    {
-      key: 'id',
-      header: 'ID',
-      width: 'w-16',
-      render: (role) => <span className="text-muted-foreground font-mono text-sm">{role.id}</span>,
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      width: 'w-40',
-      render: (role) => <span className="font-medium">{role.name}</span>,
-    },
-    {
-      key: 'description',
-      header: 'Description',
-      render: (role) => (
-        <span className="text-muted-foreground max-w-xs truncate">{role.description ?? '—'}</span>
-      ),
-    },
-    {
-      key: 'permissions',
-      header: 'Permissions',
-      render: (role) => <PermissionBadges permissions={role.permissions} />,
-    },
-    {
-      key: 'createdAt',
-      header: 'Created',
-      width: 'w-40',
-      render: (role) => (
-        <span className="text-muted-foreground text-sm">
-          {new Date(role.createdAt).toLocaleDateString()}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      width: 'w-24',
-      align: 'right',
-      render: (role) => (
-        <div className="flex justify-end gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              onEdit(role);
-            }}
-            aria-label={`Edit ${role.name}`}
-          >
-            <PencilIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              onDelete(role);
-            }}
-            aria-label={`Delete ${role.name}`}
-          >
-            <TrashIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <DataTable
-      items={roles}
-      columns={columns}
-      getRowKey={(role) => role.id}
-      loading={loading}
-      emptyMessage="No roles found."
-    />
+      isLoading={loading}
+      isEmpty={roles.length === 0}
+      empty={{ text: 'No roles found.' }}
+      caption="Roles"
+      head={
+        <>
+          <Th width="w-16">ID</Th>
+          <Th width="w-40">Name</Th>
+          <Th>Description</Th>
+          <Th>Permissions</Th>
+          <Th width="w-40">Created</Th>
+          <Th width="w-24" align="right">
+            Actions
+          </Th>
+        </>
+      }
+    >
+      {roles.map((role) => (
+        <Tr key={role.id}>
+          <Td className="text-muted-foreground font-mono text-sm">{role.id}</Td>
+          <Td className="font-medium">{role.name}</Td>
+          <Td className="text-muted-foreground max-w-xs truncate">{role.description ?? '—'}</Td>
+          <Td>
+            <PermissionBadges permissions={role.permissions} />
+          </Td>
+          <Td className="text-muted-foreground text-sm">
+            {new Date(role.createdAt).toLocaleDateString()}
+          </Td>
+          <Td align="right">
+            <div className="flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  onEdit(role);
+                }}
+                aria-label={`Edit ${role.name}`}
+              >
+                <PencilIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  onDelete(role);
+                }}
+                aria-label={`Delete ${role.name}`}
+              >
+                <TrashIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </Td>
+        </Tr>
+      ))}
+    </DataTable>
   );
 }

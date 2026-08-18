@@ -1,11 +1,14 @@
 import type { InstagramAccount, ConnectAccountInput, AgentConfig } from '../../domain/account.js';
 import type { AccountInsight, DashboardData, InsightSnapshot, NorthStarMetrics } from '../../domain/insight.js';
 import type { InstagramMedia, MediaMetrics, MediaWithMetrics, PaginatedMedia } from '../../domain/media.js';
+import type { Owner } from '../../domain/owner.js';
 import type { FilterParams } from '../repository.interface.js';
 
 export interface InstagramRepository {
   // Account
-  findAccountByTenantId(tenantId: string): Promise<InstagramAccount | null>;
+  // The caller's own account. Everyone in a tenant connects their own, so a
+  // lookup by tenant alone would answer with whichever row came back first.
+  findAccountByOwner(owner: Owner): Promise<InstagramAccount | null>;
   findAccountById(accountId: string): Promise<InstagramAccount | null>;
   findAccountWithToken(
     accountId: string,
@@ -14,13 +17,17 @@ export interface InstagramRepository {
     daysThreshold: number,
   ): Promise<{ id: string; tenantId: string; igUserId: string; tokenEncrypted: string }[]>;
   upsertAccount(
-    tenantId: string,
+    owner: Owner,
     input: ConnectAccountInput,
     accessTokenHash: string,
     tokenEncrypted: string,
     tokenExpiresAt: Date,
   ): Promise<InstagramAccount>;
-  disconnectAccount(tenantId: string, userId: string): Promise<InstagramAccount>;
+  disconnectAccount(owner: Owner): Promise<InstagramAccount>;
+  // Tenant administration: every account the organisation holds, and cutting
+  // one loose by its id rather than by whoever is asking.
+  listAccountsByTenantId(tenantId: string): Promise<InstagramAccount[]>;
+  disconnectAccountById(tenantId: string, accountId: string): Promise<InstagramAccount>;
   updateToken(
     accountId: string,
     accessTokenHash: string,
@@ -39,13 +46,13 @@ export interface InstagramRepository {
   updateSyncStatus(accountId: string, status: string, lastSyncAt?: Date): Promise<void>;
 
   // Agent Config
-  getAgentConfig(tenantId: string, userId: string): Promise<AgentConfig | null>;
-  saveAgentConfig(tenantId: string, userId: string, config: AgentConfig): Promise<void>;
+  getAgentConfig(owner: Owner): Promise<AgentConfig | null>;
+  saveAgentConfig(owner: Owner, config: AgentConfig): Promise<void>;
 
   // FAL API Key (per-tenant, AES-256-GCM encrypted)
-  hasFalApiKey(tenantId: string): Promise<boolean>;
-  saveFalApiKey(tenantId: string, encryptedKey: string): Promise<void>;
-  getFalApiKeyEncrypted(tenantId: string): Promise<string | null>;
+  hasFalApiKey(owner: Owner): Promise<boolean>;
+  saveFalApiKey(owner: Owner, encryptedKey: string): Promise<void>;
+  getFalApiKeyEncrypted(owner: Owner): Promise<string | null>;
 
   // Media
   findMediaByIgId(accountId: string, igMediaId: string): Promise<InstagramMedia | null>;

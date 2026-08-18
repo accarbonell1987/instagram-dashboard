@@ -5,6 +5,7 @@ import type { EffectiveModule } from '../../domain/index.js'
 import {
   GetTenantModulesResponseSchema,
   GetTenantProductsResponseSchema,
+  TenantAdminSectionsResponseSchema,
 } from './modules.schemas.js'
 import { commonErrorResponses } from '../schemas/index.js'
 
@@ -31,6 +32,19 @@ function toModuleTree(modules: EffectiveModule[]) {
     }))
 }
 
+/**
+ * Whose product roles narrow the module list — nobody's, for an admin.
+ *
+ * The resolver intersects the plan's modules with the modules the user's
+ * product roles permit, and a user with no roles keeps everything. A tenant
+ * admin is the person who hands those roles out: filtering them by their own
+ * assignment would let them lock themselves out of the product they administer,
+ * with only a SuperAdmin able to undo it. So an admin resolves unfiltered.
+ */
+function roleFilterSubject(role: string, userId: string): string | undefined {
+  return role === 'User' ? userId : undefined
+}
+
 export function createTenantModulesRouter(
   moduleService: ModuleService,
   authGuard: MiddlewareHandler,
@@ -39,6 +53,7 @@ export function createTenantModulesRouter(
 
   router.use('/tenants/current/modules', authGuard)
   router.use('/tenants/current/products', authGuard)
+  router.use('/tenants/current/admin-sections', authGuard)
 
   const getTenantModulesRoute = createRoute({
     method: 'get',
@@ -75,7 +90,10 @@ export function createTenantModulesRouter(
       )
     }
 
-    const effectiveModules = await moduleService.getEffectiveModulesForTenant(tenantUuid, userId)
+    const effectiveModules = await moduleService.getEffectiveModulesForTenant(
+      tenantUuid,
+      roleFilterSubject(role, userId),
+    )
 
     return c.json(
       {
@@ -114,7 +132,7 @@ export function createTenantModulesRouter(
 
     const products = await moduleService.getAvailableProductsForTenant(
       tenantUuid,
-      userId,
+      roleFilterSubject(role, userId),
       role === 'SuperAdmin',
     )
 
@@ -126,6 +144,50 @@ export function createTenantModulesRouter(
           description: product.description,
           defaultUrl: product.defaultUrl,
           modules: toModuleTree(product.modules),
+        })),
+      },
+      200,
+    )
+  })
+
+  // ── GET /tenants/current/admin-sections ──────────────────────────────────
+
+  const getTenantAdminSectionsRoute = createRoute({
+    method: 'get',
+    path: '/tenants/current/admin-sections',
+    operationId: 'getTenantAdminSections',
+    summary: 'Settings screens contributed by the tenant products',
+    tags: ['modules'],
+    responses: {
+      200: {
+        content: { 'application/json': { schema: TenantAdminSectionsResponseSchema } },
+        description: 'Admin sections the caller may see',
+      },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+    },
+  })
+
+  router.openapi(getTenantAdminSectionsRoute, async (c) => {
+    const { tenantUuid, role, sub: userId } = c.var.user
+
+    const sections = await moduleService.listAdminSectionsForTenant(
+      tenantUuid,
+      role,
+      roleFilterSubject(role, userId),
+    )
+
+    return c.json(
+      {
+        sections: sections.map((section) => ({
+          key: section.key,
+          label: section.label,
+          description: section.description,
+          productId: section.productId,
+          productName: section.productName,
+          productUrl: section.productUrl,
+          path: section.path,
+          moduleId: section.moduleId,
         })),
       },
       200,

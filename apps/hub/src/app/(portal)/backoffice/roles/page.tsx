@@ -1,26 +1,10 @@
 'use client';
 
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@core/ui';
+import { Button, DataTable, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Td, Th, Tr } from '@core/ui';
 import { Plus, Pencil, Trash2, Puzzle } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 import { toast } from 'sonner';
 
-import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import { ModuleTransfer } from '@/components/module-transfer';
 import { ApiError } from '@/lib/api/errors';
 import { listModules, type AdminModule } from '@/modules/backoffice/modulo-admin/services/module-admin.service';

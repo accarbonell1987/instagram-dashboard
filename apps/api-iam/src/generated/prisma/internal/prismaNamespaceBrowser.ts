@@ -73,6 +73,7 @@ export const ModelName = {
   TenantModuleOverride: 'TenantModuleOverride',
   TenantProductSubscription: 'TenantProductSubscription',
   Entitlement: 'Entitlement',
+  ProductAdminSection: 'ProductAdminSection',
   ProductRole: 'ProductRole',
   UserProductRole: 'UserProductRole',
   RoleModuleAccess: 'RoleModuleAccess'
@@ -431,6 +432,24 @@ export const EntitlementScalarFieldEnum = {
 } as const
 
 export type EntitlementScalarFieldEnum = (typeof EntitlementScalarFieldEnum)[keyof typeof EntitlementScalarFieldEnum]
+
+
+export const ProductAdminSectionScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  moduleId: 'moduleId',
+  key: 'key',
+  label: 'label',
+  description: 'description',
+  path: 'path',
+  visibleToRole: 'visibleToRole',
+  displayOrder: 'displayOrder',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductAdminSectionScalarFieldEnum = (typeof ProductAdminSectionScalarFieldEnum)[keyof typeof ProductAdminSectionScalarFieldEnum]
 
 
 export const ProductRoleScalarFieldEnum = {

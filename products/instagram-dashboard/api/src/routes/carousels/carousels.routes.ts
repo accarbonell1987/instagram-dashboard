@@ -1,3 +1,4 @@
+import { ownerOf } from '../../domain/owner.js';
 import { Hono } from 'hono';
 
 import { AppError, InsufficientScopeError } from '../../errors.js';
@@ -31,7 +32,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
       );
     }
 
-    const slides = await carouselService.previewScript(tenant.tenantId, parsed.data.topic);
+    const slides = await carouselService.previewScript(ownerOf(tenant), parsed.data.topic);
     return c.json({ success: true, data: { slides } }, 200);
   });
 
@@ -40,7 +41,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     const tenant = c.get('tenant');
     const page = Math.max(1, Number(c.req.query('page') ?? '1'));
     const limit = Math.min(50, Math.max(1, Number(c.req.query('limit') ?? '20')));
-    const result = await carouselService.listCarousels(tenant.tenantId, page, limit);
+    const result = await carouselService.listCarousels(ownerOf(tenant), page, limit);
     return c.json({ success: true, data: result }, 200);
   });
 
@@ -58,7 +59,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     }
 
     const result = await carouselService.createCarousel(
-      tenant.tenantId,
+      ownerOf(tenant),
       parsed.data.topic,
       parsed.data.suggestionId,
       parsed.data.slides,
@@ -72,7 +73,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     const tenant = c.get('tenant');
     const id = c.req.param('id');
 
-    const carousel = await carouselService.getCarousel(id, tenant.tenantId);
+    const carousel = await carouselService.getCarousel(id, tenant);
     return c.json({ success: true, data: carousel }, 200);
   });
 
@@ -100,7 +101,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     const slide = await carouselService.updateSlide(
       carouselId,
       slideId,
-      tenant.tenantId,
+      ownerOf(tenant),
       slideData,
     );
 
@@ -113,7 +114,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     const carouselId = c.req.param('id');
     const slideId = c.req.param('slideId');
 
-    await carouselService.regenerateSlide(carouselId, slideId, tenant.tenantId);
+    await carouselService.regenerateSlide(carouselId, slideId, tenant);
     return c.json({ success: true, data: { queued: true } }, 202);
   });
 
@@ -131,7 +132,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
       );
     }
 
-    const slides = await carouselService.reorderSlides(carouselId, tenant.tenantId, parsed.data.order);
+    const slides = await carouselService.reorderSlides(carouselId, tenant, parsed.data.order);
     return c.json({ success: true, data: { slides } }, 200);
   });
 
@@ -140,7 +141,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     const tenant = c.get('tenant');
     const carouselId = c.req.param('id');
     try {
-      await carouselService.deleteCarousel(carouselId, tenant.tenantId);
+      await carouselService.deleteCarousel(carouselId, tenant);
       return c.json({ success: true, data: { deleted: true } }, 200);
     } catch (error) {
       if (error instanceof AppError) {
@@ -171,7 +172,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     }
 
     try {
-      const result = await carouselService.regenerateCarousel(carouselId, tenant.tenantId, body);
+      const result = await carouselService.regenerateCarousel(carouselId, tenant, body);
       return c.json({ success: true, data: result }, 202);
     } catch (error) {
       if (error instanceof AppError) {
@@ -197,8 +198,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
       );
     }
 
-    const result = await carouselService.createUploadCarousel(tenant.tenantId, {
-      tenantId: tenant.tenantId,
+    const result = await carouselService.createUploadCarousel(ownerOf(tenant), {
       topic: parsed.data.topic,
       ...(parsed.data.caption !== undefined && { caption: parsed.data.caption }),
       slides: parsed.data.slides.map((s) => ({
@@ -257,7 +257,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     const imageBuffer = Buffer.from(arrayBuffer);
 
     try {
-      await carouselService.uploadSlideImage(carouselId, slideId, tenant.tenantId, imageBuffer);
+      await carouselService.uploadSlideImage(carouselId, slideId, tenant, imageBuffer);
     } catch (error) {
       if (error instanceof AppError) {
         return c.json(
@@ -289,7 +289,7 @@ export function createCarouselRoutes(carouselService: CarouselService): Hono<any
     }
 
     try {
-      const result = await carouselService.publishCarousel(carouselId, tenant.tenantId, body);
+      const result = await carouselService.publishCarousel(carouselId, tenant, body);
       return c.json({ success: true, data: result }, 200);
     } catch (error) {
       if (error instanceof InsufficientScopeError) {

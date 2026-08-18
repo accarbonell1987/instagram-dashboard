@@ -1,3 +1,4 @@
+import { ownerOf } from '../../domain/owner.js';
 import { Hono } from 'hono';
 
 import type { SuggestionService } from '../../services/suggestion.service.js';
@@ -17,7 +18,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
       return c.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details: parsed.error.issues } }, 400);
     }
 
-    const suggestion = await suggestionService.generateContentIdea(tenant.tenantId, parsed.data.prompt);
+    const suggestion = await suggestionService.generateContentIdea(ownerOf(tenant), parsed.data.prompt);
 
     return c.json({
       success: true,
@@ -36,14 +37,15 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
   // GET / — List suggestions (optionally filtered by status)
   routes.get('/', async (c) => {
     const tenant = c.get('tenant');
-    const { tenantId } = tenant;
+    const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
 
     const query = SuggestionsQuerySchema.safeParse({
       status: c.req.query('status'),
     });
 
     const status = query.success ? query.data.status : undefined;
-    const suggestions = await suggestionService.getSuggestions(tenantId, status);
+    const suggestions = await suggestionService.getSuggestions(owner, status);
 
     return c.json(
       {
@@ -65,7 +67,8 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
   // POST /:id/mark-used — Mark a suggestion as used
   routes.post('/:id/mark-used', async (c) => {
     const tenant = c.get('tenant');
-    const { tenantId } = tenant;
+    const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
     const { id } = c.req.param();
 
     let body: { linkedMediaId?: string | undefined };
@@ -93,7 +96,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
       );
     }
 
-    await suggestionService.markUsed(tenantId, id, body.linkedMediaId);
+    await suggestionService.markUsed(owner, id, body.linkedMediaId);
 
     return c.json({ success: true, data: { id } }, 200);
   });
@@ -101,10 +104,11 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
   // POST /:id/dismiss — Dismiss a suggestion
   routes.post('/:id/dismiss', async (c) => {
     const tenant = c.get('tenant');
-    const { tenantId } = tenant;
+    const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
     const { id } = c.req.param();
 
-    await suggestionService.dismiss(tenantId, id);
+    await suggestionService.dismiss(owner, id);
 
     return c.json({ success: true, data: { id } }, 200);
   });
@@ -115,7 +119,7 @@ export function createSuggestionsRoutes(suggestionService: SuggestionService): H
     const page = parseInt(c.req.query('page') ?? '1', 10);
     const limit = Math.min(parseInt(c.req.query('limit') ?? '10', 10), 50);
 
-    const result = await suggestionService.listBatches(tenant.tenantId, page, limit);
+    const result = await suggestionService.listBatches(ownerOf(tenant), page, limit);
 
     return c.json({
       success: true,

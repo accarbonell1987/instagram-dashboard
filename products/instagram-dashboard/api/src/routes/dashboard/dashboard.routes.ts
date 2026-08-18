@@ -1,3 +1,4 @@
+import { ownerOf } from '../../domain/owner.js';
 import { createRoute } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 
@@ -97,8 +98,7 @@ export function createDashboardRoutes(
     const periodDays = period === '7d' ? 7 : period === '30d' ? 30 : period === '1y' ? 365 : 90;
 
     const data = await dashboardService.getDashboardDataWithNorthStar(
-      tenant.tenantId,
-      tenant.userId,
+      ownerOf(tenant),
       periodDays,
     );
 
@@ -110,7 +110,7 @@ export function createDashboardRoutes(
 
   routes.openapi(getInsight, async (c) => {
     const tenant = c.get('tenant');
-    const data = await dashboardService.getDashboardData(tenant.tenantId, tenant.userId);
+    const data = await dashboardService.getDashboardData(ownerOf(tenant));
     const insight = insightService.generateInsight(data);
     return c.json({ success: true, data: insight }, 200);
   });
@@ -119,8 +119,7 @@ export function createDashboardRoutes(
     const { metric, period } = c.req.valid('query');
     const tenant = c.get('tenant');
     const result = await dashboardService.getGrowthData(
-      tenant.tenantId,
-      tenant.userId,
+      ownerOf(tenant),
       metric,
       period,
     );
@@ -129,7 +128,7 @@ export function createDashboardRoutes(
 
   routes.openapi(getDemographics, async (c) => {
     const tenant = c.get('tenant');
-    const result = await dashboardService.getDemographicsData(tenant.tenantId, tenant.userId);
+    const result = await dashboardService.getDemographicsData(ownerOf(tenant));
     return c.json({ success: true, data: result }, 200);
   });
 

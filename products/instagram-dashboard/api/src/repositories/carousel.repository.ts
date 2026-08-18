@@ -1,5 +1,7 @@
 import { CarouselStatus, SlideStatus, type PrismaClient, type SlideRole } from '@prisma/client';
 
+import type { Owner } from '../domain/owner.js';
+
 import type { Carousel, CarouselSlide, CarouselStatus as DomainCarouselStatus, SlideStatus as DomainSlideStatus, SlideRole as DomainSlideRole, ImageMode, CarouselType, PublishStatus } from '../domain/carousel.js';
 import { NotFoundError } from '../errors.js';
 
@@ -17,18 +19,19 @@ export interface CreateSlideInput {
 export interface ICarouselRepository {
   create(data: {
     tenantId: string;
+    userId: string;
     accountId?: string | undefined;
     suggestionId?: string | undefined;
     topic: string;
     caption?: string | undefined;
     carouselType?: CarouselType | undefined;
   }): Promise<Carousel>;
-  findAll(tenantId: string, page: number, limit: number): Promise<{ carousels: Carousel[]; total: number }>;
-  findById(tenantId: string, id: string): Promise<Carousel | null>;
-  delete(tenantId: string, id: string): Promise<void>;
+  findAll(owner: Owner, page: number, limit: number): Promise<{ carousels: Carousel[]; total: number }>;
+  findById(owner: Owner, id: string): Promise<Carousel | null>;
+  delete(owner: Owner, id: string): Promise<void>;
   updateStatus(id: string, status: DomainCarouselStatus, errorMessage?: string): Promise<void>;
   createSlides(slides: CreateSlideInput[]): Promise<CarouselSlide[]>;
-  updateSlide(tenantId: string, carouselId: string, slideId: string, data: { text?: string; visualPrompt?: string }): Promise<CarouselSlide>;
+  updateSlide(owner: Owner, carouselId: string, slideId: string, data: { text?: string; visualPrompt?: string }): Promise<CarouselSlide>;
   updateSlideStatus(slideId: string, status: DomainSlideStatus, imageUrl?: string, uploadedImageUrl?: string): Promise<void>;
   countPendingSlides(carouselId: string): Promise<number>;
   reorderSlides(carouselId: string, order: { id: string; order: number }[]): Promise<CarouselSlide[]>;
@@ -54,6 +57,7 @@ export class PrismaCarouselRepository implements ICarouselRepository {
 
   async create(data: {
     tenantId: string;
+    userId: string;
     accountId?: string | undefined;
     suggestionId?: string | undefined;
     topic: string;
@@ -63,6 +67,7 @@ export class PrismaCarouselRepository implements ICarouselRepository {
     const record = await this.prisma.carousel.create({
       data: {
         tenantId: data.tenantId,
+        userId: data.userId,
         ...(data.accountId !== undefined && { accountId: data.accountId }),
         ...(data.suggestionId !== undefined && { suggestionId: data.suggestionId }),
         topic: data.topic,
@@ -75,32 +80,32 @@ export class PrismaCarouselRepository implements ICarouselRepository {
     return this.toDomain(record);
   }
 
-  async findAll(tenantId: string, page: number, limit: number): Promise<{ carousels: Carousel[]; total: number }> {
+  async findAll(owner: Owner, page: number, limit: number): Promise<{ carousels: Carousel[]; total: number }> {
     const skip = (page - 1) * limit;
     const [records, total] = await this.prisma.$transaction([
       this.prisma.carousel.findMany({
-        where: { tenantId },
+        where: { ...owner },
         include: { slides: { orderBy: { order: 'asc' } } },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prisma.carousel.count({ where: { tenantId } }),
+      this.prisma.carousel.count({ where: { ...owner } }),
     ]);
     return { carousels: records.map((r) => this.toDomain(r)), total };
   }
 
-  async findById(tenantId: string, id: string): Promise<Carousel | null> {
+  async findById(owner: Owner, id: string): Promise<Carousel | null> {
     const record = await this.prisma.carousel.findFirst({
-      where: { tenantId, id },
+      where: { ...owner, id },
       include: { slides: { orderBy: { order: 'asc' } } },
     });
     if (!record) return null;
     return this.toDomain(record);
   }
 
-  async delete(tenantId: string, id: string): Promise<void> {
-    await this.prisma.carousel.deleteMany({ where: { id, tenantId } });
+  async delete(owner: Owner, id: string): Promise<void> {
+    await this.prisma.carousel.deleteMany({ where: { id, ...owner } });
   }
 
   async updateStatus(id: string, status: DomainCarouselStatus, errorMessage?: string): Promise<void> {
@@ -133,13 +138,14 @@ export class PrismaCarouselRepository implements ICarouselRepository {
   }
 
   async updateSlide(
-    tenantId: string,
+    owner: Owner,
     carouselId: string,
     slideId: string,
     data: { text?: string; visualPrompt?: string },
   ): Promise<CarouselSlide> {
-    // Verify tenant isolation via carousel
-    const carousel = await this.prisma.carousel.findFirst({ where: { id: carouselId, tenantId } });
+    // Isolation runs through the carousel: a slide is only reachable if its
+    // carousel belongs to the caller.
+    const carousel = await this.prisma.carousel.findFirst({ where: { id: carouselId, ...owner } });
     if (!carousel) throw new NotFoundError('Carousel', carouselId);
 
     const record = await this.prisma.carouselSlide.update({

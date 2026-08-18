@@ -1,3 +1,4 @@
+import { ownerOf } from '../../domain/owner.js';
 /**
  * Integration tests for growth route.
  *
@@ -90,8 +91,7 @@ describe('GET /api/dashboard/growth', () => {
     expect(body.data[0]?.value).toBe(1000);
 
     expect(mockDashboardService.getGrowthData).toHaveBeenCalledWith(
-      MOCK_TENANT.tenantId,
-      MOCK_TENANT.userId,
+      { tenantId: MOCK_TENANT.tenantId, userId: MOCK_TENANT.userId },
       'followers',
       '7d',
     );
@@ -146,8 +146,7 @@ describe('GET /api/dashboard/growth', () => {
     await app.fetch(req);
 
     expect(mockDashboardService.getGrowthData).toHaveBeenCalledWith(
-      'tenant-b',
-      'user-b',
+      { tenantId: 'tenant-b', userId: 'user-b' },
       'reach',
       '90d',
     );

@@ -42,6 +42,7 @@ export function createChatRoutes(
   routes.post('/', async (c) => {
     const tenant = c.get('tenant');
     const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
 
     // Rate limit check
     const { allowed } = checkChatRateLimit(tenantId);
@@ -118,7 +119,8 @@ export function createChatRoutes(
   // GET /history — Get chat history for a session
   routes.get('/history', async (c) => {
     const tenant = c.get('tenant');
-    const { tenantId } = tenant;
+    const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
 
     const sessionId = c.req.query('sessionId');
     if (!sessionId) {
@@ -128,7 +130,7 @@ export function createChatRoutes(
       );
     }
 
-    const messages = await chatMessageRepo.findBySession(tenantId, sessionId);
+    const messages = await chatMessageRepo.findBySession(owner, sessionId);
     return c.json(
       {
         success: true,
@@ -144,7 +146,8 @@ export function createChatRoutes(
   // DELETE /messages/:id — Delete a single message
   routes.delete('/messages/:id', async (c) => {
     const tenant = c.get('tenant');
-    const { tenantId } = tenant;
+    const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
 
     const parseResult = DeleteMessageParamsSchema.safeParse({ id: c.req.param('id') });
     if (!parseResult.success) {
@@ -154,7 +157,7 @@ export function createChatRoutes(
       );
     }
 
-    await chatMessageRepo.deleteById(tenantId, parseResult.data.id);
+    await chatMessageRepo.deleteById(owner, parseResult.data.id);
 
     return c.json(
       { success: true, data: { deleted: true } },
@@ -165,7 +168,8 @@ export function createChatRoutes(
   // DELETE /history — Delete all messages in a session
   routes.delete('/history', async (c) => {
     const tenant = c.get('tenant');
-    const { tenantId } = tenant;
+    const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
 
     const parseResult = DeleteHistoryQuerySchema.safeParse({ sessionId: c.req.query('sessionId') });
     if (!parseResult.success) {
@@ -175,7 +179,7 @@ export function createChatRoutes(
       );
     }
 
-    const deletedCount = await chatMessageRepo.deleteBySessionId(tenantId, parseResult.data.sessionId);
+    const deletedCount = await chatMessageRepo.deleteBySessionId(owner, parseResult.data.sessionId);
 
     return c.json(
       { success: true, data: { deletedCount } },

@@ -24,25 +24,9 @@ export const PaymentMethodChangeResponseSchema = z.object({
   id: z.string().uuid(),
 })
 
-const InvoiceStatusSchema = z.enum(['paid', 'pending', 'overdue', 'cancelled'])
-
-export const InvoiceListItemSchema = z.object({
-  id: z.string(),
-  issuedAt: z.string(),
-  total: z.number(),
-  currency: z.string(),
-  status: InvoiceStatusSchema,
-  documentId: z.string().nullable(),
-})
-
-export const InvoiceListResponseSchema = z.object({
-  items: z.array(InvoiceListItemSchema),
-  total: z.number().int(),
-  page: z.number().int(),
-  pageSize: z.number().int(),
-})
-
-export const InvoiceListQuerySchema = z.object({
+// Plain pagination. It was named after the invoice list it first served;
+// that list is gone and the payment log is the only caller.
+export const PaginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
 })

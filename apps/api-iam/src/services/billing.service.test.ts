@@ -21,7 +21,7 @@ function makeDeps(overrides: Partial<BillingServiceDeps> = {}): BillingServiceDe
     documentRepo: {
       create: vi.fn(),
       findById: vi.fn().mockResolvedValue(makeDocument()),
-      findByTenantId: vi.fn(),
+      findByTenantId: vi.fn().mockResolvedValue([]),
       updateStatus: vi.fn(),
     },
     storageAdapter: {
@@ -88,7 +88,7 @@ describe('BillingService', () => {
         documentRepo: {
           create: vi.fn(),
           findById: vi.fn().mockResolvedValue(null),
-          findByTenantId: vi.fn(),
+          findByTenantId: vi.fn().mockResolvedValue([]),
           updateStatus: vi.fn(),
         },
       })
@@ -104,7 +104,7 @@ describe('BillingService', () => {
         documentRepo: {
           create: vi.fn(),
           findById: vi.fn().mockResolvedValue(makeDocument({ tenantId: 'tenant-uuid-2' })),
-          findByTenantId: vi.fn(),
+          findByTenantId: vi.fn().mockResolvedValue([]),
           updateStatus: vi.fn(),
         },
       })
@@ -120,7 +120,7 @@ describe('BillingService', () => {
         documentRepo: {
           create: vi.fn(),
           findById: vi.fn().mockResolvedValue(makeDocument({ status: 'pending', storageKey: 'pending' })),
-          findByTenantId: vi.fn(),
+          findByTenantId: vi.fn().mockResolvedValue([]),
           updateStatus: vi.fn(),
         },
       })
@@ -173,6 +173,85 @@ describe('BillingService', () => {
 
       expect(result.items).toHaveLength(1)
       expect(result.total).toBe(3)
+    })
+  })
+
+  describe('listPayments — the invoice document', () => {
+    function depsWith(payments: unknown[], documents: unknown[]) {
+      const deps = makeDeps()
+      deps.paymentRepo.listByTenant = vi.fn().mockResolvedValue(payments)
+      deps.documentRepo.findByTenantId = vi.fn().mockResolvedValue(documents)
+      return deps
+    }
+
+    /**
+     * There is no invoicing subsystem — nothing issues a document on a cycle,
+     * and no row carries an invoice number or a due date. The charge is the
+     * record, and the PDF settlement generated hangs off it.
+     */
+    it('attaches the invoice document to a settled charge', async () => {
+      const deps = depsWith([makePayment({ status: 'approved' })], [makeDocument()])
+      const service = createBillingService(deps)
+
+      const result = await service.listPayments({
+        tenantUuid: 'tenant-uuid-1',
+        page: 1,
+        pageSize: 10,
+      })
+
+      expect(result.items[0]?.documentId).toBe('doc-1')
+    })
+
+    // You do not get a fiscal document for a charge that never settled.
+    it('offers no document for a payment that was never settled', async () => {
+      const deps = depsWith([makePayment({ status: 'declined' })], [makeDocument()])
+      const service = createBillingService(deps)
+
+      const result = await service.listPayments({
+        tenantUuid: 'tenant-uuid-1',
+        page: 1,
+        pageSize: 10,
+      })
+
+      expect(result.items[0]?.documentId).toBeNull()
+    })
+
+    /**
+     * submit.service creates the invoice row as a `pending` placeholder with a
+     * storageKey of 'pending'. Offering it would hand the customer a download
+     * button that resolves to nothing.
+     */
+    it('offers no document while the PDF is still a placeholder', async () => {
+      const deps = depsWith(
+        [makePayment({ status: 'approved' })],
+        [makeDocument({ status: 'pending', storageKey: 'pending' })],
+      )
+      const service = createBillingService(deps)
+
+      const result = await service.listPayments({
+        tenantUuid: 'tenant-uuid-1',
+        page: 1,
+        pageSize: 10,
+      })
+
+      expect(result.items[0]?.documentId).toBeNull()
+    })
+
+    // The tenant's contract PDF is not its invoice.
+    it('ignores documents of other types', async () => {
+      const deps = depsWith(
+        [makePayment({ status: 'approved' })],
+        [makeDocument({ id: 'doc-contract', type: 'contract' })],
+      )
+      const service = createBillingService(deps)
+
+      const result = await service.listPayments({
+        tenantUuid: 'tenant-uuid-1',
+        page: 1,
+        pageSize: 10,
+      })
+
+      expect(result.items[0]?.documentId).toBeNull()
     })
   })
 })

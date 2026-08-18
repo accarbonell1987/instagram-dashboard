@@ -1,27 +1,9 @@
 'use client';
 
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
-  Textarea,
-} from '@core/ui';
+import { Button, DataTable, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, TablePagination, Td, Textarea, Th, Tr } from '@core/ui';
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
-import { DataTable, TablePagination, Td, Th, Tr } from '@/components/data-table';
 import { ApiError } from '@/lib/api/errors';
 import {
   listTenantPayments,

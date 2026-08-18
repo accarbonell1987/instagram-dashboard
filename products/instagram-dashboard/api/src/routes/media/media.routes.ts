@@ -1,3 +1,4 @@
+import { ownerOf } from '../../domain/owner.js';
 import { createRoute } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 
@@ -74,7 +75,7 @@ export function createMediaRoutes(
   routes.openapi(listMedia, async (c) => {
     const tenant = c.get('tenant');
     const query = c.req.valid('query');
-    const result = await dashboardService.listMedia(tenant.tenantId, tenant.userId, {
+    const result = await dashboardService.listMedia(ownerOf(tenant), {
       ...(query.page !== undefined ? { page: query.page } : {}),
       ...(query.pageSize !== undefined ? { pageSize: query.pageSize } : {}),
       ...(query.productType !== undefined ? { mediaProductType: query.productType } : {}),
@@ -85,14 +86,14 @@ export function createMediaRoutes(
   routes.openapi(getMedia, async (c) => {
     const tenant = c.get('tenant');
     const { id } = c.req.valid('param');
-    const media = await dashboardService.getMediaDetail(tenant.tenantId, tenant.userId, id);
+    const media = await dashboardService.getMediaDetail(ownerOf(tenant), id);
     return c.json({ success: true, data: media }, 200);
   });
 
   routes.openapi(getPlaybackUrl, async (c) => {
     const tenant = c.get('tenant');
     const { id } = c.req.valid('param');
-    const mediaUrl = await dashboardService.getMediaPlaybackUrl(tenant.tenantId, tenant.userId, id);
+    const mediaUrl = await dashboardService.getMediaPlaybackUrl(ownerOf(tenant), id);
     return c.json({ success: true, data: { mediaUrl } }, 200);
   });
 

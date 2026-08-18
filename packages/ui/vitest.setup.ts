@@ -1,0 +1,7 @@
+import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
+
+// Without this, a component left mounted by one test is still in the document
+// for the next one, and a passing assertion may be reading the previous render.
+afterEach(cleanup);

@@ -5,12 +5,10 @@ import {
   SignedUrlResponseSchema,
   PaymentMethodResponseSchema,
   PaymentMethodChangeResponseSchema,
-  InvoiceListResponseSchema,
-  InvoiceListQuerySchema,
+  PaginationQuerySchema,
   PaymentListResponseSchema,
   commonErrorResponses,
 } from '../schemas/index.js'
-import { NotFoundError } from '../../errors.js'
 
 export function createBillingRouter(
   billingService: BillingService,
@@ -65,42 +63,18 @@ export function createBillingRouter(
     return c.json(result, 202)
   })
 
-  // ─── GET /billing/invoices ────────────────────────────────────────────────────
-
-  const listInvoicesRoute = createRoute({
-    method: 'get',
-    path: '/billing/invoices',
-    operationId: 'listInvoices',
-    tags: ['billing'],
-    request: {
-      query: InvoiceListQuerySchema,
-    },
-    responses: {
-      200: {
-        content: { 'application/json': { schema: InvoiceListResponseSchema } },
-        description: 'Invoice list',
-      },
-      401: commonErrorResponses[401],
-      403: commonErrorResponses[403],
-    },
-  })
-
-  router.openapi(listInvoicesRoute, async (c) => {
-    const { page, pageSize } = c.req.valid('query')
-    const result = await billingService.listInvoices({ page, pageSize })
-    return c.json(result, 200)
-  })
-
   // ─── GET /billing/payments ────────────────────────────────────────────────────
-  // Tenant-facing payment log — distinct from /billing/invoices (spec
-  // "payment-visibility": an invoice is not a payment).
+  // The tenant's own ledger: every charge, with the invoice PDF attached to
+  // the ones that settled. There used to be a second list at /billing/invoices
+  // showing the same events with fewer columns — one table reads better than
+  // two views of one truth.
 
   const listPaymentsRoute = createRoute({
     method: 'get',
     path: '/billing/payments',
     operationId: 'listPayments',
     tags: ['billing', 'payments'],
-    request: { query: InvoiceListQuerySchema },
+    request: { query: PaginationQuerySchema },
     responses: {
       200: { content: { 'application/json': { schema: PaymentListResponseSchema } }, description: 'Paginated payment history' },
       401: commonErrorResponses[401],
@@ -112,31 +86,6 @@ export function createBillingRouter(
     const { page, pageSize } = c.req.valid('query')
     const result = await billingService.listPayments({ tenantUuid: c.var.user.tenantUuid, page, pageSize })
     return c.json(result, 200)
-  })
-
-  // ─── GET /billing/invoices/{invoiceId}/signed-url ─────────────────────────────
-
-  const getInvoiceSignedUrlRoute = createRoute({
-    method: 'get',
-    path: '/billing/invoices/{invoiceId}/signed-url',
-    operationId: 'getInvoiceSignedUrl',
-    tags: ['billing'],
-    request: {
-      params: z.object({ invoiceId: z.string() }),
-    },
-    responses: {
-      200: {
-        content: { 'application/json': { schema: SignedUrlResponseSchema } },
-        description: 'Signed invoice document URL',
-      },
-      401: commonErrorResponses[401],
-      403: commonErrorResponses[403],
-      404: commonErrorResponses[404],
-    },
-  })
-
-  router.openapi(getInvoiceSignedUrlRoute, async (_c) => {
-    throw new NotFoundError('billing.invoice_document_not_found')
   })
 
   // ─── GET /billing/documents/{documentId}/signed-url ──────────────────────────

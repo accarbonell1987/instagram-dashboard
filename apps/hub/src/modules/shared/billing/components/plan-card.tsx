@@ -1,34 +1,50 @@
 'use client';
 
 import { CheckCircle2, CheckIcon } from 'lucide-react';
-import { type JSX } from 'react';
-
-import { type Plan } from '../../services/plans.service';
+import { type JSX, type ReactNode } from 'react';
 
 import { GradientBorderCard } from '@/components';
+import { type Plan } from '@/lib/api/plans';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface PlanCardProps {
   plan: Plan;
-  isSelected: boolean;
-  isSubmitting: boolean;
-  onSelect: (plan: Plan) => void;
-  onShowDetails: (plan: Plan) => void;
+  isSelected?: boolean | undefined;
+  isSubmitting?: boolean | undefined;
+  /** Omit to render a card that presents a plan rather than offering it. */
+  onSelect?: ((plan: Plan) => void) | undefined;
+  onShowDetails?: ((plan: Plan) => void) | undefined;
+  /** Extra marker beside the name, e.g. "Plan actual". */
+  badge?: ReactNode | undefined;
+  /** Replaces the default "Ver detalles" link at the foot of the card. */
+  footer?: ReactNode | undefined;
   /** Sizing owned by the collection (flex track), not by the card itself. */
-  className?: string;
+  className?: string | undefined;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+/**
+ * One plan, rendered the same whether it is being chosen during registration or
+ * shown afterwards as the plan in force.
+ *
+ * They used to be two components, and they disagreed on more than styling: the
+ * signup card lists the modules the plan actually grants, while the billing one
+ * listed `features`, a free-text marketing array. A customer compared plans on
+ * one screen and then saw a different description of the same plan on the other.
+ */
 export function PlanCard({
   plan,
-  isSelected,
-  isSubmitting,
+  isSelected = false,
+  isSubmitting = false,
   onSelect,
   onShowDetails,
+  badge,
+  footer,
   className = '',
 }: PlanCardProps): JSX.Element {
+  const isSelectable = onSelect !== undefined;
   const priceFormatted = new Intl.NumberFormat('es-PY').format(plan.price);
   const cycleLabel = plan.billingCycle === 'monthly' ? '/mes' : '/año';
   const modules = plan.modules ?? [];
@@ -38,9 +54,7 @@ export function PlanCard({
       key={plan.id}
       isSelected={isSelected}
       popular={plan.popular}
-      onClick={() => {
-        onSelect(plan);
-      }}
+      {...(isSelectable ? { onClick: () => { onSelect(plan); } } : {})}
       className={[className, isSelected ? '' : plan.popular ? 'scale-[1.02] shadow-xl' : '']
         .filter(Boolean)
         .join(' ')}
@@ -52,11 +66,11 @@ export function PlanCard({
         className={[
           // Base layout — NO border/ring when selected (GradientBorderCard handles it)
           'bg-card relative flex h-full flex-col gap-6 rounded-[calc(var(--radius-2xl)-2px)] p-8',
-          // Cursor
-          isSubmitting ? 'cursor-not-allowed' : 'cursor-pointer',
+          // Cursor — a card that presents a plan is not a control.
+          !isSelectable ? '' : isSubmitting ? 'cursor-not-allowed' : 'cursor-pointer',
           // Transitions
           'transition-all duration-200',
-          !isSubmitting ? 'hover:-translate-y-0.5 hover:shadow-md' : '',
+          isSelectable && !isSubmitting ? 'hover:-translate-y-0.5 hover:shadow-md' : '',
           // Border — transparent when selected (gradient wrapper is the border)
           isSelected
             ? 'border border-transparent'
@@ -81,7 +95,10 @@ export function PlanCard({
 
         {/* Plan name + price header */}
         <div className="flex flex-col gap-1">
-          <h2 className="text-foreground text-xl font-bold tracking-tight">{plan.name}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-foreground text-xl font-bold tracking-tight">{plan.name}</h2>
+            {badge}
+          </div>
 
           {plan.price === 0 ? (
             <p className="text-primary text-3xl font-bold">Gratis</p>
@@ -125,17 +142,22 @@ export function PlanCard({
         )}
 
         {/* mt-auto pins the action to the bottom whatever the module count */}
-        <button
-          type="button"
-          className="text-primary mt-auto self-start text-sm font-medium underline-offset-4 hover:underline"
-          onClick={(event) => {
-            // The card itself selects the plan — opening details must not.
-            event.stopPropagation();
-            onShowDetails(plan);
-          }}
-        >
-          Ver detalles
-        </button>
+        <div className="mt-auto">
+          {footer ??
+            (onShowDetails !== undefined && (
+              <button
+                type="button"
+                className="text-primary self-start text-sm font-medium underline-offset-4 hover:underline"
+                onClick={(event) => {
+                  // The card itself selects the plan — opening details must not.
+                  event.stopPropagation();
+                  onShowDetails(plan);
+                }}
+              >
+                Ver detalles
+              </button>
+            ))}
+        </div>
       </article>
     </GradientBorderCard>
   );

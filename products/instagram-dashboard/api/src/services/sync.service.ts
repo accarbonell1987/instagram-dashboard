@@ -1,3 +1,4 @@
+import type { Owner } from '../domain/owner.js';
 import {
   AccountNotConnectedError,
   InstagramAPIError,
@@ -131,8 +132,8 @@ export class SyncService {
     if (counter) counter.count++;
   }
 
-  async triggerSync(tenantId: string, _userId: string): Promise<{ syncId: string; status: string }> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+  async triggerSync(owner: Owner): Promise<{ syncId: string; status: string }> {
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     if (account.syncStatus === 'syncing') {
@@ -464,11 +465,8 @@ export class SyncService {
     }
   }
 
-  async backfillFollowerHistory(
-    tenantId: string,
-    _userId: string,
-  ): Promise<{ inserted: number }> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+  async backfillFollowerHistory(owner: Owner): Promise<{ inserted: number }> {
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     const tokenRecord = await this.repos.instagram.findAccountWithToken(account.id);
@@ -490,13 +488,13 @@ export class SyncService {
     return { inserted };
   }
 
-  async getSyncStatus(tenantId: string, _userId: string): Promise<{
+  async getSyncStatus(owner: Owner): Promise<{
     status: string;
     lastSyncAt: string | null;
     mediaCount: number;
     nextSyncAvailableAt: string | null;
   }> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     const lastLog = await this.repos.instagram.getLatestSyncLog(account.id);

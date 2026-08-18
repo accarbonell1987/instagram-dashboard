@@ -1,10 +1,12 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import type { MiddlewareHandler } from 'hono'
-import type { IdentityService } from '../../services/index.js'
+import type { IdentityService, ProductRoleService } from '../../services/index.js'
 import {
   TenantSchema,
   MemberListItemSchema,
   MemberListResponseSchema,
+  SetMemberProductRolesRequestSchema,
+  TenantProductRolesResponseSchema,
   UpdateTenantNameRequestSchema,
   UpdateMemberStatusRequestSchema,
   UpdateProfileRequestSchema,
@@ -15,6 +17,7 @@ import { ForbiddenError, NotFoundError, ConflictError } from '../../errors.js'
 
 export function createIdentityRouter(
   identityService: IdentityService,
+  productRoleService: ProductRoleService,
   authGuard: MiddlewareHandler,
   idempotency: MiddlewareHandler,
 ) {
@@ -74,6 +77,11 @@ export function createIdentityRouter(
       requesterRole: c.var.user.role,
     })
 
+    // Joined here rather than inside the identity service: product access is a
+    // separate domain, and the team screen is the only caller that needs both.
+    // One query for the whole list — see listRolesByUsers.
+    const rolesByUser = await productRoleService.listRolesForMembers(items.map((m) => m.id))
+
     return c.json(
       {
         items: items.map((m) => ({
@@ -83,10 +91,99 @@ export function createIdentityRouter(
           role: m.role as 'SuperAdmin' | 'TenantAdmin' | 'User',
           status: m.status as 'pending_first_login' | 'active' | 'suspended',
           createdAt: m.createdAt.toISOString(),
+          productRoles: (rolesByUser.get(m.id) ?? []).map((role) => ({
+            id: role.id,
+            productId: role.productId,
+            key: role.key,
+            name: role.name,
+          })),
         })),
       },
       200,
     )
+  })
+
+  // ── Product access administered by the tenant itself ───────────────────────
+
+  const getTenantProductRolesRoute = createRoute({
+    method: 'get',
+    path: '/tenants/current/product-roles',
+    operationId: 'getTenantProductRoles',
+    summary: 'Roles this tenant may hand out, grouped by contracted product',
+    tags: ['identity'],
+    responses: {
+      200: {
+        content: { 'application/json': { schema: TenantProductRolesResponseSchema } },
+        description: 'Assignable roles per contracted product',
+      },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+    },
+  })
+
+  router.openapi(getTenantProductRolesRoute, async (c) => {
+    const { role, tenantUuid } = c.var.user
+    if (role !== 'TenantAdmin' && role !== 'SuperAdmin') {
+      throw new ForbiddenError('product-roles.forbidden', 'TenantAdmin role required')
+    }
+
+    const products = await productRoleService.listRolesForTenant(tenantUuid)
+
+    return c.json(
+      {
+        products: products.map((product) => ({
+          productId: product.productId,
+          productName: product.productName,
+          roles: product.roles.map((r) => ({
+            id: r.id,
+            productId: r.productId,
+            key: r.key,
+            name: r.name,
+            moduleCount: r.moduleCount,
+          })),
+        })),
+      },
+      200,
+    )
+  })
+
+  router.on('PUT', '/tenants/current/members/:memberId/product-roles', idempotency)
+
+  const setMemberProductRolesRoute = createRoute({
+    method: 'put',
+    path: '/tenants/current/members/:memberId/product-roles',
+    operationId: 'setMemberProductRoles',
+    summary: "Replace a member's product roles",
+    tags: ['identity'],
+    request: {
+      params: z.object({ memberId: z.string().uuid() }),
+      body: {
+        content: { 'application/json': { schema: SetMemberProductRolesRequestSchema } },
+        required: true,
+      },
+    },
+    responses: {
+      204: { description: 'Member product roles replaced' },
+      401: commonErrorResponses[401],
+      403: commonErrorResponses[403],
+      404: commonErrorResponses[404],
+      422: commonErrorResponses[422],
+    },
+  })
+
+  router.openapi(setMemberProductRolesRoute, async (c) => {
+    const { memberId } = c.req.valid('param')
+    const { productRoleIds } = c.req.valid('json')
+
+    await productRoleService.setMemberRoles({
+      tenantUuid: c.var.user.tenantUuid,
+      memberId,
+      productRoleIds,
+      requesterRole: c.var.user.role,
+      assignedBy: c.var.user.sub,
+    })
+
+    return c.body(null, 204)
   })
 
   const updateTenantNameRoute = createRoute({

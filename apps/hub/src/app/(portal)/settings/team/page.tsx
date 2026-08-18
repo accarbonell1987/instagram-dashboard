@@ -5,6 +5,7 @@ import { useEffect, useState, Suspense, type JSX } from 'react';
 
 import type { components } from '@/lib/api/types';
 import { DeleteMemberDialog } from '@/modules/iam/admin/components/delete-member-dialog';
+import { MemberAccessDialog } from '@/modules/iam/admin/components/member-access-dialog';
 import { RevokeConfirmDialog } from '@/modules/iam/admin/components/revoke-confirm-dialog';
 import { SuspendConfirmDialog } from '@/modules/iam/admin/components/suspend-confirm-dialog';
 import { TeamTabs } from '@/modules/iam/admin/components/team-tabs';
@@ -12,7 +13,13 @@ import {
   listAdminInvitations,
   revokeAdminInvitation,
 } from '@/modules/iam/admin/services/invitation.service';
-import { updateMemberStatus, deleteMember } from '@/modules/iam/admin/services/member.service';
+import {
+  updateMemberStatus,
+  deleteMember,
+  listTenantProductRoles,
+  setMemberProductRoles,
+  type TenantProductRoles,
+} from '@/modules/iam/admin/services/member.service';
 import { getTenantMembers } from '@/modules/iam/admin/services/organization.service';
 import { RequireRole } from '@/modules/iam/identity/guards/require-role';
 import { useSession } from '@/modules/iam/identity/hooks/use-session';
@@ -55,6 +62,11 @@ function TeamPageInner(): JSX.Element {
   const [deleteMemberId, setDeleteMemberId] = useState<string | null>(null);
   const [deleteMemberEmail, setDeleteMemberEmail] = useState<string | null>(null);
 
+  // Product access dialog state. The catalogue is the same for every member, so
+  // it is loaded once with the page rather than each time the dialog opens.
+  const [productRoles, setProductRoles] = useState<TenantProductRoles[]>([]);
+  const [accessMemberId, setAccessMemberId] = useState<string | null>(null);
+
   async function loadInvitations(): Promise<void> {
     setIsLoadingInvitations(true);
     try {
@@ -79,9 +91,18 @@ function TeamPageInner(): JSX.Element {
     }
   }
 
+  async function loadProductRoles(): Promise<void> {
+    try {
+      setProductRoles(await listTenantProductRoles());
+    } catch {
+      // The dialog says so on its own when there is nothing to hand out.
+    }
+  }
+
   useEffect(() => {
     void loadInvitations();
     void loadMembers();
+    void loadProductRoles();
   }, []);
 
   // ─── Tab handler ────────────────────────────────────────────────────────────
@@ -158,6 +179,15 @@ function TeamPageInner(): JSX.Element {
     await loadMembers();
   }
 
+  // ─── Product access handlers ────────────────────────────────────────────────
+
+  async function handleAccessSave(productRoleIds: string[]): Promise<void> {
+    if (accessMemberId === null) return;
+    await setMemberProductRoles(accessMemberId, productRoleIds);
+    setAccessMemberId(null);
+    await loadMembers();
+  }
+
   return (
     <RequireRole role={['TenantAdmin', 'SuperAdmin']}>
       <div className="flex flex-col gap-6">
@@ -172,6 +202,7 @@ function TeamPageInner(): JSX.Element {
           onSuspend={handleSuspendClick}
           onActivate={(memberId) => void handleActivateClick(memberId)}
           onDelete={handleDeleteClick}
+          onEditAccess={setAccessMemberId}
           invitations={invitations}
           isLoadingInvitations={isLoadingInvitations}
           onRevoke={handleRevokeClick}
@@ -202,6 +233,16 @@ function TeamPageInner(): JSX.Element {
         memberEmail={deleteMemberEmail}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
+      />
+
+      {/* Product access dialog */}
+      <MemberAccessDialog
+        member={members.find((m) => m.id === accessMemberId) ?? null}
+        products={productRoles}
+        onSave={handleAccessSave}
+        onCancel={() => {
+          setAccessMemberId(null);
+        }}
       />
     </RequireRole>
   );

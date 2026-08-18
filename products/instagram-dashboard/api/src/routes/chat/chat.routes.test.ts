@@ -39,6 +39,7 @@ const mockChatMessageRepo = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const TENANT_ID = 'b3e4c5d6-e7f8-4a9b-a0c1-d2e3f4a5b6c7';
+const USER_ID = 'user-1';
 const SESSION_ID = 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5';
 
 function makeApp() {
@@ -232,7 +233,7 @@ describe('Chat routes', () => {
       const body = await res.json() as { success: boolean; data: { deleted: boolean } };
       expect(body.success).toBe(true);
       expect(body.data.deleted).toBe(true);
-      expect(mockDeleteById).toHaveBeenCalledWith(TENANT_ID, SESSION_ID);
+      expect(mockDeleteById).toHaveBeenCalledWith({ tenantId: TENANT_ID, userId: USER_ID }, SESSION_ID);
     });
 
     it('non-existent message is idempotent → 200 (NFR-CP02)', async () => {
@@ -263,7 +264,7 @@ describe('Chat routes', () => {
       const body = await res.json() as { success: boolean; data: { deletedCount: number } };
       expect(body.success).toBe(true);
       expect(body.data.deletedCount).toBe(5);
-      expect(mockDeleteBySessionId).toHaveBeenCalledWith(TENANT_ID, SESSION_ID);
+      expect(mockDeleteBySessionId).toHaveBeenCalledWith({ tenantId: TENANT_ID, userId: USER_ID }, SESSION_ID);
     });
 
     it('empty session → 200 with deletedCount 0', async () => {

@@ -22,6 +22,8 @@ const mockPrisma = {
 
 const TENANT_ID = 'b3e4c5d6-e7f8-4a9b-a0c1-d2e3f4a5b6c7';
 const SESSION_ID = 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5';
+const USER_ID = 'c4d5e6f7-a8b9-4c0d-9e1f-a2b3c4d5e6f7';
+const OWNER = { tenantId: TENANT_ID, userId: USER_ID };
 
 function makeRepo(): IChatMessageRepository {
   return new PrismaChatMessageRepository(mockPrisma as unknown as PrismaClient);
@@ -46,41 +48,34 @@ describe('PrismaChatMessageRepository', () => {
     vi.clearAllMocks();
   });
 
-  // T-01: deleteById
   describe('deleteById', () => {
-    it('deletes the message by id and tenantId → resolves void', async () => {
+    it("removes the caller's own message", async () => {
       const repo = makeRepo();
-      mockPrisma.chatMessage.delete.mockResolvedValueOnce(makePrismaMessage());
+      mockPrisma.chatMessage.deleteMany.mockResolvedValueOnce({ count: 1 });
 
-      await expect(
-        repo.deleteById(TENANT_ID, 'msg-1'),
-      ).resolves.toBeUndefined();
+      await expect(repo.deleteById(OWNER, 'msg-1')).resolves.toBeUndefined();
 
-      expect(mockPrisma.chatMessage.delete).toHaveBeenCalledWith({
-        where: { id: 'msg-1', tenantId: TENANT_ID },
+      expect(mockPrisma.chatMessage.deleteMany).toHaveBeenCalledWith({
+        where: { id: 'msg-1', tenantId: TENANT_ID, userId: USER_ID },
       });
     });
 
-    it('throws if message not found (Prisma rejects with P2025)', async () => {
+    /**
+     * Scoped by owner, so a message belonging to somebody else simply matches
+     * nothing. Deleting what is not yours removes nothing and reports no error
+     * — the caller cannot tell whether it existed, which is the point.
+     */
+    it("leaves another member's message alone", async () => {
       const repo = makeRepo();
-      const prismaError = new Error('Record to delete does not exist.') as Error & { code: string };
-      prismaError.code = 'P2025';
-      mockPrisma.chatMessage.delete.mockRejectedValueOnce(prismaError);
+      mockPrisma.chatMessage.deleteMany.mockResolvedValueOnce({ count: 0 });
 
       await expect(
-        repo.deleteById(TENANT_ID, 'nonexistent-id'),
-      ).rejects.toThrow('Record to delete does not exist.');
-    });
+        repo.deleteById({ tenantId: TENANT_ID, userId: 'someone-else' }, 'msg-1'),
+      ).resolves.toBeUndefined();
 
-    it('throws if tenantId mismatch (message belongs to different tenant)', async () => {
-      const repo = makeRepo();
-      const prismaError = new Error('Record to delete does not exist.') as Error & { code: string };
-      prismaError.code = 'P2025';
-      mockPrisma.chatMessage.delete.mockRejectedValueOnce(prismaError);
-
-      await expect(
-        repo.deleteById('other-tenant-id', 'msg-1'),
-      ).rejects.toThrow('Record to delete does not exist.');
+      expect(mockPrisma.chatMessage.deleteMany).toHaveBeenCalledWith({
+        where: { id: 'msg-1', tenantId: TENANT_ID, userId: 'someone-else' },
+      });
     });
   });
 
@@ -90,11 +85,11 @@ describe('PrismaChatMessageRepository', () => {
       const repo = makeRepo();
       mockPrisma.chatMessage.deleteMany.mockResolvedValueOnce({ count: 5 });
 
-      const count = await repo.deleteBySessionId(TENANT_ID, SESSION_ID);
+      const count = await repo.deleteBySessionId(OWNER, SESSION_ID);
 
       expect(count).toBe(5);
       expect(mockPrisma.chatMessage.deleteMany).toHaveBeenCalledWith({
-        where: { tenantId: TENANT_ID, sessionId: SESSION_ID },
+        where: { tenantId: TENANT_ID, userId: USER_ID, sessionId: SESSION_ID },
       });
     });
 
@@ -102,7 +97,7 @@ describe('PrismaChatMessageRepository', () => {
       const repo = makeRepo();
       mockPrisma.chatMessage.deleteMany.mockResolvedValueOnce({ count: 0 });
 
-      const count = await repo.deleteBySessionId(TENANT_ID, 'empty-session');
+      const count = await repo.deleteBySessionId(OWNER, 'empty-session');
 
       expect(count).toBe(0);
     });
@@ -111,11 +106,11 @@ describe('PrismaChatMessageRepository', () => {
       const repo = makeRepo();
       mockPrisma.chatMessage.deleteMany.mockResolvedValueOnce({ count: 0 });
 
-      const count = await repo.deleteBySessionId('other-tenant-id', SESSION_ID);
+      const count = await repo.deleteBySessionId({ tenantId: 'other-tenant-id', userId: USER_ID }, SESSION_ID);
 
       expect(count).toBe(0);
       expect(mockPrisma.chatMessage.deleteMany).toHaveBeenCalledWith({
-        where: { tenantId: 'other-tenant-id', sessionId: SESSION_ID },
+        where: { tenantId: 'other-tenant-id', userId: USER_ID, sessionId: SESSION_ID },
       });
     });
   });
@@ -138,7 +133,7 @@ describe('PrismaChatMessageRepository', () => {
       // prismaResult = [msg-25, msg-24, ..., msg-6] (newest first)
       mockPrisma.chatMessage.findMany.mockResolvedValueOnce(prismaResult);
 
-      const messages = await repo.findBySession(TENANT_ID, SESSION_ID);
+      const messages = await repo.findBySession(OWNER, SESSION_ID);
 
       // Should return exactly 20 messages
       expect(messages).toHaveLength(20);
@@ -149,7 +144,7 @@ describe('PrismaChatMessageRepository', () => {
 
       // Prisma query should be: orderBy desc, take 20
       expect(mockPrisma.chatMessage.findMany).toHaveBeenCalledWith({
-        where: { tenantId: TENANT_ID, sessionId: SESSION_ID },
+        where: { tenantId: TENANT_ID, userId: USER_ID, sessionId: SESSION_ID },
         orderBy: { createdAt: 'desc' },
         take: 20,
       });
@@ -167,7 +162,7 @@ describe('PrismaChatMessageRepository', () => {
 
       mockPrisma.chatMessage.findMany.mockResolvedValueOnce(prismaResults);
 
-      const messages = await repo.findBySession(TENANT_ID, SESSION_ID);
+      const messages = await repo.findBySession(OWNER, SESSION_ID);
 
       // After .reverse(): [msg-1, msg-2, msg-3]
       expect(messages).toHaveLength(3);
@@ -179,9 +174,43 @@ describe('PrismaChatMessageRepository', () => {
       const repo = makeRepo();
       mockPrisma.chatMessage.findMany.mockResolvedValueOnce([]);
 
-      const messages = await repo.findBySession(TENANT_ID, 'empty-session');
+      const messages = await repo.findBySession(OWNER, 'empty-session');
 
       expect(messages).toEqual([]);
     });
+  });
+});
+
+/**
+ * The reason this change exists.
+ *
+ * Chat was scoped by tenant alone, and a tenant has many members — so every
+ * member could read every other member's conversation with the agent by asking
+ * for the same session. These pin the scope to the person, not the company.
+ */
+describe('PrismaChatMessageRepository — per-member isolation', () => {
+  it('reads only the calling member\'s messages', async () => {
+    const repo = makeRepo();
+    mockPrisma.chatMessage.findMany.mockResolvedValueOnce([]);
+
+    await repo.findBySession({ tenantId: TENANT_ID, userId: 'member-a' }, SESSION_ID);
+
+    expect(mockPrisma.chatMessage.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tenantId: TENANT_ID, userId: 'member-a', sessionId: SESSION_ID },
+      }),
+    );
+  });
+
+  // Same tenant, same session id, different person: still not their history.
+  it('does not widen to the tenant when a colleague asks', async () => {
+    const repo = makeRepo();
+    mockPrisma.chatMessage.findMany.mockResolvedValueOnce([]);
+
+    await repo.findBySession({ tenantId: TENANT_ID, userId: 'member-b' }, SESSION_ID);
+
+    const where = mockPrisma.chatMessage.findMany.mock.calls[0]?.[0]?.where as Record<string, unknown>;
+    expect(where['userId']).toBe('member-b');
+    expect(Object.keys(where)).toContain('userId');
   });
 });

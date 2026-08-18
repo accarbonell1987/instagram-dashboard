@@ -240,12 +240,14 @@ export async function createTestApp(): Promise<TestApp> {
 
   const moduleService = createModuleService({
     moduleRepository: repos.moduleRepository,
+    productAdminSectionRepository: repos.productAdminSectionRepository,
     tenantRepository: repos.tenantRepo,
     logger,
   })
 
   const productRoleService = createProductRoleService({
     productRoleRepository: repos.productRoleRepository,
+    moduleRepository: repos.moduleRepository,
     userRepo: repos.userRepo,
     logger,
   })

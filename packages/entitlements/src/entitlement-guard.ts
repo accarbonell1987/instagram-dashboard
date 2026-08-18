@@ -98,12 +98,20 @@ export function entitlementGuard(opts: EntitlementGuardOptions): EntitlementGuar
  * mounts it, and api-iam CALLS it on entitlement-mutating writes
  * (mirrors the existing /internal/quotas/purge fan-out).
  */
-export function createEntitlementsPurgeRoute(guard: EntitlementGuardHandler): Hono {
+export function createEntitlementsPurgeRoute(
+  guards: EntitlementGuardHandler | EntitlementGuardHandler[],
+): Hono {
+  // Every guard keeps its own cache, so a product that mounts module-scoped
+  // guards alongside the product-wide one must purge all of them together.
+  // Purging only some leaves the rest answering from a stale decision for the
+  // rest of the TTL — which reads as "I changed their role and nothing
+  // happened", the exact failure this endpoint exists to prevent.
+  const all = Array.isArray(guards) ? guards : [guards];
   const router = new Hono();
 
   router.post('/internal/entitlements/purge', async (c) => {
     const body = (await c.req.json().catch(() => ({}))) as { tenantId?: string; productId?: string };
-    guard.purgeCache(body.tenantId, body.productId);
+    for (const guard of all) guard.purgeCache(body.tenantId, body.productId);
     return c.json({ success: true, data: { purged: true } }, 200);
   });
 

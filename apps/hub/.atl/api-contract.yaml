@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.22.0
+  version: 2.1.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -767,35 +767,6 @@ components:
       properties:
         id: { type: string, format: uuid }
 
-    InvoiceStatus:
-      type: string
-      enum: [paid, pending, overdue, cancelled]
-
-    InvoiceListItem:
-      type: object
-      required: [id, issuedAt, total, currency, status]
-      properties:
-        id: { type: string, format: uuid }
-        issuedAt: { type: string, format: date-time }
-        total: { type: number }
-        currency: { type: string, enum: [PYG, USD] }
-        status: { $ref: '#/components/schemas/InvoiceStatus' }
-        documentId:
-          oneOf:
-            - { type: string, format: uuid }
-            - { type: 'null' }
-
-    InvoiceListResponse:
-      type: object
-      required: [items, total, page, pageSize]
-      properties:
-        items:
-          type: array
-          items: { $ref: '#/components/schemas/InvoiceListItem' }
-        total: { type: integer, minimum: 0 }
-        page: { type: integer, minimum: 1 }
-        pageSize: { type: integer, minimum: 1, maximum: 100 }
-
     PaginatedResponse:
       type: object
       required: [items, total, page, pageSize]
@@ -874,6 +845,14 @@ components:
           oneOf:
             - $ref: '#/components/schemas/PaymentInstruction'
             - type: 'null'
+        documentId:
+          type: ['string', 'null']
+          format: uuid
+          description: |
+            PDF de la factura de este cobro, descargable con
+            `/billing/documents/{documentId}/signed-url`. Solo en la vista del tenant, y solo si el
+            pago está aprobado **y** el archivo ya se generó — la fila del documento se crea como
+            placeholder antes de que exista el PDF.
         createdAt: { type: string, format: date-time }
 
     PaymentListResponse:
@@ -1055,9 +1034,21 @@ components:
       type: string
       enum: [pending_first_login, active, suspended]
 
+    # El rol que un miembro tiene DENTRO de un producto. Es un eje distinto del
+    # rol de tenant: `role` dice qué puede hacer en el hub, esto dice qué puede
+    # abrir dentro de un producto al que se le dio acceso.
+    MemberProductRole:
+      type: object
+      required: [id, productId, key, name]
+      properties:
+        id: { type: string, format: uuid }
+        productId: { type: string }
+        key: { type: string }
+        name: { type: string }
+
     MemberListItem:
       type: object
-      required: [id, email, role, status, createdAt]
+      required: [id, email, role, status, createdAt, productRoles]
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
@@ -1066,6 +1057,81 @@ components:
         status:
           $ref: '#/components/schemas/MemberStatus'
         createdAt: { type: string, format: date-time }
+        productRoles:
+          type: array
+          description: Accesos a producto del miembro. Vacío = ve todo lo que otorga el plan.
+          items:
+            $ref: '#/components/schemas/MemberProductRole'
+
+    TenantAdminSection:
+      type: object
+      required: [key, label, description, productId, productName, productUrl, path, moduleId]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        description:
+          oneOf: [{ type: string }, { type: 'null' }]
+        productId: { type: string }
+        productName: { type: string }
+        productUrl:
+          type: string
+          description: Dirección del producto. El hub le une `path` para obtener la URL final.
+        path:
+          type: string
+          description: Ruta relativa a `productUrl`.
+        moduleId:
+          oneOf: [{ type: string }, { type: 'null' }]
+          description: Módulo que la sección requiere, o null si es del producto entero.
+
+    TenantAdminSectionsResponse:
+      type: object
+      required: [sections]
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantAdminSection'
+
+    TenantProductRole:
+      allOf:
+        - $ref: '#/components/schemas/MemberProductRole'
+        - type: object
+          required: [moduleCount]
+          properties:
+            moduleCount:
+              type: integer
+              minimum: 0
+              description: |
+                Cuántos módulos abre el rol. Cero significa que asignarlo le quita el
+                producto al miembro: el resolver intersecta los módulos del plan con
+                los del rol.
+
+    TenantProductRolesResponse:
+      type: object
+      required: [products]
+      properties:
+        products:
+          type: array
+          items:
+            type: object
+            required: [productId, productName, roles]
+            properties:
+              productId: { type: string }
+              productName: { type: string }
+              roles:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TenantProductRole'
+
+    SetMemberProductRolesRequest:
+      type: object
+      required: [productRoleIds]
+      properties:
+        productRoleIds:
+          type: array
+          maxItems: 50
+          description: Conjunto completo, no delta. Un array vacío le quita todos los accesos.
+          items: { type: string, format: uuid }
 
     MemberListResponse:
       type: object
@@ -2039,11 +2105,27 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [user, tenant, role]
+                required: [user, tenant, role, productRoles]
                 properties:
                   user: { $ref: '#/components/schemas/User' }
                   tenant: { $ref: '#/components/schemas/Tenant' }
                   role: { $ref: '#/components/schemas/Role' }
+                  productRoles:
+                    type: array
+                    description: |
+                      Lo que el llamante puede abrir dentro de cada producto contratado. `role`
+                      dice qué puede hacer en el hub; esto es el otro eje, y es el que decide qué
+                      le muestra un producto — así "¿por qué no veo el agente?" se responde acá.
+                      Vacío significa que ve todo lo que otorga el plan.
+                    items:
+                      type: object
+                      required: [id, productId, productName, key, name]
+                      properties:
+                        id: { type: string, format: uuid }
+                        productId: { type: string }
+                        productName: { type: string }
+                        key: { type: string }
+                        name: { type: string }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   # ==================== PLANS ====================
@@ -2751,6 +2833,90 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /tenants/current/product-roles:
+    get:
+      tags: [identity, Organización]
+      operationId: getTenantProductRoles
+      summary: Roles que el tenant puede repartir, agrupados por producto contratado
+      description: |
+        **Propósito**: Devuelve, por cada producto que el tenant tiene contratado, los roles
+        que ese producto define. Es el catálogo del que un `TenantAdmin` elige al dar acceso
+        a un miembro.
+
+        **Proceso**: Consultado por `Settings > Team` para poblar el selector de producto y rol
+        del diálogo de accesos.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
+
+        **Notas**: `moduleCount` es la cantidad de módulos que el rol abre. Un rol con
+        `moduleCount: 0` no da acceso a nada — asignarlo le quita el producto al miembro,
+        porque el resolver intersecta los módulos del plan con los del rol.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Assignable roles per contracted product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantProductRolesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tenants/current/members/{memberId}/product-roles:
+    put:
+      tags: [identity, Organización]
+      operationId: setMemberProductRoles
+      summary: Reemplazar los roles de producto de un miembro
+      description: |
+        **Propósito**: Define, de una sola vez, a qué productos accede un miembro y con qué rol
+        dentro de cada uno. El rol del tenant (`TenantAdmin` / `User`) decide qué puede hacer en
+        el hub; esto decide qué puede abrir dentro de un producto. Son ejes separados.
+
+        **Proceso**: Accionado desde `Settings > Team` al guardar el diálogo de accesos.
+
+        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. El miembro debe
+        pertenecer al tenant del solicitante.
+
+        **Notas**:
+        - El body es el conjunto completo, no un delta: un array vacío le quita todos los accesos.
+        - Solo se aceptan roles de productos que el tenant tiene contratados (422
+          `product-roles.not_available`).
+        - Un solo rol por producto (422 `product-roles.duplicate_product`).
+        - Un miembro sin ningún rol de producto ve todo lo que el plan otorga. Asignar un rol
+          *restringe*; no amplía.
+        - Los `TenantAdmin` nunca quedan filtrados por su propio rol de producto — de lo
+          contrario podrían dejarse a sí mismos fuera del producto que administran.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetMemberProductRolesRequest'
+      responses:
+        '204':
+          description: Member product roles replaced
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
   /tenants/current/plan-change:
     post:
       tags: [identity, Organización]
@@ -2829,6 +2995,44 @@ paths:
                 $ref: '#/components/schemas/AccessibleModuleList'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /tenants/current/admin-sections:
+    get:
+      tags: [modules, Módulos]
+      operationId: getTenantAdminSections
+      summary: Pantallas de configuración que aportan los productos del tenant
+      description: |
+        **Propósito**: Un producto puede aportar pantallas de administración al área de
+        configuración del tenant — por ejemplo, las cuentas de Instagram vinculadas y quién las
+        tiene tomadas. Este endpoint devuelve las que el llamante puede ver.
+
+        **Proceso**: El hub las agrega al nav de `/settings` y monta cada una en el mismo iframe
+        que ya usa para el producto (`ProductShell`), uniendo `productUrl` + `path`.
+
+        **Precondiciones**: Sesión activa. El filtro por rol es por sección.
+
+        **Notas**:
+        - `path` es **relativo** a `productUrl` a propósito: el hub une los dos, y eso le permite
+          sustituir la dirección del producto en desarrollo sin que este registro sepa nada de
+          entornos.
+        - Solo aparecen secciones de productos contratados. Si la sección declara `moduleId`, además
+          ese módulo tiene que estar habilitado para el tenant.
+        - **El filtro por rol es de presentación, no de autorización.** El hub decide qué entrada
+          dibuja; no está en el camino de la request y no puede proteger nada. La API del propio
+          producto DEBE verificar el claim `role` del JWT en cada acción privilegiada.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Admin sections the caller may see
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantAdminSectionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /tenants/current/products:
     get:
@@ -3756,71 +3960,6 @@ paths:
         '422': { $ref: '#/components/responses/UnprocessableEntity' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
-  /billing/invoices:
-    get:
-      tags: [billing, Billing]
-      operationId: listInvoices
-      summary: Listar facturas del tenant paginadas en orden descendente
-      description: |
-        **Propósito**: Devuelve el historial de facturas del tenant paginado, ordenado
-        por fecha de emisión descendente (más recientes primero).
-
-        **Proceso**: Consultado por `InvoicesSection` en `Settings > Billing` para mostrar
-        el historial de facturación. Cada factura puede tener asociado un `documentId` para
-        descargar el PDF via `GET /billing/invoices/{id}/signed-url`.
-
-        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
-
-        **Notas**: **Stub actual** — el backend retorna siempre una lista vacía (`items: []`,
-        `total: 0`) en esta versión. La paginación usa `page` (desde 1) y `pageSize` (máx 100,
-        default 10). Los estados de factura son: `paid`, `pending`, `overdue`, `cancelled`.
-      security:
-        - bearerAuth: []
-      parameters:
-        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
-        - { name: pageSize, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
-      responses:
-        '200':
-          description: Lista de facturas
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/InvoiceListResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-
-  /billing/invoices/{invoiceId}/signed-url:
-    get:
-      tags: [billing, Billing]
-      operationId: getInvoiceSignedUrl
-      summary: Obtener URL firmada para descargar PDF de factura (TTL 5 min)
-      description: |
-        **Propósito**: Genera una URL pre-firmada de corta duración (5 min) para descargar
-        el PDF de una factura específica del tenant.
-
-        **Proceso**: Accionado desde `InvoicesSection` al hacer clic en el botón de descarga
-        junto a una factura. El `invoiceId` proviene del campo `id` en `GET /billing/invoices`.
-
-        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. La factura
-        debe existir y tener un documento PDF asociado (`documentId` no nulo).
-
-        **Notas**: **Stub actual** — el backend retorna siempre 404 en esta versión.
-        La generación real de facturas PDF es trabajo futuro. Para documentos del onboarding
-        (factura de bienvenida, contrato), usar `GET /billing/documents/{documentId}/signed-url`.
-      security:
-        - bearerAuth: []
-      parameters:
-        - { name: invoiceId, in: path, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '200':
-          description: URL firmada
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/SignedUrlResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  # ==================== WELL-KNOWN ====================
   /.well-known/jwks.json:
     get:
       operationId: getJwks

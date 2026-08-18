@@ -63,7 +63,7 @@ apps/hub/
 | `tenant-onboarding` | `src/modules/tenant-onboarding/` | Signup wizard (6 steps), draft service, wizard state machine, payment polling                                                        |
 | `invitations`       | `src/modules/invitations/`       | Invitation preview + accept flow                                                                                                     |
 | `admin`             | `src/modules/admin/`             | Settings de organización (nombre, plan actual), gestión de equipo (invitar, suspender, eliminar miembros), solicitudes de cambio de plan. Services: `organization.service.ts`, `member.service.ts`, `invitation.service.ts`, `plan-change.service.ts` |
-| `billing`           | `src/modules/billing/`           | Plan actual (BillingPlanSection), método de pago (PaymentMethodSection), historial de facturas (InvoicesSection). Services: `billing.service.ts`, `document.service.ts` |
+| `billing`           | `src/modules/billing/`           | Plan actual (BillingPlanSection), método de pago (PaymentMethodSection), historial de cobros con su factura (PaymentsSection). Services: `billing.service.ts`, `document.service.ts` |
 
 ## Key Conventions (hub-specific)
 
@@ -80,21 +80,65 @@ apps/hub/
 - **Port**: 3001 (hub posee este puerto). `@internal/api-example` se movió a 3005, así que ya no colisionan.
 - **Providers render**: `providers.tsx` retorna `<></>` mientras MSW arranca — es intencional (no spinner).
 - **Per-section loading**: Cada sección de settings (OrganizationCard, PaymentMethodSection, InvoicesSection) gestiona su propio `useEffect` + estado de carga. No hay loading global de página.
-- **Nunca escribas un `<table>` a mano**: usá `DataTable` + `Th`/`Tr`/`Td` de
-  `@/components/data-table`, y `TablePagination` si hay paginado. El componente aporta el
-  marco (contenedor, header, bordes, padding) y los estados de carga, vacío y error; las
-  filas las escribe cada pantalla, porque las celdas son heterogéneas. El único `<table>`
-  del hub vive dentro de ese componente.
-  - `variant="default"` — pantallas del backoffice.
-  - `variant="dense"` — tablas de muchas columnas (ver la cola de pagos).
-  - `variant="bare"` — tablas dentro de una tarjeta de settings: sin contenedor con borde
-    y con los estados en texto plano, para no dibujar una caja dentro de otra caja.
-    Ver `invitations-list.tsx` e `invoices-section.tsx`.
+- **Nunca escribas un `<table>` a mano**: usá `DataTable` + `Th`/`Tr`/`Td` de **`@core/ui`**, y
+  `TablePagination` si hay paginado. El componente aporta el marco (contenedor con borde, header
+  relleno, padding, bordes de fila) y los estados de carga, vacío y error; las filas las escribe
+  cada pantalla, porque las celdas son heterogéneas.
+  - **No hay prop `variant`.** Una tabla se ve igual en todo el sistema — hub, productos y
+    `webapp-example`. Hubo tres variantes (`default`, `dense`, `bare`) y tres variantes son tres
+    diseños. Una pantalla que parece necesitar otro marco tiene un problema de layout: sacá el
+    título afuera de la tarjeta, o quitale el borde a la tarjeta.
+  - Por eso las secciones de settings ya **no** envuelven la tabla en un `Card` con borde: título
+    y descripción van sueltos arriba y el marco lo pone la tabla (ver `payments-section.tsx`).
   - **El error gana sobre el vacío**: una request fallida también deja la lista vacía, y
     anunciar "no hay resultados" por una carga rota manda a buscar datos que nunca llegaron.
-- **Billing stubs**: Los endpoints de billing en `api-iam` son stubs que retornan estado vacío (`paymentMethod: null`, `items: []`). La integración real con Bancard para tokenización de tarjetas es trabajo futuro.
+  - El único `<table>` del monorepo vive en `packages/ui/src/components/organisms/data-table/`.
+- **Billing stubs**: ya solo `GET/POST /billing/payment-method` (retornan `paymentMethod: null`
+  y 202). La integración real con Bancard para tokenización de tarjetas es trabajo futuro.
+- **Un solo libro mayor, no dos**: `PaymentsSection` es la única tabla de facturación. Muestra
+  cada cobro con su fecha, medio, referencia, estado, nota de liquidación **y la factura**.
+  No hay subsistema de facturación: el PDF cuelga del cobro al que pertenece.
+  - `Payment.documentId` viene en `/billing/payments` y es `null` salvo que el pago esté aprobado
+    **y** el PDF ya exista — la fila del documento se crea como placeholder antes que el archivo.
+    Sin documento, la celda muestra un guion, nunca un botón muerto.
+  - Se descarga con `/billing/documents/{id}/signed-url`, el mismo endpoint que usa onboarding.
+  - **`/billing/invoices` ya no existe** (contrato 2.0.0). Había una segunda tabla con los mismos
+    eventos y menos columnas; una lista se lee mejor que dos vistas de una sola verdad.
 - **`session.role`**: El rol está en `session.role` (no en `session.user.role`). Usar `useSession()` para leer el rol en componentes.
 - **RequireRole**: `<RequireRole role={['TenantAdmin', 'SuperAdmin']}>` — envuelve secciones y rutas que solo son visibles para admins. Redirige a `/` si el rol no está autorizado.
+- **Dos ejes de permisos, no uno**: el rol de tenant (`TenantAdmin` / `User`) decide qué se
+  puede hacer *en el hub*; el rol de producto decide qué se puede abrir *dentro* de un producto.
+  La invitación fija el primero; `/settings/team` → botón de llave por miembro fija el segundo
+  (`MemberAccessDialog`, un rol por producto).
+  - **Sin rol de producto = ve todo lo que otorga el plan.** El resolver solo empieza a filtrar
+    cuando el usuario tiene al menos un rol. Asignar un rol *restringe*, nunca amplía.
+  - Un rol con `moduleCount: 0` deja al miembro sin nada — el diálogo avisa antes de guardar.
+  - Los `TenantAdmin` nunca quedan filtrados por su propio rol de producto
+    (`roleFilterSubject` en `api-iam/routes/modules/tenant-modules.ts`): si no, podrían
+    dejarse a sí mismos fuera del producto que administran y solo un SuperAdmin lo desharía.
+  - El botón de accesos vive **fuera** de `MemberActionsMenu` a propósito: ese menú se oculta
+    para el usuario actual, y un tenant cuyo admin es su único miembro igual tiene que poder
+    configurarse a sí mismo.
+- **Radix `Select` dentro de un Radix `Dialog` cuelga jsdom** — los dos focus scopes se pasan el
+  foco para siempre y el runner se traba sin timeout. Por eso `MemberAccessForm` está separado de
+  `MemberAccessDialog`: la interacción se testea con el form suelto. Además Radix `Select` necesita
+  stubs de `hasPointerCapture` / `scrollIntoView`, locales al test que los usa.
+
+- **Los productos aportan pantallas a `/settings`**: un producto declara sus secciones en
+  `product_admin_sections` (api-iam) y el hub las agrega al nav de settings y las monta en
+  `ModuleFrame`, el mismo iframe con handshake de token que usa `ProductShell`.
+  - `GET /tenants/current/admin-sections` ya filtra por producto contratado, módulo habilitado
+    y rol. La página solo dibuja lo que recibe.
+  - `path` es **relativo** a `productUrl` (`resolveSectionUrl`), así el override por env que
+    apunta a un producto local en desarrollo también aplica a sus pantallas de settings.
+  - `sizing="content"` hace que el iframe crezca con el mensaje `corehub.module.v1.resize`,
+    **acotado entre 160 y 4000px**: la altura viene de una página que el hub no controla.
+  - **El filtro por rol es de presentación.** El hub no está en el camino de la request; la API
+    del producto tiene que verificar el claim `role` (ver `assertTenantAdmin` en
+    `products/instagram-dashboard/api/src/routes/admin/admin.routes.ts`).
+  - Un `page.tsx` de Next **no admite exports nombrados**: el panel vive en
+    `modules/shared/modules/components/product-settings-section.tsx` y la ruta solo desempaqueta
+    los params con `use()`.
 
 ## Scripts disponibles
 
@@ -125,7 +169,7 @@ Note: Backend currently only supports recovering to `'company'` step. For `repre
 ## Contrato API
 
 - Archivo: `.atl/api-contract.yaml` (OpenAPI 3.1)
-- Versión actual: **1.6.0**
+- Versión actual: **2.0.0**
 - Lint: `pnpm --package=@redocly/cli dlx redocly lint .atl/api-contract.yaml`
 - Cambios al contrato requieren PR coordinado con el equipo backend (`apps/api-iam`).
 

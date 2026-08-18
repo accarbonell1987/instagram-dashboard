@@ -1,3 +1,4 @@
+import { ownerOf } from './domain/owner.js';
 import { join } from 'node:path';
 
 import {
@@ -25,6 +26,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { createAgentRoutes } from './routes/agent/agent.routes.js';
 import { createAuthRoutes } from './routes/auth/auth.routes.js';
 import { createCarouselRoutes } from './routes/carousels/carousels.routes.js';
+import { createAdminRoutes } from './routes/admin/admin.routes.js';
 import { createChatRoutes } from './routes/chat/chat.routes.js';
 import { createDashboardRoutes } from './routes/dashboard/dashboard.routes.js';
 import { createHealthRoutes } from './routes/health/health.routes.js';
@@ -115,6 +117,28 @@ async function bootstrap() {
     iamBaseUrl: config.IAM_INTERNAL_URL,
   });
 
+  /**
+   * A guard for one module of this product.
+   *
+   * The product-wide guard above only asks "may this user open the product at
+   * all". The web already draws its agent tabs per module — a Content Analyst
+   * gets Chat and Suggestions but no Carousels — and hiding a tab is not the
+   * same as refusing the call behind it. Without these, that analyst can POST
+   * to /api/carousels directly and generate exactly what their role says they
+   * may not.
+   */
+  const moduleGuard = (moduleId: string) =>
+    entitlementGuard({
+      productId: 'instagram-dashboard',
+      moduleId,
+      iamBaseUrl: config.IAM_INTERNAL_URL,
+    });
+
+  const agentGuard = moduleGuard('ig-ai-agent');
+  const chatGuard = moduleGuard('ig-ai-chat');
+  const suggestionsGuard = moduleGuard('ig-ai-suggestions');
+  const carouselsGuard = moduleGuard('ig-ai-carousels');
+
   // Protected routes (JWT required)
   const api = new OpenAPIHono();
   api.use('*', authGuard);
@@ -124,20 +148,34 @@ async function bootstrap() {
   api.route('/media', createMediaRoutes(dashboardService));
   api.route('/sync', createSyncRoutes(syncService));
   // Growth agent routes (chat + suggestions)
+  // Both paths on purpose: in Hono '/chat/*' does not match a bare '/chat',
+  // which is exactly the list endpoint worth protecting.
+  api.use('/chat', chatGuard);
+  api.use('/chat/*', chatGuard);
   api.route('/chat', createChatRoutes(growthAgentService, repos.chatMessage));
+  api.use('/suggestions', suggestionsGuard);
+  api.use('/suggestions/*', suggestionsGuard);
   api.route('/suggestions', createSuggestionsRoutes(suggestionService));
   // Agent config + usage routes
+  api.use('/agent', agentGuard);
+  api.use('/agent/*', agentGuard);
   api.route('/agent', createAgentRoutes(repos.instagram, usageTracker, config.ENABLE_USAGE_TRACKING));
   // Carousel routes
+  api.use('/carousels', carouselsGuard);
+  api.use('/carousels/*', carouselsGuard);
   api.route('/carousels', createCarouselRoutes(carouselService));
+  // Tenant administration contributed to the hub's settings area. Guarded on
+  // the JWT role inside the router — the hub cannot protect this.
+  api.route('/admin', createAdminRoutes(repos.instagram));
 
   // Protected auth routes: need JWT so authGuard has already set tenant context
   api.get('/auth/instagram/authorize', async (c) => {
     const tenant = c.get('tenant');
-    // Permanent binding: one IG account per tenant, forever
-    const existingAccount = await repos.instagram.findAccountByTenantId(tenant.tenantId);
+    // One IG account per user. A member who already holds one must release it
+    // — or have an admin release it — before connecting another.
+    const existingAccount = await repos.instagram.findAccountByOwner(ownerOf(tenant));
     if (existingAccount && existingAccount.syncStatus !== 'disconnected') {
-      throw new ConflictError('InstagramAccount', 'tenantId', tenant.tenantId);
+      throw new ConflictError('InstagramAccount', 'userId', tenant.userId);
     }
     const url = oauthService.getAuthorizationUrl(tenant.tenantId, tenant.userId);
     return c.json({ success: true, data: { url } }, 200);
@@ -145,13 +183,13 @@ async function bootstrap() {
 
   api.get('/auth/instagram/status', async (c) => {
     const tenant = c.get('tenant');
-    const status = await oauthService.getConnectionStatus(tenant.tenantId, tenant.userId);
+    const status = await oauthService.getConnectionStatus(ownerOf(tenant));
     return c.json({ success: true, data: status }, 200);
   });
 
   api.post('/auth/instagram/disconnect', async (c) => {
     const tenant = c.get('tenant');
-    await oauthService.disconnectAccount(tenant.tenantId, tenant.userId);
+    await oauthService.disconnectAccount(ownerOf(tenant));
     return c.json({ success: true, data: { message: 'Cuenta desconectada exitosamente' } }, 200);
   });
   
@@ -162,7 +200,13 @@ async function bootstrap() {
   // a4 purge-direction correction (owner-resolved): the entitlement cache
   // lives in the guard, so the purge route is hosted here — api-iam is the
   // CALLER on entitlement-mutating writes (mirrors the quotas purge pattern).
-  app.route('/', createEntitlementsPurgeRoute(entitlementsGuard));
+  app.route('/', createEntitlementsPurgeRoute([
+      entitlementsGuard,
+      agentGuard,
+      chatGuard,
+      suggestionsGuard,
+      carouselsGuard,
+    ]));
 
   // Static file serving for generated carousel images
   app.use('/carousels/*', serveStatic({ root: './public' }));

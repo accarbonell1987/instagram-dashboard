@@ -272,6 +272,13 @@ export function createSubmitService(deps: SubmitServiceDeps) {
               tenantId: tenant.id,
               email: repEmail,
               fullName: repFullName ?? null,
+              // The representative's phone also lands on the tenant above,
+              // where it serves as the company's contact number — the company
+              // step pre-fills it from here and stores none of its own. It has
+              // to be on the user too: the profile screen reads users.phone,
+              // so leaving it off meant the field the wizard just asked for
+              // came back empty on the owner's first visit.
+              phone: repPhone ?? null,
               role: 'TenantAdmin',
               status: 'pending_first_login',
               passwordHash: null,

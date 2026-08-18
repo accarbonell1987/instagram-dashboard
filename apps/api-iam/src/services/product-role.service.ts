@@ -1,13 +1,25 @@
 import type { Logger } from 'pino'
-import type { ProductRoleRepository } from '../repositories/product-role/index.js'
+import type {
+  ProductRoleRepository,
+  ProductRoleWithModuleCount,
+} from '../repositories/product-role/index.js'
+import type { ModuleRepository } from '../repositories/module/index.js'
 import type { UserRepository } from '../repositories/user/index.js'
 import type { ProductRole, UserProductRole } from '../domain/index.js'
-import { NotFoundError } from '../errors.js'
+import { ForbiddenError, NotFoundError, ValidationError } from '../errors.js'
 
 export type ProductRoleServiceDeps = {
   productRoleRepository: ProductRoleRepository
+  moduleRepository: ModuleRepository
   userRepo: UserRepository
   logger: Logger
+}
+
+/** The roles a tenant may hand out, grouped by the product that defines them. */
+export type TenantProductRoles = {
+  productId: string
+  productName: string
+  roles: ProductRoleWithModuleCount[]
 }
 
 export type ProductRoleService = {
@@ -20,10 +32,25 @@ export type ProductRoleService = {
   listByUser(userId: string): Promise<UserProductRole[]>
   getRoleModules(roleId: string): Promise<string[]>
   setRoleModules(roleId: string, moduleIds: string[]): Promise<void>
+  // ── Tenant-scoped: a TenantAdmin administering their own organisation ──
+  listRolesForTenant(tenantUuid: string): Promise<TenantProductRoles[]>
+  listRolesForMembers(userIds: string[]): Promise<Map<string, ProductRole[]>>
+  /** The caller's own roles, named for display alongside their product. */
+  listRolesForUser(
+    tenantUuid: string,
+    userId: string,
+  ): Promise<(ProductRole & { productName: string })[]>
+  setMemberRoles(params: {
+    tenantUuid: string
+    memberId: string
+    productRoleIds: string[]
+    requesterRole: string
+    assignedBy: string
+  }): Promise<void>
 }
 
 export function createProductRoleService(deps: ProductRoleServiceDeps): ProductRoleService {
-  const { productRoleRepository, userRepo, logger } = deps
+  const { productRoleRepository, moduleRepository, userRepo, logger } = deps
   const log = logger.child({ component: 'product-role-service' })
 
   return {
@@ -73,6 +100,86 @@ export function createProductRoleService(deps: ProductRoleServiceDeps): ProductR
 
     async setRoleModules(roleId, moduleIds) {
       await productRoleRepository.setRoleModules(roleId, moduleIds)
+    },
+
+    // ── Tenant-scoped ────────────────────────────────────────────────────────
+
+    async listRolesForTenant(tenantUuid) {
+      const products = await moduleRepository.findAvailableProducts(tenantUuid)
+      const roles = await productRoleRepository.findAllByProducts(products.map((p) => p.id))
+      return products.map((product) => ({
+        productId: product.id,
+        productName: product.name,
+        roles: roles.filter((role) => role.productId === product.id),
+      }))
+    },
+
+    async listRolesForMembers(userIds) {
+      const rows = await productRoleRepository.listRolesByUsers(userIds)
+      const byUser = new Map<string, ProductRole[]>()
+      for (const { userId, role } of rows) {
+        const list = byUser.get(userId) ?? []
+        list.push(role)
+        byUser.set(userId, list)
+      }
+      return byUser
+    },
+
+    async listRolesForUser(tenantUuid, userId) {
+      const [rows, products] = await Promise.all([
+        productRoleRepository.listRolesByUsers([userId]),
+        moduleRepository.findAvailableProducts(tenantUuid),
+      ])
+      const nameById = new Map(products.map((product) => [product.id, product.name]))
+
+      // A role whose product the tenant no longer has is not worth naming: the
+      // assignment survives a cancelled subscription, the access does not.
+      return rows
+        .filter(({ role }) => nameById.has(role.productId))
+        .map(({ role }) => ({ ...role, productName: nameById.get(role.productId) ?? role.productId }))
+    },
+
+    async setMemberRoles({ tenantUuid, memberId, productRoleIds, requesterRole, assignedBy }) {
+      if (requesterRole !== 'TenantAdmin' && requesterRole !== 'SuperAdmin') {
+        throw new ForbiddenError('product-roles.forbidden', 'TenantAdmin role required')
+      }
+
+      // 404, not 403: a member of another tenant must be indistinguishable from
+      // one that does not exist.
+      const member = await userRepo.findByIdInTenant(memberId, tenantUuid)
+      if (!member) {
+        throw new NotFoundError('identity.member_not_found', `Member '${memberId}' not found`)
+      }
+
+      const products = await moduleRepository.findAvailableProducts(tenantUuid)
+      const productIds = products.map((product) => product.id)
+      const available = await productRoleRepository.findAllByProducts(productIds)
+      const byId = new Map(available.map((role) => [role.id, role]))
+
+      const chosen = productRoleIds.map((id) => byId.get(id))
+      if (chosen.some((role) => role === undefined)) {
+        throw new ValidationError(
+          'product-roles.not_available',
+          'One of the roles does not belong to a product this tenant has contracted',
+        )
+      }
+
+      // One role per product. Two roles in the same product would union their
+      // modules, which no screen can show and nobody asked for.
+      const seenProducts = new Set<string>()
+      for (const role of chosen) {
+        if (role === undefined) continue
+        if (seenProducts.has(role.productId)) {
+          throw new ValidationError(
+            'product-roles.duplicate_product',
+            `More than one role given for product '${role.productId}'`,
+          )
+        }
+        seenProducts.add(role.productId)
+      }
+
+      log.info({ tenantUuid, memberId, count: productRoleIds.length }, 'setting member roles')
+      await productRoleRepository.replaceUserRoles(memberId, productIds, productRoleIds, assignedBy)
     },
   }
 }

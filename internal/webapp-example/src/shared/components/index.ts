@@ -10,5 +10,3 @@ export type { DeleteConfirmationDialogProps } from './delete-confirmation-dialog
 export { CrudPageLayout } from './crud-page-layout';
 export type { CrudPageLayoutProps } from './crud-page-layout';
 
-export { DataTable } from './data-table';
-export type { DataTableColumn, DataTableProps } from './data-table';

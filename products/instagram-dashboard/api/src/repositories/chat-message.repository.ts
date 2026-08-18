@@ -1,10 +1,13 @@
-import { Prisma, type PrismaClient, type MessageRole } from '@prisma/client';
+import type { PrismaClient, MessageRole } from '@prisma/client';
+
+import type { Owner } from '../domain/owner.js';
 
 export type { MessageRole };
 
 export interface ChatMessage {
   id: string;
   tenantId: string;
+  userId: string;
   sessionId: string;
   role: MessageRole;
   content: string;
@@ -13,6 +16,7 @@ export interface ChatMessage {
 
 export interface CreateChatMessage {
   tenantId: string;
+  userId: string;
   sessionId: string;
   role: MessageRole;
   content: string;
@@ -20,9 +24,9 @@ export interface CreateChatMessage {
 
 export interface IChatMessageRepository {
   save(msg: CreateChatMessage): Promise<ChatMessage>;
-  findBySession(tenantId: string, sessionId: string): Promise<ChatMessage[]>;
-  deleteById(tenantId: string, id: string): Promise<void>;
-  deleteBySessionId(tenantId: string, sessionId: string): Promise<number>;
+  findBySession(owner: Owner, sessionId: string): Promise<ChatMessage[]>;
+  deleteById(owner: Owner, id: string): Promise<void>;
+  deleteBySessionId(owner: Owner, sessionId: string): Promise<number>;
 }
 
 export class PrismaChatMessageRepository implements IChatMessageRepository {
@@ -32,6 +36,7 @@ export class PrismaChatMessageRepository implements IChatMessageRepository {
     const record = await this.prisma.chatMessage.create({
       data: {
         tenantId: msg.tenantId,
+        userId: msg.userId,
         sessionId: msg.sessionId,
         role: msg.role,
         content: msg.content,
@@ -40,6 +45,7 @@ export class PrismaChatMessageRepository implements IChatMessageRepository {
     return {
       id: record.id,
       tenantId: record.tenantId,
+      userId: record.userId,
       sessionId: record.sessionId,
       role: record.role,
       content: record.content,
@@ -47,9 +53,9 @@ export class PrismaChatMessageRepository implements IChatMessageRepository {
     };
   }
 
-  async findBySession(tenantId: string, sessionId: string): Promise<ChatMessage[]> {
+  async findBySession(owner: Owner, sessionId: string): Promise<ChatMessage[]> {
     const records = await this.prisma.chatMessage.findMany({
-      where: { tenantId, sessionId },
+      where: { ...owner, sessionId },
       orderBy: { createdAt: 'desc' },
       take: 20,
     });
@@ -58,6 +64,7 @@ export class PrismaChatMessageRepository implements IChatMessageRepository {
     return ordered.map((record) => ({
       id: record.id,
       tenantId: record.tenantId,
+      userId: record.userId,
       sessionId: record.sessionId,
       role: record.role,
       content: record.content,
@@ -65,23 +72,20 @@ export class PrismaChatMessageRepository implements IChatMessageRepository {
     }));
   }
 
-  async deleteById(tenantId: string, id: string): Promise<void> {
-    try {
-      await this.prisma.chatMessage.delete({
-        where: { id, tenantId },
-      });
-    } catch (err) {
-      // P2025 = record not found — idempotent, silently succeed
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-        return;
-      }
-      throw err;
-    }
+  /**
+   * deleteMany, not delete: `delete` takes a unique where, so scoping it by
+   * owner would mean reading the row first and trusting it in between. This
+   * also makes the operation naturally idempotent — deleting something that is
+   * not there, or belongs to somebody else, removes nothing and says so by
+   * removing nothing.
+   */
+  async deleteById(owner: Owner, id: string): Promise<void> {
+    await this.prisma.chatMessage.deleteMany({ where: { id, ...owner } });
   }
 
-  async deleteBySessionId(tenantId: string, sessionId: string): Promise<number> {
+  async deleteBySessionId(owner: Owner, sessionId: string): Promise<number> {
     const result = await this.prisma.chatMessage.deleteMany({
-      where: { tenantId, sessionId },
+      where: { ...owner, sessionId },
     });
     return result.count;
   }

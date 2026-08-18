@@ -177,3 +177,127 @@ describe('createEntitlementsPurgeRoute', () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe('entitlementGuard — module scope', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /**
+   * The whole point of a module-scoped guard. Without the moduleId on the wire
+   * it asks the same question as the product-wide guard — "may they open this
+   * product at all" — and silently allows everything the product contains,
+   * which is the hole it was mounted to close.
+   */
+  it('asks IAM about its module, not just the product', async () => {
+    const fetchMock = fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve({ allowed: true }) });
+
+    const guard = entitlementGuard({
+      productId: 'instagram-dashboard',
+      moduleId: 'ig-ai-carousels',
+      iamBaseUrl: IAM_BASE_URL,
+    });
+    await makeApp(guard).request('/protected');
+
+    const requested = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(requested.searchParams.get('productId')).toBe('instagram-dashboard');
+    expect(requested.searchParams.get('moduleId')).toBe('ig-ai-carousels');
+  });
+
+  // A product-wide guard must not narrow itself to some module by accident.
+  it('sends no moduleId when it guards the whole product', async () => {
+    const fetchMock = fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve({ allowed: true }) });
+
+    await makeApp(
+      entitlementGuard({ productId: 'instagram-dashboard', iamBaseUrl: IAM_BASE_URL }),
+    ).request('/protected');
+
+    const requested = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(requested.searchParams.get('moduleId')).toBeNull();
+  });
+
+  // Denial is what a role restriction looks like from in here.
+  it('refuses the call when IAM says the module is not granted', async () => {
+    const fetchMock = fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve({ allowed: false }) });
+
+    const res = await makeApp(
+      entitlementGuard({
+        productId: 'instagram-dashboard',
+        moduleId: 'ig-ai-carousels',
+        iamBaseUrl: IAM_BASE_URL,
+      }),
+    ).request('/protected');
+
+    expect(res.status).toBe(403);
+  });
+});
+
+/**
+ * A product that gates individual modules mounts several guards — one per
+ * module — beside the product-wide one. Each keeps its own cache, so a purge
+ * that reaches only some of them leaves the rest answering from a stale
+ * decision: the admin changes a role and nothing appears to happen until the
+ * TTL runs out.
+ */
+describe('createEntitlementsPurgeRoute — several guards', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('purges every guard it was given, not just the first', async () => {
+    const fetchMock = fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ allowed: true }),
+    });
+
+    const productGuard = entitlementGuard({ productId: 'p', iamBaseUrl: IAM_BASE_URL });
+    const moduleGuard = entitlementGuard({
+      productId: 'p',
+      moduleId: 'm',
+      iamBaseUrl: IAM_BASE_URL,
+    });
+
+    // Warm both caches.
+    await makeApp(productGuard).request('/protected');
+    await makeApp(moduleGuard).request('/protected');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    const app = new Hono();
+    app.route('/', createEntitlementsPurgeRoute([productGuard, moduleGuard]));
+    const purged = await app.request('/internal/entitlements/purge', {
+      method: 'POST',
+      body: JSON.stringify({ tenantId: 'tenant-1' }),
+    });
+    expect(purged.status).toBe(200);
+
+    // Both must go back to IAM; a guard left warm would answer from cache.
+    await makeApp(productGuard).request('/protected');
+    await makeApp(moduleGuard).request('/protected');
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('still accepts a single guard', async () => {
+    const guard = entitlementGuard({ productId: 'p', iamBaseUrl: IAM_BASE_URL });
+    const app = new Hono();
+    app.route('/', createEntitlementsPurgeRoute(guard));
+
+    const res = await app.request('/internal/entitlements/purge', {
+      method: 'POST',
+      body: JSON.stringify({ tenantId: 'tenant-1' }),
+    });
+
+    expect(res.status).toBe(200);
+  });
+});

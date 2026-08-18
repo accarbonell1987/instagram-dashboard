@@ -71,7 +71,15 @@ Every webapp under `apps/**` (and `internal/webapp-example/`) MUST have:
 
 - MUST import primitives from `@core/ui` (Button, Input, Table, Dialog, Card, Badge, Toaster, TooltipProvider, etc.).
 - MUST NOT recreate primitives locally. If a needed primitive is missing, add it to `@core/ui` (`pnpm ui:add <name>` from the root) — do not inline it in the app.
-- SHOULD compose reusable layouts in `src/shared/components/` (`CrudPageLayout`, `DataTable`, `SearchInput`, etc.).
+- MUST render every table with `DataTable` + `Th`/`Tr`/`Td` from `@core/ui`, and `TablePagination`
+  when paginated. **There is no variant prop**: a table looks the same wherever it appears, in
+  every app of the monorepo. A screen that seems to need a different frame has a layout problem —
+  put the heading outside the card, or drop the card's own border. The component owns the frame
+  and the loading/empty/error states; the caller writes its rows, because cells are heterogeneous.
+  - **MUST NOT** hand-roll a table from the `Table`/`TableRow`/`TableCell` primitives, and MUST NOT
+    write a second `DataTable` in `src/shared/components/`. This app used to ship its own
+    column-config version — two components with different APIs is how the tables drifted apart.
+- SHOULD compose reusable layouts in `src/shared/components/` (`CrudPageLayout`, `SearchInput`, etc.).
 - MUST NOT use `cva` + `forwardRef` + `cn()` patterns at app level — those belong in `@core/ui` atoms.
 - MUST NOT import internal paths from `@core/ui` (e.g. `@core/ui/src/atoms/button`). Use the package barrel: `import { Button } from '@core/ui'`.
 
@@ -100,7 +108,7 @@ apps/{app}/src/
 │   └── components/
 ├── shared/
 │   ├── hooks/                 # useCrudPage, useDebouncedValue, ...
-│   └── components/            # CrudPageLayout, DataTable, ...
+│   └── components/            # CrudPageLayout, SearchInput, ... (NO DataTable: vive en @core/ui)
 ├── lib/
 │   └── services.ts            # Composition root
 ├── services/

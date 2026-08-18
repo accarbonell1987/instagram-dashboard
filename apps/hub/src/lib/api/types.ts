@@ -1040,6 +1040,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tenants/current/product-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Roles que el tenant puede repartir, agrupados por producto contratado
+         * @description **Propósito**: Devuelve, por cada producto que el tenant tiene contratado, los roles
+         *     que ese producto define. Es el catálogo del que un `TenantAdmin` elige al dar acceso
+         *     a un miembro.
+         *
+         *     **Proceso**: Consultado por `Settings > Team` para poblar el selector de producto y rol
+         *     del diálogo de accesos.
+         *
+         *     **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
+         *
+         *     **Notas**: `moduleCount` es la cantidad de módulos que el rol abre. Un rol con
+         *     `moduleCount: 0` no da acceso a nada — asignarlo le quita el producto al miembro,
+         *     porque el resolver intersecta los módulos del plan con los del rol.
+         */
+        get: operations["getTenantProductRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tenants/current/members/{memberId}/product-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reemplazar los roles de producto de un miembro
+         * @description **Propósito**: Define, de una sola vez, a qué productos accede un miembro y con qué rol
+         *     dentro de cada uno. El rol del tenant (`TenantAdmin` / `User`) decide qué puede hacer en
+         *     el hub; esto decide qué puede abrir dentro de un producto. Son ejes separados.
+         *
+         *     **Proceso**: Accionado desde `Settings > Team` al guardar el diálogo de accesos.
+         *
+         *     **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. El miembro debe
+         *     pertenecer al tenant del solicitante.
+         *
+         *     **Notas**:
+         *     - El body es el conjunto completo, no un delta: un array vacío le quita todos los accesos.
+         *     - Solo se aceptan roles de productos que el tenant tiene contratados (422
+         *       `product-roles.not_available`).
+         *     - Un solo rol por producto (422 `product-roles.duplicate_product`).
+         *     - Un miembro sin ningún rol de producto ve todo lo que el plan otorga. Asignar un rol
+         *       *restringe*; no amplía.
+         *     - Los `TenantAdmin` nunca quedan filtrados por su propio rol de producto — de lo
+         *       contrario podrían dejarse a sí mismos fuera del producto que administran.
+         */
+        put: operations["setMemberProductRoles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tenants/current/plan-change": {
         parameters: {
             query?: never;
@@ -1098,6 +1166,43 @@ export interface paths {
          *     para trazabilidad.
          */
         get: operations["getAccessibleModules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tenants/current/admin-sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pantallas de configuración que aportan los productos del tenant
+         * @description **Propósito**: Un producto puede aportar pantallas de administración al área de
+         *     configuración del tenant — por ejemplo, las cuentas de Instagram vinculadas y quién las
+         *     tiene tomadas. Este endpoint devuelve las que el llamante puede ver.
+         *
+         *     **Proceso**: El hub las agrega al nav de `/settings` y monta cada una en el mismo iframe
+         *     que ya usa para el producto (`ProductShell`), uniendo `productUrl` + `path`.
+         *
+         *     **Precondiciones**: Sesión activa. El filtro por rol es por sección.
+         *
+         *     **Notas**:
+         *     - `path` es **relativo** a `productUrl` a propósito: el hub une los dos, y eso le permite
+         *       sustituir la dirección del producto en desarrollo sin que este registro sepa nada de
+         *       entornos.
+         *     - Solo aparecen secciones de productos contratados. Si la sección declara `moduleId`, además
+         *       ese módulo tiene que estar habilitado para el tenant.
+         *     - **El filtro por rol es de presentación, no de autorización.** El hub decide qué entrada
+         *       dibuja; no está en el camino de la request y no puede proteger nada. La API del propio
+         *       producto DEBE verificar el claim `role` del JWT en cada acción privilegiada.
+         */
+        get: operations["getTenantAdminSections"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1629,68 +1734,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/billing/invoices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Listar facturas del tenant paginadas en orden descendente
-         * @description **Propósito**: Devuelve el historial de facturas del tenant paginado, ordenado
-         *     por fecha de emisión descendente (más recientes primero).
-         *
-         *     **Proceso**: Consultado por `InvoicesSection` en `Settings > Billing` para mostrar
-         *     el historial de facturación. Cada factura puede tener asociado un `documentId` para
-         *     descargar el PDF via `GET /billing/invoices/{id}/signed-url`.
-         *
-         *     **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
-         *
-         *     **Notas**: **Stub actual** — el backend retorna siempre una lista vacía (`items: []`,
-         *     `total: 0`) en esta versión. La paginación usa `page` (desde 1) y `pageSize` (máx 100,
-         *     default 10). Los estados de factura son: `paid`, `pending`, `overdue`, `cancelled`.
-         */
-        get: operations["listInvoices"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/invoices/{invoiceId}/signed-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Obtener URL firmada para descargar PDF de factura (TTL 5 min)
-         * @description **Propósito**: Genera una URL pre-firmada de corta duración (5 min) para descargar
-         *     el PDF de una factura específica del tenant.
-         *
-         *     **Proceso**: Accionado desde `InvoicesSection` al hacer clic en el botón de descarga
-         *     junto a una factura. El `invoiceId` proviene del campo `id` en `GET /billing/invoices`.
-         *
-         *     **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. La factura
-         *     debe existir y tener un documento PDF asociado (`documentId` no nulo).
-         *
-         *     **Notas**: **Stub actual** — el backend retorna siempre 404 en esta versión.
-         *     La generación real de facturas PDF es trabajo futuro. Para documentos del onboarding
-         *     (factura de bienvenida, contrato), usar `GET /billing/documents/{documentId}/signed-url`.
-         */
-        get: operations["getInvoiceSignedUrl"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/.well-known/jwks.json": {
         parameters: {
             query?: never;
@@ -2163,25 +2206,6 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
-        /** @enum {string} */
-        InvoiceStatus: "paid" | "pending" | "overdue" | "cancelled";
-        InvoiceListItem: {
-            /** Format: uuid */
-            id: string;
-            /** Format: date-time */
-            issuedAt: string;
-            total: number;
-            /** @enum {string} */
-            currency: "PYG" | "USD";
-            status: components["schemas"]["InvoiceStatus"];
-            documentId?: string | null;
-        };
-        InvoiceListResponse: {
-            items: components["schemas"]["InvoiceListItem"][];
-            total: number;
-            page: number;
-            pageSize: number;
-        };
         PaginatedResponse: {
             items: unknown[];
             total: number;
@@ -2246,6 +2270,14 @@ export interface components {
             /** Format: date-time */
             settledAt?: string | null;
             instruction?: components["schemas"]["PaymentInstruction"] | null;
+            /**
+             * Format: uuid
+             * @description PDF de la factura de este cobro, descargable con
+             *     `/billing/documents/{documentId}/signed-url`. Solo en la vista del tenant, y solo si el
+             *     pago está aprobado **y** el archivo ya se generó — la fila del documento se crea como
+             *     placeholder antes de que exista el PDF.
+             */
+            documentId?: string | null;
             /** Format: date-time */
             createdAt: string;
         };
@@ -2381,6 +2413,13 @@ export interface components {
         };
         /** @enum {string} */
         MemberStatus: "pending_first_login" | "active" | "suspended";
+        MemberProductRole: {
+            /** Format: uuid */
+            id: string;
+            productId: string;
+            key: string;
+            name: string;
+        };
         MemberListItem: {
             /** Format: uuid */
             id: string;
@@ -2392,6 +2431,43 @@ export interface components {
             status: components["schemas"]["MemberStatus"];
             /** Format: date-time */
             createdAt: string;
+            /** @description Accesos a producto del miembro. Vacío = ve todo lo que otorga el plan. */
+            productRoles: components["schemas"]["MemberProductRole"][];
+        };
+        TenantAdminSection: {
+            key: string;
+            label: string;
+            description: string | null;
+            productId: string;
+            productName: string;
+            /** @description Dirección del producto. El hub le une `path` para obtener la URL final. */
+            productUrl: string;
+            /** @description Ruta relativa a `productUrl`. */
+            path: string;
+            /** @description Módulo que la sección requiere, o null si es del producto entero. */
+            moduleId: string | null;
+        };
+        TenantAdminSectionsResponse: {
+            sections: components["schemas"]["TenantAdminSection"][];
+        };
+        TenantProductRole: components["schemas"]["MemberProductRole"] & {
+            /**
+             * @description Cuántos módulos abre el rol. Cero significa que asignarlo le quita el
+             *     producto al miembro: el resolver intersecta los módulos del plan con
+             *     los del rol.
+             */
+            moduleCount: number;
+        };
+        TenantProductRolesResponse: {
+            products: {
+                productId: string;
+                productName: string;
+                roles: components["schemas"]["TenantProductRole"][];
+            }[];
+        };
+        SetMemberProductRolesRequest: {
+            /** @description Conjunto completo, no delta. Un array vacío le quita todos los accesos. */
+            productRoleIds: string[];
         };
         MemberListResponse: {
             items: components["schemas"]["MemberListItem"][];
@@ -2772,9 +2848,6 @@ export type SchemaPaymentMethodBrand = components['schemas']['PaymentMethodBrand
 export type SchemaPaymentMethod = components['schemas']['PaymentMethod'];
 export type SchemaPaymentMethodResponse = components['schemas']['PaymentMethodResponse'];
 export type SchemaPaymentMethodChangeRequestResponse = components['schemas']['PaymentMethodChangeRequestResponse'];
-export type SchemaInvoiceStatus = components['schemas']['InvoiceStatus'];
-export type SchemaInvoiceListItem = components['schemas']['InvoiceListItem'];
-export type SchemaInvoiceListResponse = components['schemas']['InvoiceListResponse'];
 export type SchemaPaginatedResponse = components['schemas']['PaginatedResponse'];
 export type SchemaPaymentMethodKind = components['schemas']['PaymentMethodKind'];
 export type SchemaBankAccount = components['schemas']['BankAccount'];
@@ -2800,7 +2873,13 @@ export type SchemaInvitationStatus = components['schemas']['InvitationStatus'];
 export type SchemaInvitationListItem = components['schemas']['InvitationListItem'];
 export type SchemaInvitationListResponse = components['schemas']['InvitationListResponse'];
 export type SchemaMemberStatus = components['schemas']['MemberStatus'];
+export type SchemaMemberProductRole = components['schemas']['MemberProductRole'];
 export type SchemaMemberListItem = components['schemas']['MemberListItem'];
+export type SchemaTenantAdminSection = components['schemas']['TenantAdminSection'];
+export type SchemaTenantAdminSectionsResponse = components['schemas']['TenantAdminSectionsResponse'];
+export type SchemaTenantProductRole = components['schemas']['TenantProductRole'];
+export type SchemaTenantProductRolesResponse = components['schemas']['TenantProductRolesResponse'];
+export type SchemaSetMemberProductRolesRequest = components['schemas']['SetMemberProductRolesRequest'];
 export type SchemaMemberListResponse = components['schemas']['MemberListResponse'];
 export type SchemaUpdateTenantNameRequest = components['schemas']['UpdateTenantNameRequest'];
 export type SchemaUpdateMemberStatusRequest = components['schemas']['UpdateMemberStatusRequest'];
@@ -3335,6 +3414,20 @@ export interface operations {
                         user: components["schemas"]["User"];
                         tenant: components["schemas"]["Tenant"];
                         role: components["schemas"]["Role"];
+                        /**
+                         * @description Lo que el llamante puede abrir dentro de cada producto contratado. `role`
+                         *     dice qué puede hacer en el hub; esto es el otro eje, y es el que decide qué
+                         *     le muestra un producto — así "¿por qué no veo el agente?" se responde acá.
+                         *     Vacío significa que ve todo lo que otorga el plan.
+                         */
+                        productRoles: {
+                            /** Format: uuid */
+                            id: string;
+                            productId: string;
+                            productName: string;
+                            key: string;
+                            name: string;
+                        }[];
                     };
                 };
             };
@@ -3934,6 +4027,64 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    getTenantProductRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Assignable roles per contracted product */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantProductRolesResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    setMemberProductRoles: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description UUID v4. Requerido en todos los endpoints de mutación que no sean GET. El backend almacena
+                 *     (key, request_hash, response_body, status_code, created_at) durante 24 h.
+                 *     Misma key → respuesta cacheada. Cuerpo de request diferente con la misma key → 422.
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKeyHeader"];
+            };
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMemberProductRolesRequest"];
+            };
+        };
+        responses: {
+            /** @description Member product roles replaced */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+        };
+    };
     requestPlanChange: {
         parameters: {
             query?: never;
@@ -3989,6 +4140,28 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getTenantAdminSections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Admin sections the caller may see */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantAdminSectionsResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getAvailableProducts: {
@@ -4974,56 +5147,6 @@ export interface operations {
             };
             422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["TooManyRequests"];
-        };
-    };
-    listInvoices: {
-        parameters: {
-            query?: {
-                page?: number;
-                pageSize?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Lista de facturas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InvoiceListResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    getInvoiceSignedUrl: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                invoiceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description URL firmada */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SignedUrlResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
         };
     };
     getJwks: {

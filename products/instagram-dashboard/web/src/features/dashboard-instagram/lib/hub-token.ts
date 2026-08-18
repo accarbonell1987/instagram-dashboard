@@ -17,6 +17,7 @@ const HUB_TO_MODULE = {
 const MODULE_TO_HUB = {
   ready: 'corehub.module.v1.ready',
   requestToken: 'corehub.module.v1.requestToken',
+  resize: 'corehub.module.v1.resize',
 } as const;
 
 // Hub origin to trust and to post to. Configurable per environment; dev default
@@ -95,4 +96,31 @@ export function initHubToken(): () => void {
   return () => {
     window.removeEventListener('message', handleMessage);
   };
+}
+
+/**
+ * Tell the hub how tall this page is.
+ *
+ * Only matters when the hub mounts the page as a panel inside its own layout —
+ * a settings screen rather than the full-window product — because nothing
+ * outside the iframe can measure the content. Harmless when unframed: the
+ * message goes to `window.parent`, which is `window` itself, and nobody reads
+ * it.
+ *
+ * Returns a cleanup function; call it from an effect.
+ */
+export function reportHeightToHub(element: HTMLElement): () => void {
+  if (typeof window === 'undefined') return () => undefined;
+
+  const post = (): void => {
+    window.parent.postMessage(
+      { type: MODULE_TO_HUB.resize, height: Math.ceil(element.getBoundingClientRect().height) },
+      HUB_ORIGIN,
+    );
+  };
+
+  post();
+  const observer = new ResizeObserver(post);
+  observer.observe(element);
+  return () => { observer.disconnect(); };
 }

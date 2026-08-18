@@ -90,7 +90,10 @@ model InstagramAccount {
   syncLogs  InstagramSyncLog[]
   carousels Carousel[]
 
-  @@unique([tenantId])
+  // One account per user, not per tenant: everyone in the organisation connects
+  // their own. The admin sees them all in the hub's settings area.
+  @@unique([tenantId, userId])
+  @@index([tenantId])
   @@map("instagram_accounts")
 }
 
@@ -172,30 +175,35 @@ model InstagramSyncLog {
 model ChatMessage {
   id        String      @id @default(uuid()) @db.Uuid
   tenantId  String      @map("tenant_id") @db.Uuid
+  // Whose conversation this is. Tenant alone would let anyone in the
+  // organisation read everybody else's chat with the agent.
+  userId    String      @map("user_id") @db.Uuid
   sessionId String      @map("session_id") @db.Uuid
   role      MessageRole
   content   String      @db.Text
   createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
 
-  @@index([tenantId, sessionId, createdAt])
+  @@index([tenantId, userId, sessionId, createdAt])
   @@map("chat_messages")
 }
 
 model SuggestionBatch {
   id          String              @id @default(uuid()) @db.Uuid
   tenantId    String              @map("tenant_id") @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
   userMessage String              @map("user_message") @db.Text
   createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
 
   suggestions ContentSuggestion[]
 
-  @@index([tenantId, createdAt])
+  @@index([tenantId, userId, createdAt])
   @@map("suggestion_batches")
 }
 
 model Carousel {
   id            String            @id @default(uuid()) @db.Uuid
   tenantId      String            @map("tenant_id") @db.Uuid
+  userId        String            @map("user_id")   @db.Uuid
   accountId     String?           @map("account_id") @db.Uuid
   account       InstagramAccount? @relation(fields: [accountId], references: [id])
   suggestionId  String?           @map("suggestion_id") @db.Uuid
@@ -213,7 +221,7 @@ model Carousel {
 
   slides CarouselSlide[]
 
-  @@index([tenantId, createdAt])
+  @@index([tenantId, userId, createdAt])
   @@map("carousels")
 }
 
@@ -240,6 +248,7 @@ model CarouselSlide {
 model ContentSuggestion {
   id            String             @id @default(uuid()) @db.Uuid
   tenantId      String             @map("tenant_id") @db.Uuid
+  userId        String             @map("user_id")   @db.Uuid
   batchId       String?            @map("batch_id") @db.Uuid
   batch         SuggestionBatch?   @relation(fields: [batchId], references: [id])
   category      SuggestionCategory
@@ -269,6 +278,8 @@ model AiUsageLog {
   imageCount       Int        @default(0) @map("image_count")
   createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz
 
+  // Tenant-scoped on purpose: this backs quota enforcement and the quota
+  // belongs to the plan the TENANT bought, not to each member.
   @@index([tenantId, createdAt])
   @@index([tenantId, operation, createdAt])
   @@map("ai_usage_logs")
