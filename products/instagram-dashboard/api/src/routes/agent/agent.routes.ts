@@ -1,18 +1,27 @@
 import { Hono } from 'hono';
 
 import type { AgentConfig } from '../../domain/account.js';
-import { NotFoundError } from '../../errors.js';
+import {
+  findChangedSections,
+  resolveEditableSections,
+} from '../../domain/agent-settings-sections.js';
+import { ForbiddenError, NotFoundError } from '../../errors.js';
 import { encryptToken } from '../../lib/crypto.js';
 import type { InstagramRepository } from '../../repositories/instagram/index.js';
 import type { UsageTracker } from '../../services/usage-tracker.service.js';
 
 import { SaveAgentSettingsBodySchema } from './agent.schemas.js';
 
- 
+/** Reads the caller's entitled module ids — the same lookup `/me/modules` uses. */
+export interface ModuleAccessLookup {
+  getAccessibleModuleIds(tenantId: string, userId: string): Promise<string[]>;
+}
+
 export function createAgentRoutes(
   repos: InstagramRepository,
   usageTracker: UsageTracker,
   usageTrackingEnabled: boolean,
+  moduleAccess: ModuleAccessLookup,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Hono<any> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,16 +33,24 @@ export function createAgentRoutes(
     const { tenantId, userId } = tenant;
     const owner = { tenantId, userId };
 
-    const [agentConfig, hasFalApiKey, hasLlmApiKey] = await Promise.all([
+    const [agentConfig, hasFalApiKey, hasLlmApiKey, moduleIds] = await Promise.all([
       repos.getAgentConfig(owner),
       repos.hasFalApiKey(owner),
       repos.hasLlmApiKey(owner),
+      moduleAccess.getAccessibleModuleIds(tenantId, userId),
     ]);
+
+    // The screen is told what it may edit rather than working it out itself.
+    // It has no access to the tenant role — decoding the JWT client-side to
+    // find one would be reading mutable data from a claim — and a second copy
+    // of these rules would be a second place for them to go wrong. The same
+    // table answers here and refuses in PUT.
+    const editableSections = resolveEditableSections(moduleIds, tenant.role);
 
     // The keys themselves never come back — only whether one is set, which is
     // all the screen needs to say "configurada" instead of showing a secret.
     return c.json(
-      { success: true, data: { agentConfig, hasFalApiKey, hasLlmApiKey } },
+      { success: true, data: { agentConfig, hasFalApiKey, hasLlmApiKey, editableSections } },
       200,
     );
   });
@@ -66,6 +83,24 @@ export function createAgentRoutes(
       return c.json(
         { success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON body' } },
         400,
+      );
+    }
+
+    // Authorisation runs on the change, not on the screen. Hiding a tab stops
+    // nobody: this endpoint took the whole payload with no per-field check, so
+    // any member holding `ig-ai-agent` could set the model, the fal.ai key and
+    // the character limits — the tenant's credentials and its token spend.
+    const [storedConfig, moduleIds] = await Promise.all([
+      repos.getAgentConfig(owner),
+      moduleAccess.getAccessibleModuleIds(tenantId, userId),
+    ]);
+    const editable = new Set<string>(resolveEditableSections(moduleIds, tenant.role));
+    const refused = findChangedSections(body, storedConfig).filter(
+      (section) => !editable.has(section),
+    );
+    if (refused.length > 0) {
+      throw new ForbiddenError(
+        `No tenés permiso para cambiar: ${refused.join(', ')}`,
       );
     }
 

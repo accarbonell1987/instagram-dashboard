@@ -6,6 +6,7 @@ import type { JSX } from 'react'
 import { useState, useEffect } from 'react'
 
 
+import type { UseGrowthAgentResult } from '../hooks/use-growth-agent'
 import { getUsage } from '../services/instagram.service'
 import type { ContentSuggestion, UsageResponse } from '../types/instagram.types'
 
@@ -13,7 +14,6 @@ import { AgentSettingsModal } from './agent-settings'
 import { CarouselPreviewPanel } from './carousel-preview-panel'
 import { CarouselsSection } from './carousels-section'
 import { ChatPanel } from './chat-panel'
-import type { UseGrowthAgentResult } from './chat-panel.types'
 import { ScriptPreviewModal } from './script-preview-modal'
 import { SuggestionsPanel } from './suggestions-panel'
 import { UsageMeter } from './usage-meter'
@@ -268,6 +268,7 @@ export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentP
         initialConfig={hook.agentConfig}
         hasFalApiKey={hook.hasFalApiKey}
         hasLlmApiKey={hook.hasLlmApiKey}
+        editableSections={hook.editableSections}
       />
 
       {/* Script preview modal — shown before carousel is created */}

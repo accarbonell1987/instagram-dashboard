@@ -1,4 +1,3 @@
-import { ownerOf } from './domain/owner.js';
 import { join } from 'node:path';
 
 import {
@@ -16,17 +15,17 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
 import { config } from './config.js';
+import { ownerOf } from './domain/owner.js';
 import { ConflictError } from './errors.js';
 import { createRepositories } from './lib/create-repositories.js';
-import { LlmResolver } from './services/llm-resolver.service.js';
 import { DiskImageStorage } from './lib/image/disk-image-storage.js';
 import { FalAiImageProvider } from './lib/image/fal-ai-image-provider.js';
 import { authGuard } from './middleware/auth-guard.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { createAdminRoutes } from './routes/admin/admin.routes.js';
 import { createAgentRoutes } from './routes/agent/agent.routes.js';
 import { createAuthRoutes } from './routes/auth/auth.routes.js';
 import { createCarouselRoutes } from './routes/carousels/carousels.routes.js';
-import { createAdminRoutes } from './routes/admin/admin.routes.js';
 import { createChatRoutes } from './routes/chat/chat.routes.js';
 import { createDashboardRoutes } from './routes/dashboard/dashboard.routes.js';
 import { createHealthRoutes } from './routes/health/health.routes.js';
@@ -38,6 +37,7 @@ import { CarouselService } from './services/carousel.service.js';
 import { DashboardService } from './services/dashboard.service.js';
 import { GrowthAgentService } from './services/growth-agent.service.js';
 import { InsightService } from './services/insight.service.js';
+import { LlmResolver } from './services/llm-resolver.service.js';
 import { OAuthService } from './services/oauth.service.js';
 import { ScriptGeneratorService } from './services/script-generator.service.js';
 import { SuggestionService } from './services/suggestion.service.js';
@@ -161,7 +161,7 @@ async function bootstrap() {
   // Agent config + usage routes
   api.use('/agent', agentGuard);
   api.use('/agent/*', agentGuard);
-  api.route('/agent', createAgentRoutes(repos.instagram, usageTracker, config.ENABLE_USAGE_TRACKING));
+  api.route('/agent', createAgentRoutes(repos.instagram, usageTracker, config.ENABLE_USAGE_TRACKING, moduleAccessService));
   // Carousel routes
   api.use('/carousels', carouselsGuard);
   api.use('/carousels/*', carouselsGuard);

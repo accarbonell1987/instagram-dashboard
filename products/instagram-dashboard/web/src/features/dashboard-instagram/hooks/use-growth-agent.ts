@@ -15,11 +15,11 @@ import {
   saveAgentSettings,
 } from '../services/instagram.service'
 import type { ChatMessage, ContentSuggestion, SuggestionBatch, AgentConfig,
-  AgentSecrets, AgentSettingsResponse } from '../types/instagram.types'
+  AgentSecrets, AgentSettingsResponse, AgentSettingsSectionKey } from '../types/instagram.types'
 
 const SESSION_ID_KEY = 'corehub:growth-agent:sessionId'
 
-interface UseGrowthAgentResult {
+export interface UseGrowthAgentResult {
   messages: ChatMessage[]
   suggestions: ContentSuggestion[]
   suggestionBatches: SuggestionBatch[]
@@ -41,6 +41,7 @@ interface UseGrowthAgentResult {
   agentConfig: AgentConfig | null
   hasFalApiKey: boolean
   hasLlmApiKey: boolean
+  editableSections: AgentSettingsSectionKey[]
   isSettingsOpen: boolean
   openSettings: () => void
   closeSettings: () => void
@@ -58,6 +59,9 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null)
   const [hasFalApiKey, setHasFalApiKey] = useState(false)
   const [hasLlmApiKey, setHasLlmApiKey] = useState(false)
+  // Empty until the API answers: showing a control before knowing it is
+  // permitted invites a save that comes back 403.
+  const [editableSections, setEditableSections] = useState<AgentSettingsSectionKey[]>([])
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   // Read sessionId from localStorage on mount, generate if missing
@@ -113,6 +117,7 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
         setAgentConfig(response.agentConfig)
         setHasFalApiKey(response.hasFalApiKey)
         setHasLlmApiKey(response.hasLlmApiKey)
+        setEditableSections(response.editableSections ?? [])
       })
       .catch(() => {
         // Silently fail — config stays null (default prompt)
@@ -338,6 +343,7 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
     agentConfig,
     hasFalApiKey,
     hasLlmApiKey,
+    editableSections,
     isSettingsOpen,
     openSettings,
     closeSettings,

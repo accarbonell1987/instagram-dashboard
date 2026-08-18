@@ -1,8 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 
+import type { UseGrowthAgentResult } from '../hooks/use-growth-agent'
+
 import { ChatPanel } from './chat-panel'
-import type { UseGrowthAgentResult } from './chat-panel.types'
 
 // Build a mock hook result
 function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgentResult {
@@ -27,6 +28,8 @@ function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgent
     agentConfig: null,
     hasFalApiKey: false,
   hasLlmApiKey: false,
+  // Every section, so these tests keep exercising the panel rather than the gate.
+  editableSections: ['topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles'] as const,
     isSettingsOpen: false,
     openSettings: vi.fn(),
     closeSettings: vi.fn(),

@@ -2,9 +2,15 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import type { AgentConfig } from '../types/instagram.types'
+import type { AgentConfig, AgentSettingsSectionKey  } from '../types/instagram.types'
 
 import { AgentSettingsModal } from './agent-settings'
+
+
+/** These tests are about the panel; the gate has its own describe block. */
+const ALL_SECTIONS: AgentSettingsSectionKey[] = [
+  'topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles',
+]
 
 
 describe('AgentSettingsModal', () => {
@@ -19,6 +25,7 @@ describe('AgentSettingsModal', () => {
   it('renders null when isOpen is false', () => {
     const { container } = render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={false}
         onClose={onClose}
         onSave={onSave}
@@ -31,6 +38,7 @@ describe('AgentSettingsModal', () => {
   it('renders dialog when isOpen is true', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -44,6 +52,7 @@ describe('AgentSettingsModal', () => {
   it('renders predefined tag chips', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -60,6 +69,7 @@ describe('AgentSettingsModal', () => {
   it('clicking tag chip toggles selection', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -85,6 +95,7 @@ describe('AgentSettingsModal', () => {
   it('custom tag input adds tag on Enter', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -103,6 +114,7 @@ describe('AgentSettingsModal', () => {
   it('custom tag input adds tag on + button click', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -122,6 +134,7 @@ describe('AgentSettingsModal', () => {
   it('does not add duplicate custom tag', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -147,6 +160,7 @@ describe('AgentSettingsModal', () => {
 
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -179,6 +193,7 @@ describe('AgentSettingsModal', () => {
   it('cancel button calls onClose', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -194,6 +209,7 @@ describe('AgentSettingsModal', () => {
   it('close ✕ button calls onClose', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -215,6 +231,7 @@ describe('AgentSettingsModal', () => {
 
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -233,6 +250,7 @@ describe('AgentSettingsModal', () => {
   it('save is disabled when no tags selected', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -256,6 +274,7 @@ describe('AgentSettingsModal', () => {
 
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -274,6 +293,7 @@ describe('AgentSettingsModal', () => {
   it('shows character count for custom prompt', () => {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={onClose}
         onSave={onSave}
@@ -292,6 +312,7 @@ describe('AgentSettingsModal', () => {
 
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen={true}
         onClose={vi.fn()}
         onSave={failingSave}
@@ -328,6 +349,7 @@ describe('AgentSettingsModal — model tab', () => {
   async function openModelTab(initialConfig: AgentConfig | null = null, hasLlmApiKey = false) {
     render(
       <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
         isOpen
         onClose={onClose}
         onSave={onSave}
@@ -399,5 +421,65 @@ describe('AgentSettingsModal — model tab', () => {
     expect(
       screen.getByPlaceholderText('Dejala vacía para conservar la actual'),
     ).toBeInTheDocument()
+  })
+
+  /**
+   * Hiding is cosmetic — the API refuses the change regardless — but drawing a
+   * control the caller cannot use only produces a save that comes back 403.
+   */
+  describe('permitted sections', () => {
+    const renderWith = (sections: AgentSettingsSectionKey[]) =>
+      render(
+        <AgentSettingsModal
+          editableSections={sections}
+          isOpen={true}
+          onClose={onClose}
+          onSave={onSave}
+          initialConfig={null}
+        />,
+      )
+
+    it('hides the Modelo tab from a caller who cannot change the model', () => {
+      renderWith(['topics', 'prompt'])
+
+      expect(screen.queryByRole('tab', { name: 'Modelo' })).not.toBeInTheDocument()
+    })
+
+    it('shows the Modelo tab when the caller may change it', () => {
+      renderWith(['model'])
+
+      expect(screen.getByRole('tab', { name: 'Modelo' })).toBeInTheDocument()
+    })
+
+    // The three admin-only options, each hidden on its own while its tab stays.
+    it('keeps the Agente tab but drops the character limits', () => {
+      renderWith(['topics', 'prompt'])
+
+      expect(screen.getByRole('tab', { name: 'Agente' })).toBeInTheDocument()
+      expect(screen.getByText('Temas de contenido')).toBeInTheDocument()
+      expect(screen.queryByText('Límites de caracteres')).not.toBeInTheDocument()
+    })
+
+    it('keeps the Imágenes tab but drops the fal.ai key', () => {
+      renderWith(['imageModels', 'imageStyles'])
+
+      expect(screen.getByRole('tab', { name: 'Imágenes' })).toBeInTheDocument()
+      expect(screen.queryByText('API Key de fal.ai')).not.toBeInTheDocument()
+    })
+
+    // A tab with nothing left in it is not an empty tab, it is no tab.
+    it('drops a tab whose every option is withheld', () => {
+      renderWith(['topics'])
+
+      expect(screen.queryByRole('tab', { name: 'Imágenes' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: 'Modelo' })).not.toBeInTheDocument()
+    })
+
+    // Opening on a hidden tab would leave the panel blank.
+    it('opens on the first tab the caller can actually see', () => {
+      renderWith(['model'])
+
+      expect(screen.getByRole('tab', { name: 'Modelo' })).toHaveAttribute('aria-selected', 'true')
+    })
   })
 })

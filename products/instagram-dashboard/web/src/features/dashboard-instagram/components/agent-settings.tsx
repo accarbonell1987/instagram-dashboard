@@ -5,7 +5,7 @@ import type { JSX } from 'react'
 import { useState } from 'react'
 
 
-import type { AgentConfig, AgentLimits, AgentSecrets, ImageGenConfig, LlmConfig } from '../types/instagram.types'
+import type { AgentConfig, AgentLimits, AgentSecrets, AgentSettingsSectionKey, ImageGenConfig, LlmConfig } from '../types/instagram.types'
 
 const PREDEFINED_TAGS = [
   'Ferretería',
@@ -77,6 +77,13 @@ interface AgentSettingsModalProps {
   initialConfig: AgentConfig | null
   hasFalApiKey?: boolean
   hasLlmApiKey?: boolean
+  /**
+   * Which settings sections this caller may change, as decided by the API.
+   * Hiding here is cosmetic — PUT /agent/settings refuses the change whatever
+   * this screen drew — but drawing a control the caller cannot use only
+   * produces a save that comes back 403.
+   */
+  editableSections?: AgentSettingsSectionKey[]
 }
 
 export function AgentSettingsModal({
@@ -86,7 +93,10 @@ export function AgentSettingsModal({
   initialConfig,
   hasFalApiKey = false,
   hasLlmApiKey = false,
+  editableSections = [],
 }: AgentSettingsModalProps): JSX.Element | null {
+  // 'agent' even when that tab is hidden: Radix activates the only remaining
+  // trigger on its own, so computing an opening tab here was dead code.
   const [activeTab, setActiveTab] = useState<ActiveTab>('agent')
   const [selectedTags, setSelectedTags] = useState<string[]>(
     initialConfig?.tags ?? ['Ferretería'],
@@ -249,6 +259,11 @@ export function AgentSettingsModal({
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- PROMPT_TABS is a non-empty constant array, so [0] is always defined
   const activePrompt = PROMPT_TABS.find((t) => t.key === activePromptTab) ?? PROMPT_TABS[0]!
 
+  const can = (section: AgentSettingsSectionKey) => editableSections.includes(section)
+  // A tab with nothing left in it is not an empty tab, it is no tab.
+  const showAgentTab = can('topics') || can('prompt') || can('limits')
+  const showImagesTab = can('imageKey') || can('imageModels') || can('imageStyles')
+
   return (
     <Dialog open={isOpen} onOpenChange={(next) => { if (!next) onClose() }}>
       {/*
@@ -271,9 +286,9 @@ export function AgentSettingsModal({
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ActiveTab); }} className="flex flex-col flex-1 min-h-0">
           <TabsList className="mx-6 shrink-0">
-            <TabsTrigger value="agent">Agente</TabsTrigger>
-            <TabsTrigger value="model">Modelo</TabsTrigger>
-            <TabsTrigger value="images">Imágenes</TabsTrigger>
+            {showAgentTab && <TabsTrigger value="agent">Agente</TabsTrigger>}
+            {can('model') && <TabsTrigger value="model">Modelo</TabsTrigger>}
+            {showImagesTab && <TabsTrigger value="images">Imágenes</TabsTrigger>}
           </TabsList>
 
           {/* Tab: Modelo */}
@@ -363,7 +378,7 @@ export function AgentSettingsModal({
           {/* Tab: Imágenes */}
           <TabsContent value="images" className="flex-1 overflow-y-auto px-6 py-4 space-y-4 mt-0">
             <>
-              {/* FAL API Key */}
+              {can('imageKey') && (
               <div>
                 <Label htmlFor="fal-api-key" className="block text-sm font-medium mb-1">
                   API Key de fal.ai
@@ -402,8 +417,9 @@ export function AgentSettingsModal({
                   </a>
                 </p>
               </div>
+              )}
 
-              {/* Model selection */}
+              {can('imageModels') && (
               <div className="space-y-3">
                 <label className="block text-sm font-medium">Modelos de generación</label>
 
@@ -445,8 +461,9 @@ export function AgentSettingsModal({
                   </p>
                 </div>
               </div>
+              )}
 
-              {/* Prompt por rol — mini-tabs */}
+              {can('imageStyles') && (
               <div>
                 <label className="block text-sm font-medium mb-2">Estilo visual por rol</label>
 
@@ -472,13 +489,14 @@ export function AgentSettingsModal({
                 />
                 <p className="text-xs text-muted-foreground mt-1">{activePrompt.hint}</p>
               </div>
+              )}
             </>
           </TabsContent>
 
           {/* Tab: Agente */}
           <TabsContent value="agent" className="flex-1 overflow-y-auto px-6 py-4 space-y-4 mt-0">
             <>
-              {/* Tag selection */}
+              {can('topics') && (
               <div>
                 <label className="block text-sm font-medium mb-2">Temas de contenido</label>
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -547,8 +565,9 @@ export function AgentSettingsModal({
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Custom prompt */}
+              {can('prompt') && (
               <div>
                 <Label htmlFor="agent-custom-prompt" className="block text-sm font-medium mb-2">
                   Instrucciones personalizadas (opcional)
@@ -567,8 +586,9 @@ export function AgentSettingsModal({
                   {customPrompt.length}/2000 caracteres
                 </p>
               </div>
+              )}
 
-              {/* Character limits */}
+              {can('limits') && (
               <div>
                 <label className="block text-sm font-medium mb-2">Límites de caracteres</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -605,6 +625,7 @@ export function AgentSettingsModal({
                   Controlan el máximo de caracteres en el editor de guiones.
                 </p>
               </div>
+              )}
             </>
           </TabsContent>
         </Tabs>

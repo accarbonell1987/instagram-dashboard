@@ -359,10 +359,27 @@ export interface AgentSecrets {
   llmApiKey?: string;
 }
 
+/** The settings sections this caller may change. */
+export type AgentSettingsSectionKey =
+  | 'topics'
+  | 'prompt'
+  | 'limits'
+  | 'model'
+  | 'imageKey'
+  | 'imageModels'
+  | 'imageStyles'
+
 export interface AgentSettingsResponse {
   agentConfig: AgentConfig | null
   hasFalApiKey: boolean
   hasLlmApiKey: boolean
+  /**
+   * Decided by the API, not worked out here. This screen has no access to the
+   * tenant role, and a second copy of the rules would be a second place for
+   * them to go wrong. Hiding is cosmetic either way — PUT /agent/settings
+   * refuses the change regardless of what the screen drew.
+   */
+  editableSections?: AgentSettingsSectionKey[]
 }
 
 // ── Carousel ──
