@@ -267,6 +267,7 @@ export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentP
         onSave={hook.saveAgentConfig}
         initialConfig={hook.agentConfig}
         hasFalApiKey={hook.hasFalApiKey}
+        hasLlmApiKey={hook.hasLlmApiKey}
       />
 
       {/* Script preview modal — shown before carousel is created */}

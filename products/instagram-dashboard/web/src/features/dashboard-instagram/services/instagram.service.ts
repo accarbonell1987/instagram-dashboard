@@ -22,6 +22,7 @@ import type {
   GrowthMetric,
   GrowthPeriod,
   AgentConfig,
+  AgentSecrets,
   AgentSettingsResponse,
   Carousel,
   CarouselSlide,
@@ -340,13 +341,16 @@ export async function getAgentSettings(): Promise<AgentSettingsResponse> {
 
 export async function saveAgentSettings(
   config: AgentConfig,
-  falApiKey?: string,
+  secrets?: AgentSecrets,
 ): Promise<void> {
   await apiFetch<{ success: true; data: unknown }>('/api/agent/settings', {
     method: 'PUT',
     body: JSON.stringify({
       ...config,
-      ...(falApiKey !== undefined && { falApiKey }),
+      // Omitted when blank rather than sent empty: the backend treats a present
+      // key as a replacement, so an empty string would erase a working one.
+      ...(secrets?.falApiKey !== undefined && { falApiKey: secrets.falApiKey }),
+      ...(secrets?.llmApiKey !== undefined && { llmApiKey: secrets.llmApiKey }),
     }),
   });
 }

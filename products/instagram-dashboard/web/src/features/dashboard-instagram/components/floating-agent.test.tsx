@@ -40,6 +40,7 @@ function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgent
     refreshSuggestions: vi.fn().mockResolvedValue(undefined),
     agentConfig: null,
     hasFalApiKey: false,
+  hasLlmApiKey: false,
     isSettingsOpen: false,
     openSettings: vi.fn(),
     closeSettings: vi.fn(),

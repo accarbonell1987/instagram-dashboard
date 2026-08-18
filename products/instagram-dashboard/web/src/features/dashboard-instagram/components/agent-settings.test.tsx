@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 import type { AgentConfig } from '../types/instagram.types'
@@ -168,7 +169,9 @@ describe('AgentSettingsModal', () => {
           tags: ['Ferretería'],
           customPrompt: 'Sé breve',
         }),
-        undefined,
+        // Secrets travel as their own object now. Empty means "change nothing":
+        // an empty string would replace a stored key with none.
+        {},
       )
     })
   })
@@ -304,5 +307,97 @@ describe('AgentSettingsModal', () => {
       expect(screen.getByRole('dialog')).toBeInTheDocument()
     })
     expect(failingSave).toHaveBeenCalled()
+  })
+})
+
+/**
+ * The model stopped being a property of the deployment. An account picks its
+ * own provider, model and key; configuring nothing keeps the platform default.
+ */
+describe('AgentSettingsModal — model tab', () => {
+  const onClose = vi.fn()
+  const onSave = vi.fn().mockResolvedValue(undefined)
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    onSave.mockResolvedValue(undefined)
+  })
+
+  // Radix tabs switch on the full pointer sequence, which fireEvent.click does
+  // not send — the panel would never mount and every query would miss.
+  async function openModelTab(initialConfig: AgentConfig | null = null, hasLlmApiKey = false) {
+    render(
+      <AgentSettingsModal
+        isOpen
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={initialConfig}
+        hasLlmApiKey={hasLlmApiKey}
+      />,
+    )
+    await userEvent.click(screen.getByRole('tab', { name: 'Modelo' }))
+  }
+
+  it('sends the chosen provider and model', async () => {
+    await openModelTab()
+
+    fireEvent.change(screen.getByPlaceholderText('deepseek-v4-flash'), { target: { value: 'gpt-4o' } })
+    fireEvent.click(screen.getByRole('button', { name: /Guardar configuración/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    })
+    const config = onSave.mock.calls[0]?.[0] as { llm?: { model?: string } }
+    expect(config.llm?.model).toBe('gpt-4o')
+  })
+
+  /**
+   * The backend treats a present key as a replacement, so sending an empty
+   * string would wipe a working one. Blank has to mean "leave it alone".
+   */
+  it('omits the key when the field is left blank', async () => {
+    await openModelTab(null, true)
+
+    fireEvent.click(screen.getByRole('button', { name: /Guardar configuración/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    })
+    const secrets = onSave.mock.calls[0]?.[1] as Record<string, unknown>
+    expect(secrets).not.toHaveProperty('llmApiKey')
+  })
+
+  it('sends the key when one is typed', async () => {
+    await openModelTab()
+
+    fireEvent.change(screen.getByPlaceholderText('sk-...'), { target: { value: 'sk-secret' } })
+    fireEvent.click(screen.getByRole('button', { name: /Guardar configuración/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    })
+    const secrets = onSave.mock.calls[0]?.[1] as { llmApiKey?: string }
+    expect(secrets.llmApiKey).toBe('sk-secret')
+  })
+
+  // Nothing chosen must stay nothing: writing today's default into the account
+  // would pin it there and stop it following the platform.
+  it('sends no llm block when nothing was chosen', async () => {
+    await openModelTab()
+
+    fireEvent.click(screen.getByRole('button', { name: /Guardar configuración/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    })
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('llm')
+  })
+
+  it('says when a key is already stored', async () => {
+    await openModelTab(null, true)
+    // The placeholder is the honest signal: the key itself never comes back.
+    expect(
+      screen.getByPlaceholderText('Dejala vacía para conservar la actual'),
+    ).toBeInTheDocument()
   })
 })

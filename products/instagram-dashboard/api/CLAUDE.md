@@ -86,6 +86,27 @@ Hub Frontend (Next.js)
   → PostgreSQL
 ```
 
+### El modelo lo elige la cuenta, no el deployment
+
+`LlmClient` (`src/lib/llm-client.ts`) es el SDK de OpenAI con `baseURL` configurable, así que un
+solo camino de código habla con cualquier proveedor que implemente chat-completions. Claude y
+Gemini entran por **OpenRouter**, no nativos: sus protocolos propios pedirían una segunda
+implementación de tool-calling y parseo para el mismo resultado.
+
+- `LlmResolver` arma el cliente **por llamada** desde `agent_config.llm` + `llm_api_key_encrypted`,
+  con *fallback* al env. Sin ese fallback, todo tenant que no configuró nada pierde el agente.
+- Espeja el patrón que ya usaba fal.ai: clave por cuenta, cifrada, en su propia columna; de vuelta
+  solo sale un booleano.
+- **`reasoning_effort` es de DeepSeek y viaja en el body.** OpenAI y Groq rechazan el campo
+  desconocido, así que la bandera está atada al preset del proveedor. Un proveedor desconocido no
+  manda nada específico de nadie.
+- Los servicios **ya no hardcodean modelo por llamada** (había `deepseek-v4-pro` para guiones y
+  `flash` para chat). Con modelo configurable esa distinción no sobrevive; hay uno solo, y el
+  registro de uso guarda `response.model` — **lo que respondió**, no lo que se pidió, porque un
+  alias como `gpt-4o` resuelve a un build con fecha y la factura se escribe contra el build.
+- Pendiente: el recurso de cuota se sigue llamando `deepseek_tokens`. Renombrarlo a `llm_tokens`
+  toca `plan_quotas` en api-iam y necesita migración con backfill.
+
 ### Guards de entitlements: producto y módulo
 
 `api.use('*', entitlementsGuard)` solo pregunta *"¿puede abrir este producto?"*. Las rutas de IA

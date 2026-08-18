@@ -14,7 +14,8 @@ import {
   getAgentSettings,
   saveAgentSettings,
 } from '../services/instagram.service'
-import type { ChatMessage, ContentSuggestion, SuggestionBatch, AgentConfig, AgentSettingsResponse } from '../types/instagram.types'
+import type { ChatMessage, ContentSuggestion, SuggestionBatch, AgentConfig,
+  AgentSecrets, AgentSettingsResponse } from '../types/instagram.types'
 
 const SESSION_ID_KEY = 'corehub:growth-agent:sessionId'
 
@@ -39,10 +40,11 @@ interface UseGrowthAgentResult {
   // Agent config
   agentConfig: AgentConfig | null
   hasFalApiKey: boolean
+  hasLlmApiKey: boolean
   isSettingsOpen: boolean
   openSettings: () => void
   closeSettings: () => void
-  saveAgentConfig: (config: AgentConfig) => Promise<void>
+  saveAgentConfig: (config: AgentConfig, secrets?: AgentSecrets) => Promise<void>
 }
 
 export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentResult {
@@ -55,6 +57,7 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null)
   const [hasFalApiKey, setHasFalApiKey] = useState(false)
+  const [hasLlmApiKey, setHasLlmApiKey] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   // Read sessionId from localStorage on mount, generate if missing
@@ -109,6 +112,7 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
       .then((response: AgentSettingsResponse) => {
         setAgentConfig(response.agentConfig)
         setHasFalApiKey(response.hasFalApiKey)
+        setHasLlmApiKey(response.hasLlmApiKey)
       })
       .catch(() => {
         // Silently fail — config stays null (default prompt)
@@ -299,11 +303,12 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
   const closeSettings = useCallback(() => { setIsSettingsOpen(false); }, [])
 
   const saveAgentConfig = useCallback(
-    async (config: AgentConfig, falApiKey?: string) => {
+    async (config: AgentConfig, secrets?: AgentSecrets) => {
       try {
-        await saveAgentSettings(config, falApiKey)
+        await saveAgentSettings(config, secrets)
         setAgentConfig(config)
-        if (falApiKey) setHasFalApiKey(true)
+        if (secrets?.falApiKey) setHasFalApiKey(true)
+        if (secrets?.llmApiKey) setHasLlmApiKey(true)
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Error al guardar configuración'
         setError(message)
@@ -332,6 +337,7 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
     refreshSuggestions,
     agentConfig,
     hasFalApiKey,
+    hasLlmApiKey,
     isSettingsOpen,
     openSettings,
     closeSettings,

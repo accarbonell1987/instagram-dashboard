@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 
 
-import type { AgentConfig, AgentLimits, ImageGenConfig } from '../types/instagram.types'
+import type { AgentConfig, AgentLimits, AgentSecrets, ImageGenConfig, LlmConfig } from '../types/instagram.types'
 
 const PREDEFINED_TAGS = [
   'Ferretería',
@@ -30,7 +30,32 @@ const PREDEFINED_TAGS = [
   'Gaming',
 ]
 
-type ActiveTab = 'agent' | 'images'
+type ActiveTab = 'agent' | 'images' | 'model'
+
+/**
+ * Every provider here speaks the OpenAI chat-completions protocol, which is why
+ * one code path reaches all of them. Claude and Gemini arrive through
+ * OpenRouter rather than natively — their own protocols would need a second
+ * implementation for the same result.
+ */
+const LLM_PROVIDERS: { id: string; label: string; hint: string }[] = [
+  { id: 'deepseek', label: 'DeepSeek', hint: 'Por defecto. Barato y con buen soporte de herramientas.' },
+  { id: 'openai', label: 'OpenAI', hint: 'GPT-4o, GPT-4o mini, o1.' },
+  { id: 'openrouter', label: 'OpenRouter', hint: 'Una sola clave para Claude, Gemini, Llama y cientos más.' },
+  { id: 'groq', label: 'Groq', hint: 'El más rápido. Llama y Mixtral.' },
+  { id: 'together', label: 'Together AI', hint: 'Catálogo amplio de modelos abiertos.' },
+  { id: 'custom', label: 'Otro (compatible con OpenAI)', hint: 'Incluye un modelo propio, por ejemplo Ollama.' },
+]
+
+/** A starting point per provider — the field stays free text. */
+const MODEL_PLACEHOLDERS: Record<string, string> = {
+  deepseek: 'deepseek-v4-flash',
+  openai: 'gpt-4o',
+  openrouter: 'anthropic/claude-sonnet-4',
+  groq: 'llama-3.3-70b-versatile',
+  together: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+  custom: 'llama3',
+}
 type PromptTab = 'base' | 'hook' | 'development' | 'cta'
 
 const T2I_MODELS: { id: string; label: string; description: string }[] = [
@@ -49,9 +74,10 @@ const I2I_MODELS: { id: string; label: string; description: string }[] = [
 interface AgentSettingsModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (config: AgentConfig, falApiKey?: string) => Promise<void>
+  onSave: (config: AgentConfig, secrets?: AgentSecrets) => Promise<void>
   initialConfig: AgentConfig | null
   hasFalApiKey?: boolean
+  hasLlmApiKey?: boolean
 }
 
 export function AgentSettingsModal({
@@ -60,6 +86,7 @@ export function AgentSettingsModal({
   onSave,
   initialConfig,
   hasFalApiKey = false,
+  hasLlmApiKey = false,
 }: AgentSettingsModalProps): JSX.Element | null {
   const [activeTab, setActiveTab] = useState<ActiveTab>('agent')
   const [selectedTags, setSelectedTags] = useState<string[]>(
@@ -81,6 +108,13 @@ export function AgentSettingsModal({
   const [t2iModel, setT2iModel] = useState(initialConfig?.imageGen?.t2iModel ?? 'fal-ai/ideogram/v3')
   const [i2iModel, setI2iModel] = useState(initialConfig?.imageGen?.i2iModel ?? 'fal-ai/flux/dev/image-to-image')
   const [activePromptTab, setActivePromptTab] = useState<PromptTab>('base')
+
+  // Model config. Empty provider means "whatever the platform runs" — the
+  // account has not chosen, and the deployment default applies.
+  const [llmProvider, setLlmProvider] = useState(initialConfig?.llm?.provider ?? '')
+  const [llmModel, setLlmModel] = useState(initialConfig?.llm?.model ?? '')
+  const [llmBaseUrl, setLlmBaseUrl] = useState(initialConfig?.llm?.baseUrl ?? '')
+  const [llmApiKey, setLlmApiKey] = useState('')
   const [basePrompt, setBasePrompt] = useState(
     initialConfig?.imageGen?.basePrompt ??
     'Fotografía comercial profesional, iluminación suave y uniforme, fondo claro neutro (blanco o gris perla), colores cálidos y confiables, tipografía bold sans-serif en tonos oscuros, composición limpia y ordenada, estilo moderno y aspiracional.',
@@ -138,6 +172,13 @@ export function AgentSettingsModal({
         visualPrompt: visualPromptLimit,
       }
 
+      // Only the fields the account actually chose. An empty object here would
+      // pin the model to today's default and stop following the platform.
+      const llm: LlmConfig = {}
+      if (llmProvider) llm.provider = llmProvider
+      if (llmModel.trim()) llm.model = llmModel.trim()
+      if (llmProvider === 'custom' && llmBaseUrl.trim()) llm.baseUrl = llmBaseUrl.trim()
+
       await onSave(
         {
           niche: selectedTags[0] ?? '',
@@ -145,10 +186,17 @@ export function AgentSettingsModal({
           ...(customPrompt.trim() ? { customPrompt: customPrompt.trim() } : {}),
           ...(Object.keys(imageGen).length > 0 ? { imageGen } : {}),
           limits,
+          ...(Object.keys(llm).length > 0 ? { llm } : {}),
         },
-        falApiKey.trim() ? falApiKey.trim() : undefined,
+        {
+          // Blank means "leave the stored one alone": sending an empty string
+          // would replace a working key with nothing.
+          ...(falApiKey.trim() ? { falApiKey: falApiKey.trim() } : {}),
+          ...(llmApiKey.trim() ? { llmApiKey: llmApiKey.trim() } : {}),
+        },
       )
       setFalApiKey('')
+      setLlmApiKey('')
       onClose()
     } catch {
       // Error is handled by the parent hook (sets error state)
@@ -229,8 +277,93 @@ export function AgentSettingsModal({
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ActiveTab); }} className="flex flex-col flex-1 min-h-0">
           <TabsList className="mx-6 shrink-0">
             <TabsTrigger value="agent">Agente</TabsTrigger>
+            <TabsTrigger value="model">Modelo</TabsTrigger>
             <TabsTrigger value="images">Imágenes</TabsTrigger>
           </TabsList>
+
+          {/* Tab: Modelo */}
+          <TabsContent value="model" className="flex-1 overflow-y-auto px-6 py-4 space-y-4 mt-0">
+            <p className="text-muted-foreground text-sm">
+              Elegí qué modelo responde por esta cuenta. Si no configurás nada, se usa el de la
+              plataforma.
+            </p>
+
+            <div>
+              <Label htmlFor="llm-provider" className="mb-1 block text-sm font-medium">
+                Proveedor
+              </Label>
+              <Select value={llmProvider} onValueChange={setLlmProvider}>
+                <SelectTrigger id="llm-provider">
+                  <SelectValue placeholder="El de la plataforma" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LLM_PROVIDERS.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      {provider.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {llmProvider !== '' && (
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {LLM_PROVIDERS.find((provider) => provider.id === llmProvider)?.hint}
+                </p>
+              )}
+            </div>
+
+            {/* Free text rather than a list: catalogues change weekly and a
+                stale dropdown blocks a model that already works. */}
+            <div>
+              <Label htmlFor="llm-model" className="mb-1 block text-sm font-medium">
+                Modelo
+              </Label>
+              <Input
+                id="llm-model"
+                value={llmModel}
+                onChange={(e) => { setLlmModel(e.target.value); }}
+                placeholder={MODEL_PLACEHOLDERS[llmProvider] ?? 'deepseek-v4-flash'}
+              />
+              <p className="text-muted-foreground mt-1 text-xs">
+                El identificador exacto del proveedor, tal cual aparece en su documentación.
+              </p>
+            </div>
+
+            {llmProvider === 'custom' && (
+              <div>
+                <Label htmlFor="llm-base-url" className="mb-1 block text-sm font-medium">
+                  Dirección del servicio
+                </Label>
+                <Input
+                  id="llm-base-url"
+                  value={llmBaseUrl}
+                  onChange={(e) => { setLlmBaseUrl(e.target.value); }}
+                  placeholder="http://localhost:11434/v1"
+                />
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Cualquier servicio compatible con la API de OpenAI, incluido uno propio.
+                </p>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="llm-api-key" className="mb-1 block text-sm font-medium">
+                API Key
+                {hasLlmApiKey && (
+                  <span className="text-success ml-2 text-xs font-normal">✓ Configurada</span>
+                )}
+              </Label>
+              <Input
+                id="llm-api-key"
+                type="password"
+                value={llmApiKey}
+                onChange={(e) => { setLlmApiKey(e.target.value); }}
+                placeholder={hasLlmApiKey ? 'Dejala vacía para conservar la actual' : 'sk-...'}
+              />
+              <p className="text-muted-foreground mt-1 text-xs">
+                Se guarda cifrada y no vuelve a mostrarse. Dejala vacía para no cambiarla.
+              </p>
+            </div>
+          </TabsContent>
 
           {/* Tab: Imágenes */}
           <TabsContent value="images" className="flex-1 overflow-y-auto px-6 py-4 space-y-4 mt-0">

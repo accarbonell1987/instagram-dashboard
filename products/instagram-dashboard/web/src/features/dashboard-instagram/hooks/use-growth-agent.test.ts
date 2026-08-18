@@ -63,7 +63,7 @@ describe('useGrowthAgent', () => {
     mockedService.getChatHistory.mockResolvedValue([])
     mockedService.deleteChatMessage.mockResolvedValue({ deleted: true })
     mockedService.clearChatHistory.mockResolvedValue({ deletedCount: 0 })
-    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: null, hasFalApiKey: false })
+    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: null, hasFalApiKey: false, hasLlmApiKey: false })
     mockedService.saveAgentSettings.mockResolvedValue(undefined)
   })
 
@@ -455,7 +455,7 @@ describe('useGrowthAgent', () => {
   // ── Agent Config ──
 
   it('loads agent config on mount (null by default)', async () => {
-    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: null, hasFalApiKey: false })
+    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: null, hasFalApiKey: false, hasLlmApiKey: false })
 
     const { result } = renderHook(() => useGrowthAgent())
 
@@ -467,7 +467,7 @@ describe('useGrowthAgent', () => {
 
   it('loads agent config on mount (with data)', async () => {
     const config = { niche: 'Moda', tags: ['Ropa', 'Tendencias'] }
-    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: config, hasFalApiKey: true })
+    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: config, hasFalApiKey: true, hasLlmApiKey: false })
 
     const { result } = renderHook(() => useGrowthAgent())
 
@@ -491,7 +491,7 @@ describe('useGrowthAgent', () => {
   })
 
   it('saveAgentConfig calls saveAgentSettings and updates state', async () => {
-    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: null, hasFalApiKey: false })
+    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: null, hasFalApiKey: false, hasLlmApiKey: false })
     mockedService.saveAgentSettings.mockResolvedValue(undefined)
 
     const { result } = renderHook(() => useGrowthAgent())
@@ -511,7 +511,7 @@ describe('useGrowthAgent', () => {
   })
 
   it('saveAgentConfig sets error on API failure', async () => {
-    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: null, hasFalApiKey: false })
+    mockedService.getAgentSettings.mockResolvedValue({ agentConfig: null, hasFalApiKey: false, hasLlmApiKey: false })
     mockedService.saveAgentSettings.mockRejectedValue(new Error('Save failed'))
 
     const { result } = renderHook(() => useGrowthAgent())

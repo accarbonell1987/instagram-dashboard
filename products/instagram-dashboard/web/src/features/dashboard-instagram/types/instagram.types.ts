@@ -332,17 +332,37 @@ export interface AgentLimits {
   visualPrompt?: number
 }
 
+/** Which model answers, and where it lives. The key never travels in here. */
+export interface LlmConfig {
+  provider?: string;
+  /** Only read for the `custom` provider; every preset carries its own. */
+  baseUrl?: string;
+  model?: string;
+}
+
 export interface AgentConfig {
   niche: string;
   tags: string[];
   customPrompt?: string;
   imageGen?: ImageGenConfig;
   limits?: AgentLimits;
+  llm?: LlmConfig;
+}
+
+/**
+ * Secrets travel apart from the config and are named rather than positional:
+ * two optional strings in a row are two strings waiting to be swapped, and a
+ * swap here would file one provider's key under another.
+ */
+export interface AgentSecrets {
+  falApiKey?: string;
+  llmApiKey?: string;
 }
 
 export interface AgentSettingsResponse {
   agentConfig: AgentConfig | null
   hasFalApiKey: boolean
+  hasLlmApiKey: boolean
 }
 
 // ── Carousel ──

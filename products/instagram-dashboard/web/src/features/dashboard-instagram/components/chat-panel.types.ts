@@ -1,4 +1,5 @@
-import type { ChatMessage, ContentSuggestion, SuggestionBatch, AgentConfig } from '../types/instagram.types'
+import type { ChatMessage, ContentSuggestion, SuggestionBatch, AgentConfig,
+  AgentSecrets } from '../types/instagram.types'
 
 export interface UseGrowthAgentResult {
   messages: ChatMessage[]
@@ -21,8 +22,9 @@ export interface UseGrowthAgentResult {
   // Agent config
   agentConfig: AgentConfig | null
   hasFalApiKey: boolean
+  hasLlmApiKey: boolean
   isSettingsOpen: boolean
   openSettings: () => void
   closeSettings: () => void
-  saveAgentConfig: (config: AgentConfig, falApiKey?: string) => Promise<void>
+  saveAgentConfig: (config: AgentConfig, secrets?: AgentSecrets) => Promise<void>
 }
