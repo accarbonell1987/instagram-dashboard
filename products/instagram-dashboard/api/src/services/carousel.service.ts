@@ -1,3 +1,4 @@
+import type { Owner } from '../domain/owner.js';
 import { config } from '../config.js';
 import type {
   Carousel,
@@ -42,29 +43,29 @@ export class CarouselService {
     private readonly usageTracker?: UsageTracker,
   ) {}
 
-  async previewScript(tenantId: string, topic: string): Promise<GeneratedSlide[]> {
-    const account = await this.instagramRepo.findAccountByTenantId(tenantId);
+  async previewScript(owner: Owner, topic: string): Promise<GeneratedSlide[]> {
+    const account = await this.instagramRepo.findAccountByOwner(owner);
     const agentConfig = account
-      ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
+      ? await this.instagramRepo.getAgentConfig(owner)
       : null;
     const basePrompt = (agentConfig as ImageGenConfig | null)?.imageGen?.basePrompt;
-    return this.scriptGenerator.generateScript(topic, basePrompt, tenantId);
+    return this.scriptGenerator.generateScript(topic, basePrompt, owner.tenantId);
   }
 
   async createCarousel(
-    tenantId: string,
+    owner: Owner,
     topic: string,
     suggestionId?: string,
     approvedSlides?: GeneratedSlide[],
   ): Promise<{ id: string; status: string }> {
     // ── Pre-call quota enforcement ──
     if (this.usageTracker) {
-      const tokenCheck = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
+      const tokenCheck = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
       if (!tokenCheck.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', tokenCheck.limit!, tokenCheck.resetsAt!);
       }
-      const imageCheck = await this.usageTracker.checkQuota(tenantId, 'fal_images');
+      const imageCheck = await this.usageTracker.checkQuota(owner.tenantId, 'fal_images');
       if (!imageCheck.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('fal_images', imageCheck.limit!, imageCheck.resetsAt!);
@@ -72,10 +73,10 @@ export class CarouselService {
     }
 
     // Resolve accountId from tenant for FK
-    const account = await this.instagramRepo.findAccountByTenantId(tenantId);
+    const account = await this.instagramRepo.findAccountByOwner(owner);
 
     const carousel = await this.carouselRepo.create({
-      tenantId,
+      ...owner,
       accountId: account?.id,
       ...(suggestionId !== undefined && { suggestionId }),
       topic,
@@ -83,13 +84,13 @@ export class CarouselService {
 
     // Resolve base image prompt from agent config
     const agentConfig = account
-      ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
+      ? await this.instagramRepo.getAgentConfig(owner)
       : null;
     const basePrompt = (agentConfig as ImageGenConfig | null)?.imageGen?.basePrompt;
 
     // Fire-and-forget background generation — background rejections must be
     // caught here or they surface as unhandled process-level rejections.
-    this._generateAsync(carousel.id, tenantId, topic, basePrompt, approvedSlides).catch((error: unknown) => {
+    this._generateAsync(carousel.id, owner, topic, basePrompt, approvedSlides).catch((error: unknown) => {
       console.error(`[carousel:${carousel.id}] background generation failed:`, error);
     });
 
@@ -97,41 +98,41 @@ export class CarouselService {
   }
 
   async listCarousels(
-    tenantId: string,
+    owner: Owner,
     page: number,
     limit: number,
   ): Promise<{ carousels: Carousel[]; total: number; page: number; limit: number }> {
-    const { carousels, total } = await this.carouselRepo.findAll(tenantId, page, limit);
+    const { carousels, total } = await this.carouselRepo.findAll(owner, page, limit);
     return { carousels, total, page, limit };
   }
 
-  async getCarousel(id: string, tenantId: string): Promise<Carousel> {
-    const carousel = await this.carouselRepo.findById(tenantId, id);
+  async getCarousel(id: string, owner: Owner): Promise<Carousel> {
+    const carousel = await this.carouselRepo.findById(owner, id);
     if (!carousel) throw new NotFoundError('Carousel', id);
     return carousel;
   }
 
-  async deleteCarousel(id: string, tenantId: string): Promise<void> {
-    const carousel = await this.carouselRepo.findById(tenantId, id);
+  async deleteCarousel(id: string, owner: Owner): Promise<void> {
+    const carousel = await this.carouselRepo.findById(owner, id);
     if (!carousel) throw new NotFoundError('Carousel', id);
-    await this.carouselRepo.delete(tenantId, id);
+    await this.carouselRepo.delete(owner, id);
   }
 
   async updateSlide(
     carouselId: string,
     slideId: string,
-    tenantId: string,
+    owner: Owner,
     data: UpdateSlideInput,
   ): Promise<CarouselSlide> {
-    return this.carouselRepo.updateSlide(tenantId, carouselId, slideId, data);
+    return this.carouselRepo.updateSlide(owner, carouselId, slideId, data);
   }
 
   async regenerateSlide(
     carouselId: string,
     slideId: string,
-    tenantId: string,
+    owner: Owner,
   ): Promise<void> {
-    const carousel = await this.carouselRepo.findById(tenantId, carouselId);
+    const carousel = await this.carouselRepo.findById(owner, carouselId);
     if (!carousel) throw new NotFoundError('Carousel', carouselId);
 
     const slide = carousel.slides.find((s) => s.id === slideId);
@@ -139,19 +140,19 @@ export class CarouselService {
 
     // ── Pre-call quota enforcement ──
     if (this.usageTracker) {
-      const imageCheck = await this.usageTracker.checkQuota(tenantId, 'fal_images');
+      const imageCheck = await this.usageTracker.checkQuota(owner.tenantId, 'fal_images');
       if (!imageCheck.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('fal_images', imageCheck.limit!, imageCheck.resetsAt!);
       }
     }
 
-    const falApiKey = await this.resolveFalApiKey(tenantId);
+    const falApiKey = await this.resolveFalApiKey(owner);
 
     // Resolve style prefix from agent config (same logic as _generateAsync)
-    const account = await this.instagramRepo.findAccountByTenantId(tenantId);
+    const account = await this.instagramRepo.findAccountByOwner(owner);
     const agentConfig = account
-      ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
+      ? await this.instagramRepo.getAgentConfig(owner)
       : null;
     const imageGenConfig = (agentConfig as ImageGenConfig | null)?.imageGen;
     const basePrompt = imageGenConfig?.basePrompt;
@@ -180,7 +181,7 @@ export class CarouselService {
         // ── Post-call logging: log single image regen ──
         if (this.usageTracker) {
           await this.usageTracker.log({
-            tenantId,
+            tenantId: owner.tenantId,
             operation: 'image_gen',
             imageCount: 1,
           });
@@ -199,20 +200,20 @@ export class CarouselService {
 
   async reorderSlides(
     carouselId: string,
-    tenantId: string,
+    owner: Owner,
     order: { id: string; order: number }[],
   ): Promise<CarouselSlide[]> {
-    const carousel = await this.carouselRepo.findById(tenantId, carouselId);
+    const carousel = await this.carouselRepo.findById(owner, carouselId);
     if (!carousel) throw new NotFoundError('Carousel', carouselId);
     return this.carouselRepo.reorderSlides(carouselId, order);
   }
 
   async regenerateCarousel(
     carouselId: string,
-    tenantId: string,
+    owner: Owner,
     input: RegenerateCarouselInput,
   ): Promise<{ id: string; status: string }> {
-    const carousel = await this.carouselRepo.findById(tenantId, carouselId);
+    const carousel = await this.carouselRepo.findById(owner, carouselId);
     if (!carousel) throw new NotFoundError('Carousel', carouselId);
 
     if (carousel.publishStatus === 'published') {
@@ -222,24 +223,24 @@ export class CarouselService {
 
     // ── Pre-call quota enforcement ──
     if (this.usageTracker) {
-      const tokenCheck = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
+      const tokenCheck = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
       if (!tokenCheck.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', tokenCheck.limit!, tokenCheck.resetsAt!);
       }
     }
 
-    const account = await this.instagramRepo.findAccountByTenantId(tenantId);
+    const account = await this.instagramRepo.findAccountByOwner(owner);
      
     const agentConfig = account
-      ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
+      ? await this.instagramRepo.getAgentConfig(owner)
       : null;
     const basePrompt = (agentConfig as ImageGenConfig | null)?.imageGen?.basePrompt;
 
     await this.carouselRepo.resetForRegeneration(carouselId, input.topic);
 
     const topic = input.topic ?? carousel.topic;
-    this._generateAsync(carouselId, tenantId, topic, basePrompt).catch((error: unknown) => {
+    this._generateAsync(carouselId, owner, topic, basePrompt).catch((error: unknown) => {
       console.error(`[carousel:${carouselId}] background generation failed:`, error);
     });
 
@@ -248,10 +249,10 @@ export class CarouselService {
 
   async publishCarousel(
     carouselId: string,
-    tenantId: string,
+    owner: Owner,
     input: PublishCarouselInput,
   ): Promise<PublishCarouselResult> {
-    const carousel = await this.carouselRepo.findById(tenantId, carouselId);
+    const carousel = await this.carouselRepo.findById(owner, carouselId);
     if (!carousel) throw new NotFoundError('Carousel', carouselId);
 
     if (carousel.publishStatus === 'published') {
@@ -273,7 +274,7 @@ export class CarouselService {
     }
 
     // Resolve Instagram account + access token
-    const account = await this.instagramRepo.findAccountByTenantId(tenantId);
+    const account = await this.instagramRepo.findAccountByOwner(owner);
     if (!account) throw new AppError(404, 'ACCOUNT_NOT_CONNECTED', 'No Instagram account connected');
 
     const tokenData = await this.instagramRepo.findAccountWithToken(account.id);
@@ -344,13 +345,13 @@ export class CarouselService {
   }
 
   async createUploadCarousel(
-    tenantId: string,
+    owner: Owner,
     input: CreateUploadCarouselInput,
   ): Promise<{ id: string; status: string; slides: { id: string; order: number; status: string }[] }> {
-    const account = await this.instagramRepo.findAccountByTenantId(tenantId);
+    const account = await this.instagramRepo.findAccountByOwner(owner);
 
     const carousel = await this.carouselRepo.create({
-      tenantId,
+      ...owner,
       accountId: account?.id,
       topic: input.topic,
       ...(input.caption !== undefined && { caption: input.caption }),
@@ -378,10 +379,10 @@ export class CarouselService {
   async uploadSlideImage(
     carouselId: string,
     slideId: string,
-    tenantId: string,
+    owner: Owner,
     imageBuffer: Buffer,
   ): Promise<void> {
-    const carousel = await this.carouselRepo.findById(tenantId, carouselId);
+    const carousel = await this.carouselRepo.findById(owner, carouselId);
     if (!carousel) throw new NotFoundError('Carousel', carouselId);
 
     const slide = carousel.slides.find((s) => s.id === slideId);
@@ -402,14 +403,14 @@ export class CarouselService {
         console.error(`[carousel:${carouselId}] slide ${slideId} composite FAILED: ${msg}`);
         await this.carouselRepo.updateSlideStatus(slideId, 'failed');
       }
-      await this.finalizeCarouselIfComplete(carouselId, tenantId);
+      await this.finalizeCarouselIfComplete(carouselId, owner);
       return;
     }
 
     if (slide.imageMode === 'img2img') {
       // Check img2img quota before dispatching
       if (this.usageTracker) {
-        const imageCheck = await this.usageTracker.checkQuota(tenantId, 'fal_images');
+        const imageCheck = await this.usageTracker.checkQuota(owner.tenantId, 'fal_images');
         if (!imageCheck.allowed) {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('fal_images', imageCheck.limit!, imageCheck.resetsAt!);
@@ -418,10 +419,10 @@ export class CarouselService {
 
       void (async () => {
         try {
-          const falApiKey = await this.resolveFalApiKey(tenantId);
-          const i2iAccount = await this.instagramRepo.findAccountByTenantId(tenantId);
+          const falApiKey = await this.resolveFalApiKey(owner);
+          const i2iAccount = await this.instagramRepo.findAccountByOwner(owner);
           const i2iConfig = i2iAccount
-            ? await this.instagramRepo.getAgentConfig(tenantId, i2iAccount.userId)
+            ? await this.instagramRepo.getAgentConfig(owner)
             : null;
           const i2iModel = (i2iConfig as ImageGenConfig | null)?.imageGen?.i2iModel;
           const visualPrompt = slide.visualPrompt || slide.text;
@@ -434,14 +435,14 @@ export class CarouselService {
           const finalPath = await this.imageStorage.saveImage(carouselId, slideId, composited);
           await this.carouselRepo.updateSlideStatus(slideId, 'ready', finalPath);
           if (this.usageTracker) {
-            await this.usageTracker.log({ tenantId, operation: 'image_gen', imageCount: 1 });
+            await this.usageTracker.log({ tenantId: owner.tenantId, operation: 'image_gen', imageCount: 1 });
           }
         } catch (error) {
           const msg = error instanceof Error ? error.message : String(error);
           console.error(`[carousel:${carouselId}] img2img slide ${slideId} FAILED: ${msg}`);
           await this.carouselRepo.updateSlideStatus(slideId, 'failed');
         }
-        await this.finalizeCarouselIfComplete(carouselId, tenantId);
+        await this.finalizeCarouselIfComplete(carouselId, owner);
       })().catch((error: unknown) => {
         console.error(`[carousel:${carouselId}] img2img slide ${slideId} task failed:`, error);
       });
@@ -450,15 +451,15 @@ export class CarouselService {
 
     // Unexpected mode — fail the slide
     await this.carouselRepo.updateSlideStatus(slideId, 'failed');
-    await this.finalizeCarouselIfComplete(carouselId, tenantId);
+    await this.finalizeCarouselIfComplete(carouselId, owner);
   }
 
-  private async finalizeCarouselIfComplete(carouselId: string, tenantId: string): Promise<void> {
+  private async finalizeCarouselIfComplete(carouselId: string, owner: Owner): Promise<void> {
     const pending = await this.carouselRepo.countPendingSlides(carouselId);
     if (pending > 0) return;
 
     // Re-fetch to count failures
-    const carousel = await this.carouselRepo.findById(tenantId, carouselId);
+    const carousel = await this.carouselRepo.findById(owner, carouselId);
     if (!carousel) return;
 
     const hasReady = carousel.slides.some((s) => s.status === 'ready');
@@ -484,7 +485,7 @@ export class CarouselService {
 
   async _generateAsync(
     carouselId: string,
-    tenantId: string,
+    owner: Owner,
     topic: string,
     basePrompt?: string,
     approvedSlides?: GeneratedSlide[],
@@ -521,16 +522,16 @@ export class CarouselService {
 
       let falApiKey: string;
       try {
-        falApiKey = await this.resolveFalApiKey(tenantId);
+        falApiKey = await this.resolveFalApiKey(owner);
       } catch {
         await this.carouselRepo.updateStatus(carouselId, 'failed', 'FAL API key not configured');
         return;
       }
 
       // Resolve role-specific prompts from agent config
-      const account = await this.instagramRepo.findAccountByTenantId(tenantId);
+      const account = await this.instagramRepo.findAccountByOwner(owner);
       const agentConfig = account
-        ? await this.instagramRepo.getAgentConfig(tenantId, account.userId)
+        ? await this.instagramRepo.getAgentConfig(owner)
         : null;
       const imageGenConfig = (agentConfig as ImageGenConfig | null)?.imageGen;
       const t2iModel = imageGenConfig?.t2iModel;
@@ -577,7 +578,7 @@ export class CarouselService {
         // ── Post-call logging: only after success ──
         if (this.usageTracker) {
           await this.usageTracker.log({
-            tenantId,
+            tenantId: owner.tenantId,
             operation: 'image_gen',
             imageCount: successCount,
           });
@@ -590,8 +591,8 @@ export class CarouselService {
     }
   }
 
-  private async resolveFalApiKey(tenantId: string): Promise<string> {
-    const encrypted = await this.instagramRepo.getFalApiKeyEncrypted(tenantId);
+  private async resolveFalApiKey(owner: Owner): Promise<string> {
+    const encrypted = await this.instagramRepo.getFalApiKeyEncrypted(owner);
     if (!encrypted) {
       throw new Error('FAL API key not configured for this account');
     }

@@ -1,5 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 
+import type { Owner } from '../../domain/owner.js';
+
 import type { InstagramAccount, ConnectAccountInput, AgentConfig } from '../../domain/account.js';
 import type { AccountInsight, DashboardData, FormatBreakdown, HeatmapCell, InsightResult, InsightSnapshot, NorthStarMetric, NorthStarMetrics } from '../../domain/insight.js';
 import type { InstagramMedia, MediaMetrics, MediaWithMetrics, PaginatedMedia } from '../../domain/media.js';
@@ -35,17 +37,9 @@ export class PrismaInstagramRepository implements InstagramRepository {
 
   // ── Account ──────────────────────────────────────────────────────
 
-  async findAccountByTenantId(tenantId: string): Promise<InstagramAccount | null> {
+  async findAccountByOwner(owner: Owner): Promise<InstagramAccount | null> {
     const record = await this.prisma.instagramAccount.findFirst({
-      where: { tenantId },
-    });
-    if (!record) return null;
-    return this.toAccountDomain(record);
-  }
-
-  async findAccountByTenantAndUserId(tenantId: string, userId: string): Promise<InstagramAccount | null> {
-    const record = await this.prisma.instagramAccount.findFirst({
-      where: { tenantId, userId },
+      where: { ...owner },
     });
     if (!record) return null;
     return this.toAccountDomain(record);
@@ -70,14 +64,14 @@ export class PrismaInstagramRepository implements InstagramRepository {
   }
 
   async upsertAccount(
-    tenantId: string,
+    owner: Owner,
     input: ConnectAccountInput,
     accessTokenHash: string,
     tokenEncrypted: string,
     tokenExpiresAt: Date,
   ): Promise<InstagramAccount> {
     const record = await this.prisma.instagramAccount.upsert({
-      where: { tenantId },
+      where: { tenantId_userId: owner },
       update: {
         igUserId: input.igUserId,
         username: input.username,
@@ -93,8 +87,7 @@ export class PrismaInstagramRepository implements InstagramRepository {
         syncStatus: 'idle',
       },
       create: {
-        tenantId,
-        userId: input.userId,
+        ...owner,
         igUserId: input.igUserId,
         username: input.username,
         accountType: input.accountType,
@@ -111,16 +104,12 @@ export class PrismaInstagramRepository implements InstagramRepository {
     return this.toAccountDomain(record);
   }
 
-  async disconnectAccount(tenantId: string, userId: string): Promise<InstagramAccount> {
+  async disconnectAccount(owner: Owner): Promise<InstagramAccount> {
     const existing = await this.prisma.instagramAccount.findFirst({
-      where: {
-        tenantId,
-        userId,
-        syncStatus: { not: 'disconnected' },
-      },
+      where: { ...owner, syncStatus: { not: 'disconnected' } },
     });
     if (!existing) {
-      throw new NotFoundError('InstagramAccount', `${tenantId}:${userId}`);
+      throw new NotFoundError('InstagramAccount', `${owner.tenantId}:${owner.userId}`);
     }
     const record = await this.prisma.instagramAccount.update({
       where: { id: existing.id },
@@ -201,42 +190,42 @@ export class PrismaInstagramRepository implements InstagramRepository {
 
   // ── Agent Config ──────────────────────────────────────────────────
 
-  async getAgentConfig(tenantId: string, userId: string): Promise<AgentConfig | null> {
+  async getAgentConfig(owner: Owner): Promise<AgentConfig | null> {
     const record = await this.prisma.instagramAccount.findFirst({
-      where: { tenantId, userId },
+      where: { ...owner },
       select: { agentConfig: true },
     });
     if (!record?.agentConfig) return null;
     return record.agentConfig as unknown as AgentConfig;
   }
 
-  async saveAgentConfig(tenantId: string, userId: string, config: AgentConfig): Promise<void> {
+  async saveAgentConfig(owner: Owner, config: AgentConfig): Promise<void> {
     await this.prisma.instagramAccount.update({
-      where: { tenantId },
+      where: { tenantId_userId: owner },
       data: { agentConfig: config as unknown as Prisma.InputJsonValue },
     });
   }
 
   // ── FAL API Key ───────────────────────────────────────────────────
 
-  async hasFalApiKey(tenantId: string): Promise<boolean> {
+  async hasFalApiKey(owner: Owner): Promise<boolean> {
     const record = await this.prisma.instagramAccount.findFirst({
-      where: { tenantId },
+      where: { ...owner },
       select: { falApiKeyEncrypted: true },
     });
     return record?.falApiKeyEncrypted !== null && record?.falApiKeyEncrypted !== undefined;
   }
 
-  async saveFalApiKey(tenantId: string, encryptedKey: string): Promise<void> {
+  async saveFalApiKey(owner: Owner, encryptedKey: string): Promise<void> {
     await this.prisma.instagramAccount.update({
-      where: { tenantId },
+      where: { tenantId_userId: owner },
       data: { falApiKeyEncrypted: encryptedKey },
     });
   }
 
-  async getFalApiKeyEncrypted(tenantId: string): Promise<string | null> {
+  async getFalApiKeyEncrypted(owner: Owner): Promise<string | null> {
     const record = await this.prisma.instagramAccount.findFirst({
-      where: { tenantId },
+      where: { ...owner },
       select: { falApiKeyEncrypted: true },
     });
     return record?.falApiKeyEncrypted ?? null;

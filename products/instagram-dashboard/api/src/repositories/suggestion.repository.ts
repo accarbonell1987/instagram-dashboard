@@ -1,10 +1,13 @@
 import { SuggestionStatus, type PrismaClient, type SuggestionCategory, type SuggestionOutcome } from '@prisma/client';
 
+import type { Owner } from '../domain/owner.js';
+
 export type { SuggestionCategory, SuggestionStatus, SuggestionOutcome };
 
 export interface ContentSuggestion {
   id: string;
   tenantId: string;
+  userId: string;
   batchId: string | null;
   category: SuggestionCategory;
   content: string;
@@ -21,6 +24,7 @@ export interface ContentSuggestion {
 
 export interface CreateSuggestion {
   tenantId: string;
+  userId: string;
   batchId?: string | undefined;
   category: SuggestionCategory;
   content: string;
@@ -29,6 +33,7 @@ export interface CreateSuggestion {
 export interface SuggestionBatch {
   id: string;
   tenantId: string;
+  userId: string;
   userMessage: string;
   createdAt: Date;
   suggestions: ContentSuggestion[];
@@ -36,6 +41,7 @@ export interface SuggestionBatch {
 
 export interface CreateBatch {
   tenantId: string;
+  userId: string;
   userMessage: string;
 }
 
@@ -51,13 +57,13 @@ export interface UpdateSuggestion {
 
 export interface ISuggestionRepository {
   create(data: CreateSuggestion): Promise<ContentSuggestion>;
-  findByTenant(tenantId: string, status?: SuggestionStatus): Promise<ContentSuggestion[]>;
-  findById(tenantId: string, id: string): Promise<ContentSuggestion | null>;
-  update(tenantId: string, id: string, data: UpdateSuggestion): Promise<ContentSuggestion>;
+  findByOwner(owner: Owner, status?: SuggestionStatus): Promise<ContentSuggestion[]>;
+  findById(owner: Owner, id: string): Promise<ContentSuggestion | null>;
+  update(owner: Owner, id: string, data: UpdateSuggestion): Promise<ContentSuggestion>;
   findEligibleForMeasurement(): Promise<ContentSuggestion[]>;
   // Batches
   createBatch(data: CreateBatch): Promise<SuggestionBatch>;
-  findBatchesByTenant(tenantId: string, page: number, limit: number): Promise<{ batches: SuggestionBatch[]; total: number }>;
+  findBatchesByOwner(owner: Owner, page: number, limit: number): Promise<{ batches: SuggestionBatch[]; total: number }>;
 }
 
 export class PrismaSuggestionRepository implements ISuggestionRepository {
@@ -67,6 +73,7 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
     const record = await this.prisma.contentSuggestion.create({
       data: {
         tenantId: data.tenantId,
+        userId: data.userId,
         category: data.category,
         content: data.content,
         ...(data.batchId !== undefined ? { batchId: data.batchId } : {}),
@@ -75,28 +82,28 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
     return this.toDomain(record);
   }
 
-  async findByTenant(tenantId: string, status?: SuggestionStatus): Promise<ContentSuggestion[]> {
+  async findByOwner(owner: Owner, status?: SuggestionStatus): Promise<ContentSuggestion[]> {
     const whereStatus =
       status !== undefined
         ? { status }
         : { status: { not: SuggestionStatus.dismissed } };
 
     const records = await this.prisma.contentSuggestion.findMany({
-      where: { tenantId, ...whereStatus },
+      where: { ...owner, ...whereStatus },
       orderBy: { createdAt: 'desc' },
     });
     return records.map((r) => this.toDomain(r));
   }
 
-  async findById(tenantId: string, id: string): Promise<ContentSuggestion | null> {
+  async findById(owner: Owner, id: string): Promise<ContentSuggestion | null> {
     const record = await this.prisma.contentSuggestion.findFirst({
-      where: { tenantId, id },
+      where: { ...owner, id },
     });
     if (!record) return null;
     return this.toDomain(record);
   }
 
-  async update(tenantId: string, id: string, data: UpdateSuggestion): Promise<ContentSuggestion> {
+  async update(owner: Owner, id: string, data: UpdateSuggestion): Promise<ContentSuggestion> {
     const record = await this.prisma.contentSuggestion.update({
       where: { id },
       data: {
@@ -107,7 +114,7 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
         ...(data.measuredAt !== undefined && { measuredAt: data.measuredAt }),
         ...(data.baselineJson !== undefined && { baselineJson: data.baselineJson as object }),
         ...(data.metricsJson !== undefined && { metricsJson: data.metricsJson as object }),
-        tenantId, // enforce tenant isolation
+        ...owner, // enforce owner isolation
       },
     });
     return this.toDomain(record);
@@ -117,27 +124,29 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
     const record = await this.prisma.suggestionBatch.create({
       data: {
         tenantId: data.tenantId,
+        userId: data.userId,
         userMessage: data.userMessage,
       },
     });
     return {
       id: record.id,
       tenantId: record.tenantId,
+      userId: record.userId,
       userMessage: record.userMessage,
       createdAt: record.createdAt,
       suggestions: [],
     };
   }
 
-  async findBatchesByTenant(
-    tenantId: string,
+  async findBatchesByOwner(
+    owner: Owner,
     page: number,
     limit: number,
   ): Promise<{ batches: SuggestionBatch[]; total: number }> {
     const [total, records] = await Promise.all([
-      this.prisma.suggestionBatch.count({ where: { tenantId } }),
+      this.prisma.suggestionBatch.count({ where: { ...owner } }),
       this.prisma.suggestionBatch.findMany({
-        where: { tenantId },
+        where: { ...owner },
         include: { suggestions: { orderBy: { createdAt: 'asc' } } },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
@@ -149,6 +158,7 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
       batches: records.map((r) => ({
         id: r.id,
         tenantId: r.tenantId,
+        userId: r.userId,
         userMessage: r.userMessage,
         createdAt: r.createdAt,
         suggestions: r.suggestions.map((s) => this.toDomain(s)),
@@ -174,6 +184,7 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
     return {
       id: record['id'] as string,
       tenantId: record['tenantId'] as string,
+      userId: record['userId'] as string,
       batchId: (record['batchId'] as string | null) ?? null,
       category: record['category'] as SuggestionCategory,
       content: record['content'] as string,

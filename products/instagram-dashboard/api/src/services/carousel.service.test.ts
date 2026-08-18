@@ -43,7 +43,7 @@ const mockCarouselRepo = {
 };
 
 const mockInstagramRepo = {
-  findAccountByTenantId: vi.fn().mockResolvedValue({ id: 'acc-1', userId: 'user-1' }),
+  findAccountByOwner: vi.fn().mockResolvedValue({ id: 'acc-1', userId: 'user-1' }),
   getAgentConfig: vi.fn().mockResolvedValue(null),
   getFalApiKeyEncrypted: vi.fn(),
 };
@@ -152,7 +152,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       makeSlide(),
       makeSlide({ id: 'slide-2', order: 2, role: 'cta' }),
     ]);
-    mockInstagramRepo.findAccountByTenantId.mockResolvedValue({ id: 'acc-1', userId: 'user-1' });
+    mockInstagramRepo.findAccountByOwner.mockResolvedValue({ id: 'acc-1', userId: 'user-1' });
     mockInstagramRepo.getAgentConfig.mockResolvedValue(null);
     mockInstagramRepo.getFalApiKeyEncrypted.mockResolvedValue('encrypted-key');
     mockScriptGenerator.generateScript.mockResolvedValue(makeGeneratedSlides());
@@ -166,7 +166,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
 
   describe('createCarousel()', () => {
     it('calls checkQuota before fire-and-forget', async () => {
-      await service.createCarousel('tenant-1', 'Test topic');
+      await service.createCarousel({ tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic');
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
@@ -184,7 +184,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
         .mockResolvedValueOnce({ allowed: false, limit: 100000, resetsAt: '2026-07-01T00:00:00.000Z' });
 
       await expect(
-        service.createCarousel('tenant-1', 'Test topic'),
+        service.createCarousel({ tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic'),
       ).rejects.toThrow(QuotaExceededError);
 
       // Carousel should NOT be created when quota exceeded
@@ -197,7 +197,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
         .mockResolvedValueOnce({ allowed: false, limit: 50, resetsAt: '2026-07-01T00:00:00.000Z' });
 
       await expect(
-        service.createCarousel('tenant-1', 'Test topic'),
+        service.createCarousel({ tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic'),
       ).rejects.toThrow(QuotaExceededError);
 
       expect(mockCarouselRepo.create).not.toHaveBeenCalled();
@@ -209,7 +209,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       mockImageProvider.generateImage.mockResolvedValue(Buffer.from('fake-image-data'));
       mockImageStorage.saveImage.mockResolvedValue('http://localhost:3003/carousels/car-1/slide-1.png');
 
-      await service._generateAsync('car-1', 'tenant-1', 'Test topic');
+      await service._generateAsync('car-1', { tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic');
 
       // Should log image_gen with success count (2 slides generated)
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
@@ -230,7 +230,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
         makeSlide({ id: 'slide-2', order: 2, role: 'cta' }),
       ]);
 
-      await service._generateAsync('car-1', 'tenant-1', 'Test topic', undefined, approvedSlides);
+      await service._generateAsync('car-1', { tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic', undefined, approvedSlides);
 
       // log should NOT be called if successCount is 0
       const imageLogCalls = (mockTracker.log as ReturnType<typeof vi.fn>).mock.calls.filter(
@@ -248,7 +248,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       );
       mockCarouselRepo.resetForRegeneration.mockResolvedValue(undefined);
 
-      await service.regenerateCarousel('car-1', 'tenant-1', { topic: 'New topic' });
+      await service.regenerateCarousel('car-1', { tenantId: 'tenant-1', userId: 'user-1' }, { topic: 'New topic' });
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
@@ -265,7 +265,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       });
 
       await expect(
-        service.regenerateCarousel('car-1', 'tenant-1', { topic: 'New topic' }),
+        service.regenerateCarousel('car-1', { tenantId: 'tenant-1', userId: 'user-1' }, { topic: 'New topic' }),
       ).rejects.toThrow(QuotaExceededError);
     });
   });
@@ -278,7 +278,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       mockInstagramRepo.getFalApiKeyEncrypted.mockResolvedValue('encrypted-key');
 
       // regenerateSlide fires-and-forgets, but checkQuota runs synchronously before
-      await service.regenerateSlide('car-1', 'slide-1', 'tenant-1');
+      await service.regenerateSlide('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' });
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'fal_images');
@@ -295,7 +295,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       });
 
       await expect(
-        service.regenerateSlide('car-1', 'slide-1', 'tenant-1'),
+        service.regenerateSlide('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' }),
       ).rejects.toThrow(QuotaExceededError);
     });
   });
@@ -304,7 +304,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
     it('passes tenantId to scriptGenerator.generateScript for quota enforcement', async () => {
       mockScriptGenerator.generateScript.mockResolvedValue(makeGeneratedSlides());
 
-      await service.previewScript('tenant-1', 'Test topic');
+      await service.previewScript({ tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic');
 
       // CRITICAL: generateScript must receive tenantId so UsageTracker.checkQuota is called
       // for the preview-script flow. Without this, previewScript bypasses quota enforcement.
@@ -316,10 +316,10 @@ describe('CarouselService (UsageTracker enforcement)', () => {
     });
 
     it('propagates errors from generateScript when tenant has no account', async () => {
-      mockInstagramRepo.findAccountByTenantId.mockResolvedValue(null);
+      mockInstagramRepo.findAccountByOwner.mockResolvedValue(null);
       mockScriptGenerator.generateScript.mockResolvedValue(makeGeneratedSlides());
 
-      const result = await service.previewScript('tenant-1', 'Test topic');
+      const result = await service.previewScript({ tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic');
 
       // Should still work even without an account (basePrompt will be undefined)
       expect(result).toEqual(makeGeneratedSlides());
@@ -386,7 +386,7 @@ describe('CarouselService — upload carousel flow', () => {
     mockCarouselRepo.updateSlideStatus.mockResolvedValue(undefined);
     mockCarouselRepo.updateStatus.mockResolvedValue(undefined);
     mockCarouselRepo.countPendingSlides.mockResolvedValue(0);
-    mockInstagramRepo.findAccountByTenantId.mockResolvedValue({ id: 'acc-1', userId: 'user-1' });
+    mockInstagramRepo.findAccountByOwner.mockResolvedValue({ id: 'acc-1', userId: 'user-1' });
     mockInstagramRepo.getFalApiKeyEncrypted.mockResolvedValue('encrypted-key');
     mockImageStorage.saveImage.mockResolvedValue('/carousels/car-1/slide-1.jpg');
 
@@ -395,8 +395,7 @@ describe('CarouselService — upload carousel flow', () => {
 
   describe('createUploadCarousel()', () => {
     it('creates carousel with carouselType=upload and returns slide IDs', async () => {
-      const result = await service.createUploadCarousel('tenant-1', {
-        tenantId: 'tenant-1',
+      const result = await service.createUploadCarousel({ tenantId: 'tenant-1', userId: 'user-1' }, {
         topic: 'Mi producto estrella',
         slides: [
           { order: 1, role: 'hook', text: 'Texto hook', imageMode: 'uploaded' },
@@ -412,8 +411,7 @@ describe('CarouselService — upload carousel flow', () => {
     });
 
     it('passes imageMode to createSlides', async () => {
-      await service.createUploadCarousel('tenant-1', {
-        tenantId: 'tenant-1',
+      await service.createUploadCarousel({ tenantId: 'tenant-1', userId: 'user-1' }, {
         topic: 'Test',
         slides: [
           { order: 1, role: 'hook', text: 'Hook', imageMode: 'uploaded' },
@@ -434,7 +432,7 @@ describe('CarouselService — upload carousel flow', () => {
     it('saves image, composites text, marks slide ready', async () => {
       const imageBuffer = Buffer.from('fake-image');
 
-      await service.uploadSlideImage('car-1', 'slide-1', 'tenant-1', imageBuffer);
+      await service.uploadSlideImage('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' }, imageBuffer);
 
       // Should save original first
       expect(mockImageStorage.saveImage).toHaveBeenCalledWith('car-1', 'slide-1-original', imageBuffer);
@@ -447,7 +445,7 @@ describe('CarouselService — upload carousel flow', () => {
       const { compositeTextOnImage } = await import('../lib/image/text-compositor.js');
       (compositeTextOnImage as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('sharp error'));
 
-      await service.uploadSlideImage('car-1', 'slide-1', 'tenant-1', Buffer.from('img'));
+      await service.uploadSlideImage('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' }, Buffer.from('img'));
 
       expect(mockCarouselRepo.updateSlideStatus).toHaveBeenCalledWith('slide-1', 'failed');
     });
@@ -459,7 +457,7 @@ describe('CarouselService — upload carousel flow', () => {
         .mockResolvedValueOnce(uploadCarousel()) // first call in uploadSlideImage
         .mockResolvedValueOnce(uploadCarousel({ slides: [uploadSlide({ status: 'ready' })] }));
 
-      await service.uploadSlideImage('car-1', 'slide-1', 'tenant-1', Buffer.from('img'));
+      await service.uploadSlideImage('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' }, Buffer.from('img'));
 
       expect(mockCarouselRepo.updateStatus).toHaveBeenCalledWith('car-1', 'ready', undefined);
     });
@@ -467,7 +465,7 @@ describe('CarouselService — upload carousel flow', () => {
     it('does not mark carousel ready while other slides are still pending', async () => {
       mockCarouselRepo.countPendingSlides.mockResolvedValue(1);
 
-      await service.uploadSlideImage('car-1', 'slide-1', 'tenant-1', Buffer.from('img'));
+      await service.uploadSlideImage('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' }, Buffer.from('img'));
 
       expect(mockCarouselRepo.updateStatus).not.toHaveBeenCalled();
     });
@@ -480,7 +478,7 @@ describe('CarouselService — upload carousel flow', () => {
       );
       mockImageProvider.generateImage.mockResolvedValue(Buffer.from('generated'));
 
-      await service.uploadSlideImage('car-1', 'slide-1', 'tenant-1', Buffer.from('source'));
+      await service.uploadSlideImage('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' }, Buffer.from('source'));
 
       // Synchronous: save original + set generating
       expect(mockImageStorage.saveImage).toHaveBeenCalledWith('car-1', 'slide-1-original', expect.any(Buffer));
@@ -498,7 +496,7 @@ describe('CarouselService — upload carousel flow', () => {
       const svcWithTracker = createCarouselService(tracker);
 
       await expect(
-        svcWithTracker.uploadSlideImage('car-1', 'slide-1', 'tenant-1', Buffer.from('img')),
+        svcWithTracker.uploadSlideImage('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' }, Buffer.from('img')),
       ).rejects.toThrow(QuotaExceededError);
     });
   });
@@ -509,7 +507,7 @@ describe('CarouselService — upload carousel flow', () => {
       mockCarouselRepo.findById.mockResolvedValue(null);
 
       await expect(
-        service.uploadSlideImage('bad-carousel', 'slide-1', 'tenant-1', Buffer.from('img')),
+        service.uploadSlideImage('bad-carousel', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' }, Buffer.from('img')),
       ).rejects.toThrow(NotFoundError);
     });
   });

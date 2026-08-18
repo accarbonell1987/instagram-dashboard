@@ -1,3 +1,4 @@
+import { ownerOf } from './domain/owner.js';
 import { join } from 'node:path';
 
 import {
@@ -138,10 +139,11 @@ async function bootstrap() {
   // Protected auth routes: need JWT so authGuard has already set tenant context
   api.get('/auth/instagram/authorize', async (c) => {
     const tenant = c.get('tenant');
-    // Permanent binding: one IG account per tenant, forever
-    const existingAccount = await repos.instagram.findAccountByTenantId(tenant.tenantId);
+    // One IG account per user. A member who already holds one must release it
+    // — or have an admin release it — before connecting another.
+    const existingAccount = await repos.instagram.findAccountByOwner(ownerOf(tenant));
     if (existingAccount && existingAccount.syncStatus !== 'disconnected') {
-      throw new ConflictError('InstagramAccount', 'tenantId', tenant.tenantId);
+      throw new ConflictError('InstagramAccount', 'userId', tenant.userId);
     }
     const url = oauthService.getAuthorizationUrl(tenant.tenantId, tenant.userId);
     return c.json({ success: true, data: { url } }, 200);
@@ -149,13 +151,13 @@ async function bootstrap() {
 
   api.get('/auth/instagram/status', async (c) => {
     const tenant = c.get('tenant');
-    const status = await oauthService.getConnectionStatus(tenant.tenantId, tenant.userId);
+    const status = await oauthService.getConnectionStatus(ownerOf(tenant));
     return c.json({ success: true, data: status }, 200);
   });
 
   api.post('/auth/instagram/disconnect', async (c) => {
     const tenant = c.get('tenant');
-    await oauthService.disconnectAccount(tenant.tenantId, tenant.userId);
+    await oauthService.disconnectAccount(ownerOf(tenant));
     return c.json({ success: true, data: { message: 'Cuenta desconectada exitosamente' } }, 200);
   });
   

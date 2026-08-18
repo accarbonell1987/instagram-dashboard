@@ -12,7 +12,7 @@ function createMockRepo(): {
 } {
   return {
     instagram: {
-      findAccountByTenantId: vi.fn(),
+      findAccountByOwner: vi.fn(),
       disconnectAccount: vi.fn(),
   listAccountsByTenantId: vi.fn(),
   disconnectAccountById: vi.fn(),
@@ -82,15 +82,15 @@ describe('DashboardService', () => {
 
   describe('getDashboardData', () => {
     it('throws AccountNotConnectedError when no account connected', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
 
-      await expect(service.getDashboardData('tenant-1', 'user-1')).rejects.toThrow(
+      await expect(service.getDashboardData({ tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(
         AccountNotConnectedError,
       );
     });
 
     it('delegates to repository when account exists', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       const mockDashboard = {
@@ -115,14 +115,14 @@ describe('DashboardService', () => {
       };
       repo.instagram.getDashboardData.mockResolvedValue(mockDashboard);
 
-      const result = await service.getDashboardData('tenant-1', 'user-1');
+      const result = await service.getDashboardData({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(result).toEqual(mockDashboard);
       expect(repo.instagram.getDashboardData).toHaveBeenCalledWith('acc-1');
     });
 
     it('passes correct account ID to repository', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount({ id: 'specific-account-id' }),
       );
       repo.instagram.getDashboardData.mockResolvedValue({
@@ -145,7 +145,7 @@ describe('DashboardService', () => {
         insight: { insight: '', generatedAt: '' },
       });
 
-      await service.getDashboardData('tenant-1', 'user-1');
+      await service.getDashboardData({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(repo.instagram.getDashboardData).toHaveBeenCalledWith(
         'specific-account-id',
@@ -153,20 +153,20 @@ describe('DashboardService', () => {
     });
 
     it('propagates repository errors', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.getDashboardData.mockRejectedValue(
         new Error('Database error'),
       );
 
-      await expect(service.getDashboardData('tenant-1', 'user-1')).rejects.toThrow(
+      await expect(service.getDashboardData({ tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(
         'Database error',
       );
     });
 
     it('scopes data to the correct tenant and user', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount({ id: 'tenant-a-acc' }),
       );
       repo.instagram.getDashboardData.mockResolvedValue({
@@ -189,40 +189,40 @@ describe('DashboardService', () => {
         insight: { insight: '', generatedAt: '' },
       });
 
-      await service.getDashboardData('tenant-a', 'user-a');
-      expect(repo.instagram.findAccountByTenantId).toHaveBeenCalledWith('tenant-a');
+      await service.getDashboardData({ tenantId: 'tenant-a', userId: 'user-a' });
+      expect(repo.instagram.findAccountByOwner).toHaveBeenCalledWith({ tenantId: 'tenant-a', userId: 'user-a' });
 
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount({ id: 'tenant-b-acc' }),
       );
 
-      await service.getDashboardData('tenant-b', 'user-b');
-      expect(repo.instagram.findAccountByTenantId).toHaveBeenCalledWith('tenant-b');
+      await service.getDashboardData({ tenantId: 'tenant-b', userId: 'user-b' });
+      expect(repo.instagram.findAccountByOwner).toHaveBeenCalledWith({ tenantId: 'tenant-b', userId: 'user-b' });
     });
   });
 
   describe('getMediaDetail', () => {
     it('throws AccountNotConnectedError when no account', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
 
       await expect(
-        service.getMediaDetail('tenant-1', 'user-1', 'media-1'),
+        service.getMediaDetail({ tenantId: 'tenant-1', userId: 'user-1' }, 'media-1'),
       ).rejects.toThrow(AccountNotConnectedError);
     });
 
     it('throws NotFoundError when media not found', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.findMediaById.mockResolvedValue(null);
 
       await expect(
-        service.getMediaDetail('tenant-1', 'user-1', 'media-1'),
+        service.getMediaDetail({ tenantId: 'tenant-1', userId: 'user-1' }, 'media-1'),
       ).rejects.toThrow(NotFoundError);
     });
 
     it('returns media with metrics when found', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       const mediaDetail = {
@@ -248,7 +248,7 @@ describe('DashboardService', () => {
       };
       repo.instagram.findMediaById.mockResolvedValue(mediaDetail);
 
-      const result = await service.getMediaDetail('tenant-1', 'user-1', 'media-1');
+      const result = await service.getMediaDetail({ tenantId: 'tenant-1', userId: 'user-1' }, 'media-1');
 
       expect(result).toEqual(mediaDetail);
       expect(result.metrics).not.toBeNull();
@@ -258,15 +258,15 @@ describe('DashboardService', () => {
 
   describe('listMedia', () => {
     it('throws AccountNotConnectedError when no account', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
 
-      await expect(service.listMedia('tenant-1', 'user-1', {})).rejects.toThrow(
+      await expect(service.listMedia({ tenantId: 'tenant-1', userId: 'user-1' }, {})).rejects.toThrow(
         AccountNotConnectedError,
       );
     });
 
     it('delegates to repository with pagination params', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       const paginatedResult = {
@@ -277,7 +277,7 @@ describe('DashboardService', () => {
       };
       repo.instagram.listMedia.mockResolvedValue(paginatedResult);
 
-      const result = await service.listMedia('tenant-1', 'user-1', {
+      const result = await service.listMedia({ tenantId: 'tenant-1', userId: 'user-1' }, {
         page: 2,
         pageSize: 5,
       });
@@ -290,7 +290,7 @@ describe('DashboardService', () => {
     });
 
     it('uses default pagination when no params provided', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.listMedia.mockResolvedValue({
@@ -300,7 +300,7 @@ describe('DashboardService', () => {
         pageSize: 10,
       });
 
-      await service.listMedia('tenant-1', 'user-1', {});
+      await service.listMedia({ tenantId: 'tenant-1', userId: 'user-1' }, {});
 
       expect(repo.instagram.listMedia).toHaveBeenCalledWith('acc-1', {});
     });
@@ -320,15 +320,15 @@ describe('DashboardService', () => {
     };
 
     it('throws AccountNotConnectedError when no account', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
 
       await expect(
-        service.getGrowthData('tenant-1', 'user-1', 'followers', '7d'),
+        service.getGrowthData({ tenantId: 'tenant-1', userId: 'user-1' }, 'followers', '7d'),
       ).rejects.toThrow(AccountNotConnectedError);
     });
 
     it('returns GrowthDataPoint[] for followers metric', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.getAccountInsightHistory.mockResolvedValue([
@@ -336,7 +336,7 @@ describe('DashboardService', () => {
         { ...baseSnapshot, syncedAt: new Date('2026-06-16T10:00:00Z'), followerCount: 1050 },
       ]);
 
-      const result = await service.getGrowthData('tenant-1', 'user-1', 'followers', '7d');
+      const result = await service.getGrowthData({ tenantId: 'tenant-1', userId: 'user-1' }, 'followers', '7d');
 
       expect(result).toHaveLength(2);
       expect(result[0]?.date).toBe('2026-06-15T10:00:00.000Z');
@@ -345,50 +345,50 @@ describe('DashboardService', () => {
     });
 
     it('computes engagement rate correctly', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       // (50+10+20+5) / 500 * 100 = 17.0
       repo.instagram.getAccountInsightHistory.mockResolvedValue([{ ...baseSnapshot }]);
 
-      const result = await service.getGrowthData('tenant-1', 'user-1', 'engagement', '7d');
+      const result = await service.getGrowthData({ tenantId: 'tenant-1', userId: 'user-1' }, 'engagement', '7d');
 
       expect(result).toHaveLength(1);
       expect(result[0]?.value).toBe(17);
     });
 
     it('returns 0 for engagement when impressions ≤ 0', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.getAccountInsightHistory.mockResolvedValue([
         { ...baseSnapshot, impressions: 0 },
       ]);
 
-      const result = await service.getGrowthData('tenant-1', 'user-1', 'engagement', '7d');
+      const result = await service.getGrowthData({ tenantId: 'tenant-1', userId: 'user-1' }, 'engagement', '7d');
 
       expect(result[0]?.value).toBe(0);
     });
 
     it('returns empty array when no snapshots in period', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.getAccountInsightHistory.mockResolvedValue([]);
 
-      const result = await service.getGrowthData('tenant-1', 'user-1', 'reach', '7d');
+      const result = await service.getGrowthData({ tenantId: 'tenant-1', userId: 'user-1' }, 'reach', '7d');
 
       expect(result).toEqual([]);
     });
 
     it('calculates correct since date for 7d period', async () => {
       const now = Date.now();
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.getAccountInsightHistory.mockResolvedValue([]);
 
-      await service.getGrowthData('tenant-1', 'user-1', 'impressions', '7d');
+      await service.getGrowthData({ tenantId: 'tenant-1', userId: 'user-1' }, 'impressions', '7d');
 
       const sinceArg = repo.instagram.getAccountInsightHistory.mock.calls[0]?.[1] as Date;
       const diffDays = (now - sinceArg.getTime()) / (24 * 60 * 60 * 1000);
@@ -396,14 +396,14 @@ describe('DashboardService', () => {
     });
 
     it('maps profileViews metric directly', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.getAccountInsightHistory.mockResolvedValue([
         { ...baseSnapshot, profileViews: 42 },
       ]);
 
-      const result = await service.getGrowthData('tenant-1', 'user-1', 'profileViews', '7d');
+      const result = await service.getGrowthData({ tenantId: 'tenant-1', userId: 'user-1' }, 'profileViews', '7d');
 
       expect(result[0]?.value).toBe(42);
     });

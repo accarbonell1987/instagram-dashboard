@@ -55,7 +55,8 @@ export interface CreateUploadSlideInput {
 }
 
 export interface CreateUploadCarouselInput {
-  tenantId: string;
+  // No tenantId here: the caller passes an Owner alongside, and two sources for
+  // the same fact is how they end up disagreeing.
   accountId?: string;
   topic: string;
   caption?: string;

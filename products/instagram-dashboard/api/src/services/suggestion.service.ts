@@ -1,3 +1,4 @@
+import type { Owner } from '../domain/owner.js';
 import { InternalError, QuotaExceededError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
 import type { DeepSeekClient } from '../lib/deepseek-client.js';
@@ -18,54 +19,54 @@ export class SuggestionService {
     private readonly usageTracker?: UsageTracker,
   ) {}
 
-  async getSuggestions(tenantId: string, status?: SuggestionStatus): Promise<ContentSuggestion[]> {
-    return this.repos.suggestion.findByTenant(tenantId, status);
+  async getSuggestions(owner: Owner, status?: SuggestionStatus): Promise<ContentSuggestion[]> {
+    return this.repos.suggestion.findByOwner(owner, status);
   }
 
   async createSuggestion(
-    tenantId: string,
+    owner: Owner,
     category: SuggestionCategory,
     content: string,
     batchId?: string,
   ): Promise<ContentSuggestion> {
     return this.repos.suggestion.create({
-      tenantId,
+      ...owner,
       category,
       content,
       ...(batchId !== undefined ? { batchId } : {}),
     });
   }
 
-  async createBatch(tenantId: string, userMessage: string): Promise<SuggestionBatch> {
-    return this.repos.suggestion.createBatch({ tenantId, userMessage });
+  async createBatch(owner: Owner, userMessage: string): Promise<SuggestionBatch> {
+    return this.repos.suggestion.createBatch({ ...owner, userMessage });
   }
 
   async listBatches(
-    tenantId: string,
+    owner: Owner,
     page: number,
     limit: number,
   ): Promise<{ batches: SuggestionBatch[]; total: number }> {
-    return this.repos.suggestion.findBatchesByTenant(tenantId, page, limit);
+    return this.repos.suggestion.findBatchesByOwner(owner, page, limit);
   }
 
-  async markUsed(tenantId: string, id: string, linkedMediaId?: string): Promise<void> {
-    await this.repos.suggestion.update(tenantId, id, {
+  async markUsed(owner: Owner, id: string, linkedMediaId?: string): Promise<void> {
+    await this.repos.suggestion.update(owner, id, {
       status: 'used' as SuggestionStatus,
       ...(linkedMediaId !== undefined ? { linkedMediaId } : {}),
       linkedAt: new Date(),
     });
   }
 
-  async dismiss(tenantId: string, id: string): Promise<void> {
-    await this.repos.suggestion.update(tenantId, id, {
+  async dismiss(owner: Owner, id: string): Promise<void> {
+    await this.repos.suggestion.update(owner, id, {
       status: 'dismissed' as SuggestionStatus,
     });
   }
 
-  async generateContentIdea(tenantId: string, prompt: string): Promise<ContentSuggestion> {
+  async generateContentIdea(owner: Owner, prompt: string): Promise<ContentSuggestion> {
     // ── Pre-call quota enforcement ──
     if (this.usageTracker) {
-      const check = await this.usageTracker.checkQuota(tenantId, 'deepseek_tokens');
+      const check = await this.usageTracker.checkQuota(owner.tenantId, 'deepseek_tokens');
       if (!check.allowed) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
         throw new QuotaExceededError('deepseek_tokens', check.limit!, check.resetsAt!);
@@ -89,7 +90,7 @@ export class SuggestionService {
     // ── Post-call logging ──
     if (this.usageTracker) {
       await this.usageTracker.log({
-        tenantId,
+        tenantId: owner.tenantId,
         operation: 'suggestion',
         model: 'deepseek-v4-flash',
         promptTokens: response.usage.promptTokens,
@@ -100,8 +101,8 @@ export class SuggestionService {
     const content = response.content.trim();
     if (!content) throw new InternalError('AI returned empty response');
 
-    const batch = await this.createBatch(tenantId, prompt);
-    return this.createSuggestion(tenantId, 'content_idea', content, batch.id);
+    const batch = await this.createBatch(owner, prompt);
+    return this.createSuggestion(owner, 'content_idea', content, batch.id);
   }
 
   async measureOutcomes(): Promise<void> {
@@ -117,7 +118,9 @@ export class SuggestionService {
   }
 
   private async measureSingleSuggestion(suggestion: ContentSuggestion): Promise<void> {
-    const { tenantId, id, linkedMediaId } = suggestion;
+    const { tenantId, userId, id, linkedMediaId } = suggestion;
+    // The row knows who it belongs to; the sweep has no caller to ask.
+    const owner = { tenantId, userId };
 
     // Try to get account and dashboard data for baseline
     let outcome: 'exceeded' | 'met' | 'below' = 'met';
@@ -127,10 +130,10 @@ export class SuggestionService {
     let format = 'unknown';
 
     try {
-      const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+      const account = await this.repos.instagram.findAccountByOwner(owner);
       if (!account) {
         // No baseline data — default to met
-        await this.repos.suggestion.update(tenantId, id, {
+        await this.repos.suggestion.update(owner, id, {
           outcome: 'met',
           baselineJson: { format, period: '90d', sampleCount: 0, medianEngagementRate: 0 },
           metricsJson: { engagementRate: 0 },
@@ -184,7 +187,7 @@ export class SuggestionService {
       // If any sub-query fails, use default values (no rethrow)
     }
 
-    await this.repos.suggestion.update(tenantId, id, {
+    await this.repos.suggestion.update(owner, id, {
       outcome,
       baselineJson: { format, period: '90d', sampleCount, medianEngagementRate },
       metricsJson: { engagementRate: actualEngagementRate },

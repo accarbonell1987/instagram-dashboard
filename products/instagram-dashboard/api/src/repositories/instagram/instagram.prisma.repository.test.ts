@@ -57,7 +57,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
     if (!repo) return; // skip if no DB
 
     const account = await repo.upsertAccount(
-      tenantA,
+      { tenantId: tenantA, userId: userA },
       { userId: userA, igUserId: 'ig-test-1', username: 'testuser', accountType: 'BUSINESS' },
       'hash123',
       'encrypted123',
@@ -71,23 +71,23 @@ describeIf('PrismaInstagramRepository (integration)', () => {
     expect(account.igUserId).toBe('ig-test-1');
   });
 
-  it('enforces tenant isolation via findAccountByTenantId', async () => {
+  it('enforces tenant isolation via findAccountByOwner', async () => {
     if (!repo) return;
 
     // Tenant A has data (created in first test)
-    const accountA = await repo.findAccountByTenantId(tenantA);
+    const accountA = await repo.findAccountByOwner({ tenantId: tenantA, userId: userA });
     // Tenant B has no data
-    const accountB = await repo.findAccountByTenantId(tenantB);
+    const accountB = await repo.findAccountByOwner({ tenantId: tenantB, userId: userA });
 
     expect(accountA).not.toBeNull();
     expect(accountB).toBeNull();
   });
 
-  it('finds account by tenantId and userId via findAccountByTenantAndUserId', async () => {
+  it('finds account by tenantId and userId via findAccountByOwner', async () => {
     if (!repo) return;
 
-    const found = await repo.findAccountByTenantAndUserId(tenantA, userA);
-    const notFound = await repo.findAccountByTenantAndUserId(tenantA, userB);
+    const found = await repo.findAccountByOwner({ tenantId: tenantA, userId: userA });
+    const notFound = await repo.findAccountByOwner({ tenantId: tenantA, userId: userB });
 
     expect(found).not.toBeNull();
     expect(found?.userId).toBe(userA);
@@ -98,14 +98,14 @@ describeIf('PrismaInstagramRepository (integration)', () => {
     if (!repo) return;
 
     await repo.upsertAccount(
-      tenantA,
+      { tenantId: tenantA, userId: userA },
       { userId: userA, igUserId: 'ig-test-1-updated', username: 'updateduser', accountType: 'CREATOR' },
       'newhash456',
       'newencrypted456',
       new Date('2027-06-01'),
     );
 
-    const account = await repo.findAccountByTenantAndUserId(tenantA, userA);
+    const account = await repo.findAccountByOwner({ tenantId: tenantA, userId: userA });
     expect(account?.username).toBe('updateduser');
     expect(account?.accountType).toBe('CREATOR');
   });
@@ -119,19 +119,19 @@ describeIf('PrismaInstagramRepository (integration)', () => {
 
     try {
       await repo.upsertAccount(
-        tenantC,
+        { tenantId: tenantC, userId: userC },
         { userId: userC, igUserId: 'ig-test-c', username: 'disconnectuser', accountType: 'BUSINESS' },
         'hashC',
         'encryptedC',
         new Date('2027-01-01'),
       );
 
-      const disconnected = await repo.disconnectAccount(tenantC, userC);
+      const disconnected = await repo.disconnectAccount({ tenantId: tenantC, userId: userC });
       expect(disconnected.syncStatus).toBe('disconnected');
 
       // Second disconnect should throw NotFoundError
       const { NotFoundError } = await import('../../errors.js');
-      await expect(repo.disconnectAccount(tenantC, userC)).rejects.toThrow(NotFoundError);
+      await expect(repo.disconnectAccount({ tenantId: tenantC, userId: userC })).rejects.toThrow(NotFoundError);
     } finally {
       // Cleanup
       await prisma?.instagramAccount.deleteMany({ where: { tenantId: tenantC } }).catch(() => undefined);
@@ -141,7 +141,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
   it('can create a sync log and retrieve it', async () => {
     if (!repo) return;
 
-    const account = await repo.findAccountByTenantAndUserId(tenantA, userA);
+    const account = await repo.findAccountByOwner({ tenantId: tenantA, userId: userA });
     expect(account).not.toBeNull();
     if (!account) return;
 
@@ -161,7 +161,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
 
     // Create a second account for tenant B
     const accountB = await repo.upsertAccount(
-      tenantB,
+      { tenantId: tenantB, userId: userB },
       { userId: userB, igUserId: 'ig-test-b', username: 'tenantbuser', accountType: 'BUSINESS' },
       'hashB',
       'encryptedB',
@@ -172,7 +172,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
     expect(logIdB).toBeTruthy();
 
     // Verify tenant A's latest log is unchanged
-    const accountA = await repo.findAccountByTenantAndUserId(tenantA, userA);
+    const accountA = await repo.findAccountByOwner({ tenantId: tenantA, userId: userA });
     if (!accountA) return;
     const lastLogA = await repo.getLatestSyncLog(accountA.id);
     expect(lastLogA).not.toBeNull();
@@ -183,7 +183,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
   it('returns null for nonexistent account or media', async () => {
     if (!repo) return;
 
-    const nonexistent = await repo.findAccountByTenantAndUserId('00000000-0000-0000-0000-000000000000', userA);
+    const nonexistent = await repo.findAccountByOwner({ tenantId: '00000000-0000-0000-0000-000000000000', userId: userA });
     expect(nonexistent).toBeNull();
 
     const nonexistentMedia = await repo.findMediaById('nonexistent-id');
@@ -194,7 +194,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
     it('getAgentConfig returns null when no config is saved', async () => {
       if (!repo) return;
 
-      const config = await repo.getAgentConfig(tenantA, userA);
+      const config = await repo.getAgentConfig({ tenantId: tenantA, userId: userA });
       expect(config).toBeNull();
     });
 
@@ -207,9 +207,9 @@ describeIf('PrismaInstagramRepository (integration)', () => {
         customPrompt: 'Sé conciso',
       };
 
-      await repo.saveAgentConfig(tenantA, userA, sampleConfig);
+      await repo.saveAgentConfig({ tenantId: tenantA, userId: userA }, sampleConfig);
 
-      const config = await repo.getAgentConfig(tenantA, userA);
+      const config = await repo.getAgentConfig({ tenantId: tenantA, userId: userA });
       expect(config).not.toBeNull();
       expect(config?.niche).toBe('Ferretería');
       expect(config?.tags).toEqual(['Herramientas', 'Tutoriales']);
@@ -220,7 +220,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
       if (!repo) return;
 
       // User B should have no config even though user A does
-      const config = await repo.getAgentConfig(tenantA, userB);
+      const config = await repo.getAgentConfig({ tenantId: tenantA, userId: userB });
       expect(config).toBeNull();
     });
 
@@ -230,10 +230,10 @@ describeIf('PrismaInstagramRepository (integration)', () => {
       const config1 = { niche: 'Moda', tags: ['Ropa'] };
       const config2 = { niche: 'Gastronomía', tags: ['Comida', 'Recetas'] };
 
-      await repo.saveAgentConfig(tenantA, userA, config1);
-      await repo.saveAgentConfig(tenantA, userA, config2);
+      await repo.saveAgentConfig({ tenantId: tenantA, userId: userA }, config1);
+      await repo.saveAgentConfig({ tenantId: tenantA, userId: userA }, config2);
 
-      const config = await repo.getAgentConfig(tenantA, userA);
+      const config = await repo.getAgentConfig({ tenantId: tenantA, userId: userA });
       expect(config?.niche).toBe('Gastronomía');
       expect(config?.tags).toEqual(['Comida', 'Recetas']);
     });
@@ -243,7 +243,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
     it('returns snapshots for an account filtered by date', async () => {
       if (!repo) return;
 
-      const account = await repo.findAccountByTenantAndUserId(tenantA, userA);
+      const account = await repo.findAccountByOwner({ tenantId: tenantA, userId: userA });
       if (!account) return; // no account in DB
 
       // Insert a few account insights at different times
@@ -309,7 +309,7 @@ describeIf('PrismaInstagramRepository (integration)', () => {
     it('returns snapshots ordered by syncedAt ascending', async () => {
       if (!repo) return;
 
-      const account = await repo.findAccountByTenantAndUserId(tenantA, userA);
+      const account = await repo.findAccountByOwner({ tenantId: tenantA, userId: userA });
       if (!account) return;
 
       const since = new Date(Date.now() - 86_400_000); // 1 day ago

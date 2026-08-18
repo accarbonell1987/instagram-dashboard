@@ -21,7 +21,7 @@ function createMockRepo(): {
 } {
   return {
     instagram: {
-      findAccountByTenantId: vi.fn(),
+      findAccountByOwner: vi.fn(),
       disconnectAccount: vi.fn(),
   listAccountsByTenantId: vi.fn(),
   disconnectAccountById: vi.fn(),
@@ -90,31 +90,31 @@ describe('SyncService', () => {
 
   describe('triggerSync', () => {
     it('throws AccountNotConnectedError when no account exists', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
 
-      await expect(service.triggerSync('tenant-1', 'user-1')).rejects.toThrow(
+      await expect(service.triggerSync({ tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(
         AccountNotConnectedError,
       );
     });
 
     it('returns already_running when sync is in progress', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount({ syncStatus: 'syncing' }),
       );
 
-      const result = await service.triggerSync('tenant-1', 'user-1');
+      const result = await service.triggerSync({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(result.status).toBe('already_running');
       expect(result.syncId).toBe('');
     });
 
     it('starts sync when account is idle', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.createSyncLog.mockResolvedValue('log-1');
 
-      const result = await service.triggerSync('tenant-1', 'user-1');
+      const result = await service.triggerSync({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(result.status).toBe('started');
       expect(result.syncId).toBe('log-1');
@@ -125,19 +125,19 @@ describe('SyncService', () => {
     });
 
     it('starts sync when account is in error state', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount({ syncStatus: 'error' }),
       );
       repo.instagram.createSyncLog.mockResolvedValue('log-error-1');
 
-      const result = await service.triggerSync('tenant-1', 'user-1');
+      const result = await service.triggerSync({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(result.status).toBe('started');
       expect(result.syncId).toBe('log-error-1');
     });
 
     it('returns rate_limited when rate counter exhausted', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
 
@@ -148,14 +148,14 @@ describe('SyncService', () => {
         windowStart: Date.now(),
       });
 
-      const result = await service.triggerSync('tenant-1', 'user-1');
+      const result = await service.triggerSync({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(result.status).toBe('rate_limited');
       expect(result.syncId).toBe('');
     });
 
     it('resets rate counter after window expires', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.createSyncLog.mockResolvedValue('log-reset');
@@ -167,7 +167,7 @@ describe('SyncService', () => {
         windowStart: Date.now() - 4_000_000,
       });
 
-      const result = await service.triggerSync('tenant-1', 'user-1');
+      const result = await service.triggerSync({ tenantId: 'tenant-1', userId: 'user-1' });
 
       // Window expired → counter reset → sync starts
       expect(result.status).toBe('started');
@@ -176,16 +176,16 @@ describe('SyncService', () => {
 
   describe('getSyncStatus', () => {
     it('throws AccountNotConnectedError when no account connected', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
 
-      await expect(service.getSyncStatus('tenant-1', 'user-1')).rejects.toThrow(
+      await expect(service.getSyncStatus({ tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(
         AccountNotConnectedError,
       );
     });
 
     it('returns idle status with last sync and media count', async () => {
       const lastSyncAt = new Date('2026-06-10T12:00:00Z');
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount({ lastSyncAt, syncStatus: 'idle' }),
       );
       repo.instagram.getLatestSyncLog.mockResolvedValue({
@@ -196,7 +196,7 @@ describe('SyncService', () => {
         mediaSynced: 24,
       });
 
-      const status = await service.getSyncStatus('tenant-1', 'user-1');
+      const status = await service.getSyncStatus({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(status.status).toBe('idle');
       expect(status.mediaCount).toBe(24);
@@ -204,7 +204,7 @@ describe('SyncService', () => {
     });
 
     it('returns nextSyncAvailableAt when rate limited', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
 
@@ -215,7 +215,7 @@ describe('SyncService', () => {
         windowStart: Date.now(),
       });
 
-      const status = await service.getSyncStatus('tenant-1', 'user-1');
+      const status = await service.getSyncStatus({ tenantId: 'tenant-1', userId: 'user-1' });
 
       // Rate limited → nextSyncAvailableAt is ~1 hour from now
       expect(status.nextSyncAvailableAt).toBeTruthy();
@@ -225,23 +225,23 @@ describe('SyncService', () => {
     });
 
     it('returns null mediaCount when no sync log exists', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount(),
       );
       repo.instagram.getLatestSyncLog.mockResolvedValue(null);
 
-      const status = await service.getSyncStatus('tenant-1', 'user-1');
+      const status = await service.getSyncStatus({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(status.mediaCount).toBe(0);
     });
 
     it('returns syncing status when sync is in progress', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(
+      repo.instagram.findAccountByOwner.mockResolvedValue(
         createMockAccount({ syncStatus: 'syncing' }),
       );
       repo.instagram.getLatestSyncLog.mockResolvedValue(null);
 
-      const status = await service.getSyncStatus('tenant-1', 'user-1');
+      const status = await service.getSyncStatus({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(status.status).toBe('syncing');
       expect(status.mediaCount).toBe(0);
@@ -256,28 +256,28 @@ describe('SyncService', () => {
     };
 
     it('throws AccountNotConnectedError when no account', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
 
       await expect(
-        service.backfillFollowerHistory('tenant-1', 'user-1'),
+        service.backfillFollowerHistory({ tenantId: 'tenant-1', userId: 'user-1' }),
       ).rejects.toThrow(AccountNotConnectedError);
     });
 
     it('throws AccountNotConnectedError when no token', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(createMockAccount());
+      repo.instagram.findAccountByOwner.mockResolvedValue(createMockAccount());
       repo.instagram.findAccountWithToken.mockResolvedValue(null);
 
       await expect(
-        service.backfillFollowerHistory('tenant-1', 'user-1'),
+        service.backfillFollowerHistory({ tenantId: 'tenant-1', userId: 'user-1' }),
       ).rejects.toThrow(AccountNotConnectedError);
     });
 
     it('always calls bulkCreateFollowerSnapshots for the full 730-day window', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(createMockAccount());
+      repo.instagram.findAccountByOwner.mockResolvedValue(createMockAccount());
       repo.instagram.findAccountWithToken.mockResolvedValue(mockTokenRecord);
       repo.instagram.bulkCreateFollowerSnapshots.mockResolvedValue(5);
 
-      const result = await service.backfillFollowerHistory('tenant-1', 'user-1');
+      const result = await service.backfillFollowerHistory({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(repo.instagram.bulkCreateFollowerSnapshots).toHaveBeenCalledWith(
         'acc-1',
@@ -287,12 +287,12 @@ describe('SyncService', () => {
     });
 
     it('returns inserted=0 when all dates in the window already exist (idempotent)', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(createMockAccount());
+      repo.instagram.findAccountByOwner.mockResolvedValue(createMockAccount());
       repo.instagram.findAccountWithToken.mockResolvedValue(mockTokenRecord);
       // IG client mock returns [] (no new data) → bulkCreate returns 0
       repo.instagram.bulkCreateFollowerSnapshots.mockResolvedValue(0);
 
-      const result = await service.backfillFollowerHistory('tenant-1', 'user-1');
+      const result = await service.backfillFollowerHistory({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(result.inserted).toBe(0);
     });

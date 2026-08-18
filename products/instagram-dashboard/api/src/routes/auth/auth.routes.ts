@@ -1,3 +1,4 @@
+import { ownerOf } from '../../domain/owner.js';
 import { createRoute } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 

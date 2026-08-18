@@ -22,10 +22,11 @@ export function createAgentRoutes(
   routes.get('/settings', async (c) => {
     const tenant = c.get('tenant');
     const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
 
     const [agentConfig, hasFalApiKey] = await Promise.all([
-      repos.getAgentConfig(tenantId, userId),
-      repos.hasFalApiKey(tenantId),
+      repos.getAgentConfig(owner),
+      repos.hasFalApiKey(owner),
     ]);
 
     return c.json(
@@ -38,6 +39,7 @@ export function createAgentRoutes(
   routes.put('/settings', async (c) => {
     const tenant = c.get('tenant');
     const { tenantId, userId } = tenant;
+    const owner = { tenantId, userId };
 
     let body: ReturnType<typeof SaveAgentSettingsBodySchema.parse>;
     try {
@@ -66,7 +68,7 @@ export function createAgentRoutes(
 
     try {
       const savePromises: Promise<void>[] = [
-        repos.saveAgentConfig(tenantId, userId, {
+        repos.saveAgentConfig(owner, {
           niche: body.niche,
           tags: body.tags,
           ...(body.customPrompt !== undefined ? { customPrompt: body.customPrompt } : {}),
@@ -79,7 +81,7 @@ export function createAgentRoutes(
       // Encrypt and persist FAL API key if provided (write-only — never returned)
       if (body.falApiKey !== undefined) {
         const encrypted = encryptToken(body.falApiKey);
-        savePromises.push(repos.saveFalApiKey(tenantId, encrypted));
+        savePromises.push(repos.saveFalApiKey(owner, encrypted));
       }
 
       await Promise.all(savePromises);

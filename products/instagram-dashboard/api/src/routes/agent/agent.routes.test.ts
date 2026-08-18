@@ -123,7 +123,7 @@ describe('Agent routes', () => {
       const body = await res.json() as { success: boolean; data: { saved: boolean } };
       expect(body.success).toBe(true);
       expect(body.data.saved).toBe(true);
-      expect(mockSaveAgentConfig).toHaveBeenCalledWith(TENANT_ID, USER_ID, {
+      expect(mockSaveAgentConfig).toHaveBeenCalledWith({ tenantId: TENANT_ID, userId: USER_ID }, {
         niche: 'Tecnología',
         tags: ['Gadgets'],
       });
@@ -144,7 +144,7 @@ describe('Agent routes', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(mockSaveAgentConfig).toHaveBeenCalledWith(TENANT_ID, USER_ID, {
+      expect(mockSaveAgentConfig).toHaveBeenCalledWith({ tenantId: TENANT_ID, userId: USER_ID }, {
         niche: 'Fitness',
         tags: ['Gym'],
         customPrompt: 'Sé breve',

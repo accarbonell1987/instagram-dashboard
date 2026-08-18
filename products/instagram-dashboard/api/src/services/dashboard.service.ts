@@ -1,3 +1,4 @@
+import type { Owner } from '../domain/owner.js';
 import type { DashboardData, DemographicsData } from '../domain/insight.js';
 import type { MediaWithMetrics, PaginatedMedia } from '../domain/media.js';
 import { AccountNotConnectedError, NotFoundError } from '../errors.js';
@@ -16,8 +17,8 @@ export interface GrowthDataPoint {
 export class DashboardService {
   constructor(private readonly repos: Repositories) {}
 
-  async getDashboardData(tenantId: string, _userId: string): Promise<DashboardData> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+  async getDashboardData(owner: Owner): Promise<DashboardData> {
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     const cacheKey = `dashboard:${account.id}`;
@@ -32,12 +33,11 @@ export class DashboardService {
   }
 
   async getDashboardDataWithNorthStar(
-    tenantId: string,
-    userId: string,
+    owner: Owner,
     periodDays: number,
   ): Promise<DashboardData> {
-    const base = await this.getDashboardData(tenantId, userId);
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+    const base = await this.getDashboardData(owner);
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     const northStar = await this.repos.instagram.getNorthStarMetrics(account.id, periodDays);
@@ -45,12 +45,11 @@ export class DashboardService {
   }
 
   async getGrowthData(
-    tenantId: string,
-    userId: string,
+    owner: Owner,
     metric: string,
     period: string,
   ): Promise<GrowthDataPoint[]> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     const PERIOD_DAYS: Record<string, number> = {
@@ -72,8 +71,8 @@ export class DashboardService {
     }));
   }
 
-  async getDemographicsData(tenantId: string, _userId: string): Promise<DemographicsData> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+  async getDemographicsData(owner: Owner): Promise<DemographicsData> {
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     const cacheKey = `demographics:${account.id}`;
@@ -131,8 +130,8 @@ export class DashboardService {
     return result;
   }
 
-  async getMediaDetail(tenantId: string, userId: string, mediaId: string): Promise<MediaWithMetrics> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+  async getMediaDetail(owner: Owner, mediaId: string): Promise<MediaWithMetrics> {
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     const media = await this.repos.instagram.findMediaById(mediaId);
@@ -141,21 +140,19 @@ export class DashboardService {
   }
 
   async listMedia(
-    tenantId: string,
-    userId: string,
+    owner: Owner,
     params: { page?: number; pageSize?: number; mediaProductType?: string },
   ): Promise<PaginatedMedia> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
     return this.repos.instagram.listMedia(account.id, params);
   }
 
   async getMediaPlaybackUrl(
-    tenantId: string,
-    userId: string,
+    owner: Owner,
     mediaId: string,
   ): Promise<string | null> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account) throw new AccountNotConnectedError();
 
     const media = await this.repos.instagram.findMediaById(mediaId);

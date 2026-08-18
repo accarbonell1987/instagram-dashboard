@@ -1,3 +1,4 @@
+import { ownerOf } from '../../domain/owner.js';
 /**
  * Integration tests for the disconnect route.
  *
@@ -40,7 +41,7 @@ function createTestApp(oauthService: Pick<OAuthService, 'disconnectAccount'>) {
   api.use('*', authGuard);
   api.post('/auth/instagram/disconnect', async (c) => {
     const tenant = c.get('tenant');
-    await oauthService.disconnectAccount(tenant.tenantId, tenant.userId);
+    await oauthService.disconnectAccount(ownerOf(tenant));
     return c.json({ success: true, data: { message: 'Cuenta desconectada exitosamente' } }, 200);
   });
 
@@ -74,10 +75,10 @@ describe('POST /api/auth/instagram/disconnect', () => {
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.data.message).toBe('Cuenta desconectada exitosamente');
-    expect(mockOAuthService.disconnectAccount).toHaveBeenCalledWith(
-      MOCK_TENANT.tenantId,
-      MOCK_TENANT.userId,
-    );
+    expect(mockOAuthService.disconnectAccount).toHaveBeenCalledWith({
+      tenantId: MOCK_TENANT.tenantId,
+      userId: MOCK_TENANT.userId,
+    });
   });
 
   it('returns 401 when no JWT is provided', async () => {

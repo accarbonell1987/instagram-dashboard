@@ -85,7 +85,7 @@ const mockFindById = vi.fn().mockResolvedValue(null);
 function createMockRepos(): Repositories {
   return {
     instagram: {
-      findAccountByTenantId: vi.fn().mockResolvedValue({ id: 'acc-1' }),
+      findAccountByOwner: vi.fn().mockResolvedValue({ id: 'acc-1' }),
       getAgentConfig: vi.fn().mockResolvedValue(null),
     },
     chatMessage: {
@@ -94,7 +94,7 @@ function createMockRepos(): Repositories {
     },
     suggestion: {
       create: mockSuggestionCreate,
-      findByTenant: mockFindByTenant,
+      findByOwner: mockFindByTenant,
       findById: mockFindById,
       update: mockSuggestionUpdate,
       findEligibleForMeasurement: mockFindEligibleForMeasurement,
@@ -233,13 +233,13 @@ describe('GrowthAgentService', () => {
 
       expect(mockSuggestionService.createSuggestion).toHaveBeenCalledTimes(2);
       expect(mockSuggestionService.createSuggestion).toHaveBeenCalledWith(
-        'tenant-1',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         'hook',
         'Empezá tu Reel con el truco más inesperado del taller',
         'batch-1',
       );
       expect(mockSuggestionService.createSuggestion).toHaveBeenCalledWith(
-        'tenant-1',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         'format',
         'Usá CAROUSEL_ALBUM para tutoriales paso a paso',
         'batch-1',
@@ -312,11 +312,11 @@ describe('GrowthAgentService', () => {
 </suggestions>`;
       mockChat.mockResolvedValueOnce(makeStopResponse(reply));
 
-      const result = await service.generateSuggestions('tenant-1');
+      const result = await service.generateSuggestions({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(mockChat).toHaveBeenCalledTimes(1);
       expect(mockSuggestionService.createSuggestion).toHaveBeenCalledWith(
-        'tenant-1',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         'content_idea',
         'Tutorial de cómo usar taladros de impacto',
         undefined,
@@ -327,7 +327,7 @@ describe('GrowthAgentService', () => {
     it('returns empty array when no suggestions block in reply', async () => {
       mockChat.mockResolvedValueOnce(makeStopResponse('No hay sugerencias disponibles ahora.'));
 
-      const result = await service.generateSuggestions('tenant-1');
+      const result = await service.generateSuggestions({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(mockSuggestionService.createSuggestion).not.toHaveBeenCalled();
       expect(result).toEqual([]);
@@ -352,7 +352,8 @@ describe('GrowthAgentService', () => {
 
       await service.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'contexto', history: [] });
 
-      expect(mockGetDashboardData).toHaveBeenCalledWith('tenant-1', 'user-1');
+      expect(mockGetDashboardData).toHaveBeenCalledWith({ tenantId: 'tenant-1',
+        userId: 'user-1' });
     });
   });
 
@@ -363,7 +364,7 @@ describe('GrowthAgentService', () => {
       const mockFindAccount = vi.fn().mockResolvedValue({ id: 'acc-1' });
       repos.instagram = {
         getAgentConfig: mockGetAgentConfig,
-        findAccountByTenantId: mockFindAccount,
+        findAccountByOwner: mockFindAccount,
       } as unknown as Repositories['instagram'];
 
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola desde el agente genérico'));
@@ -377,7 +378,8 @@ describe('GrowthAgentService', () => {
       });
 
       expect(result.reply).toBe('Hola desde el agente genérico');
-      expect(mockGetAgentConfig).toHaveBeenCalledWith('tenant-1', 'user-1');
+      expect(mockGetAgentConfig).toHaveBeenCalledWith({ tenantId: 'tenant-1',
+        userId: 'user-1' });
       // Verify system prompt is generic (no hardcoded niche)
       const systemMsg = (
         mockChat.mock.calls[0]?.[0] as { messages?: { content?: string }[] } | undefined
@@ -394,7 +396,7 @@ describe('GrowthAgentService', () => {
       const mockFindAccount = vi.fn().mockResolvedValue({ id: 'acc-1' });
       repos.instagram = {
         getAgentConfig: mockGetAgentConfig,
-        findAccountByTenantId: mockFindAccount,
+        findAccountByOwner: mockFindAccount,
       } as unknown as Repositories['instagram'];
 
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola desde moda'));
@@ -424,7 +426,7 @@ describe('GrowthAgentService', () => {
       const mockFindAccount = vi.fn().mockResolvedValue({ id: 'acc-1' });
       repos.instagram = {
         getAgentConfig: mockGetAgentConfig,
-        findAccountByTenantId: mockFindAccount,
+        findAccountByOwner: mockFindAccount,
       } as unknown as Repositories['instagram'];
 
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola'));
@@ -452,7 +454,7 @@ describe('GrowthAgentService', () => {
       const mockFindAccount = vi.fn().mockResolvedValue({ id: 'acc-1' });
       repos.instagram = {
         getAgentConfig: mockGetAgentConfig,
-        findAccountByTenantId: mockFindAccount,
+        findAccountByOwner: mockFindAccount,
       } as unknown as Repositories['instagram'];
 
       mockChat.mockResolvedValueOnce(makeStopResponse('Hola'));

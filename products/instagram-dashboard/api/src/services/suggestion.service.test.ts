@@ -17,6 +17,7 @@ function makeSuggestion(overrides: Record<string, unknown> = {}) {
   return {
     id: 'sugg-1',
     tenantId: 'tenant-1',
+    userId: 'user-1',
     category: 'hook' as const,
     content: 'Empezá con el truco',
     status: 'pending' as const,
@@ -34,17 +35,17 @@ function makeSuggestion(overrides: Record<string, unknown> = {}) {
 
 const mockSuggestionRepo = {
   create: vi.fn(),
-  findByTenant: vi.fn(),
+  findByOwner: vi.fn(),
   findById: vi.fn(),
   update: vi.fn(),
   findEligibleForMeasurement: vi.fn(),
   createBatch: vi.fn().mockResolvedValue({ id: 'batch-1' }),
-  findBatchesByTenant: vi.fn(),
+  findBatchesByOwner: vi.fn(),
 };
 
 const mockInstagramRepo = {
   getDashboardData: vi.fn(),
-  findAccountByTenantId: vi.fn(),
+  findAccountByOwner: vi.fn(),
   getLatestMetrics: vi.fn(),
 };
 
@@ -67,23 +68,25 @@ describe('SuggestionService', () => {
   });
 
   describe('getSuggestions()', () => {
-    it('calls repo.findByTenant with tenantId and returns result', async () => {
+    it('calls repo.findByOwner with tenantId and returns result', async () => {
       const suggestions = [makeSuggestion(), makeSuggestion({ id: 'sugg-2' })];
-      mockSuggestionRepo.findByTenant.mockResolvedValueOnce(suggestions);
+      mockSuggestionRepo.findByOwner.mockResolvedValueOnce(suggestions);
 
-      const result = await service.getSuggestions('tenant-1');
+      const result = await service.getSuggestions({ tenantId: 'tenant-1', userId: 'user-1' });
 
-      expect(mockSuggestionRepo.findByTenant).toHaveBeenCalledWith('tenant-1', undefined);
+      expect(mockSuggestionRepo.findByOwner).toHaveBeenCalledWith({ tenantId: 'tenant-1',
+        userId: 'user-1' }, undefined);
       expect(result).toEqual(suggestions);
     });
 
     it('filters by status when provided', async () => {
       const suggestions = [makeSuggestion({ status: 'used' })];
-      mockSuggestionRepo.findByTenant.mockResolvedValueOnce(suggestions);
+      mockSuggestionRepo.findByOwner.mockResolvedValueOnce(suggestions);
 
-      const result = await service.getSuggestions('tenant-1', 'used');
+      const result = await service.getSuggestions({ tenantId: 'tenant-1', userId: 'user-1' }, 'used');
 
-      expect(mockSuggestionRepo.findByTenant).toHaveBeenCalledWith('tenant-1', 'used');
+      expect(mockSuggestionRepo.findByOwner).toHaveBeenCalledWith({ tenantId: 'tenant-1',
+        userId: 'user-1' }, 'used');
       expect(result).toEqual(suggestions);
     });
   });
@@ -93,10 +96,11 @@ describe('SuggestionService', () => {
       const created = makeSuggestion();
       mockSuggestionRepo.create.mockResolvedValueOnce(created);
 
-      const result = await service.createSuggestion('tenant-1', 'hook', 'Empezá con el truco');
+      const result = await service.createSuggestion({ tenantId: 'tenant-1', userId: 'user-1' }, 'hook', 'Empezá con el truco');
 
       expect(mockSuggestionRepo.create).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
+        userId: 'user-1',
         category: 'hook',
         content: 'Empezá con el truco',
       });
@@ -109,10 +113,10 @@ describe('SuggestionService', () => {
       const updated = makeSuggestion({ status: 'used', linkedMediaId: 'media-123' });
       mockSuggestionRepo.update.mockResolvedValueOnce(updated);
 
-      await service.markUsed('tenant-1', 'sugg-1', 'media-123');
+      await service.markUsed({ tenantId: 'tenant-1', userId: 'user-1' }, 'sugg-1', 'media-123');
 
       expect(mockSuggestionRepo.update).toHaveBeenCalledWith(
-        'tenant-1',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         'sugg-1',
         expect.objectContaining({
           status: 'used',
@@ -128,10 +132,10 @@ describe('SuggestionService', () => {
       const updated = makeSuggestion({ status: 'dismissed' });
       mockSuggestionRepo.update.mockResolvedValueOnce(updated);
 
-      await service.dismiss('tenant-1', 'sugg-1');
+      await service.dismiss({ tenantId: 'tenant-1', userId: 'user-1' }, 'sugg-1');
 
       expect(mockSuggestionRepo.update).toHaveBeenCalledWith(
-        'tenant-1',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         'sugg-1',
         { status: 'dismissed' },
       );
@@ -153,7 +157,7 @@ describe('SuggestionService', () => {
       mockSuggestionRepo.findEligibleForMeasurement.mockResolvedValueOnce([eligible]);
 
       // Mock getDashboardData to return format breakdown for baseline
-      mockInstagramRepo.findAccountByTenantId.mockResolvedValueOnce({ id: 'acc-1' });
+      mockInstagramRepo.findAccountByOwner.mockResolvedValueOnce({ id: 'acc-1' });
       mockInstagramRepo.getDashboardData.mockResolvedValueOnce({
         period: '30d',
         account: { username: 'test', accountType: 'BUSINESS', followerCount: 1000 },
@@ -175,7 +179,7 @@ describe('SuggestionService', () => {
 
       expect(mockSuggestionRepo.findEligibleForMeasurement).toHaveBeenCalled();
       expect(mockSuggestionRepo.update).toHaveBeenCalledWith(
-        'tenant-1',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         'sugg-eligible',
         expect.objectContaining({
           outcome: expect.stringMatching(/exceeded|met|below/) as unknown,
@@ -216,7 +220,7 @@ describe('SuggestionService', () => {
       mockSuggestionRepo.findEligibleForMeasurement.mockResolvedValueOnce([eligible]);
 
       // No account found (no baseline)
-      mockInstagramRepo.findAccountByTenantId.mockResolvedValueOnce(null);
+      mockInstagramRepo.findAccountByOwner.mockResolvedValueOnce(null);
 
       const updatedSuggestion = { ...eligible, outcome: 'met', measuredAt: new Date() };
       mockSuggestionRepo.update.mockResolvedValueOnce(updatedSuggestion);
@@ -224,7 +228,7 @@ describe('SuggestionService', () => {
       await service.measureOutcomes();
 
       expect(mockSuggestionRepo.update).toHaveBeenCalledWith(
-        'tenant-1',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         'sugg-no-baseline',
         expect.objectContaining({
           outcome: 'met',
@@ -246,9 +250,9 @@ describe('SuggestionService', () => {
       const eligible2 = makeSuggestion({ id: 'sugg-ok', tenantId: 'tenant-1', status: 'used', linkedMediaId: 'media-ok', linkedAt: tenDaysAgo });
       mockSuggestionRepo.findEligibleForMeasurement.mockResolvedValueOnce([eligible1, eligible2]);
 
-      // First suggestion: findAccountByTenantId succeeds but getDashboardData throws
-      // Second suggestion: findAccountByTenantId returns null (fallback to met)
-      mockInstagramRepo.findAccountByTenantId
+      // First suggestion: findAccountByOwner succeeds but getDashboardData throws
+      // Second suggestion: findAccountByOwner returns null (fallback to met)
+      mockInstagramRepo.findAccountByOwner
         .mockResolvedValueOnce({ id: 'acc-1' })
         .mockResolvedValueOnce(null); // second suggestion → fallback
 
@@ -265,7 +269,7 @@ describe('SuggestionService', () => {
       expect(mockSuggestionRepo.update).toHaveBeenCalledTimes(2);
       // Both should get outcome = 'met' (fallback)
       expect(mockSuggestionRepo.update).toHaveBeenCalledWith(
-        'tenant-1',
+        { tenantId: 'tenant-1', userId: 'user-1' },
         expect.any(String),
         expect.objectContaining({ outcome: 'met' }),
       );
@@ -300,12 +304,12 @@ describe('SuggestionService', () => {
       });
       mockSuggestionRepo.create.mockResolvedValueOnce(makeSuggestion());
       // createBatch is called in generateContentIdea
-      // Need to mock findEligibleForMeasurement and findByTenant on the suggestion repo
+      // Need to mock findEligibleForMeasurement and findByOwner on the suggestion repo
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
       const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
 
-      await svc.generateContentIdea('tenant-1', 'Dame ideas');
+      await svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas');
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'deepseek_tokens');
@@ -325,7 +329,7 @@ describe('SuggestionService', () => {
       const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
 
       await expect(
-        svc.generateContentIdea('tenant-1', 'Dame ideas'),
+        svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),
       ).rejects.toThrow(QuotaExceededError);
 
       expect(mockDeepSeekChat).not.toHaveBeenCalled();
@@ -343,7 +347,7 @@ describe('SuggestionService', () => {
       const mockDeepseekClient = { chat: mockDeepSeekChat };
       const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
 
-      await svc.generateContentIdea('tenant-1', 'Dame ideas');
+      await svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas');
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.log).toHaveBeenCalledWith({
@@ -363,7 +367,7 @@ describe('SuggestionService', () => {
       const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient, mockUsageTracker);
 
       await expect(
-        svc.generateContentIdea('tenant-1', 'Dame ideas'),
+        svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),
       ).rejects.toThrow('API error');
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
@@ -383,7 +387,7 @@ describe('SuggestionService', () => {
       const svc = new SuggestionService(repos, mockDeepseekClient as unknown as DeepSeekClient);
 
       await expect(
-        svc.generateContentIdea('tenant-1', 'Dame ideas'),
+        svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),
       ).resolves.toBeDefined();
     });
   });

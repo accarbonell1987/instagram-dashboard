@@ -86,6 +86,27 @@ Hub Frontend (Next.js)
   → PostgreSQL
 ```
 
+### Aislamiento: por tenant Y por usuario
+
+Todo dato se scopea por `tenant_id` **y** `user_id`, no solo por tenant. El `authGuard` saca ambos
+del JWT verificado (`TenantContext`), y las rutas lo estrechan con `ownerOf(tenant)` antes de
+pasárselo a un servicio — el contexto también trae `role` y `tenantSlug`, que a un servicio no le
+incumben.
+
+- **Una cuenta de Instagram por usuario**: `@@unique([tenantId, userId])`. Cada miembro conecta la
+  suya; el admin del tenant las ve todas en `/settings` del hub y puede liberarlas.
+  Revierte `20260619000001_one_account_per_tenant`, que había fijado una por tenant.
+- `Owner` (`src/domain/owner.ts`) se pasa como **un objeto**, nunca como dos strings sueltos: un
+  método `(tenantId, userId, id)` son tres strings intercambiables, y el día que dos se cruzan la
+  query corre igual y devuelve las filas de otro.
+- `chat_messages`, `suggestion_batches`, `content_suggestions` y `carousels` llevan `user_id`.
+  Antes iban solo por tenant, así que **cualquier miembro leía el chat con la IA de los demás**.
+- **`ai_usage_logs` NO lleva `user_id`, a propósito.** Alimenta el control de cuota, y la cuota sale
+  del plan que compró el **tenant** (`getPlanQuotas(tenantId)`). Scopearlo por usuario le daría a
+  cada miembro la cuota entera y el tenant consumiría N veces lo que pagó.
+- `deleteById` usa `deleteMany` en vez de `delete`: `delete` exige un where único, así que scoparlo
+  por dueño obligaría a leer la fila antes y confiar en ella en el medio. De paso queda idempotente.
+
 ### Multi-Tenant Isolation
 
 All data is scoped by `tenant_id` from the verified JWT. The `authGuard` middleware extracts `tenant_uuid` and `tenant_slug` from JWT claims. Every repository query includes `WHERE tenant_id = ?`.

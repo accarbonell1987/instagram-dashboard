@@ -1,3 +1,4 @@
+import { ownerOf } from '../../domain/owner.js';
 import { createRoute } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 
@@ -69,13 +70,13 @@ export function createSyncRoutes(syncService: SyncService): OpenAPIHono {
 
   routes.openapi(backfillHistory, async (c) => {
     const tenant = c.get('tenant');
-    const result = await syncService.backfillFollowerHistory(tenant.tenantId, tenant.userId);
+    const result = await syncService.backfillFollowerHistory(ownerOf(tenant));
     return c.json({ success: true, data: result }, 200);
   });
 
   routes.openapi(triggerSync, async (c) => {
     const tenant = c.get('tenant');
-    const result = await syncService.triggerSync(tenant.tenantId, tenant.userId);
+    const result = await syncService.triggerSync(ownerOf(tenant));
     const data = {
       syncId: result.syncId,
       status: result.status as 'started' | 'already_running' | 'rate_limited',
@@ -85,7 +86,7 @@ export function createSyncRoutes(syncService: SyncService): OpenAPIHono {
 
   routes.openapi(getSyncStatus, async (c) => {
     const tenant = c.get('tenant');
-    const status = await syncService.getSyncStatus(tenant.tenantId, tenant.userId);
+    const status = await syncService.getSyncStatus(ownerOf(tenant));
     const data = {
       status: status.status as 'idle' | 'syncing' | 'paused' | 'error',
       lastSyncAt: status.lastSyncAt,

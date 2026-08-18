@@ -31,6 +31,7 @@ const mockSuggestionService = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const TENANT_ID = 'b3e4c5d6-e7f8-4a9b-a0c1-d2e3f4a5b6c7';
+const USER_ID = 'user-1';
 const SUGGESTION_ID = 'c4d5e6f7-a8b9-4c0d-e1f2-a3b4c5d6e7f8';
 const MEDIA_ID = 'd5e6f7a8-b9c0-4d1e-f2a3-b4c5d6e7f8a9';
 
@@ -89,7 +90,7 @@ describe('Suggestions routes', () => {
       const body = await res.json() as { success: boolean; data: unknown[] };
       expect(body.success).toBe(true);
       expect(body.data).toHaveLength(2);
-      expect(mockGetSuggestions).toHaveBeenCalledWith(TENANT_ID, undefined);
+      expect(mockGetSuggestions).toHaveBeenCalledWith({ tenantId: TENANT_ID, userId: USER_ID }, undefined);
     });
 
     it('filters by status when status query param is provided', async () => {
@@ -101,7 +102,7 @@ describe('Suggestions routes', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(mockGetSuggestions).toHaveBeenCalledWith(TENANT_ID, 'used');
+      expect(mockGetSuggestions).toHaveBeenCalledWith({ tenantId: TENANT_ID, userId: USER_ID }, 'used');
     });
   });
 
@@ -119,7 +120,7 @@ describe('Suggestions routes', () => {
       expect(res.status).toBe(200);
       const body = await res.json() as { success: boolean };
       expect(body.success).toBe(true);
-      expect(mockMarkUsed).toHaveBeenCalledWith(TENANT_ID, SUGGESTION_ID, MEDIA_ID);
+      expect(mockMarkUsed).toHaveBeenCalledWith({ tenantId: TENANT_ID, userId: USER_ID }, SUGGESTION_ID, MEDIA_ID);
     });
 
     it('missing linkedMediaId → 200 (optional — mark used without linking media)', async () => {
@@ -176,7 +177,7 @@ describe('Suggestions routes', () => {
       expect(res.status).toBe(200);
       const body = await res.json() as { success: boolean };
       expect(body.success).toBe(true);
-      expect(mockDismiss).toHaveBeenCalledWith(TENANT_ID, SUGGESTION_ID);
+      expect(mockDismiss).toHaveBeenCalledWith({ tenantId: TENANT_ID, userId: USER_ID }, SUGGESTION_ID);
     });
 
     it('suggestion not found → 404', async () => {

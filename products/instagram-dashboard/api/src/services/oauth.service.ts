@@ -1,3 +1,4 @@
+import type { Owner } from '../domain/owner.js';
 import { createHash } from 'node:crypto';
 
 import { config } from '../config.js';
@@ -90,7 +91,7 @@ export class OAuthService {
     if (me.media_count !== undefined) connectInput.mediaCount = me.media_count;
 
     const account = await this.repos.instagram.upsertAccount(
-      tenantId,
+      { tenantId, userId: connectInput.userId },
       connectInput,
       tokenHash,
       encrypted,
@@ -103,8 +104,8 @@ export class OAuthService {
     };
   }
 
-  async getConnectionStatus(tenantId: string, _userId: string): Promise<ConnectionStatus> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+  async getConnectionStatus(owner: Owner): Promise<ConnectionStatus> {
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account || account.syncStatus === 'disconnected') {
       return { connected: false };
     }
@@ -116,12 +117,12 @@ export class OAuthService {
     };
   }
 
-  async disconnectAccount(tenantId: string, _userId: string): Promise<void> {
-    const account = await this.repos.instagram.findAccountByTenantId(tenantId);
+  async disconnectAccount(owner: Owner): Promise<void> {
+    const account = await this.repos.instagram.findAccountByOwner(owner);
     if (!account || account.syncStatus === 'disconnected') {
-      throw new NotFoundError('InstagramAccount', tenantId);
+      throw new NotFoundError('InstagramAccount', owner.tenantId);
     }
-    await this.repos.instagram.disconnectAccount(tenantId, account.userId);
+    await this.repos.instagram.disconnectAccount(owner);
   }
 
   // Refreshes tokens expiring within daysThreshold days.

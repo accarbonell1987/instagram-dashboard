@@ -16,7 +16,7 @@ function createMockRepo(): {
 } {
   return {
     instagram: {
-      findAccountByTenantId: vi.fn(),
+      findAccountByOwner: vi.fn(),
       disconnectAccount: vi.fn(),
   listAccountsByTenantId: vi.fn(),
   disconnectAccountById: vi.fn(),
@@ -114,14 +114,14 @@ describe('OAuthService', () => {
 
   describe('getConnectionStatus', () => {
     it('returns connected: false when no account exists', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
-      const status = await service.getConnectionStatus('tenant-1', 'user-1');
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
+      const status = await service.getConnectionStatus({ tenantId: 'tenant-1', userId: 'user-1' });
       expect(status).toEqual({ connected: false });
     });
 
     it('returns connected: false when account is disconnected', async () => {
       const expiresAt = new Date('2026-12-31');
-      repo.instagram.findAccountByTenantId.mockResolvedValue({
+      repo.instagram.findAccountByOwner.mockResolvedValue({
         id: 'acc-1',
         tenantId: 'tenant-1',
         userId: 'user-1',
@@ -140,13 +140,13 @@ describe('OAuthService', () => {
         mediaCount: null,
       });
 
-      const status = await service.getConnectionStatus('tenant-1', 'user-1');
+      const status = await service.getConnectionStatus({ tenantId: 'tenant-1', userId: 'user-1' });
       expect(status).toEqual({ connected: false });
     });
 
     it('returns connected: true with account details', async () => {
       const expiresAt = new Date('2026-12-31');
-      repo.instagram.findAccountByTenantId.mockResolvedValue({
+      repo.instagram.findAccountByOwner.mockResolvedValue({
         id: 'acc-1',
         tenantId: 'tenant-1',
         userId: 'user-1',
@@ -165,7 +165,7 @@ describe('OAuthService', () => {
         mediaCount: null,
       });
 
-      const status = await service.getConnectionStatus('tenant-1', 'user-1');
+      const status = await service.getConnectionStatus({ tenantId: 'tenant-1', userId: 'user-1' });
 
       expect(status.connected).toBe(true);
       expect(status.username).toBe('testuser');
@@ -175,7 +175,7 @@ describe('OAuthService', () => {
 
     it('includes tokenExpiresAt as ISO string when connected', async () => {
       const expiresAt = new Date('2027-06-15T12:00:00Z');
-      repo.instagram.findAccountByTenantId.mockResolvedValue({
+      repo.instagram.findAccountByOwner.mockResolvedValue({
         id: 'acc-2',
         tenantId: 'tenant-2',
         userId: 'user-2',
@@ -194,22 +194,22 @@ describe('OAuthService', () => {
         mediaCount: null,
       });
 
-      const status = await service.getConnectionStatus('tenant-2', 'user-2');
+      const status = await service.getConnectionStatus({ tenantId: 'tenant-2', userId: 'user-2' });
       expect(status.tokenExpiresAt).toBe(expiresAt.toISOString());
     });
   });
 
   describe('disconnectAccount', () => {
     it('throws NotFoundError when no active account exists', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue(null);
+      repo.instagram.findAccountByOwner.mockResolvedValue(null);
 
       await expect(
-        service.disconnectAccount('tenant-1', 'user-1'),
+        service.disconnectAccount({ tenantId: 'tenant-1', userId: 'user-1' }),
       ).rejects.toThrow();
     });
 
     it('throws NotFoundError when account is already disconnected', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue({
+      repo.instagram.findAccountByOwner.mockResolvedValue({
         id: 'acc-1',
         tenantId: 'tenant-1',
         userId: 'user-1',
@@ -229,12 +229,12 @@ describe('OAuthService', () => {
       });
 
       await expect(
-        service.disconnectAccount('tenant-1', 'user-1'),
+        service.disconnectAccount({ tenantId: 'tenant-1', userId: 'user-1' }),
       ).rejects.toThrow();
     });
 
     it('calls repo.disconnectAccount when account is active', async () => {
-      repo.instagram.findAccountByTenantId.mockResolvedValue({
+      repo.instagram.findAccountByOwner.mockResolvedValue({
         id: 'acc-1',
         tenantId: 'tenant-1',
         userId: 'user-1',
@@ -254,9 +254,9 @@ describe('OAuthService', () => {
       });
       repo.instagram.disconnectAccount.mockResolvedValue(undefined);
 
-      await service.disconnectAccount('tenant-1', 'user-1');
+      await service.disconnectAccount({ tenantId: 'tenant-1', userId: 'user-1' });
 
-      expect(repo.instagram.disconnectAccount).toHaveBeenCalledWith('tenant-1', 'user-1');
+      expect(repo.instagram.disconnectAccount).toHaveBeenCalledWith({ tenantId: 'tenant-1', userId: 'user-1' });
     });
   });
 
