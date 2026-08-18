@@ -117,6 +117,28 @@ async function bootstrap() {
     iamBaseUrl: config.IAM_INTERNAL_URL,
   });
 
+  /**
+   * A guard for one module of this product.
+   *
+   * The product-wide guard above only asks "may this user open the product at
+   * all". The web already draws its agent tabs per module — a Content Analyst
+   * gets Chat and Suggestions but no Carousels — and hiding a tab is not the
+   * same as refusing the call behind it. Without these, that analyst can POST
+   * to /api/carousels directly and generate exactly what their role says they
+   * may not.
+   */
+  const moduleGuard = (moduleId: string) =>
+    entitlementGuard({
+      productId: 'instagram-dashboard',
+      moduleId,
+      iamBaseUrl: config.IAM_INTERNAL_URL,
+    });
+
+  const agentGuard = moduleGuard('ig-ai-agent');
+  const chatGuard = moduleGuard('ig-ai-chat');
+  const suggestionsGuard = moduleGuard('ig-ai-suggestions');
+  const carouselsGuard = moduleGuard('ig-ai-carousels');
+
   // Protected routes (JWT required)
   const api = new OpenAPIHono();
   api.use('*', authGuard);
@@ -126,11 +148,21 @@ async function bootstrap() {
   api.route('/media', createMediaRoutes(dashboardService));
   api.route('/sync', createSyncRoutes(syncService));
   // Growth agent routes (chat + suggestions)
+  // Both paths on purpose: in Hono '/chat/*' does not match a bare '/chat',
+  // which is exactly the list endpoint worth protecting.
+  api.use('/chat', chatGuard);
+  api.use('/chat/*', chatGuard);
   api.route('/chat', createChatRoutes(growthAgentService, repos.chatMessage));
+  api.use('/suggestions', suggestionsGuard);
+  api.use('/suggestions/*', suggestionsGuard);
   api.route('/suggestions', createSuggestionsRoutes(suggestionService));
   // Agent config + usage routes
+  api.use('/agent', agentGuard);
+  api.use('/agent/*', agentGuard);
   api.route('/agent', createAgentRoutes(repos.instagram, usageTracker, config.ENABLE_USAGE_TRACKING));
   // Carousel routes
+  api.use('/carousels', carouselsGuard);
+  api.use('/carousels/*', carouselsGuard);
   api.route('/carousels', createCarouselRoutes(carouselService));
   // Tenant administration contributed to the hub's settings area. Guarded on
   // the JWT role inside the router — the hub cannot protect this.
@@ -168,7 +200,13 @@ async function bootstrap() {
   // a4 purge-direction correction (owner-resolved): the entitlement cache
   // lives in the guard, so the purge route is hosted here — api-iam is the
   // CALLER on entitlement-mutating writes (mirrors the quotas purge pattern).
-  app.route('/', createEntitlementsPurgeRoute(entitlementsGuard));
+  app.route('/', createEntitlementsPurgeRoute([
+      entitlementsGuard,
+      agentGuard,
+      chatGuard,
+      suggestionsGuard,
+      carouselsGuard,
+    ]));
 
   // Static file serving for generated carousel images
   app.use('/carousels/*', serveStatic({ root: './public' }));

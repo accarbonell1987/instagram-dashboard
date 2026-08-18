@@ -86,6 +86,31 @@ Hub Frontend (Next.js)
   → PostgreSQL
 ```
 
+### Guards de entitlements: producto y módulo
+
+`api.use('*', entitlementsGuard)` solo pregunta *"¿puede abrir este producto?"*. Las rutas de IA
+llevan además un guard **por módulo**, porque esconder una pestaña no es lo mismo que rechazar la
+llamada que hay detrás:
+
+| Ruta | Módulo requerido |
+|---|---|
+| `/api/chat` | `ig-ai-chat` |
+| `/api/suggestions` | `ig-ai-suggestions` |
+| `/api/agent` | `ig-ai-agent` |
+| `/api/carousels` | `ig-ai-carousels` |
+
+Sin esto, un `content-analist` —que en el front ve Chat y Sugerencias pero no Carruseles— podía
+hacer `POST /api/carousels` a mano y generar justo lo que su rol dice que no.
+
+- **Hay que montar las dos rutas**: en Hono `'/chat/*'` **no** matchea `/chat` pelado, que suele ser
+  el listado. Siempre `api.use('/x', g)` **y** `api.use('/x/*', g)`.
+- `/api/admin` queda **sin** guard de módulo a propósito: es administración del tenant, no una
+  función del producto, y gatearla dejaría a un admin con rol restrictivo fuera de su propia
+  pantalla de administración.
+- **Cada guard tiene su caché** (TTL 60s). `createEntitlementsPurgeRoute` recibe la lista completa;
+  purgar solo algunos deja a los demás sirviendo una decisión vieja, que se ve como "cambié el rol
+  y no pasó nada".
+
 ### Aislamiento: por tenant Y por usuario
 
 Todo dato se scopea por `tenant_id` **y** `user_id`, no solo por tenant. El `authGuard` saca ambos
