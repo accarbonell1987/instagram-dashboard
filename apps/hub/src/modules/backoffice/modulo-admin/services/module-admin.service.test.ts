@@ -15,6 +15,44 @@ import { server } from '@/lib/mocks/server'
 
 const BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080'
 
+/**
+ * Ordered once here rather than in each screen. Six screens call listModules,
+ * and patching them one at a time left the roles screen showing the agent's
+ * settings sections outside the module they belong to.
+ */
+describe('module-admin.service — listModules ordering', () => {
+  it('returns each child directly under its parent, whatever order the API used', async () => {
+    // As the API sorts them: `ig-ag` collates before `ig-ai`, so every child
+    // arrives above its own parent.
+    server.use(
+      http.get(`${BASE}/admin/modules`, () =>
+        HttpResponse.json(
+          {
+            modules: [
+              { id: 'ig-agent-model', parentId: 'ig-ai-agent' },
+              { id: 'ig-agent-topics', parentId: 'ig-ai-agent' },
+              { id: 'ig-ai-agent', parentId: null },
+              { id: 'ig-ai-chat', parentId: 'ig-ai-agent' },
+              { id: 'ig-basic-metrics', parentId: null },
+            ],
+          },
+          { status: 200 },
+        ),
+      ),
+    )
+
+    const result = await listModules()
+
+    expect(result.modules.map((m) => m.id)).toEqual([
+      'ig-ai-agent',
+      'ig-agent-model',
+      'ig-agent-topics',
+      'ig-ai-chat',
+      'ig-basic-metrics',
+    ])
+  })
+})
+
 describe('module-admin.service — listModules', () => {
   it('returns list of modules from GET /admin/modules', async () => {
     const mockModules = [

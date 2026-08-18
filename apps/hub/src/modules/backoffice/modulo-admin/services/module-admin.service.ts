@@ -1,4 +1,5 @@
 import { apiFetchWithInterceptors } from '@/lib/api/interceptors'
+import { sortByHierarchy } from '@/lib/module-hierarchy'
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -36,11 +37,18 @@ export interface UpdateModuleParams {
 
 // ─── Service functions ──────────────────────────────────────────────────────────
 
+/**
+ * The API sorts by id, which is not the order a hierarchy reads in. Sorting
+ * here rather than in each screen: there are six callers, and the first attempt
+ * fixed three of them — the roles screen kept showing the agent's settings
+ * sections outside the module they belong to. One list, one order.
+ */
 export async function listModules(productId?: string): Promise<ListModulesResponse> {
   const qs = productId !== undefined ? `?productId=${encodeURIComponent(productId)}` : '';
-  return apiFetchWithInterceptors<ListModulesResponse>(`/admin/modules${qs}`, {
+  const response = await apiFetchWithInterceptors<ListModulesResponse>(`/admin/modules${qs}`, {
     method: 'GET',
   })
+  return { ...response, modules: sortByHierarchy(response.modules) }
 }
 
 export async function getModule(id: string): Promise<AdminModule> {
