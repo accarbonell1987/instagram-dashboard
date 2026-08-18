@@ -63,7 +63,7 @@ apps/hub/
 | `tenant-onboarding` | `src/modules/tenant-onboarding/` | Signup wizard (6 steps), draft service, wizard state machine, payment polling                                                        |
 | `invitations`       | `src/modules/invitations/`       | Invitation preview + accept flow                                                                                                     |
 | `admin`             | `src/modules/admin/`             | Settings de organización (nombre, plan actual), gestión de equipo (invitar, suspender, eliminar miembros), solicitudes de cambio de plan. Services: `organization.service.ts`, `member.service.ts`, `invitation.service.ts`, `plan-change.service.ts` |
-| `billing`           | `src/modules/billing/`           | Plan actual (BillingPlanSection), método de pago (PaymentMethodSection), historial de facturas (InvoicesSection). Services: `billing.service.ts`, `document.service.ts` |
+| `billing`           | `src/modules/billing/`           | Plan actual (BillingPlanSection), método de pago (PaymentMethodSection), historial de cobros con su factura (PaymentsSection). Services: `billing.service.ts`, `document.service.ts` |
 
 ## Key Conventions (hub-specific)
 
@@ -94,11 +94,15 @@ apps/hub/
     anunciar "no hay resultados" por una carga rota manda a buscar datos que nunca llegaron.
 - **Billing stubs**: ya solo `GET/POST /billing/payment-method` (retornan `paymentMethod: null`
   y 202). La integración real con Bancard para tokenización de tarjetas es trabajo futuro.
-- **Pagos y Facturas son el mismo evento con dos lentes**: `PaymentsSection` es el registro
-  operativo (método, referencia, quién liquidó, la nota); `InvoicesSection` es el fiscal (qué se
-  cobró, cuándo, si se pagó, y el PDF). No hay subsistema de facturación: el backend proyecta los
-  pagos del tenant a facturas. Una factura solo ofrece descarga si el pago está aprobado y el PDF
-  ya se generó — si no, la fila muestra un guion.
+- **Un solo libro mayor, no dos**: `PaymentsSection` es la única tabla de facturación. Muestra
+  cada cobro con su fecha, medio, referencia, estado, nota de liquidación **y la factura**.
+  No hay subsistema de facturación: el PDF cuelga del cobro al que pertenece.
+  - `Payment.documentId` viene en `/billing/payments` y es `null` salvo que el pago esté aprobado
+    **y** el PDF ya exista — la fila del documento se crea como placeholder antes que el archivo.
+    Sin documento, la celda muestra un guion, nunca un botón muerto.
+  - Se descarga con `/billing/documents/{id}/signed-url`, el mismo endpoint que usa onboarding.
+  - **`/billing/invoices` ya no existe** (contrato 2.0.0). Había una segunda tabla con los mismos
+    eventos y menos columnas; una lista se lee mejor que dos vistas de una sola verdad.
 - **`session.role`**: El rol está en `session.role` (no en `session.user.role`). Usar `useSession()` para leer el rol en componentes.
 - **RequireRole**: `<RequireRole role={['TenantAdmin', 'SuperAdmin']}>` — envuelve secciones y rutas que solo son visibles para admins. Redirige a `/` si el rol no está autorizado.
 - **Dos ejes de permisos, no uno**: el rol de tenant (`TenantAdmin` / `User`) decide qué se
@@ -164,7 +168,7 @@ Note: Backend currently only supports recovering to `'company'` step. For `repre
 ## Contrato API
 
 - Archivo: `.atl/api-contract.yaml` (OpenAPI 3.1)
-- Versión actual: **1.24.0**
+- Versión actual: **2.0.0**
 - Lint: `pnpm --package=@redocly/cli dlx redocly lint .atl/api-contract.yaml`
 - Cambios al contrato requieren PR coordinado con el equipo backend (`apps/api-iam`).
 

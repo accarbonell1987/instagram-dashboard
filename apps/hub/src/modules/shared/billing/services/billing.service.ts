@@ -5,8 +5,6 @@ import type { components } from '@/lib/api/types';
 
 type PaymentMethodResponse = components['schemas']['PaymentMethodResponse'];
 type PaymentMethodChangeRequestResponse = components['schemas']['PaymentMethodChangeRequestResponse'];
-type InvoiceListResponse = components['schemas']['InvoiceListResponse'];
-type SignedUrlResponse = components['schemas']['SignedUrlResponse'];
 type PaymentListResponse = components['schemas']['PaymentListResponse'];
 
 // ─── Service functions ────────────────────────────────────────────────────────
@@ -23,30 +21,10 @@ export async function requestPaymentMethodChange(): Promise<PaymentMethodChangeR
   });
 }
 
-export async function listInvoices(params?: {
-  page?: number;
-  pageSize?: number;
-}): Promise<InvoiceListResponse> {
-  const query = new URLSearchParams();
-  if (params?.page !== undefined) query.set('page', String(params.page));
-  if (params?.pageSize !== undefined) query.set('pageSize', String(params.pageSize));
-  const qs = query.size > 0 ? `?${query.toString()}` : '';
-  return apiFetchWithInterceptors<InvoiceListResponse>(`/billing/invoices${qs}`, {
-    method: 'GET',
-  });
-}
-
-export async function getInvoiceSignedUrl(invoiceId: string): Promise<SignedUrlResponse> {
-  return apiFetchWithInterceptors<SignedUrlResponse>(
-    `/billing/invoices/${invoiceId}/signed-url`,
-    { method: 'GET' }
-  );
-}
-
 /**
- * The tenant's own payment log — what they paid, when, and how it was settled.
- * Distinct from listInvoices: a payment is the money moving, an invoice is the
- * document, and today only the first of the two actually exists.
+ * The tenant's ledger: every charge, with the invoice PDF on the ones that
+ * settled. There is no separate invoice list — a payment and its receipt are
+ * one row, because they are one event.
  */
 export async function listTenantPayments(params?: {
   page?: number;

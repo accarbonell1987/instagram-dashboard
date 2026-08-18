@@ -57,46 +57,6 @@ export const billingHandlers = [
     return HttpResponse.json({ id }, { status: 202 });
   }),
 
-  // GET /billing/invoices
-  http.get(`${BASE}/billing/invoices`, ({ request }) => {
-    const url = new URL(request.url);
-    const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10));
-    const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get('pageSize') ?? '10', 10)));
-
-    const allInvoices = db.invoice.findMany({
-      where: { tenantId: { equals: SEED.tenantId } },
-    });
-
-    // Sort descending by issuedAt
-    const sorted = [...allInvoices].sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
-    const total = sorted.length;
-    const start = (page - 1) * pageSize;
-    const items = sorted.slice(start, start + pageSize);
-
-    return HttpResponse.json({ items, total, page, pageSize });
-  }),
-
-  // GET /billing/invoices/:invoiceId/signed-url
-  http.get(`${BASE}/billing/invoices/:invoiceId/signed-url`, ({ params }) => {
-    const invoiceId = params['invoiceId'] as string;
-
-    const invoice = db.invoice.findFirst({
-      where: {
-        id: { equals: invoiceId },
-        tenantId: { equals: SEED.tenantId },
-      },
-    });
-
-    if (invoice?.documentId == null) {
-      return notFound('invoice.not_found');
-    }
-
-    return HttpResponse.json({
-      url: `/mock-pdf/invoice-${invoiceId}.pdf`,
-      expiresAt: stableFuture(300),
-    });
-  }),
-
   // Serve mock PDF files (tiny text-based PDF for dev)
   http.get('*/mock-pdf/:filename', ({ params }) => {
     const filename = params['filename'] as string;

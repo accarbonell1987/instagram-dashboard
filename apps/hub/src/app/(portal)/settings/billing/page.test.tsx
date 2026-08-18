@@ -8,8 +8,8 @@ vi.mock('@/modules/shared/billing/components/billing-plan-section', () => ({
 vi.mock('@/modules/shared/billing/components/payment-method-section', () => ({
   PaymentMethodSection: () => <div data-testid="payment-method-section">PaymentMethodSection</div>,
 }));
-vi.mock('@/modules/shared/billing/components/invoices-section', () => ({
-  InvoicesSection: () => <div data-testid="invoices-section">InvoicesSection</div>,
+vi.mock('@/modules/shared/billing/components/payments-section', () => ({
+  PaymentsSection: () => <div data-testid="payments-section">PaymentsSection</div>,
 }));
 
 // Mock useSession to control role
@@ -30,18 +30,18 @@ function renderWithRole(role: string | null) {
 }
 
 describe('BillingPage', () => {
-  it('renders all three sections for TenantAdmin', () => {
+  it('renders every section for TenantAdmin', () => {
     renderWithRole('TenantAdmin');
     expect(screen.getByTestId('billing-plan-section')).toBeInTheDocument();
     expect(screen.getByTestId('payment-method-section')).toBeInTheDocument();
-    expect(screen.getByTestId('invoices-section')).toBeInTheDocument();
+    expect(screen.getByTestId('payments-section')).toBeInTheDocument();
   });
 
-  it('renders all three sections for SuperAdmin', () => {
+  it('renders every section for SuperAdmin', () => {
     renderWithRole('SuperAdmin');
     expect(screen.getByTestId('billing-plan-section')).toBeInTheDocument();
     expect(screen.getByTestId('payment-method-section')).toBeInTheDocument();
-    expect(screen.getByTestId('invoices-section')).toBeInTheDocument();
+    expect(screen.getByTestId('payments-section')).toBeInTheDocument();
   });
 
   it('renders access denied fallback for User role', () => {

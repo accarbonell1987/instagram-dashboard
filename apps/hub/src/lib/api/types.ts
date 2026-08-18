@@ -1734,68 +1734,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/billing/invoices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Listar facturas del tenant paginadas en orden descendente
-         * @description **Propósito**: Devuelve el historial de facturas del tenant paginado, ordenado
-         *     por fecha de emisión descendente (más recientes primero).
-         *
-         *     **Proceso**: Consultado por `InvoicesSection` en `Settings > Billing` para mostrar
-         *     el historial de facturación. Cada factura puede tener asociado un `documentId` para
-         *     descargar el PDF via `GET /billing/invoices/{id}/signed-url`.
-         *
-         *     **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
-         *
-         *     **Notas**: **Stub actual** — el backend retorna siempre una lista vacía (`items: []`,
-         *     `total: 0`) en esta versión. La paginación usa `page` (desde 1) y `pageSize` (máx 100,
-         *     default 10). Los estados de factura son: `paid`, `pending`, `overdue`, `cancelled`.
-         */
-        get: operations["listInvoices"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/invoices/{invoiceId}/signed-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Obtener URL firmada para descargar PDF de factura (TTL 5 min)
-         * @description **Propósito**: Genera una URL pre-firmada de corta duración (5 min) para descargar
-         *     el PDF de una factura específica del tenant.
-         *
-         *     **Proceso**: Accionado desde `InvoicesSection` al hacer clic en el botón de descarga
-         *     junto a una factura. El `invoiceId` proviene del campo `id` en `GET /billing/invoices`.
-         *
-         *     **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. La factura
-         *     debe existir y tener un documento PDF asociado (`documentId` no nulo).
-         *
-         *     **Notas**: **Stub actual** — el backend retorna siempre 404 en esta versión.
-         *     La generación real de facturas PDF es trabajo futuro. Para documentos del onboarding
-         *     (factura de bienvenida, contrato), usar `GET /billing/documents/{documentId}/signed-url`.
-         */
-        get: operations["getInvoiceSignedUrl"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/.well-known/jwks.json": {
         parameters: {
             query?: never;
@@ -2268,25 +2206,6 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
-        /** @enum {string} */
-        InvoiceStatus: "paid" | "pending" | "overdue" | "cancelled";
-        InvoiceListItem: {
-            /** Format: uuid */
-            id: string;
-            /** Format: date-time */
-            issuedAt: string;
-            total: number;
-            /** @enum {string} */
-            currency: "PYG" | "USD";
-            status: components["schemas"]["InvoiceStatus"];
-            documentId?: string | null;
-        };
-        InvoiceListResponse: {
-            items: components["schemas"]["InvoiceListItem"][];
-            total: number;
-            page: number;
-            pageSize: number;
-        };
         PaginatedResponse: {
             items: unknown[];
             total: number;
@@ -2351,6 +2270,14 @@ export interface components {
             /** Format: date-time */
             settledAt?: string | null;
             instruction?: components["schemas"]["PaymentInstruction"] | null;
+            /**
+             * Format: uuid
+             * @description PDF de la factura de este cobro, descargable con
+             *     `/billing/documents/{documentId}/signed-url`. Solo en la vista del tenant, y solo si el
+             *     pago está aprobado **y** el archivo ya se generó — la fila del documento se crea como
+             *     placeholder antes de que exista el PDF.
+             */
+            documentId?: string | null;
             /** Format: date-time */
             createdAt: string;
         };
@@ -2921,9 +2848,6 @@ export type SchemaPaymentMethodBrand = components['schemas']['PaymentMethodBrand
 export type SchemaPaymentMethod = components['schemas']['PaymentMethod'];
 export type SchemaPaymentMethodResponse = components['schemas']['PaymentMethodResponse'];
 export type SchemaPaymentMethodChangeRequestResponse = components['schemas']['PaymentMethodChangeRequestResponse'];
-export type SchemaInvoiceStatus = components['schemas']['InvoiceStatus'];
-export type SchemaInvoiceListItem = components['schemas']['InvoiceListItem'];
-export type SchemaInvoiceListResponse = components['schemas']['InvoiceListResponse'];
 export type SchemaPaginatedResponse = components['schemas']['PaginatedResponse'];
 export type SchemaPaymentMethodKind = components['schemas']['PaymentMethodKind'];
 export type SchemaBankAccount = components['schemas']['BankAccount'];
@@ -5209,56 +5133,6 @@ export interface operations {
             };
             422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["TooManyRequests"];
-        };
-    };
-    listInvoices: {
-        parameters: {
-            query?: {
-                page?: number;
-                pageSize?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Lista de facturas */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InvoiceListResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    getInvoiceSignedUrl: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                invoiceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description URL firmada */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SignedUrlResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
         };
     };
     getJwks: {

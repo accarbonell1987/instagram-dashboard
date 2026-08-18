@@ -21,13 +21,6 @@ export const SEED = {
   planProfessional: 'professional',
   planEnterprise: 'enterprise',
   resumeToken: 'mock-resume-token-happy',
-  invoiceIds: [
-    'inv-001-paid-0000-0000-000000000001',
-    'inv-002-paid-0000-0000-000000000002',
-    'inv-003-pending-000-0000-000000000003',
-    'inv-004-overdue-00-0000-000000000004',
-    'inv-005-cancelled-0-0000-000000000005',
-  ] as const,
   invoiceDocIds: [
     'doc-inv-001-0000-0000-000000000001',
     'doc-inv-002-0000-0000-000000000002',
@@ -161,57 +154,9 @@ function seedHappy(): void {
   });
 
   seedAdminData();
-  seedInvoices();
   seedPayments();
 }
 
-function seedInvoices(): void {
-  db.invoice.create({
-    id: SEED.invoiceIds[0],
-    tenantId: SEED.tenantId,
-    issuedAt: stablePast(4 * 30 * 24 * 3600),
-    total: 450_000,
-    currency: 'PYG',
-    status: 'paid',
-    documentId: SEED.invoiceDocIds[0],
-  });
-  db.invoice.create({
-    id: SEED.invoiceIds[1],
-    tenantId: SEED.tenantId,
-    issuedAt: stablePast(3 * 30 * 24 * 3600),
-    total: 450_000,
-    currency: 'PYG',
-    status: 'paid',
-    documentId: SEED.invoiceDocIds[1],
-  });
-  db.invoice.create({
-    id: SEED.invoiceIds[2],
-    tenantId: SEED.tenantId,
-    issuedAt: stablePast(2 * 30 * 24 * 3600),
-    total: 450_000,
-    currency: 'PYG',
-    status: 'pending',
-    documentId: null,
-  });
-  db.invoice.create({
-    id: SEED.invoiceIds[3],
-    tenantId: SEED.tenantId,
-    issuedAt: stablePast(1 * 30 * 24 * 3600),
-    total: 450_000,
-    currency: 'PYG',
-    status: 'overdue',
-    documentId: null,
-  });
-  db.invoice.create({
-    id: SEED.invoiceIds[4],
-    tenantId: SEED.tenantId,
-    issuedAt: stablePast(5 * 30 * 24 * 3600),
-    total: 450_000,
-    currency: 'PYG',
-    status: 'cancelled',
-    documentId: null,
-  });
-}
 
 // Bootstrap matches the api-iam migration seed: bancard stays the only live
 // method until bank_transfer is toggled on via the admin backoffice.

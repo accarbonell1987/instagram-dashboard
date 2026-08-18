@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { seedDb, SEED } from '../seed';
+import { seedDb } from '../seed';
 
 const BASE = 'http://localhost:8080';
 
@@ -68,56 +68,4 @@ describe('billing handlers', () => {
     expect(body.detail).toBe('payment_method_change.pending_exists');
   });
 
-  // ─── GET /billing/invoices ───────────────────────────────────────────────────
-
-  it('GET /billing/invoices returns invoices list in happy scenario', async () => {
-    const response = await fetch(`${BASE}/billing/invoices`);
-    expect(response.status).toBe(200);
-    const body = await response.json() as { items: unknown[]; total: number; page: number; pageSize: number };
-    expect(Array.isArray(body.items)).toBe(true);
-    expect(body.items.length).toBeGreaterThan(0);
-    expect(typeof body.total).toBe('number');
-    expect(body.page).toBe(1);
-    expect(body.pageSize).toBe(10);
-  });
-
-  it('GET /billing/invoices returns empty items in billing-empty scenario', async () => {
-    seedDb('billing-empty');
-    const response = await fetch(`${BASE}/billing/invoices`);
-    expect(response.status).toBe(200);
-    const body = await response.json() as { items: unknown[]; total: number };
-    expect(body.items).toHaveLength(0);
-    expect(body.total).toBe(0);
-  });
-
-  it('GET /billing/invoices respects page and pageSize params', async () => {
-    const response = await fetch(`${BASE}/billing/invoices?page=1&pageSize=2`);
-    expect(response.status).toBe(200);
-    const body = await response.json() as { items: unknown[]; total: number; page: number; pageSize: number };
-    expect(body.items.length).toBeLessThanOrEqual(2);
-    expect(body.page).toBe(1);
-    expect(body.pageSize).toBe(2);
-  });
-
-  // ─── GET /billing/invoices/:invoiceId/signed-url ─────────────────────────────
-
-  it('GET /billing/invoices/:id/signed-url returns signed URL for invoice with documentId', async () => {
-    const invoiceId = SEED.invoiceIds[0]; // paid invoice with documentId
-    const response = await fetch(`${BASE}/billing/invoices/${invoiceId}/signed-url`);
-    expect(response.status).toBe(200);
-    const body = await response.json() as { url: string; expiresAt: string };
-    expect(typeof body.url).toBe('string');
-    expect(typeof body.expiresAt).toBe('string');
-  });
-
-  it('GET /billing/invoices/:id/signed-url returns 404 for invoice with null documentId', async () => {
-    const invoiceId = SEED.invoiceIds[2]; // pending invoice with no documentId
-    const response = await fetch(`${BASE}/billing/invoices/${invoiceId}/signed-url`);
-    expect(response.status).toBe(404);
-  });
-
-  it('GET /billing/invoices/:id/signed-url returns 404 for unknown invoiceId', async () => {
-    const response = await fetch(`${BASE}/billing/invoices/unknown-invoice-id/signed-url`);
-    expect(response.status).toBe(404);
-  });
 });

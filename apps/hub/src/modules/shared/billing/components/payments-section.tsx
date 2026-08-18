@@ -1,6 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@core/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@core/ui';
+import { Download } from 'lucide-react';
 import { useEffect, useState, type JSX } from 'react';
 
 import { PaymentStatusBadge } from './payment-status-badge';
@@ -8,6 +9,7 @@ import { PaymentStatusBadge } from './payment-status-badge';
 import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import type { components } from '@/lib/api/types';
 import { listTenantPayments } from '@/modules/shared/billing/services/billing.service';
+import { getDocumentSignedUrl } from '@/modules/shared/billing/services/document.service';
 
 type Payment = components['schemas']['Payment'];
 
@@ -54,6 +56,9 @@ function PaymentSkeletonRow(): JSX.Element {
       <Td>
         <div className="bg-muted h-5 w-20 animate-pulse rounded-full" />
       </Td>
+      <Td align="right">
+        <div className="bg-muted ml-auto h-7 w-7 animate-pulse rounded" />
+      </Td>
     </Tr>
   );
 }
@@ -62,6 +67,19 @@ export function PaymentsSection(): JSX.Element {
   const [items, setItems] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  async function handleDownload(documentId: string): Promise<void> {
+    setDownloadingId(documentId);
+    try {
+      const result = await getDocumentSignedUrl(documentId);
+      window.open(result.url, '_blank');
+    } catch {
+      setError('No pudimos abrir la factura. Intentá de nuevo.');
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +103,7 @@ export function PaymentsSection(): JSX.Element {
       <CardHeader>
         <CardTitle>Pagos</CardTitle>
         <p className="text-muted-foreground text-sm">
-          Todo lo que pagaste, con la fecha y el medio que usaste.
+          Todo lo que pagaste, con la fecha, el medio que usaste y la factura.
         </p>
       </CardHeader>
       <CardContent>
@@ -106,38 +124,66 @@ export function PaymentsSection(): JSX.Element {
               <Th align="right">Monto</Th>
               <Th>Medio</Th>
               <Th>Estado</Th>
+              <Th align="right">Factura</Th>
             </>
           }
         >
-          {items.map((payment) => (
-            <Tr key={payment.id}>
-              <Td className="font-medium">{formatDate(payment.createdAt)}</Td>
-              <Td align="right" className="tabular-nums">
-                {formatAmount(payment.amount, payment.currency)}
-              </Td>
-              <Td>
-                <div>{METHOD_LABELS[payment.method] ?? payment.method}</div>
-                {payment.reference != null && payment.reference !== '' && (
-                  <div className="text-muted-foreground font-mono text-xs">
-                    {payment.reference}
-                  </div>
-                )}
-              </Td>
-              <Td>
-                <PaymentStatusBadge status={payment.status} />
-                {payment.settlementKind != null && (
-                  <div className="text-muted-foreground mt-0.5 text-xs">
-                    {SETTLEMENT_LABELS[payment.settlementKind] ?? payment.settlementKind}
-                  </div>
-                )}
-                {/* The settlement note is written for the customer to read —
+          {items.map((payment) => {
+            // Bound to a const so the null check narrows inside the click handler:
+            // TypeScript will not carry a property narrowing into a closure.
+            const invoiceDocumentId = payment.documentId ?? null;
+            return (
+              <Tr key={payment.id}>
+                <Td className="font-medium">{formatDate(payment.createdAt)}</Td>
+                <Td align="right" className="tabular-nums">
+                  {formatAmount(payment.amount, payment.currency)}
+                </Td>
+                <Td>
+                  <div>{METHOD_LABELS[payment.method] ?? payment.method}</div>
+                  {payment.reference != null && payment.reference !== '' && (
+                    <div className="text-muted-foreground font-mono text-xs">
+                      {payment.reference}
+                    </div>
+                  )}
+                </Td>
+                <Td>
+                  <PaymentStatusBadge status={payment.status} />
+                  {payment.settlementKind != null && (
+                    <div className="text-muted-foreground mt-0.5 text-xs">
+                      {SETTLEMENT_LABELS[payment.settlementKind] ?? payment.settlementKind}
+                    </div>
+                  )}
+                  {/* The settlement note is written for the customer to read —
                     it is what the agent saw, or why the payment was refused. */}
-                {payment.note != null && payment.note !== '' && (
-                  <p className="text-muted-foreground mt-0.5 text-xs italic">{payment.note}</p>
-                )}
-              </Td>
-            </Tr>
-          ))}
+                  {payment.note != null && payment.note !== '' && (
+                    <p className="text-muted-foreground mt-0.5 text-xs italic">{payment.note}</p>
+                  )}
+                </Td>
+                <Td align="right">
+                  {/* Absent until the charge settles and settlement has actually
+                    written the PDF — a dash beats a button that downloads
+                    nothing. */}
+                  {invoiceDocumentId !== null ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => {
+                        void handleDownload(invoiceDocumentId);
+                      }}
+                      disabled={downloadingId === invoiceDocumentId}
+                      aria-busy={downloadingId === invoiceDocumentId}
+                      aria-label={`Descargar la factura del ${formatDate(payment.createdAt)}`}
+                    >
+                      <Download className="h-4 w-4" aria-hidden />
+                    </Button>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
+                </Td>
+              </Tr>
+            );
+          })}
         </DataTable>
       </CardContent>
     </Card>

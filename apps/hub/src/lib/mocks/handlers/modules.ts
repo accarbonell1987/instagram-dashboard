@@ -62,7 +62,7 @@ export const modulesHandlers = [
           description: 'Las cuentas vinculadas de tu organización y quién las tiene tomadas.',
           productId: 'instagram-dashboard',
           productName: 'Dashboard Instagram',
-          productUrl: 'http://localhost:3004',
+          productUrl: 'http://localhost:3010',
           path: '/admin/linked-accounts',
           moduleId: null,
         },

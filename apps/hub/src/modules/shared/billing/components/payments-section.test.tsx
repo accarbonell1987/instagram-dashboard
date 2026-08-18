@@ -22,6 +22,7 @@ function payment(overrides: Record<string, unknown> = {}) {
     settledBy: 'admin-uuid-1',
     settledAt: '2026-08-12T19:18:10.000Z',
     instruction: null,
+    documentId: 'doc-invoice-1',
     createdAt: '2026-08-12T19:17:46.000Z',
     ...overrides,
   };
@@ -102,5 +103,27 @@ describe('PaymentsSection', () => {
     await waitFor(() => {
       expect(container.querySelector('[aria-busy="true"]')).toBeNull();
     });
+  });
+
+  /**
+   * Payments and invoices used to be two tables of the same events. They are
+   * one ledger now: the charge, and the receipt for it.
+   */
+  it('offers the invoice of a settled charge', async () => {
+    respondWith([payment()]);
+    render(<PaymentsSection />);
+
+    expect(
+      await screen.findByRole('button', { name: /Descargar la factura del 12\/08\/2026/ })
+    ).toBeInTheDocument();
+  });
+
+  // A row whose PDF does not exist yet must not offer a dead button.
+  it('shows a dash when there is no invoice document', async () => {
+    respondWith([payment({ status: 'pending', documentId: null })]);
+    render(<PaymentsSection />);
+
+    await screen.findByText('Pendiente');
+    expect(screen.queryByRole('button', { name: /Descargar la factura/ })).toBeNull();
   });
 });

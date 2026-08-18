@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Corehub Hub API
-  version: 1.24.0
+  version: 2.0.0
   description: |
     API de la plataforma SaaS multi-tenant de Corehub Hub. Gestiona autenticación,
     el asistente de onboarding de tenants, invitaciones, recibos de facturación y
@@ -767,35 +767,6 @@ components:
       properties:
         id: { type: string, format: uuid }
 
-    InvoiceStatus:
-      type: string
-      enum: [paid, pending, overdue, cancelled]
-
-    InvoiceListItem:
-      type: object
-      required: [id, issuedAt, total, currency, status]
-      properties:
-        id: { type: string, format: uuid }
-        issuedAt: { type: string, format: date-time }
-        total: { type: number }
-        currency: { type: string, enum: [PYG, USD] }
-        status: { $ref: '#/components/schemas/InvoiceStatus' }
-        documentId:
-          oneOf:
-            - { type: string, format: uuid }
-            - { type: 'null' }
-
-    InvoiceListResponse:
-      type: object
-      required: [items, total, page, pageSize]
-      properties:
-        items:
-          type: array
-          items: { $ref: '#/components/schemas/InvoiceListItem' }
-        total: { type: integer, minimum: 0 }
-        page: { type: integer, minimum: 1 }
-        pageSize: { type: integer, minimum: 1, maximum: 100 }
-
     PaginatedResponse:
       type: object
       required: [items, total, page, pageSize]
@@ -874,6 +845,14 @@ components:
           oneOf:
             - $ref: '#/components/schemas/PaymentInstruction'
             - type: 'null'
+        documentId:
+          type: ['string', 'null']
+          format: uuid
+          description: |
+            PDF de la factura de este cobro, descargable con
+            `/billing/documents/{documentId}/signed-url`. Solo en la vista del tenant, y solo si el
+            pago está aprobado **y** el archivo ya se generó — la fila del documento se crea como
+            placeholder antes de que exista el PDF.
         createdAt: { type: string, format: date-time }
 
     PaymentListResponse:
@@ -3965,71 +3944,6 @@ paths:
         '422': { $ref: '#/components/responses/UnprocessableEntity' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
-  /billing/invoices:
-    get:
-      tags: [billing, Billing]
-      operationId: listInvoices
-      summary: Listar facturas del tenant paginadas en orden descendente
-      description: |
-        **Propósito**: Devuelve el historial de facturas del tenant paginado, ordenado
-        por fecha de emisión descendente (más recientes primero).
-
-        **Proceso**: Consultado por `InvoicesSection` en `Settings > Billing` para mostrar
-        el historial de facturación. Cada factura puede tener asociado un `documentId` para
-        descargar el PDF via `GET /billing/invoices/{id}/signed-url`.
-
-        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`.
-
-        **Notas**: **Stub actual** — el backend retorna siempre una lista vacía (`items: []`,
-        `total: 0`) en esta versión. La paginación usa `page` (desde 1) y `pageSize` (máx 100,
-        default 10). Los estados de factura son: `paid`, `pending`, `overdue`, `cancelled`.
-      security:
-        - bearerAuth: []
-      parameters:
-        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
-        - { name: pageSize, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
-      responses:
-        '200':
-          description: Lista de facturas
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/InvoiceListResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-
-  /billing/invoices/{invoiceId}/signed-url:
-    get:
-      tags: [billing, Billing]
-      operationId: getInvoiceSignedUrl
-      summary: Obtener URL firmada para descargar PDF de factura (TTL 5 min)
-      description: |
-        **Propósito**: Genera una URL pre-firmada de corta duración (5 min) para descargar
-        el PDF de una factura específica del tenant.
-
-        **Proceso**: Accionado desde `InvoicesSection` al hacer clic en el botón de descarga
-        junto a una factura. El `invoiceId` proviene del campo `id` en `GET /billing/invoices`.
-
-        **Precondiciones**: Sesión activa con rol `TenantAdmin` o `SuperAdmin`. La factura
-        debe existir y tener un documento PDF asociado (`documentId` no nulo).
-
-        **Notas**: **Stub actual** — el backend retorna siempre 404 en esta versión.
-        La generación real de facturas PDF es trabajo futuro. Para documentos del onboarding
-        (factura de bienvenida, contrato), usar `GET /billing/documents/{documentId}/signed-url`.
-      security:
-        - bearerAuth: []
-      parameters:
-        - { name: invoiceId, in: path, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '200':
-          description: URL firmada
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/SignedUrlResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  # ==================== WELL-KNOWN ====================
   /.well-known/jwks.json:
     get:
       operationId: getJwks

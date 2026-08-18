@@ -159,7 +159,13 @@ export const paymentsHandlers = [
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     const { items, total } = paginate(all, page, pageSize);
-    return HttpResponse.json({ items, total, page, pageSize });
+    // The invoice PDF rides along with the charge it belongs to — one ledger,
+    // not a payment list plus an invoice list.
+    const withDocuments = items.map((payment) => ({
+      ...payment,
+      documentId: payment.status === 'approved' ? SEED.invoiceDocIds[0] : null,
+    }));
+    return HttpResponse.json({ items: withDocuments, total, page, pageSize });
   }),
 
   // GET /admin/tenants/:tenantId/payments

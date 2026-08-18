@@ -133,15 +133,6 @@ export const db = factory({
     createdAt: String,
   },
 
-  invoice: {
-    id: primaryKey(String),
-    tenantId: String,
-    issuedAt: String,
-    total: Number,
-    currency: String,
-    status: String,
-    documentId: nullable(String),
-  },
 
   paymentMethodChangeRequest: {
     id: primaryKey(String),
@@ -214,7 +205,6 @@ export function resetDb(): void {
   db.idempotency.deleteMany({ where: {} });
   db.resumeToken.deleteMany({ where: {} });
   db.planChangeRequest.deleteMany({ where: {} });
-  db.invoice.deleteMany({ where: {} });
   db.paymentMethodChangeRequest.deleteMany({ where: {} });
   db.paymentRecord.deleteMany({ where: {} });
   db.paymentMethodConfig.deleteMany({ where: {} });
