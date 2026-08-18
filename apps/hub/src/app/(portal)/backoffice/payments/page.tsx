@@ -1,29 +1,9 @@
 'use client';
 
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Textarea,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@core/ui';
+import { Button, DataTable, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, TablePagination, Td, Textarea, Th, Tooltip, TooltipContent, TooltipTrigger, Tr } from '@core/ui';
 import { Check, X, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent, type JSX } from 'react';
 
-import { DataTable, TablePagination, Td, Th, Tr } from '@/components/data-table';
 import { ApiError } from '@/lib/api/errors';
 import {
   listAdminPayments,
@@ -310,7 +290,6 @@ export default function PaymentsQueuePage(): JSX.Element {
         loadingText="Cargando pagos..."
         empty={{ text: 'No hay pagos que coincidan con este filtro.' }}
         caption="Cola de pagos pendientes"
-        variant="dense"
         tableClassName="table-fixed"
         head={
           <>

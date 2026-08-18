@@ -1,9 +1,8 @@
 'use client';
 
-import { Badge, Button } from '@core/ui';
+import { Badge, Button, DataTable, Td, Th, Tr } from '@core/ui';
 import { type JSX } from 'react';
 
-import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import type { components } from '@/lib/api/types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -75,7 +74,6 @@ export function InvitationsList({
 
   return (
     <DataTable
-      variant="bare"
       isEmpty={invitations.length === 0}
       empty={{ text: 'No hay invitaciones' }}
       head={

@@ -1,13 +1,12 @@
 'use client';
 
-import { Badge, Button, Tooltip, TooltipContent, TooltipTrigger } from '@core/ui';
+import { Badge, Button, DataTable, Td, Th, Tooltip, TooltipContent, TooltipTrigger, Tr } from '@core/ui';
 import { KeyRound } from 'lucide-react';
 import { type JSX } from 'react';
 
 import { MemberActionsMenu } from './member-actions-menu';
 import { MemberStatusBadge } from './member-status-badge';
 
-import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import type { components } from '@/lib/api/types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -67,7 +66,6 @@ export function MembersList({
 }: MembersListProps): JSX.Element {
   return (
     <DataTable
-      variant="bare"
       isLoading={isLoading}
       loadingLabel="Cargando miembros"
       loadingRows={Array.from({ length: 3 }).map((_, i) => (

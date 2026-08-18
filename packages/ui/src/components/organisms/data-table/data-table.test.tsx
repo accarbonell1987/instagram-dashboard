@@ -100,42 +100,31 @@ describe('TablePagination', () => {
 });
 
 /**
- * The bare variant exists for tables already sitting inside a settings card,
- * where the default bordered frame would draw a box inside a box. It has to
- * drop the chrome everywhere, states included — a boxed "no hay facturas" in
- * the middle of a card is the same mistake in miniature.
+ * One look, everywhere. There used to be three variants — bordered, dense, and
+ * a bare one for tables sitting inside a card — and three variants is three
+ * designs. A screen that needs a different frame has a layout problem, not a
+ * table problem.
  */
-describe('DataTable bare variant', () => {
-  it('drops the bordered container and the filled header', () => {
+describe('DataTable — one look', () => {
+  it('draws the same bordered frame with a filled header', () => {
     const { container } = render(
-      <DataTable variant="bare" head={<Th>Email</Th>} isEmpty={false}>
+      <DataTable head={<Th>Email</Th>} isEmpty={false}>
         <Tr>
           <Td>ana@empresa.com</Td>
         </Tr>
       </DataTable>
     );
-    const wrapper = container.firstElementChild;
-    expect(wrapper?.className).not.toMatch(/rounded-lg/);
-    expect(container.querySelector('thead')?.className).not.toMatch(/bg-muted/);
+    expect(container.firstElementChild?.className).toMatch(/rounded-lg/);
+    expect(container.querySelector('thead')?.className).toMatch(/bg-muted/);
   });
 
-  it('reports empty as plain text, not a boxed panel', () => {
+  it('boxes the empty state like the table it replaces', () => {
     const { container } = render(
-      <DataTable variant="bare" head={<Th>Email</Th>} isEmpty empty={{ text: 'No hay invitaciones' }}>
+      <DataTable head={<Th>Email</Th>} isEmpty empty={{ text: 'No hay invitaciones' }}>
         <></>
       </DataTable>
     );
-    const node = screen.getByText('No hay invitaciones');
-    expect(node.tagName).toBe('P');
-    expect(container.querySelector('.rounded-lg')).toBeNull();
-  });
-
-  it('keeps the bordered panel for the default variant', () => {
-    const { container } = render(
-      <DataTable head={<Th>Email</Th>} isEmpty empty={{ text: 'No hay nada' }}>
-        <></>
-      </DataTable>
-    );
+    expect(screen.getByText('No hay invitaciones')).toBeInTheDocument();
     expect(container.querySelector('.rounded-lg')).not.toBeNull();
   });
 });

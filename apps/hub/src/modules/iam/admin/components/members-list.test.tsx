@@ -63,13 +63,14 @@ describe('MembersList', () => {
   });
 
   /**
-   * This list sits inside a settings card, so it uses the bare frame: a
-   * bordered panel here would draw a box inside the box already around it.
+   * Every table in the system draws the same frame, empty state included —
+   * there is no bare variant any more. The settings page keeps its heading
+   * outside the table rather than wrapping it in a second bordered box.
    */
-  it('reports an empty team as plain text, not a boxed panel', () => {
+  it('reports an empty team inside the same bordered frame', () => {
     const { container } = renderList({ members: [] });
-    expect(screen.getByText('No hay miembros').tagName).toBe('P');
-    expect(container.querySelector('.rounded-lg')).toBeNull();
+    expect(screen.getByText('No hay miembros')).toBeInTheDocument();
+    expect(container.querySelector('.rounded-lg')).not.toBeNull();
   });
 
   it('keeps the header in place while the skeletons show', () => {

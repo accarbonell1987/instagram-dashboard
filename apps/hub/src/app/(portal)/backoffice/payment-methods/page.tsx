@@ -1,23 +1,6 @@
 'use client';
 
-import {
-  BankAccountCard,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
-} from '@core/ui';
+import { BankAccountCard, Button, DataTable, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Td, Th, Tr } from '@core/ui';
 import type { BankAccountField } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pencil, Trash2 } from 'lucide-react';
@@ -26,7 +9,6 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { DataTable, Td, Th, Tr } from '@/components/data-table';
 import { ApiError, ConflictError } from '@/lib/api/errors';
 import {
   listPaymentMethods,
@@ -256,7 +238,6 @@ function EditMethodDialog({
               {fields.some((_, index) => editing?.index !== index) && (
                 <DataTable
                   caption="Cuentas bancarias configuradas"
-                  variant="dense"
                   tableClassName="table-fixed"
                   // Emptiness is decided above, and it is a different question:
                   // "no accounts configured" is not the same as "the only account

@@ -80,18 +80,19 @@ apps/hub/
 - **Port**: 3001 (hub posee este puerto). `@internal/api-example` se movió a 3005, así que ya no colisionan.
 - **Providers render**: `providers.tsx` retorna `<></>` mientras MSW arranca — es intencional (no spinner).
 - **Per-section loading**: Cada sección de settings (OrganizationCard, PaymentMethodSection, InvoicesSection) gestiona su propio `useEffect` + estado de carga. No hay loading global de página.
-- **Nunca escribas un `<table>` a mano**: usá `DataTable` + `Th`/`Tr`/`Td` de
-  `@/components/data-table`, y `TablePagination` si hay paginado. El componente aporta el
-  marco (contenedor, header, bordes, padding) y los estados de carga, vacío y error; las
-  filas las escribe cada pantalla, porque las celdas son heterogéneas. El único `<table>`
-  del hub vive dentro de ese componente.
-  - `variant="default"` — pantallas del backoffice.
-  - `variant="dense"` — tablas de muchas columnas (ver la cola de pagos).
-  - `variant="bare"` — tablas dentro de una tarjeta de settings: sin contenedor con borde
-    y con los estados en texto plano, para no dibujar una caja dentro de otra caja.
-    Ver `invitations-list.tsx` e `invoices-section.tsx`.
+- **Nunca escribas un `<table>` a mano**: usá `DataTable` + `Th`/`Tr`/`Td` de **`@core/ui`**, y
+  `TablePagination` si hay paginado. El componente aporta el marco (contenedor con borde, header
+  relleno, padding, bordes de fila) y los estados de carga, vacío y error; las filas las escribe
+  cada pantalla, porque las celdas son heterogéneas.
+  - **No hay prop `variant`.** Una tabla se ve igual en todo el sistema — hub, productos y
+    `webapp-example`. Hubo tres variantes (`default`, `dense`, `bare`) y tres variantes son tres
+    diseños. Una pantalla que parece necesitar otro marco tiene un problema de layout: sacá el
+    título afuera de la tarjeta, o quitale el borde a la tarjeta.
+  - Por eso las secciones de settings ya **no** envuelven la tabla en un `Card` con borde: título
+    y descripción van sueltos arriba y el marco lo pone la tabla (ver `payments-section.tsx`).
   - **El error gana sobre el vacío**: una request fallida también deja la lista vacía, y
     anunciar "no hay resultados" por una carga rota manda a buscar datos que nunca llegaron.
+  - El único `<table>` del monorepo vive en `packages/ui/src/components/organisms/data-table/`.
 - **Billing stubs**: ya solo `GET/POST /billing/payment-method` (retornan `paymentMethod: null`
   y 202). La integración real con Bancard para tokenización de tarjetas es trabajo futuro.
 - **Un solo libro mayor, no dos**: `PaymentsSection` es la única tabla de facturación. Muestra

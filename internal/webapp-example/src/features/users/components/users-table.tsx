@@ -2,18 +2,20 @@
 
 import {
   Button,
+  Checkbox,
+  DataTable,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Td,
+  Th,
+  Tr,
 } from '@core/ui';
 import { MoreHorizontal, PencilIcon, ShieldIcon, TrashIcon, UserIcon } from 'lucide-react';
 
 import type { User } from '../users.types';
-
-import { DataTable } from '@/shared/components';
-import type { DataTableColumn } from '@/shared/components';
 
 export interface UsersTableProps {
   /** Users to display */
@@ -47,138 +49,149 @@ export function UsersTable({
   onAssignRole,
   onAssignPerson,
 }: UsersTableProps) {
-  const columns: DataTableColumn<User>[] = [
-    {
-      key: 'id',
-      header: 'ID',
-      width: 'w-16',
-      render: (user) => <span className="text-muted-foreground font-mono text-sm">{user.id}</span>,
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      render: (user) => <span className="font-medium">{user.name ?? '—'}</span>,
-    },
-    {
-      key: 'email',
-      header: 'Email',
-      render: (user) => <span className="text-muted-foreground">{user.email}</span>,
-    },
-    {
-      key: 'partyId',
-      header: 'Party ID',
-      width: 'w-32',
-      render: (user) => (
-        <span className="text-muted-foreground font-mono text-xs">{user.partyId}</span>
-      ),
-    },
-    {
-      key: 'createdAt',
-      header: 'Created',
-      width: 'w-40',
-      render: (user) => (
-        <span className="text-muted-foreground text-sm">
-          {new Date(user.createdAt).toLocaleDateString()}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      width: 'w-24',
-      align: 'right',
-      render: (user) => (
-        <div className="flex justify-end gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              onEdit(user);
-            }}
-            aria-label={`Edit ${user.name ?? user.email}`}
-          >
-            <PencilIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              onDelete(user);
-            }}
-            aria-label={`Delete ${user.name ?? user.email}`}
-          >
-            <TrashIcon className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`More actions for ${user.name ?? user.email}`}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {onAssignRole && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    onAssignRole(user);
-                  }}
-                >
-                  <ShieldIcon className="mr-2 h-4 w-4" />
-                  Asignar Rol
-                </DropdownMenuItem>
-              )}
-              {onAssignPerson && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    onAssignPerson(user);
-                  }}
-                >
-                  <UserIcon className="mr-2 h-4 w-4" />
-                  Asignar Persona
-                </DropdownMenuItem>
-              )}
-              {(onAssignRole !== undefined || onAssignPerson !== undefined) && (
-                <DropdownMenuSeparator />
-              )}
-              <DropdownMenuItem
-                onClick={() => {
-                  onEdit(user);
-                }}
-              >
-                <PencilIcon className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => {
-                  onDelete(user);
-                }}
-              >
-                <TrashIcon className="mr-2 h-4 w-4" />
-                Eliminar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-    },
-  ];
+  const selectedSet = new Set(selectedIds);
+  const allSelected = users.length > 0 && users.every((user) => selectedSet.has(user.id));
+  const someSelected = users.some((user) => selectedSet.has(user.id)) && !allSelected;
+
+  function toggleAll(): void {
+    if (!onSelectionChange) return;
+    onSelectionChange(allSelected ? [] : users.map((user) => user.id));
+  }
+
+  function toggleOne(userId: string): void {
+    if (!onSelectionChange) return;
+    onSelectionChange(
+      selectedSet.has(userId) ? selectedIds.filter((id) => id !== userId) : [...selectedIds, userId]
+    );
+  }
 
   return (
     <DataTable
-      items={users}
-      columns={columns}
-      getRowKey={(user) => user.id}
-      loading={loading}
-      emptyMessage="No users found."
-      {...(selectable && {
-        selectable,
-        selectedIds,
-        onSelectionChange,
-      })}
-    />
+      isLoading={loading}
+      isEmpty={users.length === 0}
+      empty={{ text: 'No users found.' }}
+      caption="Users"
+      head={
+        <>
+          {selectable && (
+            <Th width="w-12">
+              <Checkbox
+                checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                onCheckedChange={toggleAll}
+                aria-label="Select all users"
+              />
+            </Th>
+          )}
+          <Th width="w-16">ID</Th>
+          <Th>Name</Th>
+          <Th>Email</Th>
+          <Th width="w-32">Party ID</Th>
+          <Th width="w-40">Created</Th>
+          <Th width="w-24" align="right">
+            Actions
+          </Th>
+        </>
+      }
+    >
+      {users.map((user) => (
+        <Tr key={user.id}>
+          {selectable && (
+            <Td>
+              <Checkbox
+                checked={selectedSet.has(user.id)}
+                onCheckedChange={() => {
+                  toggleOne(user.id);
+                }}
+                aria-label={`Select ${user.name ?? user.email}`}
+              />
+            </Td>
+          )}
+          <Td className="text-muted-foreground font-mono text-sm">{user.id}</Td>
+          <Td className="font-medium">{user.name ?? '—'}</Td>
+          <Td className="text-muted-foreground">{user.email}</Td>
+          <Td className="text-muted-foreground font-mono text-xs">{user.partyId}</Td>
+          <Td className="text-muted-foreground text-sm">
+            {new Date(user.createdAt).toLocaleDateString()}
+          </Td>
+          <Td align="right">
+            <div className="flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  onEdit(user);
+                }}
+                aria-label={`Edit ${user.name ?? user.email}`}
+              >
+                <PencilIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  onDelete(user);
+                }}
+                aria-label={`Delete ${user.name ?? user.email}`}
+              >
+                <TrashIcon className="h-4 w-4" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`More actions for ${user.name ?? user.email}`}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onAssignRole && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        onAssignRole(user);
+                      }}
+                    >
+                      <ShieldIcon className="mr-2 h-4 w-4" />
+                      Asignar Rol
+                    </DropdownMenuItem>
+                  )}
+                  {onAssignPerson && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        onAssignPerson(user);
+                      }}
+                    >
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      Asignar Persona
+                    </DropdownMenuItem>
+                  )}
+                  {(onAssignRole !== undefined || onAssignPerson !== undefined) && (
+                    <DropdownMenuSeparator />
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => {
+                      onEdit(user);
+                    }}
+                  >
+                    <PencilIcon className="mr-2 h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => {
+                      onDelete(user);
+                    }}
+                  >
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </Td>
+        </Tr>
+      ))}
+    </DataTable>
   );
 }
