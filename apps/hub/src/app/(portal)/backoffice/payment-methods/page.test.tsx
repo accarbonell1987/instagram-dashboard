@@ -135,7 +135,7 @@ describe('PaymentMethodsPage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Editar Bank transfer' }));
 
-    await user.click(screen.getByRole('button', { name: 'Agregar cuenta' }));
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
     await user.type(screen.getByLabelText('Banco'), account.bankName);
     await user.type(screen.getByLabelText('Número de cuenta'), account.accountNumber);
     await user.type(screen.getByLabelText('Titular'), account.accountHolder);

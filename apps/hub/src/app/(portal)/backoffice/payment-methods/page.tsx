@@ -481,9 +481,18 @@ function EditMethodDialog({
                     >
                       Cancelar
                     </Button>
+                    {/*
+                      Labelled because this dialog now holds two buttons that
+                      read "Guardar" — this one, and the form's own submit.
+                      Sighted users tell them apart by position; a screen
+                      reader announces the same word twice. The label starts
+                      with the visible text, so voice control still works by
+                      saying what is on screen.
+                    */}
                     <Button
                       type="button"
                       size="sm"
+                      aria-label="Guardar cuenta"
                       onClick={() => {
                         void handleSaveAccount();
                       }}
