@@ -625,3 +625,73 @@ describe('the panel obeys its surface', () => {
   })
 })
 
+/**
+ * What the settings screen showed the first time it was opened: the panel could
+ * not load, and offered to save anyway.
+ */
+describe('the footer follows what is actually on screen', () => {
+  const ADMIN: AgentSettingsSectionKey[] = ['limits', 'model', 'imageKey']
+  const renderPanel = (props: Partial<Parameters<typeof AgentSettingsModal>[0]> = {}) =>
+    render(
+      <AgentSettingsModal
+        editableSections={ADMIN}
+        surface="settings"
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        initialConfig={null}
+        {...props}
+      />,
+    )
+
+  it('offers no Guardar when the settings could not be loaded', () => {
+    renderPanel({ settingsFailed: true })
+
+    expect(screen.getByText(/No pudimos cargar/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Guardar configuración' })).not.toBeInTheDocument()
+  })
+
+  it('offers no Guardar when the role may change nothing', () => {
+    renderPanel({ editableSections: [] })
+
+    expect(screen.queryByRole('button', { name: 'Guardar configuración' })).not.toBeInTheDocument()
+  })
+
+  it('drops Cancelar on the settings screen, which has nowhere to go back to', () => {
+    renderPanel()
+
+    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Guardar configuración' })).toBeInTheDocument()
+  })
+
+  it('keeps Cancelar in the dialog inside the product', () => {
+    renderPanel({ surface: 'product', editableSections: ['topics', 'prompt'] })
+
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
+  })
+
+  /**
+   * Topics are not drawn on the settings surface, so an empty tag list is not a
+   * reason to refuse a save there — an admin who came to change the model would
+   * find Guardar disabled with nothing on screen explaining why.
+   */
+  it('keeps Guardar usable with no topics chosen when topics are not shown', () => {
+    // An explicitly empty tag list, not the default: `initialConfig: null`
+    // falls back to a seeded tag, so it would pass whether the guard applied
+    // here or not.
+    renderPanel({ initialConfig: { niche: '', tags: [] } })
+
+    expect(screen.getByRole('button', { name: 'Guardar configuración' })).toBeEnabled()
+  })
+
+  it('still refuses a save with no topics where topics are the point', () => {
+    renderPanel({
+      surface: 'product',
+      editableSections: ['topics', 'prompt'],
+      initialConfig: { niche: '', tags: [] },
+    })
+
+    expect(screen.getByRole('button', { name: 'Guardar configuración' })).toBeDisabled()
+  })
+})
+

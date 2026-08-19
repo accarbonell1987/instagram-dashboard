@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 
 import { AgentSettingsPanel } from './components/agent-settings';
-import { initHubToken, reportHeightToHub } from './lib/hub-token';
+import { initHubToken, reportHeightToHub, subscribeToToken } from './lib/hub-token';
 import { getAgentSettings, saveAgentSettings } from './services/instagram.service';
 import type {
   AgentConfig,
@@ -60,8 +60,17 @@ export function AgentSettingsAdminPage(): JSX.Element {
     }
   }, []);
 
+  // The hub pushes the token by postMessage after mount, so the first render
+  // has none. Firing here anyway is a request certain to 401 — which is exactly
+  // what the screen showed: "no pudimos cargar la configuración", for a request
+  // that was never going to carry credentials.
   useEffect(() => {
-    void load();
+    let started = false;
+    return subscribeToToken((token) => {
+      if (token === null || started) return;
+      started = true;
+      void load();
+    });
   }, [load]);
 
   const handleSave = useCallback(
@@ -73,14 +82,10 @@ export function AgentSettingsAdminPage(): JSX.Element {
   );
 
   return (
-    <div ref={rootRef} className="space-y-4 p-6">
-      <div>
-        <h1 className="text-lg font-semibold">Agente IA</h1>
-        <p className="text-muted-foreground text-sm">
-          Modelo, credenciales y límites del agente. Aplican a todo el tenant.
-        </p>
-      </div>
-
+    // No heading here: the hub draws the section's label and description from
+    // `product_admin_sections`, so a title inside the frame is the same words
+    // twice.
+    <div ref={rootRef}>
       {isLoading ? null : (
         <AgentSettingsPanel
           surface="settings"

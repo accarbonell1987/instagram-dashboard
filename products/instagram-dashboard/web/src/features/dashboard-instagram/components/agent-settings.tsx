@@ -658,27 +658,38 @@ export function AgentSettingsPanel({
         </Tabs>
         )}
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t shrink-0">
-          <Button
-            variant="outline"
-            onClick={onDone}
-            type="button"
-            disabled={isSaving}
-            aria-label="Cancelar"
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="default"
-            onClick={() => void handleSave()}
-            type="button"
-            disabled={selectedTags.length === 0 || isSaving}
-            aria-label="Guardar configuración"
-          >
-            {isSaving ? 'Guardando...' : 'Guardar'}
-          </Button>
-        </div>
+        {/* Actions. Hidden when there is nothing to edit: a Guardar beside "no
+            pudimos cargar la configuración" offers to save what was never
+            loaded, and Cancelar has nothing to abandon. */}
+        {!settingsFailed && visibleSections.length > 0 && (
+          <div className="flex justify-end gap-3 px-6 py-4 border-t shrink-0">
+            {/* A page has nowhere to go back to; only the dialog does. */}
+            {surface === 'product' && (
+              <Button
+                variant="outline"
+                onClick={onDone}
+                type="button"
+                disabled={isSaving}
+                aria-label="Cancelar"
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              variant="default"
+              onClick={() => void handleSave()}
+              type="button"
+              // The empty-tags guard belongs to the topics section. On the
+              // settings surface topics are not even drawn, so applying it
+              // there disables Guardar permanently for an admin who only came
+              // to change the model.
+              disabled={(can('topics') && selectedTags.length === 0) || isSaving}
+              aria-label="Guardar configuración"
+            >
+              {isSaving ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </div>
+        )}
     </div>
   )
 }
