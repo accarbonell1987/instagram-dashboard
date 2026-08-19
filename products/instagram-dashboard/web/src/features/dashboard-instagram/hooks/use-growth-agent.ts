@@ -42,6 +42,8 @@ export interface UseGrowthAgentResult {
   hasFalApiKey: boolean
   hasLlmApiKey: boolean
   editableSections: AgentSettingsSectionKey[]
+  /** The settings request failed, as opposed to returning nothing editable. */
+  settingsFailed: boolean
   isSettingsOpen: boolean
   openSettings: () => void
   closeSettings: () => void
@@ -62,6 +64,7 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
   // Empty until the API answers: showing a control before knowing it is
   // permitted invites a save that comes back 403.
   const [editableSections, setEditableSections] = useState<AgentSettingsSectionKey[]>([])
+  const [settingsFailed, setSettingsFailed] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   // Read sessionId from localStorage on mount, generate if missing
@@ -120,7 +123,11 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
         setEditableSections(response.editableSections ?? [])
       })
       .catch(() => {
-        // Silently fail — config stays null (default prompt)
+        // Swallowing this used to be harmless: the panel rendered its defaults
+        // and the agent still worked. Now the panel draws only the sections the
+        // response names, so a failed load is indistinguishable from "you may
+        // not change anything" — an empty screen with nothing to explain it.
+        setSettingsFailed(true)
       })
   }, [sessionId, enabled])
 
@@ -344,6 +351,7 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
     hasFalApiKey,
     hasLlmApiKey,
     editableSections,
+    settingsFailed,
     isSettingsOpen,
     openSettings,
     closeSettings,

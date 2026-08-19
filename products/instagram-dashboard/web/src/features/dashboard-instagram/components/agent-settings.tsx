@@ -84,6 +84,12 @@ interface AgentSettingsModalProps {
    * produces a save that comes back 403.
    */
   editableSections?: AgentSettingsSectionKey[]
+  /**
+   * The settings request failed. Distinct from an empty `editableSections`,
+   * which means the caller genuinely may not change anything — the two look
+   * identical on screen and need different words.
+   */
+  settingsFailed?: boolean
 }
 
 export function AgentSettingsModal({
@@ -94,6 +100,7 @@ export function AgentSettingsModal({
   hasFalApiKey = false,
   hasLlmApiKey = false,
   editableSections = [],
+  settingsFailed = false,
 }: AgentSettingsModalProps): JSX.Element | null {
   // 'agent' even when that tab is hidden: Radix activates the only remaining
   // trigger on its own, so computing an opening tab here was dead code.
@@ -284,6 +291,13 @@ export function AgentSettingsModal({
         </DialogHeader>
 
         {/* Tabs */}
+        {settingsFailed || editableSections.length === 0 ? (
+          <div className="text-muted-foreground px-6 py-10 text-center text-sm">
+            {settingsFailed
+              ? 'No pudimos cargar la configuración. Volvé a intentarlo en un momento.'
+              : 'Tu rol no tiene ninguna opción de configuración habilitada.'}
+          </div>
+        ) : (
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ActiveTab); }} className="flex flex-col flex-1 min-h-0">
           <TabsList className="mx-6 shrink-0">
             {showAgentTab && <TabsTrigger value="agent">Agente</TabsTrigger>}
@@ -629,6 +643,7 @@ export function AgentSettingsModal({
             </>
           </TabsContent>
         </Tabs>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t shrink-0">

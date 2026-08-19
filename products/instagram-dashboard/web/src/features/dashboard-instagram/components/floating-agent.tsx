@@ -269,6 +269,7 @@ export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentP
         hasFalApiKey={hook.hasFalApiKey}
         hasLlmApiKey={hook.hasLlmApiKey}
         editableSections={hook.editableSections}
+        settingsFailed={hook.settingsFailed}
       />
 
       {/* Script preview modal — shown before carousel is created */}

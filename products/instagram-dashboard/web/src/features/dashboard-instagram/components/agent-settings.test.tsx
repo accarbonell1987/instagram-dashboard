@@ -482,4 +482,56 @@ describe('AgentSettingsModal — model tab', () => {
       expect(screen.getByRole('tab', { name: 'Modelo' })).toHaveAttribute('aria-selected', 'true')
     })
   })
+
+  /**
+   * These two states look identical on screen — an empty panel — and mean
+   * opposite things. Swallowing the failed request is what made a broken
+   * settings endpoint show up as "you have no permissions".
+   */
+  describe('nothing to show', () => {
+    it('says the load failed when it failed', () => {
+      render(
+        <AgentSettingsModal
+          editableSections={[]}
+          settingsFailed
+          isOpen={true}
+          onClose={onClose}
+          onSave={onSave}
+          initialConfig={null}
+        />,
+      )
+
+      expect(screen.getByText(/No pudimos cargar la configuración/)).toBeInTheDocument()
+      expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    })
+
+    it('says the role has nothing enabled when the load succeeded', () => {
+      render(
+        <AgentSettingsModal
+          editableSections={[]}
+          isOpen={true}
+          onClose={onClose}
+          onSave={onSave}
+          initialConfig={null}
+        />,
+      )
+
+      expect(screen.getByText(/Tu rol no tiene ninguna opción/)).toBeInTheDocument()
+    })
+
+    it('shows the panel, not a message, when something is permitted', () => {
+      render(
+        <AgentSettingsModal
+          editableSections={['topics']}
+          isOpen={true}
+          onClose={onClose}
+          onSave={onSave}
+          initialConfig={null}
+        />,
+      )
+
+      expect(screen.queryByText(/No pudimos cargar/)).not.toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Agente' })).toBeInTheDocument()
+    })
+  })
 })
