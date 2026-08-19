@@ -537,7 +537,10 @@ model Module {
   // Nullable for phase a1 (additive migration); backfilled in a2, tightened to
   // NOT NULL in a follow-up migration once verified (see design Migration/Rollout).
   productId   String?  @map("product_id")
-  // Sub-module nesting (1 level max, enforced at application layer)
+  // Sub-module nesting, 2 levels max, enforced at application layer.
+  // The middle level exists so a product can gather a family of related
+  // sub-modules under a heading instead of listing them all beside their
+  // siblings. resolveEffectiveModules cascades to whatever depth exists.
   parentId    String?  @map("parent_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

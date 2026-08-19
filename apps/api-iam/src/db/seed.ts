@@ -230,6 +230,12 @@ const BASE_MODULES = [
     description: 'Creá carousels profesionales con inteligencia artificial',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
+  {
+    id: 'ig-agent-settings',
+    name: 'Configuraciones del Agente',
+    description: 'Ajustes del agente: temas, instrucciones, modelo e imágenes',
+    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+  },
   // One module per configurable section of the agent's settings, so a plan can
   // sell them and a product role can narrow them through the machinery that
   // already exists. The role floor that keeps a member away from the tenant's
@@ -238,43 +244,43 @@ const BASE_MODULES = [
   // See products/instagram-dashboard/api/src/domain/agent-settings-sections.ts.
   {
     id: 'ig-agent-topics',
-    name: 'Agente — Temas de contenido',
+    name: 'Temas de contenido',
     description: 'Elegir el nicho y las etiquetas sobre las que escribe el agente',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
     id: 'ig-agent-prompt',
-    name: 'Agente — Instrucciones personalizadas',
+    name: 'Instrucciones personalizadas',
     description: 'Ajustar el tono y las instrucciones que sigue el agente',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
     id: 'ig-agent-limits',
-    name: 'Agente — Límites de caracteres',
+    name: 'Límites de caracteres',
     description: 'Definir cuánto texto genera cada slide — afecta el consumo de tokens',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
     id: 'ig-agent-model',
-    name: 'Agente — Modelo de lenguaje',
+    name: 'Modelo de lenguaje',
     description: 'Elegir el proveedor y el modelo que responde, con su propia API key',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
     id: 'ig-agent-image-key',
-    name: 'Agente — API key de fal.ai',
+    name: 'API key de fal.ai',
     description: 'Configurar la credencial de generación de imágenes',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
     id: 'ig-agent-image-models',
-    name: 'Agente — Modelos de generación de imágenes',
+    name: 'Modelos de generación de imágenes',
     description: 'Elegir qué modelo genera las imágenes de los carruseles',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
   {
     id: 'ig-agent-image-styles',
-    name: 'Agente — Estilo visual por rol de slide',
+    name: 'Estilo visual por rol de slide',
     description: 'Definir el estilo de portada, desarrollo y llamada a la acción',
     defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
   },
@@ -371,20 +377,25 @@ async function seedInstagramProduct() {
   // `ig-ai-*` as "child of the agent", which the settings sections below are
   // without matching that prefix. Nesting is one level, so every child names
   // `ig-ai-agent` and `ig-ai-agent` itself has no parent.
-  const IG_AGENT_CHILDREN = [
-    'ig-ai-chat', 'ig-ai-suggestions', 'ig-ai-carousels',
+  // Two levels: the agent's features sit directly under it, and its seven
+  // configurable sections sit under one heading rather than as seven more
+  // siblings of Chat and Carruseles.
+  const IG_AGENT_CHILDREN = ['ig-ai-chat', 'ig-ai-suggestions', 'ig-ai-carousels', 'ig-agent-settings'];
+  const IG_SETTINGS_CHILDREN = [
     'ig-agent-topics', 'ig-agent-prompt', 'ig-agent-limits', 'ig-agent-model',
     'ig-agent-image-key', 'ig-agent-image-models', 'ig-agent-image-styles',
   ];
+  const parentFor = (id: string): string | null => {
+    if (IG_AGENT_CHILDREN.includes(id)) return 'ig-ai-agent';
+    if (IG_SETTINGS_CHILDREN.includes(id)) return 'ig-agent-settings';
+    return null;
+  };
   const igModules = ['ig-basic-metrics', 'ig-publications', 'ig-ai-agent',
-    ...IG_AGENT_CHILDREN, 'ig-audience', 'ig-content-intelligence'];
+    ...IG_AGENT_CHILDREN, ...IG_SETTINGS_CHILDREN, 'ig-audience', 'ig-content-intelligence'];
   for (const id of igModules) {
     await prisma.module.update({
       where: { id },
-      data: {
-        productId: 'instagram-dashboard',
-        parentId: IG_AGENT_CHILDREN.includes(id) ? 'ig-ai-agent' : null,
-      },
+      data: { productId: 'instagram-dashboard', parentId: parentFor(id) },
     });
   }
 

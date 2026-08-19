@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ApiError } from '@/lib/api/errors';
+import { depthOf } from '@/lib/module-hierarchy';
 import {
   moduleFormSchema,
   type ModuleFormData,
@@ -309,6 +310,9 @@ function DeleteConfirmDialog({
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
+/** Literal classes: Tailwind cannot see an interpolated padding value. */
+const INDENT: Record<number, string> = { 1: 'pl-8', 2: 'pl-16' };
+
 export default function ModulesPage(): JSX.Element {
   const [modules, setModules] = useState<AdminModule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -434,17 +438,21 @@ export default function ModulesPage(): JSX.Element {
         }
       >
               {modules.map((mod) => {
-                const isChild = mod.parentId !== null;
-                const parent = isChild ? modules.find((m) => m.id === mod.parentId) : null;
+                // Indent by depth, not by "is it a child": nesting is two
+                // levels, and a fixed offset drew a grandchild level with the
+                // parent it belongs to.
+                const depth = depthOf(mod, modules);
+                const parent =
+                  mod.parentId !== null ? modules.find((m) => m.id === mod.parentId) : null;
                 return (
                   <Tr key={mod.id}>
                     <Td className="font-mono text-xs">{mod.id}</Td>
-                    <Td className={isChild ? 'text-muted-foreground pl-8' : ''}>
-                      {isChild ? '└ ' : ''}
+                    <Td className={depth > 0 ? `text-muted-foreground ${INDENT[depth] ?? 'pl-16'}` : ''}>
+                      {depth > 0 ? '└ ' : ''}
                       {mod.name}
                     </Td>
                     <Td className="text-muted-foreground text-xs">
-                      {isChild && parent ? `hijo de ${parent.name}` : '—'}
+                      {parent ? `hijo de ${parent.name}` : '—'}
                     </Td>
                     <Td>
                       <span

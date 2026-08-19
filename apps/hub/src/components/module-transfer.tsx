@@ -23,6 +23,7 @@ import { useEffect, useState, type JSX } from 'react';
 import { createPortal } from 'react-dom';
 
 import { moduleVisuals } from '@/lib/apps-config';
+import { depthOf } from '@/lib/module-hierarchy';
 
 export interface ModuleItem {
   id: string;
@@ -75,10 +76,17 @@ function DroppableColumn({
 function SortableModule({
   module,
   isAssigned,
+  depth,
   onRemove,
 }: {
   module: ModuleItem;
   isAssigned: boolean;
+  /**
+   * Passed in rather than derived here: the two columns hold halves of one
+   * tree, so a module's parent is often in the other one and its depth cannot
+   * be read from the list it happens to be rendered in.
+   */
+  depth: number;
   onRemove?: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -91,7 +99,6 @@ function SortableModule({
   };
 
   const Icon = moduleVisuals[module.id]?.icon;
-  const isChild = module.parentId !== null;
 
   return (
     <div
@@ -99,7 +106,10 @@ function SortableModule({
       style={style}
       className={cn(
         'flex items-center gap-2 rounded-md border px-3 py-2 text-sm',
-        isChild && 'ml-5 border-dashed',
+        depth > 0 && 'border-dashed',
+        // Literal classes: Tailwind cannot see an interpolated margin.
+        depth === 1 && 'ml-5',
+        depth >= 2 && 'ml-10',
         isDragging && 'shadow-lg',
       )}
     >
@@ -138,6 +148,9 @@ export function ModuleTransfer({
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  // Depth is read against both columns: the transfer splits one tree in half,
+  // and a child can sit in the opposite column from its parent.
+  const allModules = [...available, ...assigned];
   const assignedIds = assigned.map((m) => `assigned-${m.id}`);
   const availableIds = available.map((m) => `available-${m.id}`);
 
@@ -219,7 +232,12 @@ export function ModuleTransfer({
                 <p className="text-muted-foreground py-4 text-center text-xs">Todos asignados</p>
               ) : (
                 available.map((m) => (
-                  <SortableModule key={m.id} module={m} isAssigned={false} />
+                  <SortableModule
+                    key={m.id}
+                    module={m}
+                    isAssigned={false}
+                    depth={depthOf(m, allModules)}
+                  />
                 ))
               )}
             </SortableContext>
@@ -243,6 +261,7 @@ export function ModuleTransfer({
                     key={m.id}
                     module={m}
                     isAssigned
+                    depth={depthOf(m, allModules)}
                     onRemove={onUnassign}
                   />
                 ))

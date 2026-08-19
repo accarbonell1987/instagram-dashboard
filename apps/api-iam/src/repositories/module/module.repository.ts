@@ -193,6 +193,12 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
       // Phase 1 sub-module cascading: fetch all active modules for this
       // product to build a parent→children map, then auto-include children
       // whose parent is already in the result set (same source).
+      //
+      // This reaches grandchildren too, and deliberately so: iterating a Map
+      // visits entries inserted during the walk, so a child added here is
+      // itself expanded before the loop ends. Do not "optimise" the loop into
+      // a snapshot of the keys — nesting is two levels now, and a plan that
+      // grants the agent has to reach the settings sections under it.
       const allModules = await prisma.module.findMany({
         where: { productId, active: true },
       })
@@ -257,12 +263,22 @@ export function createModuleRepository(prisma: PrismaClient): ModuleRepository {
             `Parent '${data.parentId}' belongs to product '${parent.productId ?? 'none'}'`,
           )
         }
-        // Sub-module nesting is 1 level max (see schema.prisma Module.parentId).
+        // Nesting is 2 levels max (see schema.prisma Module.parentId). A product
+        // needs the middle one to gather a family of related sub-modules under
+        // a heading — the Instagram agent's settings sections are seven items
+        // that read as noise next to Chat and Carruseles. Three levels is where
+        // a menu stops being a menu, so the grandparent check still refuses.
         if (parent.parentId !== null) {
-          throw new ValidationError(
-            'modules.nesting_too_deep',
-            `Parent '${data.parentId}' is already a sub-module`,
-          )
+          const grandparent = await prisma.module.findUnique({
+            where: { id: parent.parentId },
+            select: { parentId: true },
+          })
+          if (grandparent?.parentId != null) {
+            throw new ValidationError(
+              'modules.nesting_too_deep',
+              `Parent '${data.parentId}' is already two levels deep`,
+            )
+          }
         }
       }
 

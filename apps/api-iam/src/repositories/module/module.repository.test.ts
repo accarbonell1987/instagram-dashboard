@@ -576,3 +576,85 @@ describe('ModuleRepository — setPlanModules product coupling', () => {
     expect(prisma.$transaction).toHaveBeenCalled()
   })
 })
+
+// Nesting went from 1 level to 2 so a product can gather related sub-modules
+// under a heading. The guard had no coverage at all before this.
+describe('ModuleRepository.create — nesting depth', () => {
+  const mod = (id: string, parentId: string | null) => ({
+    id, parentId, productId: 'p1', name: id, description: null, defaultUrl: '/x', active: true,
+  })
+
+  function repoWith(parent: ReturnType<typeof mod> | null, grandparent: ReturnType<typeof mod> | null) {
+    const prisma = makePrisma({
+      product: { findUnique: vi.fn().mockResolvedValue({ id: 'p1', active: true }) },
+      module: {
+        findMany: vi.fn().mockResolvedValue([]),
+        // First lookup resolves the parent, second the grandparent.
+        findUnique: vi.fn()
+          .mockResolvedValueOnce(parent)
+          .mockResolvedValueOnce(grandparent),
+        create: vi.fn().mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+          Promise.resolve({ ...mod(String(data['id']), null), ...data }),
+        ),
+      },
+    })
+    return createModuleRepository(prisma as never)
+  }
+
+  const create = (parentId: string) => ({
+    id: 'new', name: 'New', defaultUrl: '/n', productId: 'p1', parentId,
+  })
+
+  it('accepts a child of a top-level module', async () => {
+    const repo = repoWith(mod('agent', null), null)
+
+    await expect(repo.create(create('agent'))).resolves.toMatchObject({ id: 'new' })
+  })
+
+  // The case this change exists for: Configuraciones under Agente IA, and the
+  // settings sections under Configuraciones.
+  it('accepts a grandchild — two levels', async () => {
+    const repo = repoWith(mod('settings', 'agent'), mod('agent', null))
+
+    await expect(repo.create(create('settings'))).resolves.toMatchObject({ id: 'new' })
+  })
+
+  // Three levels is where a menu stops being a menu.
+  it('refuses a third level', async () => {
+    const repo = repoWith(mod('deep', 'settings'), mod('settings', 'agent'))
+
+    await expect(repo.create(create('deep'))).rejects.toThrow(/two levels deep/)
+  })
+})
+
+// The cascade must reach the settings sections through the middle module, or a
+// plan that grants the agent stops granting anything under it.
+describe('resolveEffectiveModules — cascade depth', () => {
+  it('reaches grandchildren through the middle module', async () => {
+    const m = (id: string, parentId: string | null) =>
+      ({ id, name: id, description: null, defaultUrl: `/${id}`, active: true, parentId })
+
+    const prisma = makePrisma({
+      tenantProductSubscription: { findUnique: vi.fn().mockResolvedValue({ planId: 'enterprise' }) },
+      planModule: {
+        findMany: vi.fn().mockResolvedValue([
+          { moduleId: 'agent', module: m('agent', null) },
+        ]),
+      },
+      module: {
+        findMany: vi.fn().mockResolvedValue([
+          m('agent', null),
+          m('settings', 'agent'),
+          m('topics', 'settings'),
+          m('model', 'settings'),
+        ]),
+        findUnique: vi.fn(),
+      },
+    })
+    const repo = createModuleRepository(prisma as never)
+
+    const result = await repo.resolveEffectiveModules('t1', 'p1')
+
+    expect(result.map((r) => r.id).sort()).toEqual(['agent', 'model', 'settings', 'topics'])
+  })
+})

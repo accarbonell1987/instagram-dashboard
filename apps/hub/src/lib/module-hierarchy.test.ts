@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { sortByHierarchy } from './module-hierarchy';
+import { depthOf, sortByHierarchy } from './module-hierarchy';
 
 const mod = (id: string, parentId: string | null = null) => ({ id, parentId });
 
@@ -63,5 +63,65 @@ describe('sortByHierarchy', () => {
     sortByHierarchy(input);
 
     expect(input.map((m) => m.id)).toEqual(before);
+  });
+
+  /**
+   * Nesting went to two levels so the agent's seven settings sections sit under
+   * one heading instead of beside Chat and Carruseles.
+   */
+  it('places a grandchild under its parent, under its grandparent', () => {
+    const input = [
+      mod('ig-agent-topics', 'ig-agent-settings'),
+      mod('ig-ai-agent'),
+      mod('ig-ai-chat', 'ig-ai-agent'),
+      mod('ig-agent-settings', 'ig-ai-agent'),
+      mod('ig-agent-model', 'ig-agent-settings'),
+    ];
+
+    expect(sortByHierarchy(input).map((m) => m.id)).toEqual([
+      'ig-ai-agent',
+      'ig-ai-chat',
+      'ig-agent-settings',
+      'ig-agent-topics',
+      'ig-agent-model',
+    ]);
+  });
+
+  // The API should never produce a cycle, which is why one that quietly hung
+  // the screen would be hard to trace back to this function.
+  it('terminates on a cycle instead of recursing forever', () => {
+    const input = [mod('a', 'b'), mod('b', 'a')];
+
+    expect(sortByHierarchy(input).map((m) => m.id).sort()).toEqual(['a', 'b']);
+  });
+
+  describe('depthOf', () => {
+    const tree = [
+      mod('agent'),
+      mod('settings', 'agent'),
+      mod('topics', 'settings'),
+    ];
+
+    it('counts levels up to the root', () => {
+      expect(tree.map((m) => depthOf(m, tree))).toEqual([0, 1, 2]);
+    });
+
+    /**
+     * The transfer component splits one tree across two columns, so a module is
+     * routinely rendered in a list its parent is missing from. Stopping is
+     * better than inventing a level it does not have.
+     */
+    it('stops when the parent is not in the list', () => {
+      const orphan = mod('topics', 'settings');
+
+      expect(depthOf(orphan, [orphan])).toBe(0);
+    });
+
+    it('terminates on a cycle', () => {
+      const a = mod('a', 'b');
+      const cyclic = [a, mod('b', 'a')];
+
+      expect(depthOf(a, cyclic)).toBeLessThan(3);
+    });
   });
 });
