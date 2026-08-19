@@ -1,6 +1,27 @@
 'use client';
 
-import { BankAccountCard, Button, DataTable, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Td, Th, Tr } from '@core/ui';
+import {
+  BankAccountCard,
+  Button,
+  DataTable,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Td,
+  Th,
+  Tr,
+} from '@core/ui';
 import type { BankAccountField } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pencil, Trash2 } from 'lucide-react';
@@ -221,7 +242,7 @@ function EditMethodDialog({
                   onClick={handleAddAccount}
                   disabled={isSubmitting || editing !== null}
                 >
-                  Agregar cuenta
+                  Agregar
                 </Button>
               </div>
 
@@ -255,52 +276,52 @@ function EditMethodDialog({
                     </>
                   }
                 >
-                      {fields.map((field, index) => {
-                        if (editing?.index === index) return null;
-                        const account = form.getValues(`accounts.${index}`);
-                        return (
-                          <Tr key={field.id}>
-                            <Td className="truncate" title={account.bankName}>
-                              {account.bankName}
-                            </Td>
-                            <Td>{accountTypeLabel(account.accountType)}</Td>
-                            <Td className="truncate" title={account.accountNumber}>
-                              {account.accountNumber}
-                            </Td>
-                            <Td className="truncate" title={account.accountHolder}>
-                              {account.accountHolder}
-                            </Td>
-                            <Td align="right">
-                              <div className="flex justify-end gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost-warning"
-                                  size="icon-sm"
-                                  onClick={() => {
-                                    handleEditAccount(index);
-                                  }}
-                                  aria-label={`Editar cuenta de ${account.bankName}`}
-                                  disabled={isSubmitting || editing !== null}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost-destructive"
-                                  size="icon-sm"
-                                  onClick={() => {
-                                    remove(index);
-                                  }}
-                                  aria-label={`Eliminar cuenta de ${account.bankName}`}
-                                  disabled={isSubmitting || editing !== null}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </Td>
-                          </Tr>
-                        );
-                      })}
+                  {fields.map((field, index) => {
+                    if (editing?.index === index) return null;
+                    const account = form.getValues(`accounts.${index}`);
+                    return (
+                      <Tr key={field.id}>
+                        <Td className="truncate" title={account.bankName}>
+                          {account.bankName}
+                        </Td>
+                        <Td>{accountTypeLabel(account.accountType)}</Td>
+                        <Td className="truncate" title={account.accountNumber}>
+                          {account.accountNumber}
+                        </Td>
+                        <Td className="truncate" title={account.accountHolder}>
+                          {account.accountHolder}
+                        </Td>
+                        <Td align="right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost-warning"
+                              size="icon-sm"
+                              onClick={() => {
+                                handleEditAccount(index);
+                              }}
+                              aria-label={`Editar cuenta de ${account.bankName}`}
+                              disabled={isSubmitting || editing !== null}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost-destructive"
+                              size="icon-sm"
+                              onClick={() => {
+                                remove(index);
+                              }}
+                              aria-label={`Eliminar cuenta de ${account.bankName}`}
+                              disabled={isSubmitting || editing !== null}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </Td>
+                      </Tr>
+                    );
+                  })}
                 </DataTable>
               )}
 
@@ -458,7 +479,7 @@ function EditMethodDialog({
                       onClick={handleCancelAccount}
                       disabled={isSubmitting}
                     >
-                      Cancelar cuenta
+                      Cancelar
                     </Button>
                     <Button
                       type="button"
@@ -468,7 +489,7 @@ function EditMethodDialog({
                       }}
                       disabled={isSubmitting}
                     >
-                      Guardar cuenta
+                      Guardar
                     </Button>
                   </div>
                 </div>
