@@ -193,6 +193,141 @@ async function seedDevFixtures() {
   console.log('Dev invitation token: dev-invitation-token-fixed');
 }
 
+
+// ─── Working-tenant fixtures ────────────────────────────────────────────────
+//
+// Extracted from the development database so the tenant, its members and the
+// product roles survive a reset instead of being rebuilt by hand through the
+// UI every time.
+//
+// Passwords are NOT extracted. The stored hashes belong to real chosen
+// passwords, and copying them into the repository would publish them; these
+// accounts get a known development password on creation instead, and an
+// existing account keeps whatever password it already has.
+
+const WORKING_TENANT = {
+  slug: 'publinstagram',
+  name: 'PUBLINSTAGRAM',
+  schemaName: 'tenant_publinstagram',
+  planId: 'professional',
+  colorTheme: 'orange',
+} as const;
+
+const WORKING_MEMBERS = [
+  { email: 'accarbonellpy@gmail.com', role: 'TenantAdmin', fullName: 'Alberto Carlos Carbonell Marce' },
+  { email: 'accarbonell1987@gmail.com', role: 'User', fullName: 'Carlos Perez' },
+] as const;
+
+// Product roles are global per product — they carry no tenantId — so these are
+// the roles every tenant of the Instagram product picks from.
+const PRODUCT_ROLES = [
+  {
+    key: 'user',
+    name: 'Usuario',
+    modules: ['ig-audience', 'ig-basic-metrics', 'ig-content-intelligence', 'ig-publications'],
+  },
+  {
+    key: 'content-analist',
+    name: 'Analista de Contenido',
+    modules: [
+      'ig-ai-agent', 'ig-ai-chat', 'ig-ai-suggestions',
+      'ig-agent-settings', 'ig-agent-topics', 'ig-agent-prompt', 'ig-agent-model',
+      'ig-audience', 'ig-basic-metrics', 'ig-content-intelligence', 'ig-publications',
+    ],
+  },
+  {
+    key: 'content-creator',
+    name: 'Creador de Contenido',
+    modules: [
+      'ig-ai-agent', 'ig-ai-chat', 'ig-ai-suggestions', 'ig-ai-carousels',
+      // No 'ig-agent-settings' here, unlike content-analist. That is how the
+      // database has it; the sections are granted individually so the heading
+      // changes nothing, but this mirrors reality rather than tidying it.
+      'ig-agent-topics', 'ig-agent-prompt', 'ig-agent-model',
+      'ig-agent-image-key', 'ig-agent-image-models', 'ig-agent-image-styles',
+      'ig-audience', 'ig-basic-metrics', 'ig-content-intelligence', 'ig-publications',
+    ],
+  },
+] as const;
+
+/** Who holds which product role. A member with none sees everything the plan grants. */
+const ROLE_ASSIGNMENTS = [
+  { email: 'accarbonell1987@gmail.com', roleKey: 'content-analist' },
+] as const;
+
+async function seedWorkingFixtures() {
+  if (process.env['NODE_ENV'] !== 'development') return;
+
+  const tenant = await prisma.tenant.upsert({
+    where: { slug: WORKING_TENANT.slug },
+    update: { name: WORKING_TENANT.name, planId: WORKING_TENANT.planId, status: 'active' },
+    create: { ...WORKING_TENANT, status: 'active' },
+  });
+
+  const password = process.env['DEV_USER_PASSWORD'] ?? 'Dev-password-1!';
+  const passwordHash = await hash(password);
+  for (const member of WORKING_MEMBERS) {
+    await prisma.user.upsert({
+      where: { tenantId_email: { tenantId: tenant.id, email: member.email } },
+      // Deliberately not touching passwordHash: re-seeding must not reset the
+      // password of an account someone is already using.
+      update: { role: member.role, fullName: member.fullName, status: 'active' },
+      create: { tenantId: tenant.id, ...member, passwordHash, status: 'active' },
+    });
+  }
+
+  await prisma.tenantProductSubscription.upsert({
+    where: { tenantId_productId: { tenantId: tenant.id, productId: 'instagram-dashboard' } },
+    update: { planId: WORKING_TENANT.planId, status: 'active' },
+    create: {
+      tenantId: tenant.id,
+      productId: 'instagram-dashboard',
+      planId: WORKING_TENANT.planId,
+      status: 'active',
+    },
+  });
+
+  for (const role of PRODUCT_ROLES) {
+    const saved = await prisma.productRole.upsert({
+      where: { productId_key: { productId: 'instagram-dashboard', key: role.key } },
+      update: { name: role.name },
+      create: { productId: 'instagram-dashboard', key: role.key, name: role.name },
+    });
+    // Replace rather than merge: the list here is the whole grant, so a module
+    // dropped from it has to disappear on the next run.
+    await prisma.roleModuleAccess.deleteMany({ where: { productRoleId: saved.id } });
+    await prisma.roleModuleAccess.createMany({
+      data: role.modules.map((moduleId) => ({ productRoleId: saved.id, moduleId })),
+      skipDuplicates: true,
+    });
+  }
+
+  // Authoritative for this tenant's members, like the module grants above.
+  // Merging instead would resurrect a role removed through the UI: an assignment
+  // that lives on only in a stale copy of this file silently widens what someone
+  // can reach, because a member's effective access is the union of their roles.
+  const memberIds = (
+    await prisma.user.findMany({ where: { tenantId: tenant.id }, select: { id: true } })
+  ).map((member) => member.id);
+  await prisma.userProductRole.deleteMany({ where: { userId: { in: memberIds } } });
+
+  for (const assignment of ROLE_ASSIGNMENTS) {
+    const user = await prisma.user.findUnique({
+      where: { tenantId_email: { tenantId: tenant.id, email: assignment.email } },
+    });
+    const role = await prisma.productRole.findUnique({
+      where: { productId_key: { productId: 'instagram-dashboard', key: assignment.roleKey } },
+    });
+    if (!user || !role) continue;
+    await prisma.userProductRole.create({ data: { userId: user.id, productRoleId: role.id } });
+  }
+
+  console.log(
+    `Working fixtures seeded: ${WORKING_TENANT.slug} (${String(WORKING_MEMBERS.length)} members, ` +
+      `${String(PRODUCT_ROLES.length)} product roles).`,
+  );
+}
+
 const BASE_MODULES = [
   {
     id: 'ig-basic-metrics',
@@ -354,7 +489,12 @@ async function retireLegacyInstagramModule() {
 // TenantProductSubscription → Plan → PlanModule. Without a Product row, the
 // dashboard-instagram module's product_id, and a subscription for the system
 // tenant, that guard fails closed (403) even though the module shows in the hub.
-async function seedInstagramProduct() {
+/**
+ * The product row on its own, because `plans.product_id` points at it. Seeding
+ * plans first works against a database that already has the product and fails
+ * on an empty one, which is the only case a seed really has to handle.
+ */
+async function seedProduct() {
   // Seeded products ship with trials OFF. A trial is an explicit decision per
   // tenant (backoffice → Trials), never something a fresh install hands out.
   // `update` sets it too, so re-seeding also switches off a product that was
@@ -371,12 +511,12 @@ async function seedInstagramProduct() {
       defaultUrl,
     },
   });
+}
 
+async function seedInstagramProduct() {
   // Link all IG modules to the product and set parent-child relationships.
   // Listed rather than derived from the id: the previous prefix test read
-  // `ig-ai-*` as "child of the agent", which the settings sections below are
-  // without matching that prefix. Nesting is one level, so every child names
-  // `ig-ai-agent` and `ig-ai-agent` itself has no parent.
+  // `ig-ai-*` as "child of the agent", which the settings sections are not.
   // Two levels: the agent's features sit directly under it, and its seven
   // configurable sections sit under one heading rather than as seven more
   // siblings of Chat and Carruseles.
@@ -423,6 +563,8 @@ async function main() {
   // seedPlans upserts, so it is already idempotent. The old count guard skipped
   // it whenever the row count matched, which silently froze plan data — new
   // fields (displayOrder, isDefault) never reached an existing database.
+  // Before the plans: they carry a foreign key to it.
+  await seedProduct();
   await seedPlans();
 
   // PlanQuota seeding: idempotent (upsert by planId + resourceType).
@@ -434,6 +576,8 @@ async function main() {
   await seedModules();
   await seedInstagramProduct();
   await seedDevFixtures();
+  // After the modules exist: the product roles reference them by id.
+  await seedWorkingFixtures();
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
