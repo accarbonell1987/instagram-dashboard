@@ -89,7 +89,12 @@ async function cleanTestData(prisma: PrismaClient): Promise<void> {
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
 
-describe('tenant registration flow (e2e)', () => {
+// Skipped unless pointed at a throwaway database: the reset below truncates
+// every tenant and user that is not `__system__`. Same gate the integration
+// tests in this package already use.
+const testDatabaseUrl = process.env['DATABASE_URL_TEST']
+
+describe.skipIf(!testDatabaseUrl)('tenant registration flow (e2e)', () => {
   let app: OpenAPIHono
   let prisma: PrismaClient
 

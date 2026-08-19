@@ -80,7 +80,18 @@ export async function createTestApp(): Promise<TestApp> {
   }
 
   const config = parseConfig(testEnv)
-  const databaseUrl = process.env['DATABASE_URL_TEST'] ?? process.env['DATABASE_URL']!
+  // Required, with no fallback to DATABASE_URL. This suite truncates every
+  // tenant and user that is not `__system__`, and the fallback pointed that at
+  // the shared development database — running the api-iam suite wiped the
+  // working accounts. The integration tests here already took a dedicated URL
+  // and skipped without one; this is the same rule, arrived at the hard way.
+  const databaseUrl = process.env['DATABASE_URL_TEST']
+  if (databaseUrl === undefined || databaseUrl === '') {
+    throw new Error(
+      'DATABASE_URL_TEST is required: this suite deletes every non-system tenant and user, ' +
+        'so it must be given a throwaway database rather than defaulting to DATABASE_URL.',
+    )
+  }
 
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 
