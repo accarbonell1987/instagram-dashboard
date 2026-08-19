@@ -240,10 +240,7 @@ const PRODUCT_ROLES = [
     name: 'Creador de Contenido',
     modules: [
       'ig-ai-agent', 'ig-ai-chat', 'ig-ai-suggestions', 'ig-ai-carousels',
-      // No 'ig-agent-settings' here, unlike content-analist. That is how the
-      // database has it; the sections are granted individually so the heading
-      // changes nothing, but this mirrors reality rather than tidying it.
-      'ig-agent-topics', 'ig-agent-prompt', 'ig-agent-model',
+      'ig-agent-settings', 'ig-agent-topics', 'ig-agent-prompt', 'ig-agent-model',
       'ig-agent-image-key', 'ig-agent-image-models', 'ig-agent-image-styles',
       'ig-audience', 'ig-basic-metrics', 'ig-content-intelligence', 'ig-publications',
     ],
