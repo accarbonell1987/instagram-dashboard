@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 import type { AgentConfig, AgentSettingsSectionKey  } from '../types/instagram.types'
 
-import { AgentSettingsModal } from './agent-settings'
+import { AgentSettingsModal, sectionsForSurface, type AgentSettingsSurface } from './agent-settings'
 
 
 /** These tests are about the panel; the gate has its own describe block. */
@@ -335,7 +335,9 @@ describe('AgentSettingsModal', () => {
  * The model stopped being a property of the deployment. An account picks its
  * own provider, model and key; configuring nothing keeps the platform default.
  */
-describe('AgentSettingsModal — model tab', () => {
+// Model, limits and the fal.ai key are edited from the hub's settings screen
+// now, not from the panel inside the product — so these render that surface.
+describe('AgentSettingsModal — model tab (settings surface)', () => {
   const onClose = vi.fn()
   const onSave = vi.fn().mockResolvedValue(undefined)
 
@@ -350,6 +352,7 @@ describe('AgentSettingsModal — model tab', () => {
     render(
       <AgentSettingsModal
         editableSections={ALL_SECTIONS}
+        surface="settings"
         isOpen
         onClose={onClose}
         onSave={onSave}
@@ -428,10 +431,16 @@ describe('AgentSettingsModal — model tab', () => {
    * control the caller cannot use only produces a save that comes back 403.
    */
   describe('permitted sections', () => {
-    const renderWith = (sections: AgentSettingsSectionKey[]) =>
+    // Surface matters as much as permission now: a section the caller may edit
+    // still does not appear on the surface it does not belong to.
+    const renderWith = (
+      sections: AgentSettingsSectionKey[],
+      surface: AgentSettingsSurface = 'product',
+    ) =>
       render(
         <AgentSettingsModal
           editableSections={sections}
+          surface={surface}
           isOpen={true}
           onClose={onClose}
           onSave={onSave}
@@ -446,7 +455,7 @@ describe('AgentSettingsModal — model tab', () => {
     })
 
     it('shows the Modelo tab when the caller may change it', () => {
-      renderWith(['model'])
+      renderWith(['model'], 'settings')
 
       expect(screen.getByRole('tab', { name: 'Modelo' })).toBeInTheDocument()
     })
@@ -477,7 +486,7 @@ describe('AgentSettingsModal — model tab', () => {
 
     // Opening on a hidden tab would leave the panel blank.
     it('opens on the first tab the caller can actually see', () => {
-      renderWith(['model'])
+      renderWith(['model'], 'settings')
 
       expect(screen.getByRole('tab', { name: 'Modelo' })).toHaveAttribute('aria-selected', 'true')
     })
@@ -535,3 +544,84 @@ describe('AgentSettingsModal — model tab', () => {
     })
   })
 })
+
+/**
+ * The split: the hub's settings screen carries the tenant-wide controls, and
+ * the panel inside the product carries the content preferences. Every section
+ * lands on exactly one of the two — a section that fell through both would
+ * simply become unreachable, with nothing on screen to say so.
+ */
+describe('sectionsForSurface', () => {
+  const ALL: AgentSettingsSectionKey[] = [
+    'topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles',
+  ]
+
+  it('sends credentials and spend levers to the settings screen', () => {
+    expect(sectionsForSurface(ALL, 'settings')).toEqual(['limits', 'model', 'imageKey'])
+  })
+
+  it('leaves the content preferences in the product', () => {
+    expect(sectionsForSurface(ALL, 'product')).toEqual([
+      'topics', 'prompt', 'imageModels', 'imageStyles',
+    ])
+  })
+
+  it('places every section on exactly one surface', () => {
+    const settings = sectionsForSurface(ALL, 'settings')
+    const product = sectionsForSurface(ALL, 'product')
+
+    expect([...settings, ...product].sort()).toEqual([...ALL].sort())
+    expect(settings.filter((s) => product.includes(s))).toEqual([])
+  })
+
+  it('never invents a section the caller was not granted', () => {
+    expect(sectionsForSurface(['topics'], 'settings')).toEqual([])
+    expect(sectionsForSurface(['model'], 'product')).toEqual([])
+  })
+})
+
+/**
+ * The filter is only worth having if the panel actually asks it. These render
+ * a caller permitted *everything* and check that each surface still draws only
+ * its own half — otherwise the settings screen and the product panel would be
+ * the same screen twice, and the tenant-wide controls would stay reachable
+ * from inside the product exactly as before.
+ */
+describe('the panel obeys its surface', () => {
+  const ALL: AgentSettingsSectionKey[] = [
+    'topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles',
+  ]
+  const renderOn = (surface: AgentSettingsSurface) =>
+    render(
+      <AgentSettingsModal
+        editableSections={ALL}
+        surface={surface}
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        initialConfig={null}
+      />,
+    )
+
+  it('hides the Modelo tab in the product even from a caller who may change it', () => {
+    renderOn('product')
+
+    expect(screen.queryByRole('tab', { name: 'Modelo' })).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Agente' })).toBeInTheDocument()
+  })
+
+  it('drops the character limits from the product panel', () => {
+    renderOn('product')
+
+    expect(screen.getByText('Temas de contenido')).toBeInTheDocument()
+    expect(screen.queryByText('Límites de caracteres')).not.toBeInTheDocument()
+  })
+
+  it('keeps the content preferences out of the settings screen', () => {
+    renderOn('settings')
+
+    expect(screen.getByRole('tab', { name: 'Modelo' })).toBeInTheDocument()
+    expect(screen.queryByText('Temas de contenido')).not.toBeInTheDocument()
+  })
+})
+

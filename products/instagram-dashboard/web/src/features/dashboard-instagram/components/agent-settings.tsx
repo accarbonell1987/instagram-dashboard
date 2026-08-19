@@ -70,9 +70,33 @@ const I2I_MODELS: { id: string; label: string; description: string }[] = [
   { id: 'fal-ai/flux-2-pro', label: 'FLUX.2 pro', description: 'Manipulación avanzada y style transfer.' },
 ]
 
-interface AgentSettingsModalProps {
-  isOpen: boolean
-  onClose: () => void
+export type AgentSettingsSurface = 'product' | 'settings'
+
+/**
+ * Where each section is edited.
+ *
+ * Derived from the API's own minimum-role table rather than restated: the three
+ * TenantAdmin sections are exactly the credentials and the spend levers, which
+ * is what makes them organisation configuration and not day-to-day work. Should
+ * the two ever need to diverge — a User-level setting that still belongs in the
+ * hub — this is the one place to say so.
+ */
+const SETTINGS_SURFACE_SECTIONS: readonly AgentSettingsSectionKey[] = ['limits', 'model', 'imageKey']
+
+export function sectionsForSurface(
+  sections: readonly AgentSettingsSectionKey[],
+  surface: AgentSettingsSurface,
+): AgentSettingsSectionKey[] {
+  return sections.filter((section) =>
+    surface === 'settings'
+      ? SETTINGS_SURFACE_SECTIONS.includes(section)
+      : !SETTINGS_SURFACE_SECTIONS.includes(section),
+  )
+}
+
+interface AgentSettingsPanelProps {
+  /** Called when the caller is finished — closes the modal, or navigates back. */
+  onDone: () => void
   onSave: (config: AgentConfig, secrets?: AgentSecrets) => Promise<void>
   initialConfig: AgentConfig | null
   hasFalApiKey?: boolean
@@ -85,6 +109,13 @@ interface AgentSettingsModalProps {
    */
   editableSections?: AgentSettingsSectionKey[]
   /**
+   * Which surface is drawing this. The settings screen in the hub shows the
+   * tenant-wide controls — model, credentials, spend — and the panel inside the
+   * product shows the content preferences. Same component either way: the split
+   * is a filter, not a second implementation.
+   */
+  surface?: AgentSettingsSurface
+  /**
    * The settings request failed. Distinct from an empty `editableSections`,
    * which means the caller genuinely may not change anything — the two look
    * identical on screen and need different words.
@@ -92,16 +123,16 @@ interface AgentSettingsModalProps {
   settingsFailed?: boolean
 }
 
-export function AgentSettingsModal({
-  isOpen,
-  onClose,
+export function AgentSettingsPanel({
+  onDone,
   onSave,
   initialConfig,
   hasFalApiKey = false,
   hasLlmApiKey = false,
   editableSections = [],
   settingsFailed = false,
-}: AgentSettingsModalProps): JSX.Element | null {
+  surface = 'product',
+}: AgentSettingsPanelProps): JSX.Element {
   // 'agent' even when that tab is hidden: Radix activates the only remaining
   // trigger on its own, so computing an opening tab here was dead code.
   const [activeTab, setActiveTab] = useState<ActiveTab>('agent')
@@ -147,8 +178,6 @@ export function AgentSettingsModal({
     initialConfig?.imageGen?.ctaPrompt ??
     'Fondo sólido en color de marca (azul marino o verde oscuro), texto de llamada a la acción grande y centrado en blanco, logotipo visible en esquina inferior, sensación de confianza y urgencia moderada. Sin ruido visual.',
   )
-
-  if (!isOpen) return null
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -213,7 +242,7 @@ export function AgentSettingsModal({
       )
       setFalApiKey('')
       setLlmApiKey('')
-      onClose()
+      onDone()
     } catch {
       // Error is handled by the parent hook (sets error state)
     } finally {
@@ -266,32 +295,16 @@ export function AgentSettingsModal({
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- PROMPT_TABS is a non-empty constant array, so [0] is always defined
   const activePrompt = PROMPT_TABS.find((t) => t.key === activePromptTab) ?? PROMPT_TABS[0]!
 
-  const can = (section: AgentSettingsSectionKey) => editableSections.includes(section)
+  const visibleSections = sectionsForSurface(editableSections, surface)
+  const can = (section: AgentSettingsSectionKey) => visibleSections.includes(section)
   // A tab with nothing left in it is not an empty tab, it is no tab.
   const showAgentTab = can('topics') || can('prompt') || can('limits')
   const showImagesTab = can('imageKey') || can('imageModels') || can('imageStyles')
 
   return (
-    <Dialog open={isOpen} onOpenChange={(next) => { if (!next) onClose() }}>
-      {/*
-        The design system's Dialog, not a hand-rolled portal. The previous shell
-        sat at `z-[9999]`, which put it above every Radix popover: a Select
-        opened inside it rendered its list behind the panel and read as "the
-        dropdown doesn't work". Dialog and Select both live at `z-50` on
-        purpose — they are sibling portals, so DOM order decides, and whatever
-        opened last wins. Two Selects here had been patched with `z-[10000]`
-        to climb back out; that workaround dies with the shell that caused it.
-      */}
-      <DialogContent
-        className="flex max-h-[90vh] w-full max-w-lg flex-col gap-0 p-0"
-        closeLabel="Cerrar"
-      >
-        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
-          <DialogTitle>Configurar Agente</DialogTitle>
-        </DialogHeader>
-
+    <div className="flex min-h-0 flex-col">
         {/* Tabs */}
-        {settingsFailed || editableSections.length === 0 ? (
+        {settingsFailed || visibleSections.length === 0 ? (
           <div className="text-muted-foreground px-6 py-10 text-center text-sm">
             {settingsFailed
               ? 'No pudimos cargar la configuración. Volvé a intentarlo en un momento.'
@@ -649,7 +662,7 @@ export function AgentSettingsModal({
         <div className="flex justify-end gap-3 px-6 py-4 border-t shrink-0">
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={onDone}
             type="button"
             disabled={isSaving}
             aria-label="Cancelar"
@@ -666,6 +679,39 @@ export function AgentSettingsModal({
             {isSaving ? 'Guardando...' : 'Guardar'}
           </Button>
         </div>
+    </div>
+  )
+}
+
+/**
+ * The panel in a dialog, for the product shell. The hub's settings screen mounts
+ * `AgentSettingsPanel` directly — a page is not an overlay.
+ */
+export function AgentSettingsModal({
+  isOpen,
+  onClose,
+  ...panelProps
+}: Omit<AgentSettingsPanelProps, 'onDone'> & { isOpen: boolean; onClose: () => void }): JSX.Element | null {
+  if (!isOpen) return null
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(next) => { if (!next) onClose() }}>
+      {/*
+        The design system's Dialog, not a hand-rolled portal. The previous shell
+        sat at `z-[9999]`, which put it above every Radix popover: a Select
+        opened inside it rendered its list behind the panel and read as "the
+        dropdown doesn't work". Dialog and Select both live at `z-50` on
+        purpose — they are sibling portals, so DOM order decides, and whatever
+        opened last wins.
+      */}
+      <DialogContent
+        className="flex max-h-[90vh] w-full max-w-lg flex-col gap-0 p-0"
+        closeLabel="Cerrar"
+      >
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+          <DialogTitle>Configurar Agente</DialogTitle>
+        </DialogHeader>
+        <AgentSettingsPanel {...panelProps} onDone={onClose} />
       </DialogContent>
     </Dialog>
   )
