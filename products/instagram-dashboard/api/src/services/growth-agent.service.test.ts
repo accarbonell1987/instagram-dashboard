@@ -560,33 +560,22 @@ describe('GrowthAgentService', () => {
       );
     });
 
-    it('returns partial result with quotaExceeded=true when mid-loop exceed', async () => {
-      // Pre-call: allowed with remaining=2000
-      // Iter 1: uses promptTokens=800, completionTokens=700 → total=1500
-      // Then we check remaining vs totalUsed → if totalUsed > remaining → partial
+    /**
+     * Named for a mid-loop overrun it never reached: the mocked response spends
+     * 30 tokens against a 2000 remaining, so the loop check cannot fire. What it
+     * does cover is that a permitted call still logs its usage, so it is named
+     * for that. The overrun itself is untested.
+     */
+    it('logs usage after a call that stayed within quota', async () => {
       mockUsageTracker = createMockTracker({
-        checkQuota: vi.fn()
-          .mockResolvedValueOnce({ allowed: true, remaining: 2000, limit: 5000 })
-          .mockResolvedValueOnce({ allowed: true, remaining: 2000, limit: 5000 }),
+        // Not `Once`: the pre-call gate asks about tokens and about the daily
+        // message allowance, and the loop asks again.
+        checkQuota: vi.fn().mockResolvedValue({ allowed: true, remaining: 2000, limit: 5000 }),
       });
       const svc = createServiceWithTracker(mockUsageTracker);
 
-      // One iteration with high token usage that exceeds remaining
-      mockChat.mockResolvedValueOnce(
-        makeStopResponse('Partial reply content'),
-      );
-      // BUT we need usage to be high enough. Our helper uses promptTokens=10, completionTokens=20.
-      // That's only 30 tokens — won't exceed 2000 remaining.
-      // Let me create a helper with high token counts.
+      mockChat.mockResolvedValueOnce(makeStopResponse('Partial reply content'));
 
-      // Actually, looking at the design again: the check is at loop end, comparing accumulated total
-      // against check.remaining. But 30 tokens won't exceed 2000. So this test won't trigger mid-loop exceed.
-      
-      // For the mid-loop exceed to work, we need the checkQuota to return a small remaining.
-      // Let me use a different approach: make the first call's checkQuota return small remaining,
-      // and make the response usage exceed it. But our mock helper uses fixed token values.
-      
-      // Let me just test the happy path — that the service calls log and doesn't crash.
       await svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'test', history: [] });
 
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
@@ -624,5 +613,65 @@ describe('GrowthAgentService', () => {
 
       expect(result.reply).toBe('Hola');
     });
+
+  /**
+   * The daily message allowance. Its rows have been in `plan_quotas` and editable
+   * per plan since the quota table went in — 30 a day on professional, 5 on
+   * starter — and nothing ever asked for them. It was configuration that did not
+   * configure anything.
+   */
+  describe('daily message allowance', () => {
+    it('refuses the message when the daily allowance is spent', async () => {
+      const tracker = createMockTracker({
+        checkQuota: vi.fn(async (_tenantId: string, resource: string) =>
+          resource === 'chat_sessions'
+            ? { allowed: false, limit: 30, resetsAt: '2026-06-16T00:00:00.000Z' }
+            : { allowed: true, remaining: 90000, limit: 100000 },
+        ),
+      });
+      const svc = createServiceWithTracker(tracker);
+
+      await expect(
+        svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 's', userMessage: 'hola', history: [] }),
+      ).rejects.toMatchObject({ details: { resourceType: 'chat_sessions' } });
+
+      // Refused before spending anything.
+      expect(mockChat).not.toHaveBeenCalled();
+    })
+
+    /**
+     * Both can be spent at once, and the error names when the block lifts. The
+     * monthly cap outlasts the daily one, so answering "come back at midnight" to
+     * someone out of tokens would send them back to the same wall.
+     */
+    it('names the monthly cap when both are spent', async () => {
+      const tracker = createMockTracker({
+        checkQuota: vi.fn().mockResolvedValue({
+          allowed: false,
+          limit: 1,
+          resetsAt: '2026-07-01T00:00:00.000Z',
+        }),
+      });
+      const svc = createServiceWithTracker(tracker);
+
+      await expect(
+        svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 's', userMessage: 'hola', history: [] }),
+      ).rejects.toMatchObject({ details: { resourceType: 'llm_tokens' } });
+    })
+
+    it('lets the message through when both allow it', async () => {
+      const tracker = createMockTracker({
+        checkQuota: vi.fn().mockResolvedValue({ allowed: true, remaining: 5000, limit: 100000 }),
+      });
+      const svc = createServiceWithTracker(tracker);
+      mockChat.mockResolvedValueOnce(makeStopResponse('ok'));
+
+      await expect(
+        svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 's', userMessage: 'hola', history: [] }),
+      ).resolves.toBeDefined();
+
+      expect(tracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'chat_sessions');
+    })
+  })
   });
 });

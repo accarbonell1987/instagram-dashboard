@@ -93,11 +93,22 @@ export class GrowthAgentService {
     const owner = { tenantId, userId };
 
     // ── Pre-call quota enforcement ──
+    //
+    // Tokens first, deliberately. Both can be spent at once, and the error the
+    // caller sees names when it lifts: the monthly cap outlasts the daily one,
+    // so leading with sessions would answer "come back at midnight" to someone
+    // for whom midnight changes nothing.
+    //
+    // chat_sessions is the daily message allowance. The rows have existed and
+    // been ajustable per plan since the quota table went in, and nothing ever
+    // asked for them — the limit was configuration that did not limit.
     if (this.usageTracker) {
-      const check = await this.usageTracker.checkQuota(owner.tenantId, 'llm_tokens');
-      if (!check.allowed) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
-        throw new QuotaExceededError('llm_tokens', check.limit!, check.resetsAt!);
+      for (const resource of ['llm_tokens', 'chat_sessions'] as const) {
+        const check = await this.usageTracker.checkQuota(owner.tenantId, resource);
+        if (!check.allowed) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- when allowed is false, checkQuota always sets limit + resetsAt
+          throw new QuotaExceededError(resource, check.limit!, check.resetsAt!);
+        }
       }
     }
 
