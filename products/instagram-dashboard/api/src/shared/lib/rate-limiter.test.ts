@@ -32,16 +32,20 @@ describe('FixedWindowRateLimiter', () => {
   });
 
   it('starts over once the window has passed', () => {
-    const limiter = new FixedWindowRateLimiter(1, 50);
+    // Fake timers rather than a spy on Date.now: the spy had to be undone
+    // globally, and a global undo in one test reaches into every other.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-20T10:00:00Z'));
+
+    const limiter = new FixedWindowRateLimiter(1, 60_000);
     limiter.allows('a');
     limiter.record('a');
     expect(limiter.allows('a')).toBe(false);
 
-    const later = Date.now() + 100;
-    vi.spyOn(Date, 'now').mockReturnValue(later);
+    vi.setSystemTime(new Date('2026-08-20T10:02:00Z'));
 
     expect(limiter.allows('a')).toBe(true);
-    vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   /**
