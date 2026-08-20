@@ -163,7 +163,14 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
       this.prisma.suggestionBatch.count({ where: { ...owner } }),
       this.prisma.suggestionBatch.findMany({
         where: { ...owner },
-        include: { suggestions: { orderBy: { createdAt: 'asc' } } },
+        // The nested read carries the owner too. Filtering the batch alone
+        // trusts that every suggestion under it shares its owner — true today,
+        // and true only because nothing has broken that assumption yet. A
+        // mismatch would hand one member another's list through the panel,
+        // which is the one screen that reads suggestions through batches.
+        include: {
+          suggestions: { where: { ...owner }, orderBy: { createdAt: 'asc' } },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,

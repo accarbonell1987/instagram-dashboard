@@ -83,3 +83,30 @@ describe('PrismaSuggestionRepository.update — owner isolation', () => {
     expect(prisma.contentSuggestion.findFirstOrThrow).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * The grouped panel is the one screen that reads suggestions through their
+ * batch. Filtering the batch alone trusts that every suggestion under it shares
+ * its owner — which is true right up until something makes it false.
+ */
+describe('PrismaSuggestionRepository.findBatchesByOwner', () => {
+  it('carries the owner into the nested read as well', async () => {
+    const prisma = {
+      suggestionBatch: {
+        count: vi.fn().mockResolvedValue(0),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+    };
+    const repo = new PrismaSuggestionRepository(prisma as never);
+
+    await repo.findBatchesByOwner(OWNER, 1, 10);
+
+    const args = prisma.suggestionBatch.findMany.mock.calls[0]?.[0] as {
+      where: unknown;
+      include: { suggestions: { where: unknown } };
+    };
+    expect(args.where).toEqual(OWNER);
+    expect(args.include.suggestions.where).toEqual(OWNER);
+  });
+});
+
