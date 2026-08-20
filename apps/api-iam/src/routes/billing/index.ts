@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import type { MiddlewareHandler } from 'hono'
+import { ForbiddenError } from '../../errors.js'
 import type { BillingService } from '../../services/index.js'
 import {
   SignedUrlResponseSchema,
@@ -9,6 +10,22 @@ import {
   PaymentListResponseSchema,
   commonErrorResponses,
 } from '../schemas/index.js'
+
+
+/**
+ * Billing is the organisation's money: what it was charged, how it pays, and
+ * the invoices and contract behind that.
+ *
+ * The hub hides /settings/billing behind TenantAdmin, and these handlers only
+ * ever scoped by tenant — so any member of the organisation could list its
+ * payments and download its invoices by asking the API directly. Hiding a
+ * screen is not refusing the call it makes.
+ */
+function assertTenantAdmin(role: string): void {
+  if (role !== 'TenantAdmin' && role !== 'SuperAdmin') {
+    throw new ForbiddenError('billing.forbidden', 'TenantAdmin role required')
+  }
+}
 
 export function createBillingRouter(
   billingService: BillingService,
@@ -36,6 +53,7 @@ export function createBillingRouter(
   })
 
   router.openapi(getPaymentMethodRoute, async (c) => {
+    assertTenantAdmin(c.var.user.role)
     const result = await billingService.getPaymentMethod()
     return c.json(result, 200)
   })
@@ -59,6 +77,7 @@ export function createBillingRouter(
   })
 
   router.openapi(requestPaymentMethodChangeRoute, async (c) => {
+    assertTenantAdmin(c.var.user.role)
     const result = await billingService.requestPaymentMethodChange()
     return c.json(result, 202)
   })
@@ -83,6 +102,7 @@ export function createBillingRouter(
   })
 
   router.openapi(listPaymentsRoute, async (c) => {
+    assertTenantAdmin(c.var.user.role)
     const { page, pageSize } = c.req.valid('query')
     const result = await billingService.listPayments({ tenantUuid: c.var.user.tenantUuid, page, pageSize })
     return c.json(result, 200)
@@ -110,6 +130,7 @@ export function createBillingRouter(
   })
 
   router.openapi(getSignedUrlRoute, async (c) => {
+    assertTenantAdmin(c.var.user.role)
     const { documentId } = c.req.valid('param')
     const result = await billingService.getSignedDocumentUrl({
       documentId,
