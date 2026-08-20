@@ -5,8 +5,8 @@ import { X } from 'lucide-react'
 import type { JSX } from 'react'
 import { useState } from 'react'
 
-import { updateCarouselSlide, regenerateCarousel } from '../services/instagram.service'
-import type { Carousel } from '../types/instagram.types'
+import { updateCarouselSlide, regenerateCarousel } from '@/features/dashboard-instagram/services/instagram.service'
+import type { Carousel } from '@/features/dashboard-instagram/types/instagram.types'
 
 interface RedoPromptPanelProps {
   carousel: Carousel

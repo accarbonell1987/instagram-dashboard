@@ -2,15 +2,16 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 
-import * as instagramService from '../services/instagram.service';
-import type { DashboardData, GrowthMetric, GrowthPeriod } from '../types/instagram.types';
-
 import {
   useConnectionStatus,
   useSyncStatus,
   useInstagramDashboard,
   useGrowthData,
 } from './use-instagram-dashboard';
+
+import * as instagramService from '@/features/dashboard-instagram/services/instagram.service';
+import type { DashboardData, GrowthMetric, GrowthPeriod } from '@/features/dashboard-instagram/types/instagram.types';
+
 
 vi.mock('../services/instagram.service');
 

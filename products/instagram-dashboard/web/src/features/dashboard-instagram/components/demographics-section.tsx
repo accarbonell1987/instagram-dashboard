@@ -3,12 +3,13 @@
 import { Button } from '@core/ui'
 import { Info } from 'lucide-react'
 
-import type { DemographicsData } from '../types/instagram.types'
 
 import { AgeBreakdownChart } from './age-breakdown-chart'
 import { GenderDonut } from './gender-donut'
 import { DemographicsSkeleton } from './loading-skeleton'
 import { RegionBreakdown } from './region-breakdown'
+
+import type { DemographicsData } from '@/features/dashboard-instagram/types/instagram.types'
 
 interface DemographicsSectionProps {
   data: DemographicsData | null

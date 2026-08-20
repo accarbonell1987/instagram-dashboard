@@ -2,12 +2,13 @@
 
 import { Skeleton } from '@core/ui'
 
-import type { ContentFinding, FormatBreakdown, HeatmapCell, TopPost } from '../types/instagram.types'
 
 import { FindingCard } from './finding-card'
 import { FormatBreakdownChart } from './format-breakdown-chart'
 import { PostingHeatmap } from './posting-heatmap'
 import { TopPostsRanking } from './top-posts-ranking'
+
+import type { ContentFinding, FormatBreakdown, HeatmapCell, TopPost } from '@/features/dashboard-instagram/types/instagram.types'
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 

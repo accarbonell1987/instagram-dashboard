@@ -1,6 +1,6 @@
 'use client'
 
-import type { DemographicItem } from '../types/instagram.types'
+import type { DemographicItem } from '@/features/dashboard-instagram/types/instagram.types'
 
 const AGE_ORDER = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
 

@@ -5,8 +5,8 @@ import { RefreshCw, X, Sparkles } from 'lucide-react'
 import type { JSX } from 'react'
 import { useState, useEffect } from 'react'
 
-import { previewCarouselScript, createCarousel } from '../services/instagram.service'
-import type { AgentLimits, GeneratedSlide, SlideRole } from '../types/instagram.types'
+import { previewCarouselScript, createCarousel } from '@/features/dashboard-instagram/services/instagram.service'
+import type { AgentLimits, GeneratedSlide, SlideRole } from '@/features/dashboard-instagram/types/instagram.types'
 
 interface ScriptPreviewModalProps {
   topic: string

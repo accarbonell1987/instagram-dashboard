@@ -7,8 +7,7 @@ import { useState, useEffect } from 'react'
 
 
 import type { UseGrowthAgentResult } from '../hooks/use-growth-agent'
-import { getUsage } from '../services/instagram.service'
-import type { ContentSuggestion, UsageResponse } from '../types/instagram.types'
+
 
 import { AgentSettingsModal } from './agent-settings'
 import { CarouselPreviewPanel } from './carousel-preview-panel'
@@ -17,6 +16,9 @@ import { ChatPanel } from './chat-panel'
 import { ScriptPreviewModal } from './script-preview-modal'
 import { SuggestionsPanel } from './suggestions-panel'
 import { UsageMeter } from './usage-meter'
+
+import { getUsage } from '@/features/dashboard-instagram/services/instagram.service'
+import type { ContentSuggestion, UsageResponse } from '@/features/dashboard-instagram/types/instagram.types'
 
 
 export type ActiveTab = 'chat' | 'suggestions' | 'carousels'

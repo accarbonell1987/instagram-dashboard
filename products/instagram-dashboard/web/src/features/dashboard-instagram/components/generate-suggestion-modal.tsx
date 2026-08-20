@@ -5,7 +5,7 @@ import { Sparkles, X } from 'lucide-react'
 import type { JSX } from 'react'
 import { useState } from 'react'
 
-import { generateContentSuggestion } from '../services/instagram.service'
+import { generateContentSuggestion } from '@/features/dashboard-instagram/services/instagram.service'
 
 interface GenerateSuggestionModalProps {
   onClose: () => void

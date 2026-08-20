@@ -6,7 +6,6 @@ import type { JSX } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 
-import { ConnectAccount } from './components/connect-account';
 import { ContentIntelligenceSection } from './components/content-intelligence-section';
 import { DemographicsSection } from './components/demographics-section';
 import { FloatingAgent } from './components/floating-agent';
@@ -15,12 +14,9 @@ import { GrowthChart } from './components/growth-chart';
 import { ScorecardsSkeleton, PublicationsListSkeleton } from './components/loading-skeleton';
 import { MediaDetailPanel } from './components/media-detail-panel';
 import { NorthStarScorecards } from './components/north-star-scorecards';
-import { ProfileHeader } from './components/profile-header';
 import { PublicationsList } from './components/publications-list';
 import { SectionHeader } from './components/section-header';
-import { SyncStatusBadge } from './components/sync-status-badge';
 import { useGrowthAgent } from './hooks/use-growth-agent';
-import { useHubToken } from './hooks/use-hub-token';
 import {
   useInstagramDashboard,
   useConnectionStatus,
@@ -30,7 +26,6 @@ import {
   useDemographics,
 } from './hooks/use-instagram-dashboard';
 import { backfillFollowerHistory, getMyModules } from './services/instagram.service';
-import { getCurrentUser, type CurrentUser } from './services/tenant-admin.service';
 import type {
   ContentFinding,
   FormatBreakdown,
@@ -42,6 +37,12 @@ import type {
   PublicationFilter,
   TopPost,
 } from './types/instagram.types';
+
+import { ConnectAccount } from '@/features/account/components/connect-account';
+import { ProfileHeader } from '@/features/account/components/profile-header';
+import { SyncStatusBadge } from '@/features/account/components/sync-status-badge';
+import { useHubToken } from '@/features/shared/lib/use-hub-token';
+import { getCurrentUser, type CurrentUser } from '@/features/shared/services/platform-client';
 
 export function DashboardInstagramPage(): JSX.Element {
   const { isConnected, isLoading: isCheckingConnection } = useConnectionStatus();

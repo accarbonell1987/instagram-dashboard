@@ -1,9 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 
-import type { ContentSuggestion } from '../types/instagram.types'
-
 import { SuggestionsPanel } from './suggestions-panel'
+
+import type { ContentSuggestion } from '@/features/dashboard-instagram/types/instagram.types'
+
 
 
 const makeSuggestion = (id: string, overrides: Partial<ContentSuggestion> = {}): ContentSuggestion => ({

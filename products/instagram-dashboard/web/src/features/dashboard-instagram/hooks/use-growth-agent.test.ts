@@ -1,10 +1,11 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import * as service from '../services/instagram.service'
-import type { ChatMessage, ContentSuggestion, ChatResponse } from '../types/instagram.types'
-
 import { useGrowthAgent } from './use-growth-agent'
+
+import * as service from '@/features/dashboard-instagram/services/instagram.service'
+import type { ChatMessage, ContentSuggestion, ChatResponse } from '@/features/dashboard-instagram/types/instagram.types'
+
 
 
 vi.mock('../services/instagram.service')

@@ -6,8 +6,8 @@ import type { JSX, ChangeEvent } from 'react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 
-import { createUploadCarousel, uploadSlideImage } from '../services/instagram.service'
-import type { SlideRole, UploadSlideInput } from '../types/instagram.types'
+import { createUploadCarousel, uploadSlideImage } from '@/features/dashboard-instagram/services/instagram.service'
+import type { SlideRole, UploadSlideInput } from '@/features/dashboard-instagram/types/instagram.types'
 
 interface UploadSlide {
   file: File | null

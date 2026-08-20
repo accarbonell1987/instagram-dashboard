@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
-import type { FormatBreakdown } from '../types/instagram.types'
+import type { FormatBreakdown } from '@/features/dashboard-instagram/types/instagram.types'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

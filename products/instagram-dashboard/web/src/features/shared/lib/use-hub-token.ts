@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { subscribeToToken } from '../lib/hub-token'
+import { subscribeToToken } from '@/features/shared/lib/hub-token'
 
 /**
  * The JWT the hub delivers over postMessage, or null until it arrives.

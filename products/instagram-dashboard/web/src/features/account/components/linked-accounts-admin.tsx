@@ -4,7 +4,7 @@ import { Badge, Button } from '@core/ui';
 import { Unlink } from 'lucide-react';
 import type { JSX } from 'react';
 
-import type { LinkedAccount, TenantMember } from '../services/tenant-admin.service';
+import type { LinkedAccount, TenantMember } from '@/features/account/services/linked-accounts.service';
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 

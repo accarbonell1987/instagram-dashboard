@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import type { PublicationFilter, ReelMedia } from '../types/instagram.types'
+import type { PublicationFilter, ReelMedia } from '@/features/dashboard-instagram/types/instagram.types'
 
 const PAGE_SIZE = 12
 

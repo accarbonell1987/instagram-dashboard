@@ -5,7 +5,7 @@ import { Button } from '@core/ui'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 
-import type { DemographicItem } from '../types/instagram.types'
+import type { DemographicItem } from '@/features/dashboard-instagram/types/instagram.types'
 
 const COUNTRY_NAMES: Record<string, string> = {
   AR: 'Argentina', BR: 'Brasil', MX: 'México', CO: 'Colombia', CL: 'Chile',

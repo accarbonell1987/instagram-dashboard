@@ -5,7 +5,7 @@ import type { JSX } from 'react'
 import { useState } from 'react'
 
 
-import type { AgentConfig, AgentLimits, AgentSecrets, AgentSettingsSectionKey, ImageGenConfig, LlmConfig } from '../types/instagram.types'
+import type { AgentConfig, AgentLimits, AgentSecrets, AgentSettingsSectionKey, ImageGenConfig, LlmConfig } from '@/features/dashboard-instagram/types/instagram.types'
 
 const PREDEFINED_TAGS = [
   'Ferretería',

@@ -10,9 +10,10 @@ vi.mock('recharts', async () => {
   };
 });
 
-import type { FormatBreakdown } from '../types/instagram.types';
-
 import { FormatBreakdownChart } from './format-breakdown-chart';
+
+import type { FormatBreakdown } from '@/features/dashboard-instagram/types/instagram.types';
+
 
 const mockBreakdown: FormatBreakdown[] = [
   {

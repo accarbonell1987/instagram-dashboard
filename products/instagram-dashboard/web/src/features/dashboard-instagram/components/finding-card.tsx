@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react'
 
-import type { ContentFinding } from '../types/instagram.types'
+import type { ContentFinding } from '@/features/dashboard-instagram/types/instagram.types'
 
 // ── Icons (inline SVG) ────────────────────────────────────────────────────────
 

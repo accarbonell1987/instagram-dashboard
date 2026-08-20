@@ -3,15 +3,10 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 
 import { LinkedAccountsAdmin } from './components/linked-accounts-admin';
-import { initHubToken, reportHeightToHub, subscribeToToken } from './lib/hub-token';
-import {
-  listLinkedAccounts,
-  listTenantMembers,
-  unlinkAccount,
-  TenantAdminError,
-  type LinkedAccount,
-  type TenantMember,
-} from './services/tenant-admin.service';
+
+import { listLinkedAccounts, listTenantMembers, unlinkAccount, type LinkedAccount, type TenantMember } from '@/features/account/services/linked-accounts.service';
+import { initHubToken, reportHeightToHub, subscribeToToken } from '@/features/shared/lib/hub-token';
+import { PlatformError } from '@/features/shared/services/platform-client';
 
 /**
  * The tenant's Instagram accounts, administered from the hub's settings area.
@@ -51,7 +46,7 @@ export function LinkedAccountsAdminPage(): JSX.Element {
       setMembersById(new Map(members.map((member) => [member.id, member])));
     } catch (err: unknown) {
       setError(
-        err instanceof TenantAdminError && err.status === 403
+        err instanceof PlatformError && err.status === 403
           ? 'Necesitás ser administrador de la organización para ver esta pantalla.'
           : 'No pudimos cargar las cuentas vinculadas. Recargá la página.',
       );

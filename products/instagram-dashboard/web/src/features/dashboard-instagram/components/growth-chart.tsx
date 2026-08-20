@@ -11,7 +11,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 
-import type { GrowthDataPoint, GrowthMetric, GrowthPeriod } from '../types/instagram.types';
+import type { GrowthDataPoint, GrowthMetric, GrowthPeriod } from '@/features/dashboard-instagram/types/instagram.types';
 
 // ── Formatters ──
 

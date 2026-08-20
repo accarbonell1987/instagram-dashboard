@@ -2,7 +2,7 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 
-import type { DemographicItem } from '../types/instagram.types'
+import type { DemographicItem } from '@/features/dashboard-instagram/types/instagram.types'
 
 const GENDER_LABELS: Record<string, string> = {
   M: 'Hombres',

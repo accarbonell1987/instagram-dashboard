@@ -1,6 +1,5 @@
 'use client';
 
-import { getHubToken, clearHubToken } from '../lib/hub-token';
 import type {
   ConnectionStatus,
   DashboardData,
@@ -35,7 +34,8 @@ import type {
   UsageResponse,
   PublicationFilter,
   SuggestionBatchesResponse,
-} from '../types/instagram.types';
+} from '@/features/dashboard-instagram/types/instagram.types';
+import { getHubToken, clearHubToken } from '@/features/shared/lib/hub-token';
 
 // ── API base URL ──
 const API_BASE = process.env['NEXT_PUBLIC_INSTAGRAM_API_URL'] ?? 'http://localhost:3003'

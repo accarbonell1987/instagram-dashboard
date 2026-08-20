@@ -1,9 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 
-import type { TopPost } from '../types/instagram.types';
-
 import { TopPostsRanking } from './top-posts-ranking';
+
+import type { TopPost } from '@/features/dashboard-instagram/types/instagram.types';
+
 
 function makePost(overrides: Partial<TopPost> & Pick<TopPost, 'igMediaId'>): TopPost {
   return {

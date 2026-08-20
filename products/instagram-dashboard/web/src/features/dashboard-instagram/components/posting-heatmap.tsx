@@ -1,6 +1,6 @@
 'use client';
 
-import type { HeatmapCell } from '../types/instagram.types';
+import type { HeatmapCell } from '@/features/dashboard-instagram/types/instagram.types';
 
 interface PostingHeatmapProps {
   cells: HeatmapCell[];

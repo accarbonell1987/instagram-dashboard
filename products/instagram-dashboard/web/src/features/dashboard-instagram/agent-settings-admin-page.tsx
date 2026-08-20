@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 
 import { AgentSettingsPanel } from './components/agent-settings';
-import { initHubToken, reportHeightToHub, subscribeToToken } from './lib/hub-token';
 import { getAgentSettings, saveAgentSettings } from './services/instagram.service';
 import type {
   AgentConfig,
   AgentSecrets,
   AgentSettingsSectionKey,
 } from './types/instagram.types';
+
+import { initHubToken, reportHeightToHub, subscribeToToken } from '@/features/shared/lib/hub-token';
 
 /**
  * The agent's tenant-wide settings, administered from the hub's settings area.

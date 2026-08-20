@@ -18,8 +18,9 @@ import {
 import { useEffect, useRef, useState, useCallback } from 'react'
 
 import { useReelDetail } from '../hooks/use-instagram-dashboard'
-import { getReelPlaybackUrl } from '../services/instagram.service'
-import type { ReelMedia } from '../types/instagram.types'
+
+import { getReelPlaybackUrl } from '@/features/dashboard-instagram/services/instagram.service'
+import type { ReelMedia } from '@/features/dashboard-instagram/types/instagram.types'
 
 function formatMs(ms: number): string {
   const seconds = ms / 1000

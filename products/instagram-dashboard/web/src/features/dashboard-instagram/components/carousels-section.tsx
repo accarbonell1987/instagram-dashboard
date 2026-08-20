@@ -19,11 +19,12 @@ import {
 import type { JSX } from 'react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-import { listCarousels, deleteCarousel, resolveImageUrl } from '../services/instagram.service'
-import type { AgentLimits, Carousel } from '../types/instagram.types'
-
 import { ScriptPreviewModal } from './script-preview-modal'
 import { UploadCarouselModal } from './upload-carousel-modal'
+
+import { listCarousels, deleteCarousel, resolveImageUrl } from '@/features/dashboard-instagram/services/instagram.service'
+import type { AgentLimits, Carousel } from '@/features/dashboard-instagram/types/instagram.types'
+
 
 function relativeTime(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date

@@ -3,7 +3,7 @@
 import { Button } from '@core/ui';
 import { RefreshCw } from 'lucide-react';
 
-import type { SyncState } from '../types/instagram.types';
+import type { SyncState } from '@/features/dashboard-instagram/types/instagram.types';
 
 interface SyncStatusBadgeProps {
   syncState: SyncState | null;

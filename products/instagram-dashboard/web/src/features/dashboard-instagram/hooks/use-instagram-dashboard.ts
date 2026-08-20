@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-import { subscribeToToken } from '../lib/hub-token'
 import {
   getDashboardData,
   getConnectionStatus,
@@ -13,7 +12,7 @@ import {
   getPublications,
   getReelDetail,
   getDemographics,
-} from '../services/instagram.service'
+} from '@/features/dashboard-instagram/services/instagram.service'
 import type {
   ConnectionStatus,
   DashboardData,
@@ -26,7 +25,8 @@ import type {
   PublicationFilter,
   ReelMedia,
   DemographicsData,
-} from '../types/instagram.types'
+} from '@/features/dashboard-instagram/types/instagram.types'
+import { subscribeToToken } from '@/features/shared/lib/hub-token'
 
 // ── Dashboard hook ──
 

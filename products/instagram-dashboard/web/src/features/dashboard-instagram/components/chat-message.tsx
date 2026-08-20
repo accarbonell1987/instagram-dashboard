@@ -5,9 +5,10 @@ import { X } from 'lucide-react'
 import type { JSX } from 'react'
 
 
-import type { ChatMessage } from '../types/instagram.types'
-
 import { MarkdownRenderer } from './markdown-renderer'
+
+import type { ChatMessage } from '@/features/dashboard-instagram/types/instagram.types'
+
 
 interface ChatMessageBubbleProps {
   message: ChatMessage

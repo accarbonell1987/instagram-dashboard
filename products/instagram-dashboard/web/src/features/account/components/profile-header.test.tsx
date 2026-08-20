@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 
-import type { InstagramProfile } from '../types/instagram.types'
-
 import { ProfileHeader } from './profile-header'
+
+import type { InstagramProfile } from '@/features/dashboard-instagram/types/instagram.types'
+
 
 const profile = (overrides: Partial<InstagramProfile> = {}): InstagramProfile => ({
   username: 'tiomonopy',

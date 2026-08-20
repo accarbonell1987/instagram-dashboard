@@ -5,9 +5,10 @@ import type { LucideIcon } from 'lucide-react'
 import { Check, X, Clock, Hash, Lightbulb, Zap, PenLine, Layers, Sparkles } from 'lucide-react'
 import type { JSX } from 'react'
 
-import type { ContentSuggestion, SuggestionCategory } from '../types/instagram.types'
-
 import { MarkdownRenderer } from './markdown-renderer'
+
+import type { ContentSuggestion, SuggestionCategory } from '@/features/dashboard-instagram/types/instagram.types'
+
 
 const categoryMeta: Record<SuggestionCategory, { label: string; icon: LucideIcon; colors: string }> = {
   caption:      { label: 'Caption',          icon: PenLine,     colors: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },

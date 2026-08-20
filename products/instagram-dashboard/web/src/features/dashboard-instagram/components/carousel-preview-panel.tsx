@@ -5,17 +5,18 @@ import { ChevronLeft, ChevronRight, RefreshCw, X, ExternalLink, AlertCircle, Ale
 import type { JSX } from 'react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 
+import { PublishConfirmDialog } from './publish-confirm-dialog'
+import { RedoPromptPanel } from './redo-prompt-panel'
+
 import {
   getCarousel,
   updateCarouselSlide,
   regenerateCarouselSlide,
   reorderCarouselSlides,
   resolveImageUrl,
-} from '../services/instagram.service'
-import type { Carousel, CarouselSlide } from '../types/instagram.types'
+} from '@/features/dashboard-instagram/services/instagram.service'
+import type { Carousel, CarouselSlide } from '@/features/dashboard-instagram/types/instagram.types'
 
-import { PublishConfirmDialog } from './publish-confirm-dialog'
-import { RedoPromptPanel } from './redo-prompt-panel'
 
 const INITIAL_POLL_MS = 1_000
 const MAX_POLL_MS = 8_000

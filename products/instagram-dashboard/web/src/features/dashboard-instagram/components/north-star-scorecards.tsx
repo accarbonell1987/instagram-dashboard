@@ -3,7 +3,7 @@
 import { ArrowUp, ArrowDown, Minus, Telescope, Share2, Bookmark, UserPlus } from 'lucide-react'
 import type { JSX } from 'react'
 
-import type { NorthStarMetrics } from '../types/instagram.types'
+import type { NorthStarMetrics } from '@/features/dashboard-instagram/types/instagram.types'
 
 function formatValue(value: number, isRate = false): string {
   if (isRate) return `${value.toFixed(2)}%`

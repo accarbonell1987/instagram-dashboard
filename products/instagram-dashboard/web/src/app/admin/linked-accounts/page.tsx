@@ -1,6 +1,6 @@
 'use client';
 
-import { LinkedAccountsAdminPage } from '@/features/dashboard-instagram/linked-accounts-admin-page';
+import { LinkedAccountsAdminPage } from '@/features/account/linked-accounts-admin-page';
 
 export default function AdminLinkedAccountsPage() {
   return <LinkedAccountsAdminPage />;

@@ -6,10 +6,11 @@ import type { JSX } from 'react'
 import { useState } from 'react'
 
 
-import type { ContentSuggestion, SuggestionBatch } from '../types/instagram.types'
 
 import { GenerateSuggestionModal } from './generate-suggestion-modal'
 import { SuggestionCard } from './suggestion-card'
+
+import type { ContentSuggestion, SuggestionBatch } from '@/features/dashboard-instagram/types/instagram.types'
 
 function relativeTime(dateStr: string): string {
   const date = new Date(dateStr)

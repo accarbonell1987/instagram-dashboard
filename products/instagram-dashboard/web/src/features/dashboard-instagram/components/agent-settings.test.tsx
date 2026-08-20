@@ -2,9 +2,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import type { AgentConfig, AgentSettingsSectionKey  } from '../types/instagram.types'
-
 import { AgentSettingsModal, sectionsForSurface, type AgentSettingsSurface } from './agent-settings'
+
+import type { AgentConfig, AgentSettingsSectionKey  } from '@/features/dashboard-instagram/types/instagram.types'
+
 
 
 /** These tests are about the panel; the gate has its own describe block. */

@@ -16,7 +16,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import type { UsageByOperation, UsageByUser, UsageDay } from '../services/tenant-admin.service';
+import type { UsageByOperation, UsageByUser, UsageDay } from '@/features/agent/services/usage.service';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

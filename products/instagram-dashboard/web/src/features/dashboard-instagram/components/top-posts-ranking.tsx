@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import type { TopPost } from '../types/instagram.types';
+import type { TopPost } from '@/features/dashboard-instagram/types/instagram.types';
 
 interface TopPostsRankingProps {
   ranking: TopPost[];

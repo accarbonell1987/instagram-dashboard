@@ -13,9 +13,9 @@ import {
   clearChatHistory as clearChatHistorySvc,
   getAgentSettings,
   saveAgentSettings,
-} from '../services/instagram.service'
+} from '@/features/dashboard-instagram/services/instagram.service'
 import type { ChatMessage, ContentSuggestion, SuggestionBatch, AgentConfig,
-  AgentSecrets, AgentSettingsResponse, AgentSettingsSectionKey } from '../types/instagram.types'
+  AgentSecrets, AgentSettingsResponse, AgentSettingsSectionKey } from '@/features/dashboard-instagram/types/instagram.types'
 
 const SESSION_ID_KEY = 'corehub:growth-agent:sessionId'
 

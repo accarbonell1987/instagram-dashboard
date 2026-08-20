@@ -6,7 +6,7 @@ import type { JSX } from 'react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { publishCarousel, InstagramApiError, getOAuthUrl } from '../services/instagram.service'
+import { publishCarousel, InstagramApiError, getOAuthUrl } from '@/features/dashboard-instagram/services/instagram.service'
 
 type DialogState = 'idle' | 'publishing' | 'success' | 'insufficient_scope' | 'error'
 

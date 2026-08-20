@@ -7,13 +7,10 @@ import {
   UsageByUserChart,
   UsageOverTimeChart,
 } from './components/usage-charts';
-import { initHubToken, reportHeightToHub, subscribeToToken } from './lib/hub-token';
-import {
-  getUsageBreakdown,
-  listTenantMembers,
-  type TenantMember,
-  type UsageBreakdown,
-} from './services/tenant-admin.service';
+
+import { listTenantMembers, type TenantMember } from '@/features/account/services/linked-accounts.service';
+import { getUsageBreakdown, type UsageBreakdown } from '@/features/agent/services/usage.service';
+import { initHubToken, reportHeightToHub, subscribeToToken } from '@/features/shared/lib/hub-token';
 
 const WINDOWS = [
   { days: 1, label: 'Hoy' },

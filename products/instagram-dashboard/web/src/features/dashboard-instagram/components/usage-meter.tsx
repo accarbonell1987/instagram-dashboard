@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react'
 
-import type { QuotaEntry, UsageResponse } from '../types/instagram.types'
+import type { QuotaEntry, UsageResponse } from '@/features/dashboard-instagram/types/instagram.types'
 
 interface UsageMeterProps {
   usage: UsageResponse | null
