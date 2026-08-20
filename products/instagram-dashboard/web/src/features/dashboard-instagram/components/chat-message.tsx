@@ -89,7 +89,10 @@ export function ChatMessageBubble({
 
         {/* Message bubble */}
         <div
-          className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+          // `min-w-0` so the bubble may actually shrink: a flex child defaults
+          // to min-width:auto and refuses to go below its content, which is how
+          // a long reply pushed past the panel instead of wrapping inside it.
+          className={`min-w-0 max-w-[85%] rounded-lg px-3 py-2 text-sm ${
             isUser
               ? 'bg-primary text-primary-foreground rounded-br-sm'
               : 'bg-muted text-foreground rounded-bl-sm'

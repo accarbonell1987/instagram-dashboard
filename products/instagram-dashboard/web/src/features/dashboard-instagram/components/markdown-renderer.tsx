@@ -33,36 +33,46 @@ interface MarkdownRendererProps {
 export function MarkdownRenderer({ content }: MarkdownRendererProps): JSX.Element {
   return (
     <div
-      className={
-        `space-y-1.5 text-sm leading-relaxed ` +
-        // Prose-like spacing for block elements
-        `[&_p:not(:last-child)]:mb-1 [&_p]:leading-relaxed` +
+      className={[
+        // Joined with spaces by the array, not by hoping each fragment ends in
+        // one. Written as `'a' + 'b'` this list silently fused every boundary —
+        // `[&_p]:leading-relaxed[&_ol]:ml-4` is one invalid class, not two, and
+        // Tailwind emits nothing for it. Half these rules were never applied,
+        // including the ones that keep wide content inside the bubble.
+        'space-y-1.5 text-sm leading-relaxed',
+        // Anything that cannot be wrapped is broken rather than allowed to push
+        // the bubble open. This is the visible bug: a long reply ran past the
+        // panel and the words were cut off by the edge.
+        'min-w-0 break-words [overflow-wrap:anywhere]',
+        // Blocks
+        '[&_p:not(:last-child)]:mb-1 [&_p]:leading-relaxed',
         // Lists
-        `[&_ol]:ml-4 [&_ol]:list-decimal [&_ul]:ml-4 [&_ul]:list-disc` +
-        `[&_ol]:list-outside [&_ul]:list-outside` +
-        `[&_li]:mt-0.5` +
+        '[&_ol]:ml-4 [&_ol]:list-decimal [&_ol]:list-outside',
+        '[&_ul]:ml-4 [&_ul]:list-disc [&_ul]:list-outside',
+        '[&_li]:mt-0.5',
         // Bold / italic
-        `[&_strong]:text-foreground [&_strong]:font-semibold` +
+        '[&_strong]:text-foreground [&_strong]:font-semibold',
         // Inline code
-        `[&_code]:bg-muted [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5` +
-        `[&_code]:font-mono [&_code]:text-xs` +
-        // Code blocks
-        `[&_pre]:rounded-md [&_pre]:bg-zinc-900 [&_pre]:p-3` +
-        `[&_pre]:overflow-x-auto [&_pre]:text-xs [&_pre]:text-zinc-100` +
-        `[&_pre]:font-mono [&_pre]:leading-relaxed` +
-        `[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-xs [&_pre_code]:text-zinc-100` +
+        '[&_code]:bg-muted [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5',
+        '[&_code]:font-mono [&_code]:text-xs',
+        // Code blocks — scroll inside their own box; a long line must not widen
+        // the message.
+        '[&_pre]:rounded-md [&_pre]:bg-zinc-900 [&_pre]:p-3',
+        '[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:text-xs [&_pre]:text-zinc-100',
+        '[&_pre]:font-mono [&_pre]:leading-relaxed',
+        '[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-xs [&_pre_code]:text-zinc-100',
         // Blockquotes
-        `[&_blockquote]:border-muted-foreground/30 [&_blockquote]:border-l-2` +
-        `[&_blockquote]:text-muted-foreground [&_blockquote]:pl-3 [&_blockquote]:italic` +
-        // Tables
-        `[&_table]:w-full [&_table]:text-left [&_table]:text-xs` +
-        `[&_thead]:border-border [&_thead]:border-b` +
-        `[&_th]:text-muted-foreground [&_th]:px-2 [&_th]:py-1 [&_th]:font-medium` +
-        `[&_td]:border-border/50 [&_td]:border-t [&_td]:px-2 [&_td]:py-1` +
+        '[&_blockquote]:border-muted-foreground/30 [&_blockquote]:border-l-2',
+        '[&_blockquote]:text-muted-foreground [&_blockquote]:pl-3 [&_blockquote]:italic',
+        // Tables — same rule: scroll, never widen.
+        '[&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:text-left [&_table]:text-xs',
+        '[&_thead]:border-border [&_thead]:border-b',
+        '[&_th]:text-muted-foreground [&_th]:px-2 [&_th]:py-1 [&_th]:font-medium',
+        '[&_td]:border-border/50 [&_td]:border-t [&_td]:px-2 [&_td]:py-1',
         // Links
-        `[&_a]:text-primary [&_a]:decoration-primary/40 [&_a]:underline` +
-        `[&_a]:hover:decoration-primary`
-      }
+        '[&_a]:text-primary [&_a]:decoration-primary/40 [&_a]:underline',
+        '[&_a]:hover:decoration-primary',
+      ].join(' ')}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
