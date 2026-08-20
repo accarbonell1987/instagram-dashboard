@@ -302,18 +302,23 @@ export function DashboardInstagramPage(): JSX.Element {
 
         {/* ── HEADER ───────────────────────────────────────────────────────── */}
         <div className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <ProfileHeader
-              profile={profile}
-              rightContent={
-                <SyncStatusBadge
-                  syncState={syncState}
-                  onTriggerSync={triggerSync}
-                  isTriggering={isTriggering}
-                />
-              }
-            />
-          </div>
+          {/*
+            No flex row around it. There was one, with `justify-between`, from
+            when the sync badge sat beside the card; the badge moved inside as
+            `rightContent` and the row stayed, wrapping a single child that then
+            sized to its content instead of filling the page.
+          */}
+          <ProfileHeader
+            profile={profile}
+            lastSyncAt={syncState?.lastSyncAt ?? null}
+            rightContent={
+              <SyncStatusBadge
+                syncState={syncState}
+                onTriggerSync={triggerSync}
+                isTriggering={isTriggering}
+              />
+            }
+          />
         </div>
 
         {/* ── A. NORTH-STAR SCORECARDS ──────────────────────────────────────── */}

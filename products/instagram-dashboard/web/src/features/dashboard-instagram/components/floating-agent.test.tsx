@@ -286,6 +286,7 @@ describe('FloatingAgent — unread badge', () => {
         category: 'content_idea',
         content: `idea ${String(i)}`,
         status: 'pending',
+        outcome: null,
         createdAt: new Date().toISOString(),
       })),
     })
@@ -307,6 +308,7 @@ describe('FloatingAgent — unread badge', () => {
       id,
       role: 'user' as const,
       content: 'hola',
+      sessionId: 'sess-1',
       createdAt: new Date().toISOString(),
     })
     const { rerender } = render(<FloatingAgent hook={makeHook({ suggestionsLoaded: true })} />)
