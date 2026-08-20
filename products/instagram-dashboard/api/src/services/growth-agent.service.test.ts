@@ -761,4 +761,57 @@ describe('GrowthAgentService', () => {
     })
   })
   });
+
+  // ── getSuggestionOutcomes ──────────────────────────────────────────────────
+
+  /**
+   * The tool is named for outcomes and used to return every suggestion marked
+   * used — `outcome` included, and that field stays null until the seven-day
+   * sweep measures it, which needs the suggestion linked to a published post.
+   * Nothing links them, so the model was handed a list of nulls to interpret.
+   */
+  describe('getSuggestionOutcomes', () => {
+    const used = (id: string, outcome: string | null) => ({
+      id,
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      category: 'content_idea',
+      content: `idea ${id}`,
+      status: 'used',
+      outcome,
+      createdAt: new Date(),
+    });
+
+    it('returns nothing while nothing has been measured', async () => {
+      mockFindByTenant.mockResolvedValue([used('a', null), used('b', null)]);
+
+      const result = await service.getSuggestionOutcomes({ tenantId: 'tenant-1', userId: 'user-1' });
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns the measured ones once there are any', async () => {
+      mockFindByTenant.mockResolvedValue([
+        used('a', null),
+        used('b', 'exceeded'),
+        used('c', 'below'),
+      ]);
+
+      const result = await service.getSuggestionOutcomes({ tenantId: 'tenant-1', userId: 'user-1' });
+
+      expect(result.map((r) => r.id)).toEqual(['b', 'c']);
+    });
+
+    it('asks only for the used ones', async () => {
+      mockFindByTenant.mockResolvedValue([]);
+
+      await service.getSuggestionOutcomes({ tenantId: 'tenant-1', userId: 'user-1' });
+
+      expect(mockFindByTenant).toHaveBeenCalledWith(
+        { tenantId: 'tenant-1', userId: 'user-1' },
+        'used',
+      );
+    });
+  });
 });
+

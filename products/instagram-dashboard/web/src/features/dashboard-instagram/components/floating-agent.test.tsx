@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest'
 
 import type { UseGrowthAgentResult } from '../hooks/use-growth-agent'
 
-import { FloatingAgent } from './floating-agent'
+import { FloatingAgent, type ActiveTab } from './floating-agent'
 
 // FloatingAgent fetches usage on open. The hub relied on a global MSW server for
 // this; the standalone app has none, so stub the service directly. Shape mirrors
@@ -381,8 +381,6 @@ describe('FloatingAgent — carousel permission', () => {
           suggestionBatches: [
             {
               id: 'b-1',
-              tenantId: 't',
-              userId: 'u',
               userMessage: 'dame ideas',
               createdAt: new Date().toISOString(),
               suggestions: [suggestion],

@@ -406,15 +406,30 @@ export class GrowthAgentService {
     }));
   }
 
+  /**
+   * Only the ones actually measured.
+   *
+   * It used to return every suggestion marked used, `outcome` and all — and
+   * that field is null until the seven-day sweep measures it, which needs the
+   * suggestion linked to a published post. Nothing links them yet, so the tool
+   * named "outcomes" handed the model a list of outcomes that were all null and
+   * left it to interpret them.
+   *
+   * Empty is an honest answer, and the prompt already knows what to do with
+   * absent data. The day a suggestion gets linked to a post, this fills itself.
+   */
   async getSuggestionOutcomes(owner: Owner): Promise<SuggestionOutcomeResult[]> {
     const suggestions = await this.repos.suggestion.findByOwner(owner, 'used');
-    return suggestions.slice(0, 20).map((s) => ({
-      id: s.id,
-      category: s.category,
-      content: s.content,
-      outcome: s.outcome,
-      createdAt: s.createdAt,
-    }));
+    return suggestions
+      .filter((s) => s.outcome !== null)
+      .slice(0, 20)
+      .map((s) => ({
+        id: s.id,
+        category: s.category,
+        content: s.content,
+        outcome: s.outcome,
+        createdAt: s.createdAt,
+      }));
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────

@@ -69,10 +69,11 @@ export function SuggestionCard({
               onClick={() => { onMarkUsed(suggestion.id); }}
               disabled={isActing}
               className="h-7 px-2.5 text-xs gap-1.5"
-              aria-label="Marcar como usada"
+              aria-label="Marcar como hecha"
+              title="La saca de pendientes. No la vincula a ninguna publicación."
             >
               <Check className="h-3.5 w-3.5" aria-hidden="true" />
-              Usar
+              Hecha
             </Button>
           )}
         </div>

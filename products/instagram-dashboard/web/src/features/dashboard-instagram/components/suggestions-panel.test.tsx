@@ -34,7 +34,7 @@ describe('SuggestionsPanel', () => {
     expect(screen.getByText('Second suggestion')).toBeInTheDocument()
   })
 
-  it('clicking "Usar" calls onMarkUsed with suggestion id', () => {
+  it('clicking "Hecha" calls onMarkUsed with suggestion id', () => {
     const onMarkUsed = vi.fn()
     const suggestions = [makeSuggestion('s1', { content: 'Suggestion to use' })]
     render(
@@ -45,9 +45,9 @@ describe('SuggestionsPanel', () => {
       />,
     )
 
-    const usarButtons = screen.getAllByRole('button', { name: /Marcar como usada/i })
+    const doneButtons = screen.getAllByRole('button', { name: /Marcar como hecha/i })
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- getAllByRole guarantees at least one match here
-    fireEvent.click(usarButtons[0]!)
+    fireEvent.click(doneButtons[0]!)
 
     expect(onMarkUsed).toHaveBeenCalledWith('s1')
   })
