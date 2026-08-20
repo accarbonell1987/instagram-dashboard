@@ -47,6 +47,7 @@ const ROLE_LABELS: Record<TenantRole, string> = {
 export default function ProfilePage(): JSX.Element {
   const [apiError, setApiError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
   const [role, setRole] = useState<TenantRole | null>(null);
   const [productRoles, setProductRoles] = useState<ProductRole[]>([]);
 
@@ -74,6 +75,7 @@ export default function ProfilePage(): JSX.Element {
       .then((me) => {
         if (cancelled) return;
         reset({ fullName: me.user.fullName, phone: me.user.phone ?? '' });
+        setEmail(me.user.email);
         setRole(me.role);
         // Tolerated as absent: the contract requires it, but a server mid-deploy
         // may not send it yet, and a missing list should not blank the page.
@@ -122,6 +124,22 @@ export default function ProfilePage(): JSX.Element {
           product opens. */}
       {role !== null && (
         <section className="border-border mb-6 flex flex-col gap-3 rounded-lg border p-4">
+          {/* First, because it is the answer to "which account am I in?" — the
+              one question this screen was silent about while naming the role,
+              the accesses and the phone. Read-only: it is the login, and
+              changing it is a different flow. */}
+          {email !== null && (
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs font-medium uppercase">
+                Correo electrónico
+              </span>
+              <span className="text-foreground text-sm font-medium break-all">{email}</span>
+              <span className="text-muted-foreground text-xs">
+                Es tu usuario para entrar. No se cambia desde acá.
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1">
             <span className="text-muted-foreground text-xs font-medium uppercase">
               Rol en la organización

@@ -141,4 +141,34 @@ describe('ProfilePage — roles', () => {
 
     expect(await screen.findByText(/ves todo lo que incluye el plan/)).toBeInTheDocument();
   });
+
+  /**
+   * The screen named the role, the product accesses and the phone, and never
+   * said which account you were in. With two logins into the same organisation
+   * that is the one thing you actually need it to answer.
+   */
+  it('shows the signed-in email', async () => {
+    respondWith({});
+    render(<ProfilePage />);
+
+    expect(await screen.findByText('ana@empresa.com')).toBeInTheDocument();
+  });
+
+  it('says the email is the login and not editable here', async () => {
+    respondWith({});
+    render(<ProfilePage />);
+
+    await screen.findByText('ana@empresa.com');
+    expect(screen.getByText(/No se cambia desde acá/)).toBeInTheDocument();
+  });
+
+  /** Read-only: no field, nothing to submit, nothing to get wrong. */
+  it('offers no input for it', async () => {
+    respondWith({});
+    render(<ProfilePage />);
+
+    await screen.findByText('ana@empresa.com');
+    expect(screen.queryByLabelText(/Correo/i)).not.toBeInTheDocument();
+  });
 });
+
