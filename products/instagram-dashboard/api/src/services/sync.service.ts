@@ -1,3 +1,4 @@
+import { FixedWindowRateLimiter } from '../shared/lib/rate-limiter.js';
 import type { Owner } from '../domain/owner.js';
 import {
   AccountNotConnectedError,
@@ -113,24 +114,21 @@ async function withRetry<T>(
 }
 
 export class SyncService {
-  private rateCounters = new Map<string, { count: number; windowStart: number }>();
-
-  constructor(private readonly repos: Repositories) {}
-
-  private checkRateLimit(accountId: string): boolean {
-    const now = Date.now();
-    const counter = this.rateCounters.get(accountId);
-    if (!counter || now - counter.windowStart > 3_600_000) {
-      this.rateCounters.set(accountId, { count: 0, windowStart: now });
-      return true;
-    }
-    return counter.count < RATE_LIMIT_MAX;
-  }
-
-  private incrementRateCounter(accountId: string): void {
-    const counter = this.rateCounters.get(accountId);
-    if (counter) counter.count++;
-  }
+  /**
+   * Injected, with the production window as the default.
+   *
+   * The tests used to reach into a private Map to exhaust the counter, which
+   * tied them to how the limit was stored. Handing one in lets a test say what
+   * it means — a limiter that refuses — without knowing the shape inside.
+   * Instagram allows roughly 200 calls an hour per token; 190 leaves headroom.
+   */
+  constructor(
+    private readonly repos: Repositories,
+    private readonly rateLimiter: FixedWindowRateLimiter = new FixedWindowRateLimiter(
+      RATE_LIMIT_MAX,
+      3_600_000,
+    ),
+  ) {}
 
   async triggerSync(owner: Owner): Promise<{ syncId: string; status: string }> {
     const account = await this.repos.instagram.findAccountByOwner(owner);
@@ -140,7 +138,7 @@ export class SyncService {
       return { syncId: '', status: 'already_running' };
     }
 
-    if (!this.checkRateLimit(account.id)) {
+    if (!this.rateLimiter.allows(account.id)) {
       return { syncId: '', status: 'rate_limited' };
     }
 
@@ -173,12 +171,12 @@ export class SyncService {
 
       // 1. Get media list
       const mediaList = await client.getMedia(tokenRecord.igUserId, 50);
-      this.incrementRateCounter(accountId);
+      this.rateLimiter.record(accountId);
       let synced = 0;
 
       // 2. For each media, upsert and get insights
       for (const item of mediaList) {
-        if (!this.checkRateLimit(accountId)) {
+        if (!this.rateLimiter.allows(accountId)) {
           await this.repos.instagram.updateSyncLog(logId, 'paused', synced);
           await this.repos.instagram.updateSyncStatus(accountId, 'paused');
           return;
@@ -218,7 +216,7 @@ export class SyncService {
             () => client.getMediaInsights(item.id, mediaMetrics),
             { maxRetries: 3, baseDelay: 1000 },
           );
-          this.incrementRateCounter(accountId);
+          this.rateLimiter.record(accountId);
 
           let likes = 0;
           let comments = 0;
@@ -317,7 +315,7 @@ export class SyncService {
             ),
           { maxRetries: 3, baseDelay: 1000 },
         );
-        this.incrementRateCounter(accountId);
+        this.rateLimiter.record(accountId);
 
         // Collect all date→value maps from the time-series response
         type DateKey = string; // ISO date YYYY-MM-DD
@@ -374,7 +372,7 @@ export class SyncService {
             ),
           { maxRetries: 3, baseDelay: 1000 },
         );
-        this.incrementRateCounter(accountId);
+        this.rateLimiter.record(accountId);
 
         let profileViews = 0;
         let likes = 0;
@@ -498,7 +496,7 @@ export class SyncService {
     if (!account) throw new AccountNotConnectedError();
 
     const lastLog = await this.repos.instagram.getLatestSyncLog(account.id);
-    const canSync = this.checkRateLimit(account.id);
+    const canSync = this.rateLimiter.allows(account.id);
 
     return {
       status: account.syncStatus,

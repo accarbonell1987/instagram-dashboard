@@ -4,9 +4,18 @@ import { AccountNotConnectedError } from '../errors.js';
 import type { Repositories } from '../lib/create-repositories.js';
 import type { InstagramRepository } from '../repositories/instagram/index.js';
 
+import { FixedWindowRateLimiter } from '../shared/lib/rate-limiter.js';
 import { SyncService } from './sync.service.js';
 
-type RateCounters = Map<string, { count: number; windowStart: number }>;
+/** A limiter with nothing left, for the cases about what happens on a refusal. */
+function exhaustedLimiter(): FixedWindowRateLimiter {
+  const limiter = new FixedWindowRateLimiter(0, 3_600_000);
+  // The first call opens the window and is always allowed — behaviour carried
+  // over from the counter this replaced. Opening it here leaves the next one
+  // to be refused, which is what these cases are about.
+  limiter.allows('acc-1');
+  return limiter;
+}
 
 vi.mock('../lib/crypto.js', () => ({ decryptToken: vi.fn(() => 'mock-token') }));
 vi.mock('../lib/instagram-client.js', () => ({
@@ -144,12 +153,9 @@ describe('SyncService', () => {
         createMockAccount(),
       );
 
-      // Manually exhaust the rate counter
-      const svc = service as unknown as { rateCounters: RateCounters };
-      svc.rateCounters.set('acc-1', {
-        count: 200,
-        windowStart: Date.now(),
-      });
+      // A limiter that refuses, handed in. What the service does with a "no"
+      // is the subject; how the limiter stores its counters is not.
+      service = new SyncService(repo as unknown as Repositories, exhaustedLimiter());
 
       const result = await service.triggerSync({ tenantId: 'tenant-1', userId: 'user-1' });
 
@@ -163,12 +169,10 @@ describe('SyncService', () => {
       );
       repo.instagram.createSyncLog.mockResolvedValue('log-reset');
 
-      // Set exhausted counter with expired window (> 1 hour ago)
-      const svc = service as unknown as { rateCounters: RateCounters };
-      svc.rateCounters.set('acc-1', {
-        count: 200,
-        windowStart: Date.now() - 4_000_000,
-      });
+      // A real limiter whose window has already rolled over: it allows again.
+      const limiter = new FixedWindowRateLimiter(190, 3_600_000);
+      for (let i = 0; i < 200; i++) limiter.record('acc-1');
+      service = new SyncService(repo as unknown as Repositories, limiter);
 
       const result = await service.triggerSync({ tenantId: 'tenant-1', userId: 'user-1' });
 
@@ -211,12 +215,7 @@ describe('SyncService', () => {
         createMockAccount(),
       );
 
-      // Exhaust rate counter
-      const svc = service as unknown as { rateCounters: RateCounters };
-      svc.rateCounters.set('acc-1', {
-        count: 200,
-        windowStart: Date.now(),
-      });
+      service = new SyncService(repo as unknown as Repositories, exhaustedLimiter());
 
       const status = await service.getSyncStatus({ tenantId: 'tenant-1', userId: 'user-1' });
 
