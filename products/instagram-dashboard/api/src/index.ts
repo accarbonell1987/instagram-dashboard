@@ -140,14 +140,33 @@ async function bootstrap() {
   const chatGuard = moduleGuard('ig-ai-chat');
   const suggestionsGuard = moduleGuard('ig-ai-suggestions');
   const carouselsGuard = moduleGuard('ig-ai-carousels');
+  // The data modules. The screens for these were hidden without them and the
+  // endpoints behind them were not — the same gap the AI routes had, mirrored:
+  // there the UI offered what the API refused, here the API served what the UI
+  // hid. `curl` was the whole exploit.
+  const metricsGuard = moduleGuard('ig-basic-metrics');
+  const publicationsGuard = moduleGuard('ig-publications');
+  const audienceGuard = moduleGuard('ig-audience');
+  const intelligenceGuard = moduleGuard('ig-content-intelligence');
 
   // Protected routes (JWT required)
   const api = new OpenAPIHono();
   api.use('*', authGuard);
   api.use('*', entitlementsGuard);
   api.route('/me', createModuleAccessRoute(moduleAccessService));
+  // Per path, not `/dashboard/*`: the four screens under here belong to four
+  // different modules, and one wildcard would grant them together.
+  api.use('/dashboard', metricsGuard);
+  api.use('/dashboard/growth', metricsGuard);
+  api.use('/dashboard/demographics', audienceGuard);
+  api.use('/dashboard/insight', intelligenceGuard);
   api.route('/dashboard', createDashboardRoutes(dashboardService, insightService));
+  api.use('/media', publicationsGuard);
+  api.use('/media/*', publicationsGuard);
   api.route('/media', createMediaRoutes(dashboardService));
+  // `/sync` stays open to any member of the product. It refreshes the account
+  // itself rather than serving any one screen's data, and picking a module for
+  // it would be inventing an owner it does not have.
   api.route('/sync', createSyncRoutes(syncService));
   // Growth agent routes (chat + suggestions)
   // Both paths on purpose: in Hono '/chat/*' does not match a bare '/chat',
@@ -208,6 +227,12 @@ async function bootstrap() {
       chatGuard,
       suggestionsGuard,
       carouselsGuard,
+      // Every guard, or the ones left out keep serving a 60-second-old
+      // decision — which reads as "I changed the role and nothing happened".
+      metricsGuard,
+      publicationsGuard,
+      audienceGuard,
+      intelligenceGuard,
     ]));
 
   // Static file serving for generated carousel images

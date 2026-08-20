@@ -33,6 +33,12 @@ interface FloatingAgentProps {
 }
 
 export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentProps): JSX.Element {
+  // Offering a button for the one thing this role is not allowed to do: the API
+  // refuses `POST /api/carousels` without `ig-ai-carousels`, so the button was
+  // never a hole — just a promise the product could not keep. The tab was
+  // hidden and the same action stayed reachable from every suggestion.
+  const canCreateCarousels = permittedTabs.includes('carousels')
+
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<ActiveTab>(permittedTabs[0] ?? 'chat')
   const [isExpanded, setIsExpanded] = useState(false)
@@ -257,7 +263,11 @@ export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentP
                 onMarkUsed={(id) => void hook.markUsed(id, '')}
                 onDismiss={(id) => void hook.dismiss(id)}
                 onClearAll={() => void hook.clearSuggestions()}
-                onStartCarousel={(suggestion) => { handleStartCarousel(suggestion); }}
+                {...(canCreateCarousels && {
+                  onStartCarousel: (suggestion: ContentSuggestion) => {
+                    handleStartCarousel(suggestion);
+                  },
+                })}
                 onRefreshSuggestions={hook.refreshSuggestions}
               />
             </div>

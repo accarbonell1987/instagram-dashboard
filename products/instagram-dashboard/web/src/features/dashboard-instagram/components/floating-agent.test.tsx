@@ -355,3 +355,58 @@ describe('FloatingAgent — unread badge', () => {
   })
 })
 
+/**
+ * `content-analist` has no `ig-ai-carousels`. The tab was hidden and the same
+ * action stayed on every suggestion card — the API refuses the call, so it was
+ * never a hole, just a button that could not do what it offered.
+ */
+describe('FloatingAgent — carousel permission', () => {
+  const suggestion = {
+    id: 's-1',
+    tenantId: 't',
+    userId: 'u',
+    category: 'content_idea' as const,
+    content: 'una idea',
+    status: 'pending' as const,
+    outcome: null,
+    createdAt: new Date().toISOString(),
+  }
+  const openOnSuggestions = (tabs: ActiveTab[]) => {
+    render(
+      <FloatingAgent
+        hook={makeHook({
+          suggestionsLoaded: true,
+          suggestions: [suggestion],
+          // The panel groups by batch, so a loose suggestion draws nothing.
+          suggestionBatches: [
+            {
+              id: 'b-1',
+              tenantId: 't',
+              userId: 'u',
+              userMessage: 'dame ideas',
+              createdAt: new Date().toISOString(),
+              suggestions: [suggestion],
+            },
+          ],
+        })}
+        permittedTabs={tabs}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente/i }))
+    // It opens on Chat; the cards live one tab over.
+    fireEvent.click(screen.getByRole('tab', { name: /Sugerencias/i }))
+  }
+
+  it('offers no carousel action without the module', () => {
+    openOnSuggestions(['chat', 'suggestions'])
+
+    expect(screen.queryByRole('button', { name: /carrusel/i })).not.toBeInTheDocument()
+  })
+
+  it('offers it when the module is there', () => {
+    openOnSuggestions(['chat', 'suggestions', 'carousels'])
+
+    expect(screen.getByRole('button', { name: /carrusel/i })).toBeInTheDocument()
+  })
+})
+
