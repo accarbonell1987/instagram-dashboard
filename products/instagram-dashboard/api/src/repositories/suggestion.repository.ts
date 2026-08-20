@@ -1,5 +1,6 @@
 import { SuggestionStatus, type PrismaClient, type SuggestionCategory, type SuggestionOutcome } from '@prisma/client';
 
+import { NotFoundError } from '../errors.js';
 import type { Owner } from '../domain/owner.js';
 
 export type { SuggestionCategory, SuggestionStatus, SuggestionOutcome };
@@ -104,8 +105,13 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
   }
 
   async update(owner: Owner, id: string, data: UpdateSuggestion): Promise<ContentSuggestion> {
-    const record = await this.prisma.contentSuggestion.update({
-      where: { id },
+    // `updateMany` with the owner in the WHERE, which is where isolation has to
+    // live. It used to sit in `data` under a comment claiming to enforce it, so
+    // the update matched on id alone — any member could mark another member's
+    // suggestion used or dismissed — and then wrote the caller's tenantId and
+    // userId onto the row, quietly moving it to whoever touched it last.
+    const updated = await this.prisma.contentSuggestion.updateMany({
+      where: { ...owner, id },
       data: {
         ...(data.status !== undefined && { status: data.status }),
         ...(data.linkedMediaId !== undefined && { linkedMediaId: data.linkedMediaId }),
@@ -114,8 +120,18 @@ export class PrismaSuggestionRepository implements ISuggestionRepository {
         ...(data.measuredAt !== undefined && { measuredAt: data.measuredAt }),
         ...(data.baselineJson !== undefined && { baselineJson: data.baselineJson as object }),
         ...(data.metricsJson !== undefined && { metricsJson: data.metricsJson as object }),
-        ...owner, // enforce owner isolation
       },
+    });
+
+    // Nothing matched: the id belongs to somebody else, or to nothing. Saying
+    // "not found" rather than "forbidden" on purpose — telling a caller that an
+    // id exists under another owner is an existence oracle.
+    if (updated.count === 0) {
+      throw new NotFoundError('suggestion', id);
+    }
+
+    const record = await this.prisma.contentSuggestion.findFirstOrThrow({
+      where: { ...owner, id },
     });
     return this.toDomain(record);
   }
