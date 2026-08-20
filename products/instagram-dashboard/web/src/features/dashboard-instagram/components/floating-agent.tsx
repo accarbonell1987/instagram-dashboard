@@ -36,7 +36,8 @@ export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentP
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<ActiveTab>(permittedTabs[0] ?? 'chat')
   const [isExpanded, setIsExpanded] = useState(false)
-  const [seenCount, setSeenCount] = useState(0)
+  // Null until the first load lands: unknown, not zero.
+  const [seenCount, setSeenCount] = useState<number | null>(null)
   const [activeCarouselId, setActiveCarouselId] = useState<string | null>(null)
   const [carouselRefreshTrigger, setCarouselRefreshTrigger] = useState(0)
   const [scriptPreview, setScriptPreview] = useState<{ topic: string; suggestionId?: string } | null>(null)
@@ -69,17 +70,39 @@ export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentP
     }
   }, [isOpen, activeTab])
 
-  const totalItems = hook.messages.length + hook.suggestions.length
-  const unreadCount = isOpen ? 0 : Math.max(0, totalItems - seenCount)
+  /**
+   * How many suggestions arrived while the panel was shut.
+   *
+   * It used to be `messages + suggestions` measured against a baseline of zero,
+   * so on every page load it announced the whole history back — your own typed
+   * messages included. A badge reading 4 for two messages you wrote and two
+   * suggestions you had already read is not a notification, it is a tally of
+   * things that exist.
+   *
+   * Messages are gone from the count: the agent only ever replies while you are
+   * watching it, so a message is never news. Suggestions can appear on their
+   * own, which is the only thing here worth a red dot.
+   */
+  const suggestionCount = hook.suggestions.length
+  const unreadCount = isOpen || seenCount === null ? 0 : Math.max(0, suggestionCount - seenCount)
+
+  // The baseline waits for the first load. Taken at mount it would be zero
+  // against a list still in flight, and every existing suggestion would count
+  // as new — which is the bug, in miniature.
+  useEffect(() => {
+    if (hook.suggestionsLoaded && seenCount === null) {
+      setSeenCount(suggestionCount)
+    }
+  }, [hook.suggestionsLoaded, seenCount, suggestionCount])
 
   const handleOpen = () => {
     setIsOpen(true)
-    setSeenCount(totalItems)
+    setSeenCount(suggestionCount)
   }
 
   const handleClose = () => {
     setIsOpen(false)
-    setSeenCount(totalItems)
+    setSeenCount(suggestionCount)
   }
 
   const handleStartCarousel = (suggestion: ContentSuggestion) => {

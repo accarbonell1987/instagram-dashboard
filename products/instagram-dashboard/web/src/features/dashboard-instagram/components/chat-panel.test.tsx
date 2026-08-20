@@ -28,6 +28,7 @@ function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgent
     agentConfig: null,
     hasFalApiKey: false,
   hasLlmApiKey: false,
+  suggestionsLoaded: true,
   settingsFailed: false,
   // Every section, so these tests keep exercising the panel rather than the gate.
   editableSections: ['topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles'] as const,

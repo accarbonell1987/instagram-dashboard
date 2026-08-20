@@ -23,6 +23,8 @@ export interface UseGrowthAgentResult {
   messages: ChatMessage[]
   suggestions: ContentSuggestion[]
   suggestionBatches: SuggestionBatch[]
+  /** The first suggestion load has landed — empty now means empty, not pending. */
+  suggestionsLoaded: boolean
   isLoading: boolean
   sessionId: string
   error: string | null
@@ -81,11 +83,21 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
 
   // Load suggestion batches — extracted so it can be called after chat responses too
   const [suggestionBatches, setSuggestionBatches] = useState<SuggestionBatch[]>([])
+  // Whether the first load has landed. Without it a caller cannot tell an empty
+  // list from a list that has not arrived — and the unread badge needs to,
+  // since everything present at that moment is history rather than news.
+  const [suggestionsLoaded, setSuggestionsLoaded] = useState(false)
 
   const loadBatches = useCallback(async () => {
-    const data = await getSuggestionBatches(1, 50)
-    setSuggestionBatches(data.batches)
-    setSuggestions(data.batches.flatMap((b) => b.suggestions))
+    try {
+      const data = await getSuggestionBatches(1, 50)
+      setSuggestionBatches(data.batches)
+      setSuggestions(data.batches.flatMap((b) => b.suggestions))
+    } finally {
+      // Marked even on failure: a load that errored is still a load that is
+      // over, and leaving it pending would make the badge silent for good.
+      setSuggestionsLoaded(true)
+    }
   }, [])
 
   useEffect(() => {
@@ -333,6 +345,7 @@ export function useGrowthAgent(options?: { enabled?: boolean }): UseGrowthAgentR
     messages,
     suggestions,
     suggestionBatches,
+    suggestionsLoaded,
     isLoading,
     sessionId,
     error,

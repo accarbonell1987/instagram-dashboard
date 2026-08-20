@@ -43,6 +43,7 @@ function makeHook(overrides: Partial<UseGrowthAgentResult> = {}): UseGrowthAgent
     agentConfig: null,
     hasFalApiKey: false,
   hasLlmApiKey: false,
+  suggestionsLoaded: true,
   settingsFailed: false,
   // Every section, so these tests keep exercising the panel rather than the gate.
   editableSections: ['topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles'] as const,
@@ -266,6 +267,89 @@ describe('FloatingAgent — scrim', () => {
 
     // A scrim above the panel would blur the very thing it is meant to frame.
     expect(scrimOf(container)?.className).toContain('z-40')
+  })
+})
+
+/**
+ * The badge read 4 for a member with two messages they had typed themselves and
+ * two suggestions they had already read. It counted things that existed, from a
+ * baseline of zero, and called the total unread.
+ */
+describe('FloatingAgent — unread badge', () => {
+  const withSuggestions = (count: number, loaded = true) =>
+    makeHook({
+      suggestionsLoaded: loaded,
+      suggestions: Array.from({ length: count }, (_, i) => ({
+        id: `s-${String(i)}`,
+        tenantId: 't',
+        userId: 'u',
+        category: 'content_idea',
+        content: `idea ${String(i)}`,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      })),
+    })
+
+  it('announces nothing for suggestions that were already there', () => {
+    render(<FloatingAgent hook={withSuggestions(2)} />)
+
+    expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument()
+  })
+
+  /**
+   * You wrote them, and the agent answers while you are watching. Messages
+   * arriving after the baseline still must not raise the badge — asserted by
+   * adding them afterwards, since a message present at baseline would be
+   * excluded either way and prove nothing.
+   */
+  it('does not count messages, even ones that arrive later', () => {
+    const message = (id: string) => ({
+      id,
+      role: 'user' as const,
+      content: 'hola',
+      createdAt: new Date().toISOString(),
+    })
+    const { rerender } = render(<FloatingAgent hook={makeHook({ suggestionsLoaded: true })} />)
+
+    rerender(
+      <FloatingAgent
+        hook={makeHook({ suggestionsLoaded: true, messages: [message('m1'), message('m2')] })}
+      />,
+    )
+
+    expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument()
+  })
+
+  /**
+   * The sequence that produced the bug: mount with the list still in flight,
+   * then the existing suggestions land. A baseline taken at mount is zero, and
+   * everything that arrives is counted as new — which is how a member with two
+   * old suggestions got a red 4.
+   */
+  it('does not announce suggestions that merely finished loading', () => {
+    const { rerender } = render(<FloatingAgent hook={withSuggestions(0, false)} />)
+
+    rerender(<FloatingAgent hook={withSuggestions(2, true)} />)
+
+    expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument()
+  })
+
+  it('announces a suggestion that arrived after the baseline', () => {
+    const { rerender } = render(<FloatingAgent hook={withSuggestions(2)} />)
+
+    rerender(<FloatingAgent hook={withSuggestions(5)} />)
+
+    expect(screen.getByLabelText('3 sin leer')).toBeInTheDocument()
+  })
+
+  it('clears once the panel is opened', () => {
+    const { rerender } = render(<FloatingAgent hook={withSuggestions(2)} />)
+    rerender(<FloatingAgent hook={withSuggestions(4)} />)
+    expect(screen.getByLabelText('2 sin leer')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente/i }))
+
+    expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument()
   })
 })
 
