@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 
-import type { Repositories } from './lib/create-repositories.js';
+import type { Repositories } from './shared/lib/create-repositories.js';
 
 // Mock @hono/node-server's serve to prevent actual server startup during tests
 vi.mock('@hono/node-server', () => ({
@@ -29,19 +29,19 @@ describe('Bootstrap (index.ts) — Composition Root', () => {
     expect(config.CORS_ORIGIN).toBeTypeOf('string');
     expect(config.NODE_ENV).toBeTypeOf('string');
 
-    const { createRepositories } = await import('./lib/create-repositories.js');
+    const { createRepositories } = await import('./shared/lib/create-repositories.js');
     expect(createRepositories).toBeTypeOf('function');
 
-    const { OAuthService } = await import('./services/oauth.service.js');
+    const { OAuthService } = await import('./account/services/oauth.service.js');
     expect(OAuthService).toBeTypeOf('function');
 
-    const { SyncService } = await import('./services/sync.service.js');
+    const { SyncService } = await import('./account/services/sync.service.js');
     expect(SyncService).toBeTypeOf('function');
 
-    const { DashboardService } = await import('./services/dashboard.service.js');
+    const { DashboardService } = await import('./dashboard/services/dashboard.service.js');
     expect(DashboardService).toBeTypeOf('function');
 
-    const { InsightService } = await import('./services/insight.service.js');
+    const { InsightService } = await import('./dashboard/services/insight.service.js');
     expect(InsightService).toBeTypeOf('function');
 
     const { authGuard } = await import('./middleware/auth-guard.js');
@@ -50,27 +50,27 @@ describe('Bootstrap (index.ts) — Composition Root', () => {
     const { errorHandler } = await import('./middleware/error-handler.js');
     expect(errorHandler).toBeDefined();
 
-    const { createHealthRoutes } = await import('./routes/health/health.routes.js');
+    const { createHealthRoutes } = await import('./shared/routes/health/health.routes.js');
     expect(createHealthRoutes).toBeTypeOf('function');
 
-    const { createAuthRoutes } = await import('./routes/auth/auth.routes.js');
+    const { createAuthRoutes } = await import('./account/routes/auth/auth.routes.js');
     expect(createAuthRoutes).toBeTypeOf('function');
 
-    const { createDashboardRoutes } = await import('./routes/dashboard/dashboard.routes.js');
+    const { createDashboardRoutes } = await import('./dashboard/routes/dashboard/dashboard.routes.js');
     expect(createDashboardRoutes).toBeTypeOf('function');
 
-    const { createMediaRoutes } = await import('./routes/media/media.routes.js');
+    const { createMediaRoutes } = await import('./dashboard/routes/media/media.routes.js');
     expect(createMediaRoutes).toBeTypeOf('function');
 
-    const { createSyncRoutes } = await import('./routes/sync/sync.routes.js');
+    const { createSyncRoutes } = await import('./account/routes/sync/sync.routes.js');
     expect(createSyncRoutes).toBeTypeOf('function');
   });
 
   it('service constructors accept dependency types correctly', async () => {
-    const { OAuthService } = await import('./services/oauth.service.js');
-    const { SyncService } = await import('./services/sync.service.js');
-    const { DashboardService } = await import('./services/dashboard.service.js');
-    const { InsightService } = await import('./services/insight.service.js');
+    const { OAuthService } = await import('./account/services/oauth.service.js');
+    const { SyncService } = await import('./account/services/sync.service.js');
+    const { DashboardService } = await import('./dashboard/services/dashboard.service.js');
+    const { InsightService } = await import('./dashboard/services/insight.service.js');
 
     const mockRepos = {
       instagram: {},
@@ -89,7 +89,7 @@ describe('Bootstrap (index.ts) — Composition Root', () => {
   });
 
   it('route factories return OpenAPIHono instances', async () => {
-    const { createApiRouter } = await import('./lib/create-openapi-router.js');
+    const { createApiRouter } = await import('./shared/lib/create-openapi-router.js');
     const router = createApiRouter();
     expect(router).toBeDefined();
     expect(typeof router.route).toBe('function');

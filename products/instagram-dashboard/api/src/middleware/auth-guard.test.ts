@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { UnauthorizedError } from '../errors.js';
-import { verifyAccessToken } from '../lib/jwt-verifier.js';
+import { verifyAccessToken } from '../shared/lib/jwt-verifier.js';
 
 import { authGuard } from './auth-guard.js';
 
 // Mock jwt-verifier (vi.mock is hoisted above the imports at runtime)
-vi.mock('../lib/jwt-verifier.js', () => ({
+vi.mock('../shared/lib/jwt-verifier.js', () => ({
   verifyAccessToken: vi.fn(),
 }));
 

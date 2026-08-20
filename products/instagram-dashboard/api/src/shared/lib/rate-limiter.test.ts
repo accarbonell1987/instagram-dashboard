@@ -49,14 +49,26 @@ describe('FixedWindowRateLimiter', () => {
   });
 
   /**
-   * Carried over from the counter this replaced: the call that opens a window
-   * is allowed whatever the limit says. Recorded rather than corrected — the
-   * production limit is 190, where one extra call is noise.
+   * The version extracted from SyncService let the call that opened a window
+   * through whatever the limit said. The middleware's copy did not, and the
+   * middleware was right — so the merged one refuses from the first call.
    */
-  it('lets the first call through even at a limit of zero', () => {
+  it('refuses from the first call at a limit of zero', () => {
     const limiter = new FixedWindowRateLimiter(0, 60_000);
 
-    expect(limiter.allows('a')).toBe(true);
     expect(limiter.allows('a')).toBe(false);
+  });
+
+  /** For a Retry-After: how long until this key gets its allowance back. */
+  it('reports the seconds left in the window', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-20T10:00:00Z'));
+    const limiter = new FixedWindowRateLimiter(1, 60_000);
+    limiter.allows('a');
+
+    vi.setSystemTime(new Date('2026-08-20T10:00:20Z'));
+
+    expect(limiter.retryAfterSeconds('a')).toBe(40);
+    vi.useRealTimers();
   });
 });

@@ -1,44 +1,25 @@
 import { createMiddleware } from 'hono/factory';
 
 import { RateLimitError } from '../errors.js';
+import { FixedWindowRateLimiter } from '../shared/lib/rate-limiter.js';
 
-const counters = new Map<string, { count: number; windowStart: number }>();
-const MAX_CALLS = 190;
-const WINDOW_MS = 3600000;
-
-export function checkRateLimit(key: string): {
-  allowed: boolean;
-  retryAfter?: number;
-} {
-  const now = Date.now();
-  let counter = counters.get(key);
-
-  if (!counter || now - counter.windowStart > WINDOW_MS) {
-    counter = { count: 0, windowStart: now };
-    counters.set(key, counter);
-  }
-
-  if (counter.count >= MAX_CALLS) {
-    return {
-      allowed: false,
-      retryAfter: Math.ceil(
-        (counter.windowStart + WINDOW_MS - now) / 1000,
-      ),
-    };
-  }
-
-  counter.count++;
-  return { allowed: true };
-}
+/**
+ * Instagram's own budget: roughly 200 calls an hour per token, held at 190.
+ *
+ * The counting lives in `FixedWindowRateLimiter`, which `SyncService` uses too.
+ * This module had its own copy of it — the same rule, written twice, for the
+ * same limit.
+ */
+const limiter = new FixedWindowRateLimiter(190, 3_600_000);
 
 export const rateLimitMiddleware = createMiddleware(async (c, next) => {
   const tenant = c.get('tenant');
   const key = `ig:${tenant.tenantId}`;
 
-  const { allowed, retryAfter } = checkRateLimit(key);
-  if (!allowed) {
-    throw new RateLimitError(retryAfter ?? 3600);
+  if (!limiter.allows(key)) {
+    throw new RateLimitError(limiter.retryAfterSeconds(key));
   }
+  limiter.record(key);
 
   await next();
 });

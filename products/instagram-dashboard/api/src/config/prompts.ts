@@ -1,4 +1,4 @@
-import type { AgentConfig } from '../domain/account.js';
+import type { AgentConfig } from '../account/domain/account.js';
 
 // ─── Default System Prompt (genérico, sin nicho hardcodeado) ──────────────────
 

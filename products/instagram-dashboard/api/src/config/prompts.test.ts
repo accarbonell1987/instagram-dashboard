@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
+import type { AgentConfig } from '../account/domain/account.js';
+
 import { DEFAULT_SYSTEM_PROMPT, buildSystemPrompt } from './prompts.js';
-import type { AgentConfig } from '../domain/account.js';
 
 const config = (overrides: Partial<AgentConfig> = {}): AgentConfig => ({
   niche: 'ferretería',
