@@ -125,3 +125,22 @@ export async function getUsageBreakdown(days: number): Promise<UsageBreakdown> {
   );
 }
 
+export interface CurrentUser {
+  id: string;
+  email: string;
+  fullName: string;
+}
+
+/**
+ * Who is signed in, from the platform rather than from this product.
+ *
+ * The account's owner is a `user_id` here and nothing else — the email lives in
+ * api-iam, and a copy kept locally would go stale the first time somebody
+ * changes it. Unlike the member list this needs no admin role: it answers only
+ * about the caller.
+ */
+export async function getCurrentUser(): Promise<CurrentUser> {
+  const result = await authorizedFetch<{ user: CurrentUser }>(`${PLATFORM_BASE}/auth/me`);
+  return result.user;
+}
+

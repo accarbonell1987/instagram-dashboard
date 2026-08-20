@@ -30,6 +30,7 @@ import {
   useDemographics,
 } from './hooks/use-instagram-dashboard';
 import { backfillFollowerHistory, getMyModules } from './services/instagram.service';
+import { getCurrentUser, type CurrentUser } from './services/tenant-admin.service';
 import type {
   ContentFinding,
   FormatBreakdown,
@@ -82,6 +83,19 @@ export function DashboardInstagramPage(): JSX.Element {
     enabled: isConnected,
   });
   const { syncState, triggerSync, isTriggering } = useSyncStatus({ enabled: isConnected });
+
+  // Who is signed in, for the profile card. Degrades to null rather than
+  // failing the page: a missing label is a smaller loss than a dashboard that
+  // will not render because the platform API blinked.
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  useEffect(() => {
+    if (!isConnected) return;
+    let cancelled = false;
+    getCurrentUser()
+      .then((user) => { if (!cancelled) setCurrentUser(user); })
+      .catch(() => { if (!cancelled) setCurrentUser(null); });
+    return () => { cancelled = true; };
+  }, [isConnected]);
   // ponytail: gates the whole agent fetch set (chat history, suggestion batches,
   // config) on the widget being visible at all. It doesn't further split fetches
   // per-tab (e.g. skip chat history when only carousels is permitted) — add that
@@ -311,6 +325,7 @@ export function DashboardInstagramPage(): JSX.Element {
           <ProfileHeader
             profile={profile}
             lastSyncAt={syncState?.lastSyncAt ?? null}
+            connectedBy={currentUser}
             rightContent={
               <SyncStatusBadge
                 syncState={syncState}

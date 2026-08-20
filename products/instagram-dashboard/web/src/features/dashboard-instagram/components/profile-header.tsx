@@ -35,10 +35,17 @@ function Stat({ label, value }: { label: string; value: string }) {
 export function ProfileHeader({
   profile,
   lastSyncAt,
+  connectedBy,
   rightContent,
 }: {
   profile: InstagramProfile;
   lastSyncAt?: string | null;
+  /**
+   * The member of the organisation this account is connected under. Each member
+   * connects their own, so the card showed an Instagram handle with no hint of
+   * which of your logins was looking at it.
+   */
+  connectedBy?: { email: string; fullName?: string } | null;
   rightContent?: ReactNode;
 }) {
   const followRatio =
@@ -80,6 +87,12 @@ export function ProfileHeader({
             <p className="text-muted-foreground text-sm">@{profile.username}</p>
             {profile.bio !== '' && (
               <p className="text-muted-foreground mt-0.5 line-clamp-1 text-sm">{profile.bio}</p>
+            )}
+            {connectedBy != null && (
+              <p className="text-muted-foreground mt-1 truncate text-xs" title={connectedBy.email}>
+                Conectada por{' '}
+                <span className="text-foreground font-medium">{connectedBy.email}</span>
+              </p>
             )}
             {profile.website !== undefined && profile.website !== '' && (
               <a

@@ -84,4 +84,40 @@ describe('ProfileHeader', () => {
 
     expect(container.querySelector('.line-clamp-1')).toBeNull()
   })
+
+  /**
+   * Each member connects their own Instagram account, so the card showed a
+   * handle with nothing saying which of your logins was looking at it — the
+   * exact ambiguity behind "I see the same thing in both browsers".
+   */
+  describe('who it is connected under', () => {
+    it('names the member', () => {
+      render(
+        <ProfileHeader
+          profile={profile()}
+          connectedBy={{ email: 'accarbonellpy@gmail.com', fullName: 'Alberto' }}
+        />,
+      )
+
+      expect(screen.getByText('accarbonellpy@gmail.com')).toBeInTheDocument()
+    })
+
+    /**
+     * Degrades quietly. The label comes from the platform API, and a dashboard
+     * that refuses to render because that call blinked trades a small loss for
+     * a total one.
+     */
+    it('says nothing when the lookup came back empty', () => {
+      render(<ProfileHeader profile={profile()} connectedBy={null} />)
+
+      expect(screen.queryByText(/Conectada por/)).not.toBeInTheDocument()
+    })
+
+    it('says nothing when no member was passed at all', () => {
+      render(<ProfileHeader profile={profile()} />)
+
+      expect(screen.queryByText(/Conectada por/)).not.toBeInTheDocument()
+    })
+  })
 })
+
