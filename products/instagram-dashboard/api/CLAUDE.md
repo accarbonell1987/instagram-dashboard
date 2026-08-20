@@ -108,7 +108,31 @@ implementación de tool-calling y parseo para el mismo resultado.
   en la facturación describía algo que la cuota ya no mide. `ALTER TYPE ... RENAME VALUE` reescribe
   la etiqueta en su lugar, así que las filas de `plan_quotas` no necesitan backfill.
 
+### Un cambio de schema desde el host NO llega al contenedor
+
+`docker-compose.dev.yml` monta `- /app/node_modules` como volumen anónimo, que **enmascara** el
+`node_modules` del host. El cliente Prisma de este paquete se genera ahí adentro (el `generator`
+no declara `output`), así que:
+
+- Correr `prisma db push` o `db:generate` desde el host actualiza la **base** y el cliente **del
+  host**, y deja el del contenedor viejo.
+- El síntoma es `Unknown argument \`campo\`` o `Unknown field` en una columna que **sí existe** en
+  Postgres — el error acusa al código y la causa es el cliente.
+- `tsx watch` recarga el proceso, no el contenedor, así que no lo arregla.
+
+La cura es reiniciar el contenedor: su entrypoint corre `db:generate` y `db:push`.
+
+```bash
+docker restart corehub-instagram-api
+```
+
+Pasó dos veces: con `llm_api_key_encrypted` y con `ai_usage_logs.user_id`.
+
 ### El agente tiene dos relojes
+
+El deployment corre `DEEPSEEK_MODEL=deepseek-v4-pro`, que pisa el default del código
+(`deepseek-v4-flash`). `pro` razona más y tarda más: las generaciones acá promedian ~8k tokens y
+28–59s. Si el chat tiene que ser rápido, ese env es la palanca, no el timeout.
 
 `HOP_TIMEOUT_MS` (120s) acota **cada** llamada al modelo; `REQUEST_BUDGET_MS` (180s) acota el chat
 entero, y la ventana de cada salto se recorta con lo que queda. Antes había un solo tope de 60s por
