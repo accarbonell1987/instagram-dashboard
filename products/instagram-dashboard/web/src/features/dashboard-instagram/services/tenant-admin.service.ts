@@ -33,9 +33,19 @@ export interface UsageByUser extends UsageTotals {
   userId: string | null;
 }
 
+export interface UsageByOperation extends UsageTotals {
+  operation: string;
+}
+
+export interface UsageDay extends UsageTotals {
+  date: string;
+}
+
 export interface UsageBreakdown {
   total: UsageTotals;
   byUser: UsageByUser[];
+  byOperation: UsageByOperation[];
+  daily: UsageDay[];
   since: string;
 }
 

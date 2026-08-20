@@ -20,9 +20,22 @@ export interface UsageByUser extends UsageTotals {
   userId: string | null;
 }
 
+export interface UsageByOperation extends UsageTotals {
+  operation: string;
+}
+
+export interface UsageDay extends UsageTotals {
+  /** `YYYY-MM-DD`, the tenant's day as the database sees it. */
+  date: string;
+}
+
 export interface UsageBreakdown {
   total: UsageTotals;
   byUser: UsageByUser[];
+  /** Where the spend goes: chat, suggestions, scripts, images. */
+  byOperation: UsageByOperation[];
+  /** One entry per day in the window, including the days with nothing. */
+  daily: UsageDay[];
   since: string;
 }
 
@@ -175,6 +188,8 @@ export class UsageTracker {
     });
 
     const byUser = new Map<string | null, UsageByUser>();
+    // Free: the groupBy already selects operation, so no second round trip.
+    const byOperation = new Map<string, UsageByOperation>();
     const total: UsageTotals = { tokens: 0, images: 0, calls: 0, messages: 0 };
 
     for (const row of rows) {
@@ -201,6 +216,19 @@ export class UsageTracker {
       entry.calls += calls;
       entry.messages += messages;
       byUser.set(key, entry);
+
+      const op = byOperation.get(row.operation) ?? {
+        operation: row.operation,
+        tokens: 0,
+        images: 0,
+        calls: 0,
+        messages: 0,
+      };
+      op.tokens += tokens;
+      op.images += images;
+      op.calls += calls;
+      op.messages += messages;
+      byOperation.set(row.operation, op);
     }
 
     return {
@@ -208,8 +236,62 @@ export class UsageTracker {
       // Heaviest first: a breakdown is read to find who is spending, and
       // scanning a list for the big number is work the sort can do.
       byUser: Array.from(byUser.values()).sort((a, b) => b.tokens - a.tokens),
+      byOperation: Array.from(byOperation.values()).sort((a, b) => b.tokens - a.tokens),
+      daily: await this.dailyUsage(tenantId, since),
       since: since.toISOString(),
     };
+  }
+
+  /**
+   * A row per day, including the quiet ones.
+   *
+   * Gaps are filled here rather than left to the chart: a line that skips empty
+   * days draws a busy Tuesday next to a busy Friday as if they were adjacent,
+   * which reads as steady use where there was a pause.
+   *
+   * Raw SQL because grouping by a truncated date is not something Prisma's
+   * groupBy expresses.
+   */
+  private async dailyUsage(tenantId: string, since: Date): Promise<UsageDay[]> {
+    const rows = await this.prisma.$queryRaw<
+      { day: Date; tokens: bigint; images: bigint; calls: bigint; messages: bigint }[]
+    >`
+      SELECT date_trunc('day', created_at) AS day,
+             COALESCE(SUM(prompt_tokens + completion_tokens), 0) AS tokens,
+             COALESCE(SUM(image_count), 0) AS images,
+             COUNT(*) AS calls,
+             COUNT(*) FILTER (WHERE operation = 'chat') AS messages
+        FROM ai_usage_logs
+       WHERE tenant_id = ${tenantId}::uuid AND created_at >= ${since}
+       GROUP BY 1
+       ORDER BY 1
+    `;
+
+    const byDate = new Map(
+      rows.map((row) => [
+        row.day.toISOString().slice(0, 10),
+        {
+          date: row.day.toISOString().slice(0, 10),
+          tokens: Number(row.tokens),
+          images: Number(row.images),
+          calls: Number(row.calls),
+          messages: Number(row.messages),
+        },
+      ]),
+    );
+
+    const days: UsageDay[] = [];
+    const cursor = new Date(since);
+    cursor.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    while (cursor <= today) {
+      const key = cursor.toISOString().slice(0, 10);
+      days.push(byDate.get(key) ?? { date: key, tokens: 0, images: 0, calls: 0, messages: 0 });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return days;
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await -- interface contract is () => Promise<void>; callers await it

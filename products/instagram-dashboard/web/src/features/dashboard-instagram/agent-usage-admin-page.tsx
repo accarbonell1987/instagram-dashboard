@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 
+import {
+  UsageByOperationChart,
+  UsageByUserChart,
+  UsageOverTimeChart,
+} from './components/usage-charts';
 import { initHubToken, reportHeightToHub, subscribeToToken } from './lib/hub-token';
 import {
   getUsageBreakdown,
@@ -80,7 +85,7 @@ export function AgentUsageAdminPage(): JSX.Element {
   const nameFor = (userId: string | null): string => {
     // The rows that predate attribution. Named rather than hidden: dropping
     // them would leave the members not adding up to the total.
-    if (userId === null) return 'Sin atribuir (anterior al registro por usuario)';
+    if (userId === null) return 'Sin atribuir';
     const member = membersById.get(userId);
     return member?.fullName ?? member?.email ?? userId;
   };
@@ -130,6 +135,27 @@ export function AgentUsageAdminPage(): JSX.Element {
               </div>
             ))}
           </dl>
+
+          <UsageOverTimeChart daily={breakdown.daily} />
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            <UsageByUserChart
+              data={breakdown.byUser}
+              metric="tokens"
+              title="Tokens por miembro"
+              hint="Quién consume el presupuesto"
+              nameFor={nameFor}
+            />
+            <UsageByUserChart
+              data={breakdown.byUser}
+              metric="messages"
+              title="Mensajes por miembro"
+              hint="Conversaciones con el agente"
+              nameFor={nameFor}
+            />
+          </div>
+
+          <UsageByOperationChart data={breakdown.byOperation} />
 
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-sm">

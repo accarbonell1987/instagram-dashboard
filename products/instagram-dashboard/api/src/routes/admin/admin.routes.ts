@@ -141,6 +141,8 @@ export function createAdminRoutes(
         {
           total: { tokens: 0, images: 0, calls: 0, messages: 0 },
           byUser: [],
+          byOperation: [],
+          daily: [],
           since: since.toISOString(),
         },
         200,

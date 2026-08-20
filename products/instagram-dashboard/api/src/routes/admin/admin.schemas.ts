@@ -46,6 +46,8 @@ const UsageTotalsSchema = z.object({
 
 export const AdminUsageResponseSchema = z.object({
   total: UsageTotalsSchema,
+  byOperation: z.array(UsageTotalsSchema.extend({ operation: z.string() })),
+  daily: z.array(UsageTotalsSchema.extend({ date: z.string() })),
   byUser: z.array(
     UsageTotalsSchema.extend({
       // Null for calls made before the column existed. The UI names that entry

@@ -22,9 +22,13 @@ function makeMockPrisma(overrides: Record<string, unknown> = {}) {
       groupBy: vi.fn(),
       count: vi.fn(),
     },
+    // The daily series is raw SQL: grouping by a truncated date is not
+    // something Prisma's groupBy expresses.
+    $queryRaw: vi.fn().mockResolvedValue([]),
     ...overrides,
   } as unknown as PrismaClient & {
     aiUsageLog: Record<'create' | 'aggregate' | 'groupBy' | 'count', Mock>;
+    $queryRaw: Mock;
   };
 }
 
@@ -473,6 +477,97 @@ describe('UsageTracker', () => {
 
       expect(result.total).toEqual({ tokens: 0, images: 0, calls: 0, messages: 0 });
       expect(result.byUser).toEqual([]);
+    });
+  });
+
+  // ── the shapes the charts read ─────────────────────────────────────────────
+
+  describe('getBreakdown — byOperation', () => {
+    const row = (userId: string | null, operation: string, tokens: number, count = 1) => ({
+      userId,
+      operation,
+      _sum: { promptTokens: tokens, completionTokens: 0, imageCount: 0 },
+      _count: { _all: count },
+    });
+
+    it('adds up each kind of call across every member', async () => {
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([
+        row('user-a', 'chat', 100, 2),
+        row('user-b', 'chat', 50, 1),
+        row('user-a', 'image_gen', 10, 4),
+      ]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', new Date('2026-08-19'));
+
+      const chat = result.byOperation.find((op) => op.operation === 'chat');
+      expect(chat).toMatchObject({ tokens: 150, calls: 3 });
+      expect(result.byOperation).toHaveLength(2);
+    });
+
+    /** Same rows the per-member split reads — one round trip, not two. */
+    it('needs no query of its own', async () => {
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([row('user-a', 'chat', 100)]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      await tracker.getBreakdown('tenant-1', new Date('2026-08-19'));
+
+      expect(mockPrisma.aiUsageLog.groupBy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getBreakdown — daily series', () => {
+    /**
+     * The gap-filling. A line that skips the quiet days draws a busy Tuesday
+     * beside a busy Friday as though they were adjacent — steady use, where
+     * there was a pause.
+     */
+    it('fills the days with nothing on them', async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 3);
+      since.setHours(0, 0, 0, 0);
+
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([]);
+      mockPrisma.$queryRaw.mockResolvedValue([]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', since);
+
+      // Three days back, inclusive of today.
+      expect(result.daily).toHaveLength(4);
+      expect(result.daily.every((day) => day.tokens === 0)).toBe(true);
+    });
+
+    it('keeps the days in order, oldest first', async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 5);
+
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([]);
+      mockPrisma.$queryRaw.mockResolvedValue([]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', since);
+      const dates = result.daily.map((day) => day.date);
+
+      expect([...dates].sort()).toEqual(dates);
+    });
+
+    /** Postgres counts in bigint; JSON does not carry it. */
+    it('turns the database bigints into numbers', async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([]);
+      mockPrisma.$queryRaw.mockResolvedValue([
+        { day: today, tokens: 1200n, images: 3n, calls: 5n, messages: 4n },
+      ]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', today);
+      const day = result.daily.find((entry) => entry.tokens > 0);
+
+      expect(day).toMatchObject({ tokens: 1200, images: 3, calls: 5, messages: 4 });
+      expect(typeof day?.tokens).toBe('number');
     });
   });
 });
