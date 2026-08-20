@@ -1,6 +1,6 @@
 'use client';
 
-import { OTPInput, OTPInputContext } from 'input-otp';
+import { OTPInput, OTPInputContext, REGEXP_ONLY_DIGITS } from 'input-otp';
 import { MinusIcon } from 'lucide-react';
 import * as React from 'react';
 
@@ -16,6 +16,14 @@ function InputOTP({
   return (
     <OTPInput
       data-slot="input-otp"
+      // Every code this platform issues is six digits, so a letter can only be
+      // a typo or a paste of the wrong thing. Rejecting the keystroke says so
+      // at the moment it happens, instead of after a round trip.
+      //
+      // Defaults, set before the spread: a caller that genuinely needs letters
+      // can still pass its own pattern.
+      pattern={REGEXP_ONLY_DIGITS}
+      inputMode="numeric"
       containerClassName={cn('has-disabled:opacity-50 flex items-center gap-2', containerClassName)}
       className={cn('disabled:cursor-not-allowed', className)}
       {...props}

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { UserSchema, TenantInSessionSchema } from './auth.schemas.js';
+import {
+  UserSchema,
+  TenantInSessionSchema,
+  OtpVerifyRequestSchema,
+  LoginCompleteRequestSchema,
+} from './auth.schemas.js';
 
 // ─── T-006: UserSchema ─────────────────────────────────────────
 describe('UserSchema', () => {
@@ -154,3 +159,45 @@ describe('TenantInSessionSchema', () => {
     }
   });
 });
+
+/**
+ * Codes are `randomInt(100000, 1000000)` — six digits, always — and config.ts
+ * already holds OTP_STUB_CODE to the same rule. Restricting the input in the
+ * browser is a courtesy; this is the side that decides what the service can be
+ * handed, and it guards both entry points, not just the one people use.
+ */
+describe('OTP codes accept digits only', () => {
+  const schemas = [
+    ['OtpVerifyRequestSchema', OtpVerifyRequestSchema, { otpId: 'otp_1' }] as const,
+    ['LoginCompleteRequestSchema', LoginCompleteRequestSchema, { otpId: 'otp_1' }] as const,
+  ];
+
+  for (const [name, schema, base] of schemas) {
+    describe(name, () => {
+      it('accepts six digits', () => {
+        expect(schema.safeParse({ ...base, code: '123456' }).success).toBe(true);
+      });
+
+      it.each([
+        ['letters', 'abcdef'],
+        ['a mix', '12a456'],
+        ['a leading sign', '+12345'],
+        ['whitespace', '12345 '],
+        ['a decimal point', '1234.5'],
+        // Unicode digits look right and are not what randomInt produced.
+        ['Arabic-Indic digits', '١٢٣٤٥٦'],
+      ])('rejects %s', (_label, code) => {
+        expect(schema.safeParse({ ...base, code }).success).toBe(false);
+      });
+
+      it.each([
+        ['too short', '12345'],
+        ['too long', '1234567'],
+        ['empty', ''],
+      ])('rejects a code that is %s', (_label, code) => {
+        expect(schema.safeParse({ ...base, code }).success).toBe(false);
+      });
+    });
+  }
+});
+

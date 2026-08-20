@@ -72,7 +72,11 @@ export const LoginResponseSchema = z.union([
 
 export const LoginCompleteRequestSchema = z.object({
   otpId: z.string(),
-  code: z.string(),
+  // Six digits, the shape every issued code has: `randomInt(100000, 1000000)`,
+  // and the same rule config.ts already applies to OTP_STUB_CODE. Restricting
+  // the input alone would be cosmetic — this is the side that decides what the
+  // service is willing to be handed.
+  code: z.string().regex(/^\d{6}$/),
   trustDevice: z.boolean().optional().default(false),
   deviceId: z.string().uuid().optional(),
 });
@@ -91,7 +95,7 @@ export const OtpSendResponseSchema = OtpIdSchema;
 
 export const OtpVerifyRequestSchema = z.object({
   otpId: z.string(),
-  code: z.string(),
+  code: z.string().regex(/^\d{6}$/),
 });
 
 export const OtpVerifyResponseSchema = OtpVerificationTokenSchema;
