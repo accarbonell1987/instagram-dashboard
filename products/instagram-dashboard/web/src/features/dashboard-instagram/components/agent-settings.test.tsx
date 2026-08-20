@@ -695,3 +695,39 @@ describe('the footer follows what is actually on screen', () => {
   })
 })
 
+/**
+ * The model field is free text, which is right — catalogues change — but it
+ * left an admin choosing between two names with nothing to choose on. The
+ * deployment ran the slow one for months and the screen never said so.
+ */
+describe('choosing a model', () => {
+  const renderModelTab = () =>
+    render(
+      <AgentSettingsModal
+        editableSections={['model']}
+        surface="settings"
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        initialConfig={null}
+      />,
+    )
+
+  it('says what an empty field falls back to', async () => {
+    const user = userEvent.setup()
+    renderModelTab()
+    await user.click(screen.getByRole('tab', { name: 'Modelo' }))
+
+    expect(screen.getByText(/Vacío usa el modelo por defecto del despliegue/)).toBeInTheDocument()
+  })
+
+  it('names the speed tradeoff once a provider with one is chosen', async () => {
+    const user = userEvent.setup()
+    renderModelTab()
+    await user.click(screen.getByRole('tab', { name: 'Modelo' }))
+
+    // No provider chosen yet: nothing to say about a catalogue we do not know.
+    expect(screen.queryByText(/responde en segundos/)).not.toBeInTheDocument()
+  })
+})
+

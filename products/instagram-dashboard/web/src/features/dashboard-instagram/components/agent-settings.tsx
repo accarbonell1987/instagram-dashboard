@@ -55,6 +55,20 @@ const MODEL_PLACEHOLDERS: Record<string, string> = {
   together: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
   custom: 'llama3',
 }
+
+/**
+ * What the choice costs, for the providers whose catalogue has a fast tier and
+ * a slow one. The field is free text on purpose — catalogues change faster than
+ * this list — but an admin picking between two names deserves to know which one
+ * is the half-minute wait.
+ */
+const MODEL_HINTS: Record<string, string> = {
+  deepseek:
+    'deepseek-v4-flash responde en segundos. deepseek-v4-pro razona más y suele tardar medio minuto o más.',
+  openai: 'gpt-4o-mini es el más rápido y barato; o1 razona más y tarda bastante más.',
+  groq: 'Cualquiera de los suyos responde rápido; es su razón de ser.',
+}
+
 type PromptTab = 'base' | 'hook' | 'development' | 'cta'
 
 const T2I_MODELS: { id: string; label: string; description: string }[] = [
@@ -362,7 +376,13 @@ export function AgentSettingsPanel({
               />
               <p className="text-muted-foreground mt-1 text-xs">
                 El identificador exacto del proveedor, tal cual aparece en su documentación.
+                Vacío usa el modelo por defecto del despliegue.
               </p>
+              {MODEL_HINTS[llmProvider] !== undefined && (
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {MODEL_HINTS[llmProvider]}
+                </p>
+              )}
             </div>
 
             {llmProvider === 'custom' && (
