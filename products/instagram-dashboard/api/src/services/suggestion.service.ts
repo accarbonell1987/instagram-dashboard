@@ -93,6 +93,7 @@ export class SuggestionService {
     if (this.usageTracker) {
       await this.usageTracker.log({
         tenantId: owner.tenantId,
+        userId: owner.userId,
         operation: 'suggestion',
         model: response.model,
         promptTokens: response.usage.promptTokens,

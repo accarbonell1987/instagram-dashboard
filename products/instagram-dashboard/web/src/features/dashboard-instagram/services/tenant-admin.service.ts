@@ -20,6 +20,25 @@ export interface LinkedAccount {
 }
 
 /** The platform user behind `LinkedAccount.userId`. Resolved from api-iam. */
+export interface UsageTotals {
+  tokens: number;
+  images: number;
+  calls: number;
+  /** Chat operations — what the daily allowance counts. */
+  messages: number;
+}
+
+export interface UsageByUser extends UsageTotals {
+  /** Null for calls made before attribution existed. */
+  userId: string | null;
+}
+
+export interface UsageBreakdown {
+  total: UsageTotals;
+  byUser: UsageByUser[];
+  since: string;
+}
+
 export interface TenantMember {
   id: string;
   email: string;
@@ -89,3 +108,10 @@ export async function listTenantMembers(): Promise<TenantMember[]> {
   );
   return result.items;
 }
+
+export async function getUsageBreakdown(days: number): Promise<UsageBreakdown> {
+  return authorizedFetch<UsageBreakdown>(
+    `${API_BASE}/api/admin/usage?days=${String(days)}`,
+  );
+}
+

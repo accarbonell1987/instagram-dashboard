@@ -121,6 +121,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockTracker.log).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
+        userId: 'user-1',
         operation: 'script',
         model: 'deepseek-v4-flash',
         promptTokens: 150,

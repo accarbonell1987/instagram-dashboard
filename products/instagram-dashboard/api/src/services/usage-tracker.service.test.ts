@@ -384,4 +384,96 @@ describe('UsageTracker', () => {
       expect(result.allowed).toBe(false);
     });
   });
+
+  // ── getBreakdown ───────────────────────────────────────────────────────────
+
+  describe('getBreakdown', () => {
+    const row = (
+      userId: string | null,
+      operation: string,
+      sums: { promptTokens?: number; completionTokens?: number; imageCount?: number },
+      count = 1,
+    ) => ({
+      userId,
+      operation,
+      _sum: {
+        promptTokens: sums.promptTokens ?? 0,
+        completionTokens: sums.completionTokens ?? 0,
+        imageCount: sums.imageCount ?? 0,
+      },
+      _count: { _all: count },
+    });
+
+    it('adds each member up and totals the tenant', async () => {
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([
+        row('user-a', 'chat', { promptTokens: 100, completionTokens: 200 }, 3),
+        row('user-b', 'chat', { promptTokens: 50, completionTokens: 50 }, 2),
+        row('user-b', 'image_gen', { imageCount: 4 }, 4),
+      ]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', new Date('2026-08-01'));
+
+      expect(result.total).toEqual({ tokens: 400, images: 4, calls: 9, messages: 5 });
+      expect(result.byUser).toHaveLength(2);
+    });
+
+    /**
+     * The rows written before the column existed. They belong to nobody, and
+     * both alternatives are worse: dropping them makes the members stop adding
+     * up to the total, and spreading them credits calls to people who did not
+     * make them.
+     */
+    it('keeps unattributed history in its own entry', async () => {
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([
+        row(null, 'chat', { promptTokens: 900, completionTokens: 100 }, 10),
+        row('user-a', 'chat', { promptTokens: 100, completionTokens: 0 }, 1),
+      ]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', new Date('2026-08-01'));
+
+      const orphan = result.byUser.find((u) => u.userId === null);
+      expect(orphan?.tokens).toBe(1000);
+      expect(result.byUser.reduce((sum, u) => sum + u.tokens, 0)).toBe(result.total.tokens);
+    });
+
+    it('counts messages as chat calls only', async () => {
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([
+        row('user-a', 'chat', { promptTokens: 10 }, 7),
+        row('user-a', 'suggestion', { promptTokens: 10 }, 5),
+        row('user-a', 'script', { promptTokens: 10 }, 3),
+      ]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', new Date('2026-08-01'));
+
+      expect(result.total.messages).toBe(7);
+      expect(result.total.calls).toBe(15);
+    });
+
+    it('sorts the heaviest consumer first', async () => {
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([
+        row('light', 'chat', { promptTokens: 10 }),
+        row('heavy', 'chat', { promptTokens: 5000 }),
+        row('middle', 'chat', { promptTokens: 500 }),
+      ]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', new Date('2026-08-01'));
+
+      expect(result.byUser.map((u) => u.userId)).toEqual(['heavy', 'middle', 'light']);
+    });
+
+    it('returns empty totals when nothing was recorded', async () => {
+      mockPrisma.aiUsageLog.groupBy.mockResolvedValue([]);
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+
+      const result = await tracker.getBreakdown('tenant-1', new Date('2026-08-01'));
+
+      expect(result.total).toEqual({ tokens: 0, images: 0, calls: 0, messages: 0 });
+      expect(result.byUser).toEqual([]);
+    });
+  });
 });
+

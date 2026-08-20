@@ -36,3 +36,23 @@ export const AdminUnlinkResponseSchema = z
     syncStatus: z.string(),
   })
   .openapi('AdminUnlinkResponse');
+
+const UsageTotalsSchema = z.object({
+  tokens: z.number(),
+  images: z.number(),
+  calls: z.number(),
+  messages: z.number(),
+});
+
+export const AdminUsageResponseSchema = z.object({
+  total: UsageTotalsSchema,
+  byUser: z.array(
+    UsageTotalsSchema.extend({
+      // Null for calls made before the column existed. The UI names that entry
+      // rather than hiding it, or the rows would stop adding up to the total.
+      userId: z.string().nullable(),
+    }),
+  ),
+  since: z.string(),
+});
+

@@ -274,6 +274,10 @@ model ContentSuggestion {
 model AiUsageLog {
   id               String     @id @default(cuid())
   tenantId         String     @map("tenant_id") @db.Uuid
+  // Nullable because the rows written before this column existed cannot be
+  // attributed to anyone — there is no record of who made those calls, and
+  // inventing one would be worse than the gap. Per-member figures start here.
+  userId           String?    @map("user_id") @db.Uuid
   operation        AiOperation
   model            String?    @db.VarChar(50)
   promptTokens     Int        @default(0) @map("prompt_tokens")
@@ -281,9 +285,11 @@ model AiUsageLog {
   imageCount       Int        @default(0) @map("image_count")
   createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz
 
-  // Tenant-scoped on purpose: this backs quota enforcement and the quota
-  // belongs to the plan the TENANT bought, not to each member.
+  // Quota accounting stays tenant-scoped: the plan belongs to the TENANT, not
+  // to each member, and summing per member would hand everyone the whole
+  // allowance. `userId` is for reporting only — never for a quota window.
   @@index([tenantId, createdAt])
   @@index([tenantId, operation, createdAt])
+  @@index([tenantId, userId, createdAt])
   @@map("ai_usage_logs")
 }

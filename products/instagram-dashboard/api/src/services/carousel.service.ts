@@ -182,6 +182,7 @@ export class CarouselService {
         if (this.usageTracker) {
           await this.usageTracker.log({
             tenantId: owner.tenantId,
+            userId: owner.userId,
             operation: 'image_gen',
             imageCount: 1,
           });
@@ -579,6 +580,7 @@ export class CarouselService {
         if (this.usageTracker) {
           await this.usageTracker.log({
             tenantId: owner.tenantId,
+            userId: owner.userId,
             operation: 'image_gen',
             imageCount: successCount,
           });

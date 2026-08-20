@@ -9,7 +9,9 @@ import type { InstagramRepository } from '../../repositories/instagram/index.js'
 import {
   AdminLinkedAccountsResponseSchema,
   AdminUnlinkResponseSchema,
+  AdminUsageResponseSchema,
 } from './admin.schemas.js';
+import type { UsageTracker } from '../../services/usage-tracker.service.js';
 
 /**
  * The real gate for tenant administration.
@@ -65,7 +67,34 @@ const unlinkAccount = createRoute({
   },
 });
 
-export function createAdminRoutes(instagramRepository: InstagramRepository): OpenAPIHono {
+
+const getUsage = createRoute({
+  method: 'get',
+  path: '/usage',
+  summary: 'AI consumption for the tenant, and per member',
+  request: {
+    query: z.object({
+      // Days back. Capped: this scans the usage log, and an unbounded window
+      // on a busy tenant is a table scan someone triggers by editing a URL.
+      days: z.coerce.number().int().min(1).max(90).optional(),
+    }),
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: AdminUsageResponseSchema } },
+      description: 'Totals and per-member breakdown',
+    },
+    403: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Not a tenant administrator',
+    },
+  },
+});
+
+export function createAdminRoutes(
+  instagramRepository: InstagramRepository,
+  usageTracker?: UsageTracker,
+): OpenAPIHono {
   const router = createApiRouter();
 
   router.openapi(listLinkedAccounts, async (c) => {
@@ -93,6 +122,32 @@ export function createAdminRoutes(instagramRepository: InstagramRepository): Ope
       },
       200,
     );
+  });
+
+
+  router.openapi(getUsage, async (c) => {
+    const tenant = c.get('tenant');
+    assertTenantAdmin(tenant.role);
+
+    const days = c.req.valid('query').days ?? 30;
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    since.setHours(0, 0, 0, 0);
+
+    if (!usageTracker) {
+      // Tracking off: an empty breakdown, not an error. The screen should say
+      // "nothing recorded", which is true, rather than fail to load.
+      return c.json(
+        {
+          total: { tokens: 0, images: 0, calls: 0, messages: 0 },
+          byUser: [],
+          since: since.toISOString(),
+        },
+        200,
+      );
+    }
+
+    return c.json(await usageTracker.getBreakdown(tenant.tenantId, since), 200);
   });
 
   router.openapi(unlinkAccount, async (c) => {

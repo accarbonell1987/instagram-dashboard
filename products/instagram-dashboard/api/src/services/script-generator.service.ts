@@ -78,6 +78,7 @@ export class ScriptGeneratorService {
     if (tenantId && this.usageTracker) {
       await this.usageTracker.log({
         tenantId,
+        userId: owner.userId,
         operation: 'script',
         model: response.model,
         promptTokens: response.usage.promptTokens,

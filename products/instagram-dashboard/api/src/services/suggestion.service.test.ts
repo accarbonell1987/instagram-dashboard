@@ -354,6 +354,7 @@ describe('SuggestionService', () => {
       // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
       expect(mockUsageTracker.log).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
+        userId: 'user-1',
         operation: 'suggestion',
         model: 'deepseek-v4-flash',
         promptTokens: 50,

@@ -7,8 +7,29 @@ export interface QuotaCheckResult {
   resetsAt?: string;
 }
 
+export interface UsageTotals {
+  tokens: number;
+  images: number;
+  calls: number;
+  /** Chat operations — what the daily allowance counts. */
+  messages: number;
+}
+
+export interface UsageByUser extends UsageTotals {
+  /** Null for calls made before the column existed; they cannot be attributed. */
+  userId: string | null;
+}
+
+export interface UsageBreakdown {
+  total: UsageTotals;
+  byUser: UsageByUser[];
+  since: string;
+}
+
 export interface UsageLogParams {
   tenantId: string;
+  /** Reporting only. Quota windows stay tenant-wide — see the schema comment. */
+  userId?: string;
   operation: 'chat' | 'script' | 'suggestion' | 'image_gen';
   model?: string;
   promptTokens?: number;
@@ -80,6 +101,7 @@ export class UsageTracker {
     await this.prisma.aiUsageLog.create({
       data: {
         tenantId: params.tenantId,
+        userId: params.userId ?? null,
         operation: params.operation,
         model: params.model ?? null,
         promptTokens: params.promptTokens ?? 0,
@@ -131,6 +153,62 @@ export class UsageTracker {
         period: sessionsQuota?.period ?? 'day',
       },
       period: 'month',
+    };
+  }
+
+
+  /**
+   * Consumption for a reporting window: the tenant's totals, and the same
+   * broken down by member.
+   *
+   * Rows written before `user_id` existed carry null, and they are reported
+   * under their own entry rather than spread over the members or dropped: the
+   * totals have to keep adding up, and a member who joined last week should not
+   * inherit a year of somebody else's calls.
+   */
+  async getBreakdown(tenantId: string, since: Date): Promise<UsageBreakdown> {
+    const rows = await this.prisma.aiUsageLog.groupBy({
+      by: ['userId', 'operation'],
+      where: { tenantId, createdAt: { gte: since } },
+      _sum: { promptTokens: true, completionTokens: true, imageCount: true },
+      _count: { _all: true },
+    });
+
+    const byUser = new Map<string | null, UsageByUser>();
+    const total: UsageTotals = { tokens: 0, images: 0, calls: 0, messages: 0 };
+
+    for (const row of rows) {
+      const tokens = (row._sum.promptTokens ?? 0) + (row._sum.completionTokens ?? 0);
+      const images = row._sum.imageCount ?? 0;
+      const calls = row._count._all;
+      const messages = row.operation === 'chat' ? calls : 0;
+
+      total.tokens += tokens;
+      total.images += images;
+      total.calls += calls;
+      total.messages += messages;
+
+      const key = row.userId;
+      const entry = byUser.get(key) ?? {
+        userId: key,
+        tokens: 0,
+        images: 0,
+        calls: 0,
+        messages: 0,
+      };
+      entry.tokens += tokens;
+      entry.images += images;
+      entry.calls += calls;
+      entry.messages += messages;
+      byUser.set(key, entry);
+    }
+
+    return {
+      total,
+      // Heaviest first: a breakdown is read to find who is spending, and
+      // scanning a list for the big number is work the sort can do.
+      byUser: Array.from(byUser.values()).sort((a, b) => b.tokens - a.tokens),
+      since: since.toISOString(),
     };
   }
 

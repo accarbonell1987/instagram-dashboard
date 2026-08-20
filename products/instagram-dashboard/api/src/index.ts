@@ -168,7 +168,7 @@ async function bootstrap() {
   api.route('/carousels', createCarouselRoutes(carouselService));
   // Tenant administration contributed to the hub's settings area. Guarded on
   // the JWT role inside the router — the hub cannot protect this.
-  api.route('/admin', createAdminRoutes(repos.instagram));
+  api.route('/admin', createAdminRoutes(repos.instagram, usageTracker));
 
   // Protected auth routes: need JWT so authGuard has already set tenant context
   api.get('/auth/instagram/authorize', async (c) => {

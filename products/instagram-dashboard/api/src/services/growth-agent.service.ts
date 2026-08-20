@@ -168,6 +168,7 @@ export class GrowthAgentService {
             // Log accumulated usage
             await this.usageTracker.log({
               tenantId: owner.tenantId,
+              userId: owner.userId,
               operation: 'chat',
               model: response.model,
               promptTokens: totalPromptTokens,
@@ -204,6 +205,7 @@ export class GrowthAgentService {
         if (this.usageTracker) {
           await this.usageTracker.log({
             tenantId: owner.tenantId,
+            userId: owner.userId,
             operation: 'chat',
             model: response.model,
             promptTokens: totalPromptTokens,
