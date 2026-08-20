@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@core/ui'
-import { Trash2, Sparkles } from 'lucide-react'
+import { Trash2, Sparkles, HelpCircle, Check, X } from 'lucide-react'
 import type { JSX } from 'react'
 import { useState } from 'react'
 
@@ -45,6 +45,7 @@ export function SuggestionsPanel({
   onRefreshSuggestions,
 }: SuggestionsPanelProps): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
   const hasBatches = suggestionBatches && suggestionBatches.length > 0
   const hasSuggestions = suggestions.length > 0
 
@@ -63,6 +64,22 @@ export function SuggestionsPanel({
             </p>
           </div>
           <div className="flex items-center gap-1">
+            {/*
+              Inline, not a Popover. This panel is a hand-rolled fixed element
+              rather than a Dialog, and a Radix portal inside it is the
+              z-index fight the Select already lost here once.
+            */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => { setShowHelp((open) => !open); }}
+              className="text-muted-foreground shrink-0"
+              title="Qué hace cada botón"
+              aria-label="Qué hace cada botón"
+              aria-expanded={showHelp}
+            >
+              <HelpCircle className="h-4 w-4" aria-hidden="true" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -88,6 +105,44 @@ export function SuggestionsPanel({
           </div>
         </div>
       </div>
+
+      {showHelp && (
+        <div className="bg-muted/40 border-b px-4 py-3 text-xs">
+          <p className="text-muted-foreground mb-2">
+            El agente propone ideas a partir de las métricas de tu cuenta. Cada una tiene tres
+            acciones:
+          </p>
+          <ul className="flex flex-col gap-2">
+            <li className="flex gap-2">
+              <Check className="text-foreground mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                <strong className="text-foreground">Hecha</strong> — la sacás de pendientes cuando
+                ya la usaste. Es un registro tuyo: hoy{' '}
+                <strong className="text-foreground">no se vincula</strong> a la publicación ni se
+                mide su resultado.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-500" aria-hidden="true" />
+              <span>
+                <strong className="text-foreground">Crear carrusel</strong> — genera el carrusel a
+                partir de la idea. Aparece solo en ideas de contenido, y solo si tu rol incluye
+                carruseles.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <X className="text-muted-foreground mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                <strong className="text-foreground">Descartar</strong> — la borrás sin usarla.
+              </span>
+            </li>
+          </ul>
+          <p className="text-muted-foreground mt-2">
+            Con el botón <Sparkles className="inline h-3 w-3 text-violet-500" aria-hidden="true" />{' '}
+            pedís una idea nueva sobre el tema que le indiques.
+          </p>
+        </div>
+      )}
 
       {/* Content */}
       <div className="p-4">

@@ -88,4 +88,50 @@ describe('SuggestionsPanel', () => {
 
     expect(screen.getByText(/3 sugerencias/i)).toBeInTheDocument()
   })
+
+  /**
+   * "Usar" was renamed to "Hecha" because it never did what its name promised.
+   * The help exists so the panel says that out loud instead of leaving people
+   * to guess what an action does — which is how the question came up.
+   */
+  describe('help', () => {
+    const openHelp = () => {
+      render(
+        <SuggestionsPanel suggestions={[]} onMarkUsed={vi.fn()} onDismiss={vi.fn()} />,
+      )
+      fireEvent.click(screen.getByRole('button', { name: /Qué hace cada botón/i }))
+    }
+
+    it('stays out of the way until asked for', () => {
+      render(<SuggestionsPanel suggestions={[]} onMarkUsed={vi.fn()} onDismiss={vi.fn()} />)
+
+      expect(screen.queryByText(/la sacás de pendientes/i)).not.toBeInTheDocument()
+    })
+
+    it('explains each of the three actions', () => {
+      openHelp()
+
+      expect(screen.getByText('Hecha')).toBeInTheDocument()
+      expect(screen.getByText('Crear carrusel')).toBeInTheDocument()
+      expect(screen.getByText('Descartar')).toBeInTheDocument()
+    })
+
+    /**
+     * The part worth writing down: the button records that you used the idea and
+     * nothing more. Saying so beats letting someone assume results are measured.
+     */
+    it('says plainly that marking it done links nothing', () => {
+      openHelp()
+
+      expect(screen.getByText(/no se vincula/i)).toBeInTheDocument()
+    })
+
+    it('closes again', () => {
+      openHelp()
+      fireEvent.click(screen.getByRole('button', { name: /Qué hace cada botón/i }))
+
+      expect(screen.queryByText(/no se vincula/i)).not.toBeInTheDocument()
+    })
+  })
 })
+
