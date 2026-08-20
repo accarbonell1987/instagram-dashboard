@@ -37,7 +37,7 @@ const PLANS = [
     currency: 'PYG',
     billingInterval: 'monthly',
     maxUsers: 8,
-    features: ['Hasta 8 usuarios', 'Soporte', 'Acceso a API'],
+    features: ['Hasta 8 usuarios', 'Soporte'],
     popular: true,
     active: true,
     productId: 'instagram-dashboard',
@@ -55,7 +55,6 @@ const PLANS = [
     features: [
       'Hasta 15 usuarios',
       'Soporte dedicado',
-      'Acceso a API',
       'SLA 99.9%',
     ],
     popular: false,
