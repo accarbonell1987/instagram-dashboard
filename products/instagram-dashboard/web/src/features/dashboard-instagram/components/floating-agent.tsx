@@ -88,6 +88,25 @@ export function FloatingAgent({ hook, permittedTabs = ALL_TABS }: FloatingAgentP
 
   return (
     <>
+      {/*
+        Scrim. The panel already declared `aria-modal="true"` while leaving the
+        page behind it live and in focus — the markup claimed modality that
+        nothing enforced. This is what that claim looks like: the page dims,
+        blurs, and stops taking clicks until the agent is closed.
+
+        Same values as the design system's overlays (`bg-black/50
+        backdrop-blur-sm`) rather than a second opinion about how deep a modal
+        sits. It is not a Dialog — this panel is a corner widget that grows,
+        not a centred box — so it cannot reuse the component, only its look.
+      */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${
+          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={handleClose}
+        aria-hidden="true"
+      />
+
       {/* Expanded panel */}
       <div
         className={`fixed z-50 flex flex-col rounded-xl border border-border bg-background shadow-2xl transition-all duration-200 ease-in-out ${

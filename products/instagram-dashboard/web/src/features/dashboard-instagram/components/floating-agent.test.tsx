@@ -235,3 +235,37 @@ describe('FloatingAgent', () => {
     expect(screen.queryByRole('tab', { name: /Sugerencias/i })).not.toBeInTheDocument()
   })
 })
+
+/**
+ * The panel declared `aria-modal="true"` from the start while the page behind
+ * it stayed lit and clickable. The scrim is what that declaration looks like.
+ */
+describe('FloatingAgent — scrim', () => {
+  const scrimOf = (container: HTMLElement) =>
+    container.querySelector('[aria-hidden="true"].fixed.inset-0')
+
+  it('blurs the page while the agent is open', () => {
+    const { container } = render(<FloatingAgent hook={makeHook()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Abrir agente/i }))
+
+    expect(scrimOf(container)?.className).toContain('backdrop-blur-sm')
+    expect(scrimOf(container)?.className).not.toContain('pointer-events-none')
+  })
+
+  it('lets the page through again once it is closed', () => {
+    const { container } = render(<FloatingAgent hook={makeHook()} />)
+
+    // Closed on mount: visible in the DOM for the fade, but inert.
+    expect(scrimOf(container)?.className).toContain('pointer-events-none')
+    expect(scrimOf(container)?.className).toContain('opacity-0')
+  })
+
+  it('sits under the panel, not over it', () => {
+    const { container } = render(<FloatingAgent hook={makeHook()} />)
+
+    // A scrim above the panel would blur the very thing it is meant to frame.
+    expect(scrimOf(container)?.className).toContain('z-40')
+  })
+})
+
