@@ -472,7 +472,10 @@ describe('GrowthAgentService', () => {
       const systemMsg = (
         mockChat.mock.calls[0]?.[0] as { messages?: { content?: string }[] } | undefined
       )?.messages?.[0]?.content;
-      expect(systemMsg).not.toContain('INSTRUCCIONES ADICIONALES DEL USUARIO');
+      // The header, with its colon — not the bare phrase. The scope block names
+      // this section to say it is bound by it, so the words appear either way;
+      // what must be absent is the section itself.
+      expect(systemMsg).not.toContain('INSTRUCCIONES ADICIONALES DEL USUARIO:');
     });
   });
 
