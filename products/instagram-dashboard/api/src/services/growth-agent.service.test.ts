@@ -284,10 +284,10 @@ describe('GrowthAgentService', () => {
       );
     });
 
-    it('throws AGENT_TIMEOUT when DeepSeek takes too long', async () => {
+    it('throws AGENT_TIMEOUT when a single call outlasts the hop budget', async () => {
       vi.useFakeTimers()
       mockChat.mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 90_000))
+        () => new Promise(resolve => setTimeout(resolve, 300_000))
       )
       const promise = service.chat({
         tenantId: 'tenant-1',
@@ -300,7 +300,94 @@ describe('GrowthAgentService', () => {
       // (which fires during advanceTimersByTimeAsync) is never momentarily
       // unhandled — otherwise vitest reports an unhandled rejection.
       const assertion = expect(promise).rejects.toThrow('AGENT_TIMEOUT')
-      await vi.advanceTimersByTimeAsync(61_000)
+      await vi.advanceTimersByTimeAsync(121_000)
+      await assertion
+      vi.useRealTimers()
+    });
+
+    /**
+     * The 504 that started this: a reply arriving at 63 seconds was refused by a
+     * 60-second wall, on a deployment whose successful chats ran 28–59s. The
+     * limit sat inside the ordinary spread, so the tail of normal traffic was
+     * being cut off rather than a hang being caught.
+     */
+    it('lets through a reply that would have missed the old 60s wall', async () => {
+      vi.useFakeTimers()
+      mockChat.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => { resolve(makeStopResponse('llegué')); }, 63_000)),
+      )
+
+      const promise = service.chat({
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+        sessionId: 'session-1',
+        userMessage: 'hola',
+        history: [],
+      })
+      await vi.advanceTimersByTimeAsync(64_000)
+
+      await expect(promise).resolves.toMatchObject({ reply: 'llegué' })
+      vi.useRealTimers()
+    });
+
+    /**
+     * The budget the loop never had. Five hops of two minutes each were all
+     * "within budget" individually, so a slow run could hold the connection for
+     * ten minutes and the caller would meet a proxy timeout rather than an
+     * answer.
+     */
+    /**
+     * The shrinking window in numbers: two hops of 100s fit inside the 180s
+     * budget, the second one running on the 80s it has left rather than a fresh
+     * 120s. A third is never sent — which is the point, since it would be
+     * billed and then discarded.
+     */
+    it('stops sending hops once the request budget is spent', async () => {
+      vi.useFakeTimers()
+      mockChat.mockImplementation(
+        () => new Promise((resolve) => setTimeout(
+          () => { resolve(makeToolCallResponse('getDashboardContext')); },
+          100_000,
+        )),
+      )
+
+      const promise = service.chat({
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+        sessionId: 'session-1',
+        userMessage: 'hola',
+        history: [],
+      })
+      const assertion = expect(promise).rejects.toThrow('AGENT_TIMEOUT')
+      await vi.advanceTimersByTimeAsync(400_000)
+      await assertion
+
+      // Two hops fit the 180s budget. A third would have been sent for nothing.
+      expect(mockChat).toHaveBeenCalledTimes(2)
+      vi.useRealTimers()
+    });
+
+    it('gives up on the request even while each hop stays inside its own budget', async () => {
+      vi.useFakeTimers()
+      // Every hop asks for another tool, so the loop keeps going; each answers
+      // in 100s, comfortably under the 120s hop budget.
+      mockChat.mockImplementation(
+        () => new Promise((resolve) => setTimeout(
+          () => { resolve(makeToolCallResponse('getDashboardContext')); },
+          100_000,
+        )),
+      )
+
+      const promise = service.chat({
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+        sessionId: 'session-1',
+        userMessage: 'hola',
+        history: [],
+      })
+      const assertion = expect(promise).rejects.toThrow('AGENT_TIMEOUT')
+      // Two hops fit in the 180s request budget; the third has nothing left.
+      await vi.advanceTimersByTimeAsync(400_000)
       await assertion
       vi.useRealTimers()
     });

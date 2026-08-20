@@ -41,6 +41,26 @@ function withTimeout<T>(promise: Promise<T>, ms: number, errorCode: string): Pro
   return Promise.race([promise, timeout]).finally(() => { clearTimeout(timer); });
 }
 
+
+// ─── Time budgets ─────────────────────────────────────────────────────────────
+//
+// One hop used to allow 60s, and nothing bounded the request. The observed
+// spread of successful chats on this deployment is 28–59s, so the wall stood
+// where ordinary traffic passes: a reply that took 63s was refused after having
+// very nearly arrived, while a run of five slow hops could hold the connection
+// for five minutes and still be "within budget".
+//
+// So: a hop gets room above the real tail, and the request as a whole gets a
+// ceiling. Whichever runs out first ends it, and the caller waits a bounded
+// time either way.
+const HOP_TIMEOUT_MS = 120_000;
+const REQUEST_BUDGET_MS = 180_000;
+
+/** What is left of the request's budget, never below zero. */
+function remainingBudget(startedAt: number): number {
+  return Math.max(0, REQUEST_BUDGET_MS - (Date.now() - startedAt));
+}
+
 // ─── System Prompt ────────────────────────────────────────────────────────────
 // Imported from ../config/prompts.ts — DEFAULT_SYSTEM_PROMPT, buildSystemPrompt, buildSuggestionPrompt
 
@@ -130,14 +150,24 @@ export class GrowthAgentService {
     let totalPromptTokens = 0;
     let totalCompletionTokens = 0;
 
+    const startedAt = Date.now();
+
     while (iterations < MAX_ITERATIONS) {
       iterations++;
+
+      // Resolved inside the budget: it reads the account and decrypts a key,
+      // and a hang there was previously untimed.
+      // Shrinks as the request spends itself, so the last hop cannot outlive
+      // the budget. No zero-check: a hop that exhausts the budget rejects from
+      // its own shortened window and leaves the loop, so the top is never
+      // reached with nothing left.
+      const hopBudget = Math.min(HOP_TIMEOUT_MS, remainingBudget(startedAt));
+
       const response = await withTimeout(
-        (await this.llm.resolve(owner)).chat({
-          messages,
-          tools: TOOL_DEFINITIONS,
-        }),
-        60_000,
+        this.llm.resolve(owner).then((client) =>
+          client.chat({ messages, tools: TOOL_DEFINITIONS }),
+        ),
+        hopBudget,
         'AGENT_TIMEOUT',
       );
 
@@ -258,13 +288,15 @@ export class GrowthAgentService {
     const suggestionPrompt = buildSuggestionPrompt(agentConfig);
 
     const response = await withTimeout(
-      (await this.llm.resolve(owner)).chat({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: suggestionPrompt },
-        ],
-      }),
-      60_000,
+      this.llm.resolve(owner).then((client) =>
+        client.chat({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: suggestionPrompt },
+          ],
+        }),
+      ),
+      HOP_TIMEOUT_MS,
       'AGENT_TIMEOUT',
     );
 

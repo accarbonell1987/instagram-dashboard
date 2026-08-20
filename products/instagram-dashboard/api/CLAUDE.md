@@ -108,6 +108,14 @@ implementación de tool-calling y parseo para el mismo resultado.
   en la facturación describía algo que la cuota ya no mide. `ALTER TYPE ... RENAME VALUE` reescribe
   la etiqueta en su lugar, así que las filas de `plan_quotas` no necesitan backfill.
 
+### El agente tiene dos relojes
+
+`HOP_TIMEOUT_MS` (120s) acota **cada** llamada al modelo; `REQUEST_BUDGET_MS` (180s) acota el chat
+entero, y la ventana de cada salto se recorta con lo que queda. Antes había un solo tope de 60s por
+salto y nada acotaba el request: con `MAX_ITERATIONS = 5` una corrida lenta podía tener la conexión
+abierta cinco minutos, y a la vez un chat normal —el rango observado acá es 28–59s— se rechazaba
+por unos segundos de más. El límite estaba adentro del tráfico normal, no afuera.
+
 ### Guards de entitlements: producto y módulo
 
 `api.use('*', entitlementsGuard)` solo pregunta *"¿puede abrir este producto?"*. Las rutas de IA
@@ -148,9 +156,13 @@ incumben.
   query corre igual y devuelve las filas de otro.
 - `chat_messages`, `suggestion_batches`, `content_suggestions` y `carousels` llevan `user_id`.
   Antes iban solo por tenant, así que **cualquier miembro leía el chat con la IA de los demás**.
-- **`ai_usage_logs` NO lleva `user_id`, a propósito.** Alimenta el control de cuota, y la cuota sale
-  del plan que compró el **tenant** (`getPlanQuotas(tenantId)`). Scopearlo por usuario le daría a
-  cada miembro la cuota entera y el tenant consumiría N veces lo que pagó.
+- **`ai_usage_logs` lleva `user_id` nullable, y es solo para reportar.** La cuota se sigue
+  contando por tenant (`getPlanQuotas(tenantId)`): el plan lo compró el tenant, y ventanear la
+  cuota por miembro le daría a cada uno la asignación entera. El `user_id` alimenta el desglose de
+  `/api/admin/usage`, nada más.
+  - **Nullable porque las filas anteriores no se pueden atribuir.** Se reportan en su propia
+    entrada, ni descartadas (los miembros dejarían de sumar el total) ni repartidas (acreditaría
+    consumo a quien no lo hizo).
 - `deleteById` usa `deleteMany` en vez de `delete`: `delete` exige un where único, así que scoparlo
   por dueño obligaría a leer la fila antes y confiar en ella en el medio. De paso queda idempotente.
 
