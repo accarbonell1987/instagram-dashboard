@@ -106,6 +106,23 @@ apps/hub/
     eventos y menos columnas; una lista se lee mejor que dos vistas de una sola verdad.
 - **`session.role`**: El rol está en `session.role` (no en `session.user.role`). Usar `useSession()` para leer el rol en componentes.
 - **RequireRole**: `<RequireRole role={['TenantAdmin', 'SuperAdmin']}>` — envuelve secciones y rutas que solo son visibles para admins. Redirige a `/` si el rol no está autorizado.
+- **`RequireRole` esconde una pantalla; no protege lo que esa pantalla llama.** Cada vez que
+  envolvés algo en `RequireRole`, la pregunta que sigue es: *¿el endpoint que hay detrás también
+  rechaza a quien no debería llamarlo?* El hub no está en el camino de la request — corre en el
+  navegador de quien sea, y `curl` con un token válido lo saltea entero.
+  - Apareció **tres veces en un día**, en dos productos, y de las dos formas posibles:
+    - `/billing/*` scopeaba por tenant y nunca miraba el rol. `/settings/billing` estaba tras
+      `TenantAdmin`, así que **cualquier miembro podía listar los pagos de su organización y bajar
+      sus facturas** pidiéndoselo a la API.
+    - En Instagram, `/api/dashboard` y `/api/media` no tenían guard de módulo mientras el front
+      escondía esas secciones sin `ig-basic-metrics` / `ig-publications`.
+    - Y al revés: el botón *Crear carrusel* se ofrecía a un rol sin `ig-ai-carousels`. Ahí no había
+      fuga —la API rechazaba— pero el producto prometía algo que no podía cumplir.
+  - La forma de auditarlo es contar: **handlers vs. chequeos de rol, archivo por archivo**. Un
+    router con N handlers y menos de N asserts tiene un agujero, y el conteo lo encuentra en
+    segundos. Así apareció billing (4 handlers, 0 chequeos) entre routers que estaban bien.
+  - `visibleToRole` en `product_admin_sections` lleva ese nombre por lo mismo: decide qué entrada
+    dibuja el hub, y nada más.
 - **Dos ejes de permisos, no uno**: el rol de tenant (`TenantAdmin` / `User`) decide qué se
   puede hacer *en el hub*; el rol de producto decide qué se puede abrir *dentro* de un producto.
   La invitación fija el primero; `/settings/team` → botón de llave por miembro fija el segundo
