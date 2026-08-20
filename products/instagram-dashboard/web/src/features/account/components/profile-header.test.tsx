@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 
 import { ProfileHeader } from './profile-header'
 
-import type { InstagramProfile } from '@/features/dashboard-instagram/types/instagram.types'
+import type { InstagramProfile } from '@/features/shared/types/instagram.types'
 
 
 const profile = (overrides: Partial<InstagramProfile> = {}): InstagramProfile => ({

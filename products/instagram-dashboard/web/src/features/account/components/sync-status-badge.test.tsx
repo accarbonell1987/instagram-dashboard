@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { SyncStatusBadge } from './sync-status-badge';
 
-import type { SyncState } from '@/features/dashboard-instagram/types/instagram.types';
+import type { SyncState } from '@/features/shared/types/instagram.types';
 
 
 const idleState: SyncState = {

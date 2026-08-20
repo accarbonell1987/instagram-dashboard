@@ -3,7 +3,7 @@
 import { Button, Checkbox, Label } from '@core/ui';
 import { useState } from 'react';
 
-import { getOAuthUrl } from '@/features/dashboard-instagram/services/instagram.service';
+import { getOAuthUrl } from '@/features/account/services/connection.service';
 
 export function ConnectAccount() {
   const [isConnecting, setIsConnecting] = useState(false);

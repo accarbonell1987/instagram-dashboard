@@ -1,0 +1,733 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+import { AgentSettingsModal, sectionsForSurface, type AgentSettingsSurface } from '@/features/agent/components/agent-settings'
+import type { AgentConfig, AgentSettingsSectionKey  } from '@/features/shared/types/instagram.types'
+
+
+
+/** These tests are about the panel; the gate has its own describe block. */
+const ALL_SECTIONS: AgentSettingsSectionKey[] = [
+  'topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles',
+]
+
+
+describe('AgentSettingsModal', () => {
+  const onClose = vi.fn();
+  const onSave = vi.fn().mockResolvedValue(undefined);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    onSave.mockResolvedValue(undefined);
+  });
+
+  it('renders null when isOpen is false', () => {
+    const { container } = render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={false}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('renders dialog when isOpen is true', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Configurar Agente')).toBeInTheDocument()
+  })
+
+  it('renders predefined tag chips', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+    // Verify some predefined tags are visible (may appear in both chips and selected tags)
+    const ferreteriaElements = screen.getAllByText('Ferretería')
+    expect(ferreteriaElements.length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('Moda')).toBeInTheDocument()
+    expect(screen.getByText('Gastronomía')).toBeInTheDocument()
+  })
+
+  it('clicking tag chip toggles selection', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    // Ferretería starts selected (default), so aria-label is "Quitar"
+    const ferreteriaChip = screen.getByRole('button', { name: /Quitar tema Ferretería/i })
+    expect(ferreteriaChip).toHaveAttribute('aria-pressed', 'true')
+
+    // Click to deselect
+    fireEvent.click(ferreteriaChip)
+    // Now it's "Agregar tema Ferretería"
+    const addChip = screen.getByRole('button', { name: /Agregar tema Ferretería/i })
+    expect(addChip).toHaveAttribute('aria-pressed', 'false')
+
+    // Click to reselect
+    fireEvent.click(addChip)
+    expect(addChip).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('custom tag input adds tag on Enter', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    const input = screen.getByRole('textbox', { name: /Agregar tema personalizado/i })
+    fireEvent.change(input, { target: { value: 'Soldadura' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    // The custom tag should appear in selected tags
+    expect(screen.getByText('Soldadura')).toBeInTheDocument()
+  })
+
+  it('custom tag input adds tag on + button click', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    const input = screen.getByRole('textbox', { name: /Agregar tema personalizado/i })
+    fireEvent.change(input, { target: { value: 'Carpintería' } })
+
+    const addBtn = screen.getByRole('button', { name: /Agregar tema personalizado/i })
+    fireEvent.click(addBtn)
+
+    expect(screen.getByText('Carpintería')).toBeInTheDocument()
+  })
+
+  it('does not add duplicate custom tag', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    const input = screen.getByRole('textbox', { name: /Agregar tema personalizado/i })
+
+    // Add "Soldadura" twice
+    fireEvent.change(input, { target: { value: 'Soldadura' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    fireEvent.change(input, { target: { value: 'Soldadura' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    // Should only appear once
+    const occurrences = screen.getAllByText('Soldadura')
+    expect(occurrences).toHaveLength(1)
+  })
+
+  it('save button calls onSave with correct config', async () => {
+    onSave.mockClear()
+
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    // Set custom prompt
+    const textarea = screen.getByRole('textbox', { name: /Instrucciones personalizadas/i })
+    fireEvent.change(textarea, { target: { value: 'Sé breve' } })
+
+    // Click save
+    const saveBtn = screen.getByRole('button', { name: /Guardar configuración/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          niche: 'Ferretería',
+          tags: ['Ferretería'],
+          customPrompt: 'Sé breve',
+        }),
+        // Secrets travel as their own object now. Empty means "change nothing":
+        // an empty string would replace a stored key with none.
+        {},
+      )
+    })
+  })
+
+  it('cancel button calls onClose', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    const cancelBtn = screen.getByRole('button', { name: /Cancelar/i })
+    fireEvent.click(cancelBtn)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('close ✕ button calls onClose', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    const closeBtn = screen.getByRole('button', { name: /Cerrar/i })
+    fireEvent.click(closeBtn)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('pre-fills from initialConfig', () => {
+    const initialConfig: AgentConfig = {
+      niche: 'Moda',
+      tags: ['Moda', 'Ropa'],
+      customPrompt: 'Usa lenguaje juvenil',
+    }
+
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={initialConfig}
+      />,
+    )
+
+    // The textarea should be pre-filled
+    const textarea = screen.getByRole('textbox', { name: /Instrucciones personalizadas/i })
+    expect(textarea).toHaveValue('Usa lenguaje juvenil')
+
+    // Selected tags should show
+    expect(screen.getByText('Ropa')).toBeInTheDocument()
+  })
+
+  it('save is disabled when no tags selected', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    // Deselect the only selected tag (Ferretería)
+    const ferreteriaChip = screen.getByRole('button', { name: /Quitar tema Ferretería/i })
+    fireEvent.click(ferreteriaChip)
+
+    const saveBtn = screen.getByRole('button', { name: /Guardar configuración/i })
+    expect(saveBtn).toBeDisabled()
+  })
+
+  it('removing a tag removes it from selected list', () => {
+    const initialConfig: AgentConfig = {
+      niche: 'Moda',
+      tags: ['Moda', 'Ropa'],
+    }
+
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={initialConfig}
+      />,
+    )
+
+    // Remove "Ropa" from selected list
+    const removeBtn = screen.getByRole('button', { name: /Quitar Ropa/i })
+    fireEvent.click(removeBtn)
+
+    // Ropa should no longer be in the selected list
+    expect(screen.queryByText('Ropa')).not.toBeInTheDocument()
+  })
+
+  it('shows character count for custom prompt', () => {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={null}
+      />,
+    )
+
+    const textarea = screen.getByRole('textbox', { name: /Instrucciones personalizadas/i })
+    fireEvent.change(textarea, { target: { value: 'Hello World' } })
+
+    expect(screen.getByText('11/2000 caracteres')).toBeInTheDocument()
+  })
+
+  it('does not close modal on save error', async () => {
+    const failingSave = vi.fn().mockRejectedValue(new Error('Network error'))
+
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={failingSave}
+        initialConfig={null}
+      />,
+    )
+
+    const saveBtn = screen.getByRole('button', { name: /Guardar configuración/i })
+    fireEvent.click(saveBtn)
+
+    // Modal should still be open
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+    })
+    expect(failingSave).toHaveBeenCalled()
+  })
+})
+
+/**
+ * The model stopped being a property of the deployment. An account picks its
+ * own provider, model and key; configuring nothing keeps the platform default.
+ */
+// Model, limits and the fal.ai key are edited from the hub's settings screen
+// now, not from the panel inside the product — so these render that surface.
+describe('AgentSettingsModal — model tab (settings surface)', () => {
+  const onClose = vi.fn()
+  const onSave = vi.fn().mockResolvedValue(undefined)
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    onSave.mockResolvedValue(undefined)
+  })
+
+  // Radix tabs switch on the full pointer sequence, which fireEvent.click does
+  // not send — the panel would never mount and every query would miss.
+  async function openModelTab(initialConfig: AgentConfig | null = null, hasLlmApiKey = false) {
+    render(
+      <AgentSettingsModal
+        editableSections={ALL_SECTIONS}
+        surface="settings"
+        isOpen
+        onClose={onClose}
+        onSave={onSave}
+        initialConfig={initialConfig}
+        hasLlmApiKey={hasLlmApiKey}
+      />,
+    )
+    await userEvent.click(screen.getByRole('tab', { name: 'Modelo' }))
+  }
+
+  it('sends the chosen provider and model', async () => {
+    await openModelTab()
+
+    fireEvent.change(screen.getByPlaceholderText('deepseek-v4-flash'), { target: { value: 'gpt-4o' } })
+    fireEvent.click(screen.getByRole('button', { name: /Guardar configuración/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    })
+    const config = onSave.mock.calls[0]?.[0] as { llm?: { model?: string } }
+    expect(config.llm?.model).toBe('gpt-4o')
+  })
+
+  /**
+   * The backend treats a present key as a replacement, so sending an empty
+   * string would wipe a working one. Blank has to mean "leave it alone".
+   */
+  it('omits the key when the field is left blank', async () => {
+    await openModelTab(null, true)
+
+    fireEvent.click(screen.getByRole('button', { name: /Guardar configuración/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    })
+    const secrets = onSave.mock.calls[0]?.[1] as Record<string, unknown>
+    expect(secrets).not.toHaveProperty('llmApiKey')
+  })
+
+  it('sends the key when one is typed', async () => {
+    await openModelTab()
+
+    fireEvent.change(screen.getByPlaceholderText('sk-...'), { target: { value: 'sk-secret' } })
+    fireEvent.click(screen.getByRole('button', { name: /Guardar configuración/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    })
+    const secrets = onSave.mock.calls[0]?.[1] as { llmApiKey?: string }
+    expect(secrets.llmApiKey).toBe('sk-secret')
+  })
+
+  // Nothing chosen must stay nothing: writing today's default into the account
+  // would pin it there and stop it following the platform.
+  it('sends no llm block when nothing was chosen', async () => {
+    await openModelTab()
+
+    fireEvent.click(screen.getByRole('button', { name: /Guardar configuración/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    })
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('llm')
+  })
+
+  it('says when a key is already stored', async () => {
+    await openModelTab(null, true)
+    // The placeholder is the honest signal: the key itself never comes back.
+    expect(
+      screen.getByPlaceholderText('Dejala vacía para conservar la actual'),
+    ).toBeInTheDocument()
+  })
+
+  /**
+   * Hiding is cosmetic — the API refuses the change regardless — but drawing a
+   * control the caller cannot use only produces a save that comes back 403.
+   */
+  describe('permitted sections', () => {
+    // Surface matters as much as permission now: a section the caller may edit
+    // still does not appear on the surface it does not belong to.
+    const renderWith = (
+      sections: AgentSettingsSectionKey[],
+      surface: AgentSettingsSurface = 'product',
+    ) =>
+      render(
+        <AgentSettingsModal
+          editableSections={sections}
+          surface={surface}
+          isOpen={true}
+          onClose={onClose}
+          onSave={onSave}
+          initialConfig={null}
+        />,
+      )
+
+    it('hides the Modelo tab from a caller who cannot change the model', () => {
+      renderWith(['topics', 'prompt'])
+
+      expect(screen.queryByRole('tab', { name: 'Modelo' })).not.toBeInTheDocument()
+    })
+
+    it('shows the Modelo tab when the caller may change it', () => {
+      renderWith(['model'], 'settings')
+
+      expect(screen.getByRole('tab', { name: 'Modelo' })).toBeInTheDocument()
+    })
+
+    // The three admin-only options, each hidden on its own while its tab stays.
+    it('keeps the Agente tab but drops the character limits', () => {
+      renderWith(['topics', 'prompt'])
+
+      expect(screen.getByRole('tab', { name: 'Agente' })).toBeInTheDocument()
+      expect(screen.getByText('Temas de contenido')).toBeInTheDocument()
+      expect(screen.queryByText('Límites de caracteres')).not.toBeInTheDocument()
+    })
+
+    it('keeps the Imágenes tab but drops the fal.ai key', () => {
+      renderWith(['imageModels', 'imageStyles'])
+
+      expect(screen.getByRole('tab', { name: 'Imágenes' })).toBeInTheDocument()
+      expect(screen.queryByText('API Key de fal.ai')).not.toBeInTheDocument()
+    })
+
+    // A tab with nothing left in it is not an empty tab, it is no tab.
+    it('drops a tab whose every option is withheld', () => {
+      renderWith(['topics'])
+
+      expect(screen.queryByRole('tab', { name: 'Imágenes' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: 'Modelo' })).not.toBeInTheDocument()
+    })
+
+    // Opening on a hidden tab would leave the panel blank.
+    it('opens on the first tab the caller can actually see', () => {
+      renderWith(['model'], 'settings')
+
+      expect(screen.getByRole('tab', { name: 'Modelo' })).toHaveAttribute('aria-selected', 'true')
+    })
+  })
+
+  /**
+   * These two states look identical on screen — an empty panel — and mean
+   * opposite things. Swallowing the failed request is what made a broken
+   * settings endpoint show up as "you have no permissions".
+   */
+  describe('nothing to show', () => {
+    it('says the load failed when it failed', () => {
+      render(
+        <AgentSettingsModal
+          editableSections={[]}
+          settingsFailed
+          isOpen={true}
+          onClose={onClose}
+          onSave={onSave}
+          initialConfig={null}
+        />,
+      )
+
+      expect(screen.getByText(/No pudimos cargar la configuración/)).toBeInTheDocument()
+      expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    })
+
+    it('says the role has nothing enabled when the load succeeded', () => {
+      render(
+        <AgentSettingsModal
+          editableSections={[]}
+          isOpen={true}
+          onClose={onClose}
+          onSave={onSave}
+          initialConfig={null}
+        />,
+      )
+
+      expect(screen.getByText(/Tu rol no tiene ninguna opción/)).toBeInTheDocument()
+    })
+
+    it('shows the panel, not a message, when something is permitted', () => {
+      render(
+        <AgentSettingsModal
+          editableSections={['topics']}
+          isOpen={true}
+          onClose={onClose}
+          onSave={onSave}
+          initialConfig={null}
+        />,
+      )
+
+      expect(screen.queryByText(/No pudimos cargar/)).not.toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Agente' })).toBeInTheDocument()
+    })
+  })
+})
+
+/**
+ * The split: the hub's settings screen carries the tenant-wide controls, and
+ * the panel inside the product carries the content preferences. Every section
+ * lands on exactly one of the two — a section that fell through both would
+ * simply become unreachable, with nothing on screen to say so.
+ */
+describe('sectionsForSurface', () => {
+  const ALL: AgentSettingsSectionKey[] = [
+    'topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles',
+  ]
+
+  it('sends credentials and spend levers to the settings screen', () => {
+    expect(sectionsForSurface(ALL, 'settings')).toEqual(['limits', 'model', 'imageKey'])
+  })
+
+  it('leaves the content preferences in the product', () => {
+    expect(sectionsForSurface(ALL, 'product')).toEqual([
+      'topics', 'prompt', 'imageModels', 'imageStyles',
+    ])
+  })
+
+  it('places every section on exactly one surface', () => {
+    const settings = sectionsForSurface(ALL, 'settings')
+    const product = sectionsForSurface(ALL, 'product')
+
+    expect([...settings, ...product].sort()).toEqual([...ALL].sort())
+    expect(settings.filter((s) => product.includes(s))).toEqual([])
+  })
+
+  it('never invents a section the caller was not granted', () => {
+    expect(sectionsForSurface(['topics'], 'settings')).toEqual([])
+    expect(sectionsForSurface(['model'], 'product')).toEqual([])
+  })
+})
+
+/**
+ * The filter is only worth having if the panel actually asks it. These render
+ * a caller permitted *everything* and check that each surface still draws only
+ * its own half — otherwise the settings screen and the product panel would be
+ * the same screen twice, and the tenant-wide controls would stay reachable
+ * from inside the product exactly as before.
+ */
+describe('the panel obeys its surface', () => {
+  const ALL: AgentSettingsSectionKey[] = [
+    'topics', 'prompt', 'limits', 'model', 'imageKey', 'imageModels', 'imageStyles',
+  ]
+  const renderOn = (surface: AgentSettingsSurface) =>
+    render(
+      <AgentSettingsModal
+        editableSections={ALL}
+        surface={surface}
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        initialConfig={null}
+      />,
+    )
+
+  it('hides the Modelo tab in the product even from a caller who may change it', () => {
+    renderOn('product')
+
+    expect(screen.queryByRole('tab', { name: 'Modelo' })).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Agente' })).toBeInTheDocument()
+  })
+
+  it('drops the character limits from the product panel', () => {
+    renderOn('product')
+
+    expect(screen.getByText('Temas de contenido')).toBeInTheDocument()
+    expect(screen.queryByText('Límites de caracteres')).not.toBeInTheDocument()
+  })
+
+  it('keeps the content preferences out of the settings screen', () => {
+    renderOn('settings')
+
+    expect(screen.getByRole('tab', { name: 'Modelo' })).toBeInTheDocument()
+    expect(screen.queryByText('Temas de contenido')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * What the settings screen showed the first time it was opened: the panel could
+ * not load, and offered to save anyway.
+ */
+describe('the footer follows what is actually on screen', () => {
+  const ADMIN: AgentSettingsSectionKey[] = ['limits', 'model', 'imageKey']
+  const renderPanel = (props: Partial<Parameters<typeof AgentSettingsModal>[0]> = {}) =>
+    render(
+      <AgentSettingsModal
+        editableSections={ADMIN}
+        surface="settings"
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        initialConfig={null}
+        {...props}
+      />,
+    )
+
+  it('offers no Guardar when the settings could not be loaded', () => {
+    renderPanel({ settingsFailed: true })
+
+    expect(screen.getByText(/No pudimos cargar/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Guardar configuración' })).not.toBeInTheDocument()
+  })
+
+  it('offers no Guardar when the role may change nothing', () => {
+    renderPanel({ editableSections: [] })
+
+    expect(screen.queryByRole('button', { name: 'Guardar configuración' })).not.toBeInTheDocument()
+  })
+
+  it('drops Cancelar on the settings screen, which has nowhere to go back to', () => {
+    renderPanel()
+
+    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Guardar configuración' })).toBeInTheDocument()
+  })
+
+  it('keeps Cancelar in the dialog inside the product', () => {
+    renderPanel({ surface: 'product', editableSections: ['topics', 'prompt'] })
+
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
+  })
+
+  /**
+   * Topics are not drawn on the settings surface, so an empty tag list is not a
+   * reason to refuse a save there — an admin who came to change the model would
+   * find Guardar disabled with nothing on screen explaining why.
+   */
+  it('keeps Guardar usable with no topics chosen when topics are not shown', () => {
+    // An explicitly empty tag list, not the default: `initialConfig: null`
+    // falls back to a seeded tag, so it would pass whether the guard applied
+    // here or not.
+    renderPanel({ initialConfig: { niche: '', tags: [] } })
+
+    expect(screen.getByRole('button', { name: 'Guardar configuración' })).toBeEnabled()
+  })
+
+  it('still refuses a save with no topics where topics are the point', () => {
+    renderPanel({
+      surface: 'product',
+      editableSections: ['topics', 'prompt'],
+      initialConfig: { niche: '', tags: [] },
+    })
+
+    expect(screen.getByRole('button', { name: 'Guardar configuración' })).toBeDisabled()
+  })
+})
+
+/**
+ * The model field is free text, which is right — catalogues change — but it
+ * left an admin choosing between two names with nothing to choose on. The
+ * deployment ran the slow one for months and the screen never said so.
+ */
+describe('choosing a model', () => {
+  const renderModelTab = () =>
+    render(
+      <AgentSettingsModal
+        editableSections={['model']}
+        surface="settings"
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        initialConfig={null}
+      />,
+    )
+
+  it('says what an empty field falls back to', async () => {
+    const user = userEvent.setup()
+    renderModelTab()
+    await user.click(screen.getByRole('tab', { name: 'Modelo' }))
+
+    expect(screen.getByText(/Vacío usa el modelo por defecto del despliegue/)).toBeInTheDocument()
+  })
+
+  it('names the speed tradeoff once a provider with one is chosen', async () => {
+    const user = userEvent.setup()
+    renderModelTab()
+    await user.click(screen.getByRole('tab', { name: 'Modelo' }))
+
+    // No provider chosen yet: nothing to say about a catalogue we do not know.
+    expect(screen.queryByText(/responde en segundos/)).not.toBeInTheDocument()
+  })
+})
+

@@ -2,7 +2,7 @@ import { Badge } from '@core/ui';
 import { Globe } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import type { InstagramProfile } from '@/features/dashboard-instagram/types/instagram.types';
+import type { InstagramProfile } from '@/features/shared/types/instagram.types';
 
 /** "hace 5 minutos" — an "Actualizado" badge alone never says since when. */
 function relativeTime(iso: string): string {
