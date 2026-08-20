@@ -11,10 +11,10 @@ import remarkGfm from 'remark-gfm';
 
 const headingBase = 'font-semibold text-foreground leading-snug';
 const headingStyles: Record<string, string> = {
-  h1: `${headingBase} text-lg mt-3 mb-1 first:mt-0`,
-  h2: `${headingBase} text-base mt-3 mb-1 first:mt-0`,
-  h3: `${headingBase} text-sm mt-2 mb-1 first:mt-0`,
-  h4: `${headingBase} text-xs mt-2 mb-0.5 first:mt-0`,
+  h1: `${headingBase} text-lg mt-4 mb-1.5 first:mt-0`,
+  h2: `${headingBase} text-base mt-4 mb-1.5 first:mt-0`,
+  h3: `${headingBase} text-sm mt-3 mb-1 first:mt-0`,
+  h4: `${headingBase} text-xs mt-3 mb-0.5 first:mt-0`,
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -46,15 +46,23 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps): JSX.Elemen
         'min-w-0 break-words [overflow-wrap:anywhere]',
         // Blocks
         '[&_p:not(:last-child)]:mb-1 [&_p]:leading-relaxed',
-        // Lists
+        // Lists. The agent answers in numbered recommendations, so the markers
+        // carry the structure — coloured, they anchor the eye down the list
+        // instead of reading as punctuation.
         '[&_ol]:ml-4 [&_ol]:list-decimal [&_ol]:list-outside',
         '[&_ul]:ml-4 [&_ul]:list-disc [&_ul]:list-outside',
-        '[&_li]:mt-0.5',
+        '[&_ol]:marker:font-semibold [&_ol]:marker:text-primary',
+        '[&_ul]:marker:text-primary',
+        // Items here run two and three lines each; at mt-0.5 they ran together
+        // into a wall.
+        '[&_li]:mt-2 [&_li:first-child]:mt-0 [&_li]:pl-1',
         // Bold / italic
         '[&_strong]:text-foreground [&_strong]:font-semibold',
-        // Inline code
-        '[&_code]:bg-muted [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5',
-        '[&_code]:font-mono [&_code]:text-xs',
+        // Inline code. `bg-muted` was invisible: the agent's bubble is
+        // `bg-muted` too, so it tinted itself against its own background.
+        // Tinting the foreground instead works on whatever the bubble is.
+        '[&_code]:bg-foreground/10 [&_code]:text-foreground [&_code]:rounded',
+        '[&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs',
         // Code blocks — scroll inside their own box; a long line must not widen
         // the message.
         '[&_pre]:rounded-md [&_pre]:bg-zinc-900 [&_pre]:p-3',
@@ -62,13 +70,15 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps): JSX.Elemen
         '[&_pre]:font-mono [&_pre]:leading-relaxed',
         '[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-xs [&_pre_code]:text-zinc-100',
         // Blockquotes
-        '[&_blockquote]:border-muted-foreground/30 [&_blockquote]:border-l-2',
+        '[&_blockquote]:border-primary/40 [&_blockquote]:border-l-2',
         '[&_blockquote]:text-muted-foreground [&_blockquote]:pl-3 [&_blockquote]:italic',
         // Tables — same rule: scroll, never widen.
         '[&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:text-left [&_table]:text-xs',
         '[&_thead]:border-border [&_thead]:border-b',
         '[&_th]:text-muted-foreground [&_th]:px-2 [&_th]:py-1 [&_th]:font-medium',
         '[&_td]:border-border/50 [&_td]:border-t [&_td]:px-2 [&_td]:py-1',
+        // Banding, because a dense table of numbers is read across the row.
+        '[&_tbody_tr:nth-child(even)]:bg-foreground/[0.04]',
         // Links
         '[&_a]:text-primary [&_a]:decoration-primary/40 [&_a]:underline',
         '[&_a]:hover:decoration-primary',
