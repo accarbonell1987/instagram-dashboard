@@ -15,9 +15,18 @@ function makeUsage(overrides: {
   imagesUsed?: number
   imagesLimit?: number
   imagesPeriod?: string
+  messagesUsed?: number
+  messagesLimit?: number
+  messagesPeriod?: string
 } = {}): UsageResponse {
   return {
     quotas: {
+      chat_sessions: {
+        used: overrides.messagesUsed ?? 4,
+        limit: overrides.messagesLimit ?? 30,
+        period: overrides.messagesPeriod ?? 'day',
+        resetsAt: '2026-06-15T00:00:00.000Z',
+      },
       llm_tokens: {
         used: overrides.tokensUsed ?? 12000,
         limit: overrides.tokensLimit ?? 100000,
@@ -184,3 +193,76 @@ describe('UsageMeter — Both Resources', () => {
     expect(screen.getByText(/Imágenes:/)).toBeInTheDocument()
   })
 })
+
+/**
+ * The daily message cap is the one that actually runs out — 30 a day on
+ * professional, 5 on starter — and the meter fetched it and then dropped it.
+ * Someone hit the wall with nothing on screen having counted towards it.
+ */
+describe('UsageMeter — mensajes diarios', () => {
+  it('shows the daily message count', () => {
+    render(<UsageMeter usage={makeUsage({ messagesUsed: 12, messagesLimit: 30 })} isLoading={false} />)
+
+    expect(screen.getByTestId('chat_sessions-label')).toHaveTextContent('Mensajes: 12/30')
+  })
+
+  it('puts messages first, ahead of the monthly resources', () => {
+    render(<UsageMeter usage={makeUsage()} isLoading={false} />)
+
+    const labels = screen.getAllByText(/Mensajes|Tokens|Imágenes/)
+    expect(labels[0]).toHaveTextContent('Mensajes')
+  })
+
+  it('says the allowance is daily, not monthly', () => {
+    render(<UsageMeter usage={makeUsage({ messagesUsed: 12, messagesLimit: 30 })} isLoading={false} />)
+
+    expect(screen.getByTestId('chat_sessions-label').parentElement).toHaveAttribute(
+      'title',
+      'Mensajes: 12 / 30 por día',
+    )
+  })
+
+  it('colours the bar red as the daily cap is reached', () => {
+    render(<UsageMeter usage={makeUsage({ messagesUsed: 29, messagesLimit: 30 })} isLoading={false} />)
+
+    const bar = screen.getByTestId('chat_sessions-bar').querySelector('div')
+    expect(bar?.className).toContain('bg-red-500')
+  })
+
+  it('shows unlimited without a bar', () => {
+    render(
+      <UsageMeter
+        usage={makeUsage({ messagesLimit: -1, messagesPeriod: 'unlimited' })}
+        isLoading={false}
+      />,
+    )
+
+    expect(screen.queryByTestId('chat_sessions-bar')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * The web and the API deploy separately, so a response can predate a resource
+ * this build knows about. Reading `.limit` off the missing entry threw inside
+ * the map and took the whole agent panel down with it.
+ */
+describe('UsageMeter — a resource the response does not carry', () => {
+  it('skips it instead of throwing', () => {
+    const usage = makeUsage()
+    // As an older API would answer.
+    delete (usage.quotas as Partial<UsageResponse['quotas']>).chat_sessions
+
+    expect(() => render(<UsageMeter usage={usage} isLoading={false} />)).not.toThrow()
+  })
+
+  it('still shows the resources it did receive', () => {
+    const usage = makeUsage()
+    delete (usage.quotas as Partial<UsageResponse['quotas']>).chat_sessions
+
+    render(<UsageMeter usage={usage} isLoading={false} />)
+
+    expect(screen.getByTestId('llm_tokens-label')).toBeInTheDocument()
+    expect(screen.queryByTestId('chat_sessions-label')).not.toBeInTheDocument()
+  })
+})
+

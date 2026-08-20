@@ -67,9 +67,9 @@ describe('UsageTracker', () => {
       const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', false);
       const result = await tracker.getUsage('tenant-1');
       expect(result).toEqual({
-        tokens: { used: 0, limit: 0 },
-        images: { used: 0, limit: 0 },
-        sessions: { used: 0, limit: 0 },
+        tokens: { used: 0, limit: 0, period: 'month' },
+        images: { used: 0, limit: 0, period: 'month' },
+        sessions: { used: 0, limit: 0, period: 'day' },
         period: 'month',
       });
     });
@@ -214,15 +214,65 @@ describe('UsageTracker', () => {
       internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue([
         { resourceType: 'llm_tokens', limit: 100000, period: 'month' },
         { resourceType: 'fal_images', limit: 50, period: 'month' },
-        { resourceType: 'chat_sessions', limit: 30, period: 'month' },
+        { resourceType: 'chat_sessions', limit: 30, period: 'day' },
+      ]);
+      mockPrisma.aiUsageLog.count.mockResolvedValue(4);
+
+      const result = await tracker.getUsage('tenant-1');
+
+      expect(result.tokens).toEqual({ used: 12000, limit: 100000, period: 'month' });
+      expect(result.images).toEqual({ used: 8, limit: 50, period: 'month' });
+      expect(result.sessions).toEqual({ used: 4, limit: 30, period: 'day' });
+    });
+
+    /**
+     * `sessions.used` was the literal 0, and the old assertion locked it in. The
+     * meter read 0 of 30 right up to the cap — an allowance that appears
+     * untouched while it is being spent.
+     */
+    it('counts chat messages instead of reporting zero', async () => {
+      mockPrisma.aiUsageLog.aggregate.mockResolvedValue({
+        _sum: { promptTokens: 0, completionTokens: 0, imageCount: 0 },
+      });
+      mockPrisma.aiUsageLog.count.mockResolvedValue(17);
+
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue([
+        { resourceType: 'chat_sessions', limit: 30, period: 'day' },
       ]);
 
       const result = await tracker.getUsage('tenant-1');
 
-      expect(result.tokens).toEqual({ used: 12000, limit: 100000 });
-      expect(result.images).toEqual({ used: 8, limit: 50 });
-      expect(result.sessions).toEqual({ used: 0, limit: 30 });
-      expect(result.period).toBe('month');
+      expect(result.sessions.used).toBe(17);
+      // Rows, not a token sum, and only chat — scripts and suggestions are not
+      // messages someone sent.
+      expect(mockPrisma.aiUsageLog.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ operation: 'chat' }),
+        }),
+      );
+    });
+
+    it('counts the day, not the month, for a daily allowance', async () => {
+      mockPrisma.aiUsageLog.aggregate.mockResolvedValue({
+        _sum: { promptTokens: 0, completionTokens: 0, imageCount: 0 },
+      });
+      mockPrisma.aiUsageLog.count.mockResolvedValue(1);
+
+      const tracker = new UsageTracker(mockPrisma, 'http://localhost:8080', true);
+      internals(tracker).getPlanQuotas = vi.fn().mockResolvedValue([
+        { resourceType: 'chat_sessions', limit: 30, period: 'day' },
+      ]);
+
+      await tracker.getUsage('tenant-1');
+
+      const call = mockPrisma.aiUsageLog.count.mock.calls[0]?.[0] as
+        | { where: { createdAt: { gte: Date } } }
+        | undefined;
+      const since = call?.where.createdAt.gte;
+      const midnight = new Date();
+      midnight.setHours(0, 0, 0, 0);
+      expect(since?.getTime()).toBe(midnight.getTime());
     });
   });
 

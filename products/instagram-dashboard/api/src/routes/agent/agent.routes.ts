@@ -153,6 +153,14 @@ export function createAgentRoutes(
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
+    // Daily quotas reset tonight, not at the end of the month. Reporting the
+    // month boundary would tell someone blocked at 30 messages to come back in
+    // three weeks.
+    const dayEnd = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+    ).toISOString();
 
     // Feature flag off: return unlimited placeholder
     if (!usageTrackingEnabled) {
@@ -163,6 +171,7 @@ export function createAgentRoutes(
             quotas: {
               llm_tokens: { used: 0, limit: -1, period: 'month', resetsAt: periodEnd },
               fal_images: { used: 0, limit: -1, period: 'month', resetsAt: periodEnd },
+              chat_sessions: { used: 0, limit: -1, period: 'day', resetsAt: dayEnd },
             },
             periodStart,
             periodEnd,
@@ -182,14 +191,20 @@ export function createAgentRoutes(
             llm_tokens: {
               used: usage.tokens.used,
               limit: usage.tokens.limit,
-              period: 'month',
+              period: usage.tokens.period,
               resetsAt: periodEnd,
             },
             fal_images: {
               used: usage.images.used,
               limit: usage.images.limit,
-              period: 'month',
+              period: usage.images.period,
               resetsAt: periodEnd,
+            },
+            chat_sessions: {
+              used: usage.sessions.used,
+              limit: usage.sessions.limit,
+              period: usage.sessions.period,
+              resetsAt: usage.sessions.period === 'day' ? dayEnd : periodEnd,
             },
           },
           periodStart,

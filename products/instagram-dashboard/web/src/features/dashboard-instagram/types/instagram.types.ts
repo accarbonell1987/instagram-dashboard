@@ -489,6 +489,7 @@ export interface UsageResponse {
   quotas: {
     llm_tokens: QuotaEntry
     fal_images: QuotaEntry
+    chat_sessions: QuotaEntry
   }
   periodStart: string
   periodEnd: string

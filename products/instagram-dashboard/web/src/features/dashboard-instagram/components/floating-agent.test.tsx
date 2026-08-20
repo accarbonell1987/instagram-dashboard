@@ -11,6 +11,7 @@ import { FloatingAgent } from './floating-agent'
 vi.mock('../services/instagram.service', () => ({
   getUsage: vi.fn().mockResolvedValue({
     quotas: {
+        chat_sessions: { used: 4, limit: 30, period: 'day', resetsAt: '2026-06-15T00:00:00.000Z' },
       llm_tokens: { used: 12000, limit: 100000, period: 'month', resetsAt: '2026-07-01T00:00:00.000Z' },
       fal_images: { used: 8, limit: 50, period: 'month', resetsAt: '2026-07-01T00:00:00.000Z' },
     },

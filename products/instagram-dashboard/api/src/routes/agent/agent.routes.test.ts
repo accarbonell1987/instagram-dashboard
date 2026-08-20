@@ -23,7 +23,7 @@ interface Quota {
 }
 
 interface UsageData {
-  quotas: { llm_tokens: Quota; fal_images: Quota };
+  quotas: { llm_tokens: Quota; fal_images: Quota; chat_sessions: Quota };
   periodStart: string;
   periodEnd: string;
 }
@@ -347,9 +347,9 @@ describe('Agent routes', () => {
   describe('GET /agent/usage', () => {
     it('returns 200 with quota structure when usage exists', async () => {
       mockGetUsage.mockResolvedValueOnce({
-        tokens: { used: 12450, limit: 100000 },
-        images: { used: 8, limit: 50 },
-        sessions: { used: 3, limit: 30 },
+        tokens: { used: 12450, limit: 100000, period: 'month' },
+        images: { used: 8, limit: 50, period: 'month' },
+        sessions: { used: 3, limit: 30, period: 'day' },
         period: 'month',
       });
 
@@ -367,6 +367,10 @@ describe('Agent routes', () => {
       expect(body.data.quotas.fal_images.limit).toBe(50);
       expect(body.data.quotas.fal_images.period).toBe('month');
       expect(body.data.quotas.fal_images.resetsAt).toBeDefined();
+      // The daily cap, which the endpoint used to leave out entirely.
+      expect(body.data.quotas.chat_sessions.used).toBe(3);
+      expect(body.data.quotas.chat_sessions.limit).toBe(30);
+      expect(body.data.quotas.chat_sessions.period).toBe('day');
       expect(body.data.periodStart).toBeDefined();
       expect(body.data.periodEnd).toBeDefined();
       expect(mockGetUsage).toHaveBeenCalledWith(TENANT_ID);
@@ -374,9 +378,9 @@ describe('Agent routes', () => {
 
     it('returns 200 with zeros when no usage yet', async () => {
       mockGetUsage.mockResolvedValueOnce({
-        tokens: { used: 0, limit: 100000 },
-        images: { used: 0, limit: 50 },
-        sessions: { used: 0, limit: 30 },
+        tokens: { used: 0, limit: 100000, period: 'month' },
+        images: { used: 0, limit: 50, period: 'month' },
+        sessions: { used: 0, limit: 30, period: 'day' },
         period: 'month',
       });
 
@@ -506,9 +510,9 @@ describe('Agent routes', () => {
 
     it('returns 200 with zero usage when getUsage returns all zeros', async () => {
       mockGetUsage.mockResolvedValueOnce({
-        tokens: { used: 0, limit: 100000 },
-        images: { used: 0, limit: 50 },
-        sessions: { used: 0, limit: 30 },
+        tokens: { used: 0, limit: 100000, period: 'month' },
+        images: { used: 0, limit: 50, period: 'month' },
+        sessions: { used: 0, limit: 30, period: 'day' },
         period: 'month',
       });
 

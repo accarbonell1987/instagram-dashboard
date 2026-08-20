@@ -59,6 +59,7 @@ export const UsageResponseDataSchema = z.object({
   quotas: z.object({
     llm_tokens: QuotaEntrySchema,
     fal_images: QuotaEntrySchema,
+    chat_sessions: QuotaEntrySchema,
   }),
   periodStart: z.string(),
   periodEnd: z.string(),

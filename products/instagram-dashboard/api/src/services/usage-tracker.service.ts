@@ -17,9 +17,12 @@ export interface UsageLogParams {
 }
 
 export interface UsageData {
-  tokens: { used: number; limit: number };
-  images: { used: number; limit: number };
-  sessions: { used: number; limit: number };
+  // Each carries its own period: sessions reset daily, the other two monthly,
+  // and a single `period` for all three described only the majority.
+  tokens: { used: number; limit: number; period: string };
+  images: { used: number; limit: number; period: string };
+  sessions: { used: number; limit: number; period: string };
+  /** @deprecated Read the period off each resource. */
   period: string;
 }
 
@@ -61,32 +64,7 @@ export class UsageTracker {
     if (!quota) return { allowed: true };
     if (quota.period === 'unlimited') return { allowed: true, limit: quota.limit };
 
-    const used = await this.prisma.aiUsageLog.aggregate({
-      _sum:
-        resourceType === 'fal_images'
-          ? { imageCount: true }
-          : { promptTokens: true, completionTokens: true },
-      where: {
-        tenantId,
-        operation:
-          resourceType === 'fal_images'
-            ? 'image_gen'
-            : { in: ['chat', 'script', 'suggestion'] },
-        createdAt: { gte: this.periodStart(quota.period) },
-      },
-    });
-
-    // Prisma types `_sum` as a union keyed on the aggregated fields; the branch
-    // here mirrors the `_sum` selection above, so widen to read the field safely.
-    const totals = used._sum as {
-      imageCount?: number | null;
-      promptTokens?: number | null;
-      completionTokens?: number | null;
-    };
-    const sum =
-      resourceType === 'fal_images'
-        ? (totals.imageCount ?? 0)
-        : ((totals.promptTokens ?? 0) + (totals.completionTokens ?? 0));
+    const sum = await this.countUsage(tenantId, resourceType, quota.period);
 
     return {
       allowed: sum < quota.limit,
@@ -114,53 +92,43 @@ export class UsageTracker {
   async getUsage(tenantId: string): Promise<UsageData> {
     if (!this.enabled) {
       return {
-        tokens: { used: 0, limit: 0 },
-        images: { used: 0, limit: 0 },
-        sessions: { used: 0, limit: 0 },
+        tokens: { used: 0, limit: 0, period: 'month' },
+        images: { used: 0, limit: 0, period: 'month' },
+        sessions: { used: 0, limit: 0, period: 'day' },
         period: 'month',
       };
     }
 
     const quotas = await this.getPlanQuotas(tenantId);
+    const quotaFor = (resourceType: string) => quotas.find((q) => q.resourceType === resourceType);
 
-    const tokenUsage = await this.prisma.aiUsageLog.aggregate({
-      _sum: { promptTokens: true, completionTokens: true },
-      where: {
-        tenantId,
-        operation: { in: ['chat', 'script', 'suggestion'] },
-        createdAt: { gte: this.periodStart('month') },
-      },
-    });
+    const tokensQuota = quotaFor('llm_tokens');
+    const imagesQuota = quotaFor('fal_images');
+    const sessionsQuota = quotaFor('chat_sessions');
 
-    const imageUsage = await this.prisma.aiUsageLog.aggregate({
-      _sum: { imageCount: true },
-      where: {
-        tenantId,
-        operation: 'image_gen',
-        createdAt: { gte: this.periodStart('month') },
-      },
-    });
-
-    const tokenCount =
-      (tokenUsage._sum.promptTokens ?? 0) + (tokenUsage._sum.completionTokens ?? 0);
-    const imageCount = imageUsage._sum.imageCount ?? 0;
-
-    const tokensQuota = quotas.find((q) => q.resourceType === 'llm_tokens');
-    const imagesQuota = quotas.find((q) => q.resourceType === 'fal_images');
-    const sessionsQuota = quotas.find((q) => q.resourceType === 'chat_sessions');
+    const [tokenCount, imageCount, sessionCount] = await Promise.all([
+      this.countUsage(tenantId, 'llm_tokens', tokensQuota?.period ?? 'month'),
+      this.countUsage(tenantId, 'fal_images', imagesQuota?.period ?? 'month'),
+      // Counted rather than left at zero. The meter reported 0 of 30 forever,
+      // which reads as "you have used nothing" right up to the cap.
+      this.countUsage(tenantId, 'chat_sessions', sessionsQuota?.period ?? 'day'),
+    ]);
 
     return {
       tokens: {
         used: tokenCount,
         limit: tokensQuota?.limit ?? 0,
+        period: tokensQuota?.period ?? 'month',
       },
       images: {
         used: imageCount,
         limit: imagesQuota?.limit ?? 0,
+        period: imagesQuota?.period ?? 'month',
       },
       sessions: {
-        used: 0,
+        used: sessionCount,
         limit: sessionsQuota?.limit ?? 0,
+        period: sessionsQuota?.period ?? 'day',
       },
       period: 'month',
     };
@@ -175,6 +143,46 @@ export class UsageTracker {
     } else {
       this.cache.clear();
     }
+  }
+
+
+  /**
+   * What a resource has consumed in its period.
+   *
+   * `chat_sessions` counts rows, not tokens. The branch used to be binary —
+   * fal_images against everything else — so a session limit was compared
+   * against a token sum, and 30 "sessions" were spent by the first message.
+   * Nothing called it that way yet, which is the only reason it never showed.
+   *
+   * What is countable is chat operations, i.e. messages: AiUsageLog carries no
+   * session id, so the resource's name promises a grouping the data cannot make.
+   */
+  private async countUsage(
+    tenantId: string,
+    resourceType: 'llm_tokens' | 'fal_images' | 'chat_sessions',
+    period: string,
+  ): Promise<number> {
+    const createdAt = { gte: this.periodStart(period) };
+
+    if (resourceType === 'chat_sessions') {
+      return this.prisma.aiUsageLog.count({
+        where: { tenantId, operation: 'chat', createdAt },
+      });
+    }
+
+    if (resourceType === 'fal_images') {
+      const images = await this.prisma.aiUsageLog.aggregate({
+        _sum: { imageCount: true },
+        where: { tenantId, operation: 'image_gen', createdAt },
+      });
+      return images._sum.imageCount ?? 0;
+    }
+
+    const tokens = await this.prisma.aiUsageLog.aggregate({
+      _sum: { promptTokens: true, completionTokens: true },
+      where: { tenantId, operation: { in: ['chat', 'script', 'suggestion'] }, createdAt },
+    });
+    return (tokens._sum.promptTokens ?? 0) + (tokens._sum.completionTokens ?? 0);
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────

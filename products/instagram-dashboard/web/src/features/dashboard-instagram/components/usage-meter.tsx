@@ -2,14 +2,14 @@
 
 import type { JSX } from 'react'
 
-import type { UsageResponse } from '../types/instagram.types'
+import type { QuotaEntry, UsageResponse } from '../types/instagram.types'
 
 interface UsageMeterProps {
   usage: UsageResponse | null
   isLoading: boolean
 }
 
-type ResourceLabel = 'llm_tokens' | 'fal_images'
+type ResourceLabel = 'llm_tokens' | 'fal_images' | 'chat_sessions'
 
 function formatNumber(n: number): string {
   if (n >= 1000) {
@@ -41,6 +41,7 @@ function getTextColorClass(used: number, limit: number): string {
 const RESOURCE_LABELS: Record<ResourceLabel, string> = {
   llm_tokens: 'Tokens',
   fal_images: 'Imágenes',
+  chat_sessions: 'Mensajes',
 }
 
 export function UsageMeter({ usage, isLoading }: UsageMeterProps): JSX.Element | null {
@@ -56,12 +57,19 @@ export function UsageMeter({ usage, isLoading }: UsageMeterProps): JSX.Element |
 
   if (usage === null) return null
 
-  const resources: ResourceLabel[] = ['llm_tokens', 'fal_images']
+  // Messages first: it is the daily one, the one that runs out soonest, and the
+  // only one anybody feels. It was fetched and then dropped here.
+  const resources: ResourceLabel[] = ['chat_sessions', 'llm_tokens', 'fal_images']
 
   return (
     <div className="flex items-center gap-2" aria-label="Medidor de uso de recursos">
       {resources.map((resourceType) => {
-        const quota = usage.quotas[resourceType]
+        // The web and the API ship separately, so a response can legitimately
+        // predate a resource this build knows about. Skipping the entry costs a
+        // meter; reading `.limit` off undefined took down the whole panel.
+        const quota = usage.quotas[resourceType] as QuotaEntry | undefined
+        if (quota === undefined) return null
+
         const isUnlimited = quota.limit <= 0 || quota.period === 'unlimited'
         const barColor = getColorClass(quota.used, quota.limit)
         const textColor = getTextColorClass(quota.used, quota.limit)
@@ -75,7 +83,8 @@ export function UsageMeter({ usage, isLoading }: UsageMeterProps): JSX.Element |
             title={
               isUnlimited
                 ? `${label}: Ilimitado`
-                : `${label}: ${formatNumber(quota.used)} / ${formatNumber(quota.limit)}`
+                : `${label}: ${formatNumber(quota.used)} / ${formatNumber(quota.limit)}` +
+                  (quota.period === 'day' ? ' por día' : ' este mes')
             }
           >
             {isUnlimited ? (
