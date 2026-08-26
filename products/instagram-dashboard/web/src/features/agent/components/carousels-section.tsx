@@ -277,18 +277,26 @@ export function CarouselsSection({
 
   const LIMIT = 12
 
+  // La peticion sobrevive al desmontaje: sin esta guarda,  corre sobre
+  // un componente que ya no existe. En React 19 la actualizacion es un no-op
+  // silencioso, pero en un test jsdom ya se desarmo y la corrida entera cae con
+  // "window is not defined" aunque todos los tests hayan pasado.
+  const isMounted = useRef(true)
+  useEffect(() => () => { isMounted.current = false }, [])
+
   const fetchCarousels = useCallback(async (p: number) => {
     setIsLoading(true)
     setError(null)
     try {
       const result = await listCarousels(p, LIMIT)
+      if (!isMounted.current) return
       setCarousels(result.carousels)
       setTotal(result.total)
       setPage(p)
     } catch {
-      setError('Error al cargar los carruseles')
+      if (isMounted.current) setError('Error al cargar los carruseles')
     } finally {
-      setIsLoading(false)
+      if (isMounted.current) setIsLoading(false)
     }
   }, [])
 
