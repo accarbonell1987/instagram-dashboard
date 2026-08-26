@@ -15,11 +15,21 @@ name: corehub-${ENV_NAME:?falta ENV_NAME}
 
 x-restart: &restart unless-stopped
 
+# El driver por defecto de Docker crece SIN limite. En una VPS compartida con 7
+# sistemas de clientes, un log desbocado llena el disco y se los lleva a todos.
+# 10MB x 3 archivos por servicio: 210MB de techo para el stack entero.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # ─── Base de datos ────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     restart: *restart
+    logging: *logging
     environment:
       POSTGRES_USER: corehub
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}
@@ -42,6 +52,7 @@ services:
   migrate-iam:
     image: ${IMAGE_PREFIX:?falta IMAGE_PREFIX}/api-iam:${IMAGE_TAG:?falta IMAGE_TAG}
     restart: "no"
+    logging: *logging
     working_dir: /repo/apps/api-iam
     command: ["node_modules/.bin/prisma", "migrate", "deploy"]
     environment:
@@ -53,6 +64,7 @@ services:
   migrate-instagram:
     image: ${IMAGE_PREFIX}/instagram-api:${IMAGE_TAG}
     restart: "no"
+    logging: *logging
     working_dir: /repo/products/instagram-dashboard/api
     command: ["node_modules/.bin/prisma", "migrate", "deploy"]
     environment:
@@ -65,6 +77,7 @@ services:
   api-iam:
     image: ${IMAGE_PREFIX}/api-iam:${IMAGE_TAG}
     restart: *restart
+    logging: *logging
     env_file: [./env/api-iam.env]
     environment:
       PORT: "8080"
@@ -91,6 +104,7 @@ services:
   instagram-api:
     image: ${IMAGE_PREFIX}/instagram-api:${IMAGE_TAG}
     restart: *restart
+    logging: *logging
     env_file: [./env/instagram-api.env]
     environment:
       PORT: "3003"
@@ -126,6 +140,7 @@ services:
   hub:
     image: ${IMAGE_PREFIX}/hub:${IMAGE_TAG}
     restart: *restart
+    logging: *logging
     environment:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
@@ -138,6 +153,7 @@ services:
   instagram-web:
     image: ${IMAGE_PREFIX}/instagram-web:${IMAGE_TAG}
     restart: *restart
+    logging: *logging
     environment:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
