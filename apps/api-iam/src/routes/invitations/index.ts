@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import { setCookie } from 'hono/cookie';
+import { setHubSessionCookie } from '../../lib/hub-session-cookie.js';
 import type { InvitationService } from '../../services/index.js';
 import type { Config } from '../../config.js';
 import type { InvitationStatus } from '../../repositories/invitation/types.js';
@@ -15,18 +16,7 @@ import {
   commonErrorResponses,
 } from '../schemas/index.js';
 
-function setHubSessionCookie(c: Parameters<typeof setCookie>[0], config: Config): void {
-  // hub_session is a presence-only cookie (not httpOnly) so the Next.js middleware
-  // can read it on all routes and redirect to /login when no session exists.
-  // It carries no sensitive data — the real auth gate is the refresh_token cookie.
-  setCookie(c, 'hub_session', '1', {
-    httpOnly: false,
-    secure: true,
-    sameSite: 'Lax',
-    path: '/',
-    maxAge: config.JWT_REFRESH_TOKEN_TTL_SECONDS,
-  });
-}
+
 
 export function createInvitationsRouter(
   invitationService: InvitationService,

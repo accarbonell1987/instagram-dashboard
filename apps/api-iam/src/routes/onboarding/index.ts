@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import { setCookie } from 'hono/cookie';
+import { setHubSessionCookie } from '../../lib/hub-session-cookie.js';
 import type { DraftService, PaymentService, SubmitService } from '../../services/index.js';
 import { UNSETTLED_STATUSES } from '../../services/settlement.service.js';
 import type { PlanRepository, PaymentRepository } from '../../repositories/index.js';
@@ -36,13 +37,7 @@ function setRefreshCookie(c: Parameters<typeof setCookie>[0], raw: string, confi
     path: '/auth/refresh',
     maxAge: config.JWT_REFRESH_TOKEN_TTL_SECONDS,
   });
-  setCookie(c, 'hub_session', '1', {
-    httpOnly: false,
-    secure: true,
-    sameSite: 'Lax',
-    path: '/',
-    maxAge: config.JWT_REFRESH_TOKEN_TTL_SECONDS,
-  });
+  setHubSessionCookie(c, config);
 }
 
 function mapFeatures(features: unknown): string[] {

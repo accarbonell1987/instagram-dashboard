@@ -39,6 +39,11 @@ const configSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
 
+  // Dominio padre para la cookie hub_session cuando el hub y la API viven en
+  // subdominios distintos (ej: '.corehub.guay.pro'). Sin esto la cookie queda
+  // atada al host de la API y el middleware del hub nunca la ve.
+  COOKIE_DOMAIN: z.string().optional(),
+
   HUB_BASE_URL: z.string().url().default('http://localhost:3001'),
 
   BANCARD_PROVIDER: z.enum(['stub', 'real']).default('stub'),

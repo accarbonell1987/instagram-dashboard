@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import { setHubSessionCookie, deleteHubSessionCookie } from '../../lib/hub-session-cookie.js';
 import { createHash } from 'node:crypto';
 import type { PrismaClient } from '../../generated/prisma/client.js';
 import type {
@@ -50,21 +51,10 @@ function setRefreshCookie(c: Parameters<typeof setCookie>[0], raw: string, confi
     path: '/auth/refresh',
     maxAge: config.JWT_REFRESH_TOKEN_TTL_SECONDS,
   });
-  // hub_session is a presence-only cookie (not httpOnly) so the Next.js middleware
-  // can read it on all routes and redirect to /login when no session exists.
-  // It carries no sensitive data — the real auth gate is the refresh_token cookie.
-  setCookie(c, 'hub_session', '1', {
-    httpOnly: false,
-    secure: true,
-    sameSite: 'Lax',
-    path: '/',
-    maxAge: config.JWT_REFRESH_TOKEN_TTL_SECONDS,
-  });
+  setHubSessionCookie(c, config);
 }
 
-function deleteHubSessionCookie(c: Parameters<typeof deleteCookie>[0]): void {
-  deleteCookie(c, 'hub_session', { path: '/' });
-}
+
 
 export function createAuthRouter(
   authService: AuthService,
@@ -399,7 +389,7 @@ export function createAuthRouter(
       sameSite: 'Lax',
       path: '/auth/refresh',
     });
-    deleteHubSessionCookie(c);
+    deleteHubSessionCookie(c, config);
     return new Response(null, { status: 204 });
   });
 
