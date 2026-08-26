@@ -63,7 +63,7 @@ describe('UsageTracker', () => {
         promptTokens: 100,
         completionTokens: 200,
       });
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockPrisma.aiUsageLog.create).not.toHaveBeenCalled();
     });
 
@@ -99,7 +99,7 @@ describe('UsageTracker', () => {
         completionTokens: 350,
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockPrisma.aiUsageLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           tenantId: 'tenant-1',
@@ -122,7 +122,7 @@ describe('UsageTracker', () => {
         imageCount: 3,
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockPrisma.aiUsageLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           tenantId: 'tenant-1',

@@ -122,6 +122,7 @@ export class LlmClient {
         messages: params.messages,
         ...(params.tools !== undefined && { tools: params.tools }),
       },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       this.supportsReasoningEffort
         ? // extra_body merges into the request body — how provider-specific
           // fields get through the OpenAI SDK.

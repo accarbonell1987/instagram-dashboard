@@ -308,13 +308,13 @@ describe('SuggestionService', () => {
       // Need to mock findEligibleForMeasurement and findByOwner on the suggestion repo
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockUsageTracker);
+      const svc = new SuggestionService(repos, ({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver), mockUsageTracker);
 
       await svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas');
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledBefore(mockDeepSeekChat);
     });
 
@@ -327,7 +327,7 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockUsageTracker);
+      const svc = new SuggestionService(repos, ({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver), mockUsageTracker);
 
       await expect(
         svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),
@@ -347,11 +347,11 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockUsageTracker);
+      const svc = new SuggestionService(repos, ({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver), mockUsageTracker);
 
       await svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas');
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.log).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
         userId: 'user-1',
@@ -367,13 +367,13 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockUsageTracker);
+      const svc = new SuggestionService(repos, ({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver), mockUsageTracker);
 
       await expect(
         svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),
       ).rejects.toThrow('API error');
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.log).not.toHaveBeenCalled();
     });
 
@@ -388,7 +388,7 @@ describe('SuggestionService', () => {
 
       const repos = createMockRepos();
       const mockDeepseekClient = { chat: mockDeepSeekChat };
-      const svc = new SuggestionService(repos, ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver));
+      const svc = new SuggestionService(repos, ({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver));
 
       await expect(
         svc.generateContentIdea({ tenantId: 'tenant-1', userId: 'user-1' }, 'Dame ideas'),

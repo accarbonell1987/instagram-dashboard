@@ -1,7 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 
-import { ownerOf } from '../../../shared/domain/owner.js';
 import { createApiRouter } from '../../../shared/lib/create-openapi-router.js';
 import { ErrorResponseSchema } from '../../../shared/lib/shared-schemas.js';
 import type { OAuthService } from '../../services/oauth.service.js';

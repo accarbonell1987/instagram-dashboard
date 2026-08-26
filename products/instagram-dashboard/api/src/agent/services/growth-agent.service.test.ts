@@ -129,7 +129,7 @@ describe('GrowthAgentService', () => {
     return new GrowthAgentService(
       repos,
       mockDashboardService as unknown as DashboardService,
-      ({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver),
+      ({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver),
       mockSuggestionService as unknown as SuggestionService,
       tracker,
     );
@@ -601,9 +601,9 @@ describe('GrowthAgentService', () => {
 
       await svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'Hola', history: [] });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.checkQuota).toHaveBeenCalledBefore(mockChat);
     });
 
@@ -620,7 +620,7 @@ describe('GrowthAgentService', () => {
       // DeepSeek should NOT be called
       expect(mockChat).not.toHaveBeenCalled();
       // No log should be written
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.log).not.toHaveBeenCalled();
     });
 
@@ -635,7 +635,7 @@ describe('GrowthAgentService', () => {
 
       // Two iterations: tool_call (promptTokens:10, completionTokens:5) + stop (promptTokens:10, completionTokens:20)
       // Total: promptTokens=20, completionTokens=25
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.log).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: 'tenant-1',
@@ -665,7 +665,7 @@ describe('GrowthAgentService', () => {
 
       await svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'test', history: [] });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.log).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: 'tenant-1',
@@ -687,7 +687,7 @@ describe('GrowthAgentService', () => {
         svc.chat({ tenantId: 'tenant-1', userId: 'user-1', sessionId: 'sess-1', userMessage: 'Hola', history: [] }),
       ).rejects.toThrow(QuotaExceededError);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockUsageTracker.log).not.toHaveBeenCalled();
     });
 
@@ -710,10 +710,12 @@ describe('GrowthAgentService', () => {
   describe('daily message allowance', () => {
     it('refuses the message when the daily allowance is spent', async () => {
       const tracker = createMockTracker({
-        checkQuota: vi.fn(async (_tenantId: string, resource: string) =>
-          resource === 'chat_sessions'
-            ? { allowed: false, limit: 30, resetsAt: '2026-06-16T00:00:00.000Z' }
-            : { allowed: true, remaining: 90000, limit: 100000 },
+        checkQuota: vi.fn((_tenantId: string, resource: string) =>
+          Promise.resolve(
+            resource === 'chat_sessions'
+              ? { allowed: false, limit: 30, resetsAt: '2026-06-16T00:00:00.000Z' }
+              : { allowed: true, remaining: 90000, limit: 100000 },
+          ),
         ),
       });
       const svc = createServiceWithTracker(tracker);

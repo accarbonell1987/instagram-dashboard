@@ -171,9 +171,9 @@ describe('CarouselService (UsageTracker enforcement)', () => {
     it('calls checkQuota before fire-and-forget', async () => {
       await service.createCarousel({ tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic');
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'fal_images');
 
       // Verify checkQuota was called before carousel.create
@@ -215,7 +215,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       await service._generateAsync('car-1', { tenantId: 'tenant-1', userId: 'user-1' }, 'Test topic');
 
       // Should log image_gen with success count (2 slides generated)
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.log).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: 'tenant-1',
@@ -253,7 +253,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
 
       await service.regenerateCarousel('car-1', { tenantId: 'tenant-1', userId: 'user-1' }, { topic: 'New topic' });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
     });
 
@@ -283,7 +283,7 @@ describe('CarouselService (UsageTracker enforcement)', () => {
       // regenerateSlide fires-and-forgets, but checkQuota runs synchronously before
       await service.regenerateSlide('car-1', 'slide-1', { tenantId: 'tenant-1', userId: 'user-1' });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'fal_images');
     });
 

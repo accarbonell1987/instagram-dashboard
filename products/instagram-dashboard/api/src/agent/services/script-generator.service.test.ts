@@ -70,12 +70,12 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
   describe('constructor', () => {
     it('accepts UsageTracker as optional 2nd param', () => {
       const tracker = createMockUsageTracker();
-      const svc = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), tracker);
+      const svc = new ScriptGeneratorService(({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver), tracker);
       expect(svc).toBeInstanceOf(ScriptGeneratorService);
     });
 
     it('works without UsageTracker (backward compat)', () => {
-      const svc = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver));
+      const svc = new ScriptGeneratorService(({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver));
       expect(svc).toBeInstanceOf(ScriptGeneratorService);
     });
   });
@@ -84,7 +84,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockTracker);
+      service = new ScriptGeneratorService(({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver), mockTracker);
     });
 
     it('calls checkQuota before DeepSeek when tenantId is provided', async () => {
@@ -92,9 +92,9 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
 
       await service.generateScript('Cómo crecer en Instagram', OWNER);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.checkQuota).toHaveBeenCalledBefore(mockDeepSeekChat);
     });
 
@@ -118,7 +118,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
 
       await service.generateScript('Tema de prueba', OWNER, 'Contexto base');
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.log).toHaveBeenCalledWith({
         tenantId: 'tenant-1',
         userId: 'user-1',
@@ -136,7 +136,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
         service.generateScript('Tema inválido', OWNER),
       ).rejects.toThrow('API error');
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.log).not.toHaveBeenCalled();
     });
   });
@@ -145,7 +145,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockTracker);
+      service = new ScriptGeneratorService(({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver), mockTracker);
     });
 
     /**
@@ -159,9 +159,9 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
 
       await service.generateScript('Tema sin tenant', OWNER);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.checkQuota).toHaveBeenCalledWith('tenant-1', 'llm_tokens');
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- asserting on a mock reference, not calling it
+       
       expect(mockTracker.log).toHaveBeenCalled();
     });
 
@@ -178,7 +178,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
   describe('generateScript() with usageTracker undefined', () => {
     beforeEach(() => {
       vi.clearAllMocks();
-      service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver));
+      service = new ScriptGeneratorService(({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver));
     });
 
     it('generates script normally without usageTracker and tenantId', async () => {
@@ -195,7 +195,7 @@ describe('ScriptGeneratorService (UsageTracker enforcement)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockTracker = createMockUsageTracker();
-      service = new ScriptGeneratorService(({ resolve: async () => mockDeepseekClient } as unknown as LlmResolver), mockTracker);
+      service = new ScriptGeneratorService(({ resolve: () => Promise.resolve(mockDeepseekClient) } as unknown as LlmResolver), mockTracker);
     });
 
     it('passes llm_tokens as resourceType to checkQuota', async () => {

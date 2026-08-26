@@ -2,8 +2,8 @@
 
 import type { JSX, ReactNode } from 'react';
 
-import { Button } from '../../atoms/button';
 import { cn } from '../../../lib/utils';
+import { Button } from '../../atoms/button';
 
 /**
  * The one table in the system.

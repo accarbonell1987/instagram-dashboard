@@ -78,6 +78,19 @@ export default [
     },
   },
   {
+    // Los matchers de vitest devuelven `any` por diseno: `expect.objectContaining()`
+    // no se puede tipar, y `expect(mock.metodo)` es COMO se asierta un mock, no un
+    // metodo desligado de su objeto. Estas reglas existen para atrapar `any`
+    // fluyendo por codigo de produccion; en un test solo empujan a escribir
+    // aserciones peores para callarlas.
+    files: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "@typescript-eslint/unbound-method": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+    },
+  },
+  {
     ignores: [
       "node_modules/",
       "dist/",
@@ -86,6 +99,9 @@ export default [
       "*.config.js",
       "*.config.ts",
       "*.config.mjs",
+      // Tooling, no codigo fuente: vive fuera del `include` del tsconfig y el
+      // project service de typescript-eslint no puede parsearlo.
+      "vitest.setup.ts",
     ],
   },
 ];

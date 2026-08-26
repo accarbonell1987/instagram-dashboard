@@ -42,8 +42,6 @@ export function createChatRoutes(
   routes.post('/', async (c) => {
     const tenant = c.get('tenant');
     const { tenantId, userId } = tenant;
-    const owner = { tenantId, userId };
-
     // Rate limit check
     const { allowed } = checkChatRateLimit(tenantId);
     if (!allowed) {
