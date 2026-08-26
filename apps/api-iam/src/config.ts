@@ -34,6 +34,10 @@ const configSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().positive().default(1025),
+  // Opcionales: MailDev no acepta AUTH, un servidor real lo exige. El
+  // transporte solo manda credenciales cuando las dos estan presentes.
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
 
   HUB_BASE_URL: z.string().url().default('http://localhost:3001'),
 

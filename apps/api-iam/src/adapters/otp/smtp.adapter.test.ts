@@ -16,7 +16,7 @@ describe('SmtpOtpAdapter', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     const nodemailer = await import('nodemailer')
-    adapter = new SmtpOtpAdapter('localhost', 1025, 'noreply@corehub.com')
+    adapter = new SmtpOtpAdapter({ host: 'localhost', port: 1025, from: 'noreply@corehub.com' })
     const transport = vi.mocked(nodemailer.default.createTransport).mock.results[0]?.value as { sendMail: ReturnType<typeof vi.fn> }
     mockSendMail = transport.sendMail
   })

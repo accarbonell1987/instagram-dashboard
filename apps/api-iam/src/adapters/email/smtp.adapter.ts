@@ -1,14 +1,17 @@
-import nodemailer from 'nodemailer'
 import type { EmailAdapter, EmailSendParams, PlanChangeNotificationParams } from './types.js'
 import { planChangeTemplate } from './templates/index.js'
+import type { SmtpTransportOptions } from '../smtp-transport.js'
+import { createSmtpTransport } from '../smtp-transport.js'
+
+export type SmtpEmailAdapterOptions = SmtpTransportOptions & { from: string }
 
 export class SmtpEmailAdapter implements EmailAdapter {
-  private readonly transporter: ReturnType<typeof nodemailer.createTransport>
+  private readonly transporter: ReturnType<typeof createSmtpTransport>
   private readonly from: string
 
-  constructor(host: string, port: number, from: string) {
-    this.from = from
-    this.transporter = nodemailer.createTransport({ host, port, secure: false })
+  constructor(options: SmtpEmailAdapterOptions) {
+    this.from = options.from
+    this.transporter = createSmtpTransport(options)
   }
 
   async send(params: EmailSendParams): Promise<void> {

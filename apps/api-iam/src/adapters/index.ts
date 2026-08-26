@@ -17,19 +17,29 @@ export type { StorageAdapter, StorageUploadParams, StorageSignedUrlParams } from
 export type { RateLimiter } from './rate-limiter/index.js'
 
 export function createAdapters(config: Config, logger: Logger) {
+  // Un solo objeto alimenta los dos adaptadores SMTP: el de OTP y el de email
+  // hablan con el mismo servidor, y separarlos invitaba a configurar uno solo.
+  const smtpOptions = {
+    host: config.SMTP_HOST,
+    port: config.SMTP_PORT,
+    from: config.EMAIL_FROM,
+    user: config.SMTP_USER,
+    password: config.SMTP_PASSWORD,
+  }
+
   return {
     keyProvider: new PemKeyProvider(config),
     otpAdapter:
       config.OTP_EMAIL_PROVIDER === 'resend'
         ? new ResendOtpAdapter(config.RESEND_API_KEY!)
         : config.OTP_EMAIL_PROVIDER === 'smtp'
-          ? new SmtpOtpAdapter(config.SMTP_HOST, config.SMTP_PORT, config.EMAIL_FROM)
+          ? new SmtpOtpAdapter(smtpOptions)
           : new StubOtpAdapter(logger),
     emailAdapter:
       config.EMAIL_PROVIDER === 'resend'
         ? new ResendEmailAdapter(config.RESEND_API_KEY!)
         : config.EMAIL_PROVIDER === 'smtp'
-          ? new SmtpEmailAdapter(config.SMTP_HOST, config.SMTP_PORT, config.EMAIL_FROM)
+          ? new SmtpEmailAdapter(smtpOptions)
           : new StubEmailAdapter(logger),
     bancardAdapter:
       config.BANCARD_PROVIDER === 'real' ? new RealBancardAdapter() : new StubBancardAdapter(),

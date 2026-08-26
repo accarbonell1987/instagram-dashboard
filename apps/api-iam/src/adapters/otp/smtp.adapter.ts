@@ -1,14 +1,17 @@
-import nodemailer from 'nodemailer'
 import { otpTemplate } from '../email/templates/index.js'
 import type { OtpAdapter, OtpSendParams } from './types.js'
+import type { SmtpTransportOptions } from '../smtp-transport.js'
+import { createSmtpTransport } from '../smtp-transport.js'
+
+export type SmtpOtpAdapterOptions = SmtpTransportOptions & { from: string }
 
 export class SmtpOtpAdapter implements OtpAdapter {
-  private readonly transporter: ReturnType<typeof nodemailer.createTransport>
+  private readonly transporter: ReturnType<typeof createSmtpTransport>
   private readonly from: string
 
-  constructor(host: string, port: number, from: string) {
-    this.from = from
-    this.transporter = nodemailer.createTransport({ host, port, secure: false })
+  constructor(options: SmtpOtpAdapterOptions) {
+    this.from = options.from
+    this.transporter = createSmtpTransport(options)
   }
 
   async send(params: OtpSendParams): Promise<void> {
