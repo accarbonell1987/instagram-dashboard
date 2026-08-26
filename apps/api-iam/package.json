@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/db dist/types && cp -R src/db/migrations-tenant dist/db/ && cp src/types/hono.js dist/types/",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
