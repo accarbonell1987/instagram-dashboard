@@ -1,0 +1,62 @@
+# syntax=docker/dockerfile:1
+# Imagen de produccion para las apps Next.js del monorepo (hub, instagram-web).
+#
+# Se parametriza con dos ARG en vez de duplicar el archivo:
+#   APP_PKG  nombre del paquete pnpm   (ej: @corehub/hub)
+#   APP_DIR  ruta relativa en el repo  (ej: apps/hub)
+ARG NODE_VERSION=22-alpine
+
+# --- pruner: recorta el monorepo al subgrafo que esta app necesita -----------
+FROM node:${NODE_VERSION} AS pruner
+ARG APP_PKG
+WORKDIR /repo
+RUN corepack enable
+COPY . .
+# Version fijada a la que resuelve el lockfile: podar con una turbo distinta
+# de la que compila produce un lockfile que --frozen-lockfile puede rechazar.
+RUN pnpm dlx turbo@2.7.6 prune "${APP_PKG}" --docker
+
+# --- builder ----------------------------------------------------------------
+FROM node:${NODE_VERSION} AS builder
+ARG APP_PKG
+ARG APP_DIR
+WORKDIR /repo
+RUN corepack enable
+
+# Los manifests primero: si no cambian, Docker reusa la capa de install.
+COPY --from=pruner /repo/out/json/ .
+RUN pnpm install --frozen-lockfile
+COPY --from=pruner /repo/out/full/ .
+
+# Las NEXT_PUBLIC_* se hornean en el bundle durante `next build`, no se leen en
+# runtime. Por eso la imagen queda atada a un ambiente y dev y prod NO pueden
+# compartir el mismo artefacto: son builds distintos, no una promocion.
+ARG NEXT_PUBLIC_API_URL=""
+ARG NEXT_PUBLIC_INSTAGRAM_API_URL=""
+ARG NEXT_PUBLIC_HUB_ORIGIN=""
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_INSTAGRAM_API_URL=$NEXT_PUBLIC_INSTAGRAM_API_URL \
+    NEXT_PUBLIC_HUB_ORIGIN=$NEXT_PUBLIC_HUB_ORIGIN \
+    NODE_ENV=production
+
+RUN pnpm turbo build --filter="${APP_PKG}"
+
+# instagram-web no tiene public/ y hub si. Creando el directorio siempre, el
+# COPY de abajo sirve para los dos sin un Dockerfile por app.
+RUN mkdir -p "${APP_DIR}/public"
+
+# --- runner -----------------------------------------------------------------
+FROM node:${NODE_VERSION} AS runner
+ARG APP_DIR
+ENV NODE_ENV=production HOSTNAME=0.0.0.0 APP_DIR=${APP_DIR}
+WORKDIR /app
+RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs nextjs
+
+# El output standalone espeja la estructura del monorepo, asi que server.js
+# queda en /app/<APP_DIR>/server.js, no en la raiz.
+COPY --from=builder --chown=nextjs:nodejs /repo/${APP_DIR}/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /repo/${APP_DIR}/.next/static ./${APP_DIR}/.next/static
+COPY --from=builder --chown=nextjs:nodejs /repo/${APP_DIR}/public ./${APP_DIR}/public
+
+USER nextjs
+CMD ["sh", "-c", "node ${APP_DIR}/server.js"]

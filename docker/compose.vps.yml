@@ -1,0 +1,155 @@
+# Stack de Corehub en la VPS compartida.
+#
+# UN archivo para los dos ambientes: lo que cambia (puertos, tag de imagen,
+# password) entra por el .env que vive junto al compose en la VPS.
+#   /opt/corehub/dev  -> .env con ENV_NAME=dev  y puertos 411x
+#   /opt/corehub/prod -> .env con ENV_NAME=prod y puertos 410x
+#
+# `name:` hace que Docker prefije redes y volumenes con corehub-dev / corehub-prod,
+# asi los dos ambientes conviven en la misma maquina sin tocarse.
+#
+# NINGUN servicio publica en 0.0.0.0: todo escucha en 127.0.0.1 y solo nginx
+# llega. En una VPS que ademas corre 7 sistemas de clientes, un puerto abierto
+# de mas es superficie que no pedimos.
+name: corehub-${ENV_NAME:?falta ENV_NAME}
+
+x-restart: &restart unless-stopped
+
+services:
+  # ─── Base de datos ────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: *restart
+    environment:
+      POSTGRES_USER: corehub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}
+      POSTGRES_DB: corehub_iam
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Crea corehub_instagram; corehub_iam la crea POSTGRES_DB.
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corehub -d corehub_iam"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [internal]
+
+  # ─── Migraciones ──────────────────────────────────────────────────────────
+  # Servicios de un solo disparo. Las APIs esperan a que TERMINEN, no a que
+  # esten "arriba": arrancar la app contra un schema viejo es como se corrompen
+  # los datos en un deploy.
+  migrate-iam:
+    image: ${IMAGE_PREFIX:?falta IMAGE_PREFIX}/api-iam:${IMAGE_TAG:?falta IMAGE_TAG}
+    restart: "no"
+    working_dir: /repo/apps/api-iam
+    command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: postgresql://corehub:${POSTGRES_PASSWORD}@postgres:5432/corehub_iam
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [internal]
+
+  migrate-instagram:
+    image: ${IMAGE_PREFIX}/instagram-api:${IMAGE_TAG}
+    restart: "no"
+    working_dir: /repo/products/instagram-dashboard/api
+    command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: postgresql://corehub:${POSTGRES_PASSWORD}@postgres:5432/corehub_instagram
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [internal]
+
+  # ─── APIs ─────────────────────────────────────────────────────────────────
+  api-iam:
+    image: ${IMAGE_PREFIX}/api-iam:${IMAGE_TAG}
+    restart: *restart
+    env_file: [./env/api-iam.env]
+    environment:
+      PORT: "8080"
+      NODE_ENV: production
+      DATABASE_URL: postgresql://corehub:${POSTGRES_PASSWORD}@postgres:5432/corehub_iam
+      # Las llaves NO viven en la imagen. Se generan una sola vez por ambiente
+      # y se montan: si cada deploy las regenerara, cada release desloguearia
+      # a todos los usuarios y los JWT emitidos antes dejarian de validar.
+      JWT_PRIVATE_KEY_PATH: /keys/private.pem
+      JWT_PUBLIC_KEY_PATH: /keys/public.pem
+    volumes:
+      - ./keys:/keys:ro
+    ports: ["127.0.0.1:${PORT_API_IAM:?falta PORT_API_IAM}:8080"]
+    depends_on:
+      migrate-iam: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [internal]
+
+  instagram-api:
+    image: ${IMAGE_PREFIX}/instagram-api:${IMAGE_TAG}
+    restart: *restart
+    env_file: [./env/instagram-api.env]
+    environment:
+      PORT: "3003"
+      NODE_ENV: production
+      DATABASE_URL: postgresql://corehub:${POSTGRES_PASSWORD}@postgres:5432/corehub_instagram
+      # Server-to-server: nombre de servicio, no el dominio publico. Salir a
+      # internet para hablar con el contenedor de al lado agrega latencia y una
+      # dependencia de DNS y TLS que no hace falta.
+      IAM_JWKS_URL: http://api-iam:8080
+      IAM_INTERNAL_URL: http://api-iam:8080
+      # URL publica de las imagenes que genera el agente. Su default es
+      # localhost:3003, que produciria URLs rotas en los carruseles.
+      PUBLIC_BASE_URL: https://${DOMAIN_IG_API:?falta DOMAIN_IG_API}
+    volumes:
+      # El agente escribe los carruseles en disco y la API los sirve en
+      # /carousels/*. Sin este volumen, cada deploy los borra todos.
+      - ./media/carousels:/repo/products/instagram-dashboard/api/public/carousels
+    ports: ["127.0.0.1:${PORT_IG_API:?falta PORT_IG_API}:3003"]
+    depends_on:
+      migrate-instagram: { condition: service_completed_successfully }
+      api-iam: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3003/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [internal]
+
+  # ─── Frontends ────────────────────────────────────────────────────────────
+  # No llevan env_file: sus NEXT_PUBLIC_* ya viajan horneadas en la imagen
+  # desde `next build`. En runtime solo necesitan saber en que puerto escuchar.
+  hub:
+    image: ${IMAGE_PREFIX}/hub:${IMAGE_TAG}
+    restart: *restart
+    environment:
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+    ports: ["127.0.0.1:${PORT_HUB:?falta PORT_HUB}:3000"]
+    depends_on:
+      api-iam: { condition: service_healthy }
+    networks: [internal]
+
+  instagram-web:
+    image: ${IMAGE_PREFIX}/instagram-web:${IMAGE_TAG}
+    restart: *restart
+    environment:
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+    ports: ["127.0.0.1:${PORT_IG_WEB:?falta PORT_IG_WEB}:3000"]
+    depends_on:
+      instagram-api: { condition: service_healthy }
+    networks: [internal]
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+    driver: bridge

@@ -2,8 +2,9 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches: [main, develop]
+  # Permite que el deploy reuse ESTA verificacion en vez de copiar los pasos:
+  # una suite duplicada se desincroniza y deja pasar lo que la otra habria frenado.
+  workflow_call:
 
 concurrency:
   group: ci-${{ github.ref }}

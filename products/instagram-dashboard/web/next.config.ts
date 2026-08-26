@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   // `output: 'standalone'` and the Dockerfiles expect.
   distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
 
+  output: "standalone",
+
   transpilePackages: ["@core/ui", "@core/config", "@core/shared"],
   outputFileTracingRoot: path.join(__dirname, "../../../"),
   experimental: {

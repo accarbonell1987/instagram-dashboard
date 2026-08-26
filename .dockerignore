@@ -7,8 +7,8 @@ node_modules/
 **/out/
 
 # Build outputs
-dist/
-*.tsbuildinfo
+**/dist/
+**/*.tsbuildinfo
 
 # Turborepo
 .turbo/
@@ -43,3 +43,6 @@ LICENSE
 *.log
 logs/
 tmp/
+
+# Contenido generado en runtime: no va en la imagen y persiste en volumen.
+**/public/carousels/

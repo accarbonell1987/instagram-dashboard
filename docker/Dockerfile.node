@@ -1,0 +1,54 @@
+# syntax=docker/dockerfile:1
+# Imagen de produccion para las APIs Hono del monorepo (api-iam, instagram-api).
+#
+#   APP_PKG  nombre del paquete pnpm   (ej: @corehub/api-iam)
+#   APP_DIR  ruta relativa en el repo  (ej: apps/api-iam)
+ARG NODE_VERSION=22-alpine
+
+# --- pruner -----------------------------------------------------------------
+FROM node:${NODE_VERSION} AS pruner
+ARG APP_PKG
+WORKDIR /repo
+RUN corepack enable
+COPY . .
+# Version fijada a la que resuelve el lockfile: podar con una turbo distinta
+# de la que compila produce un lockfile que --frozen-lockfile puede rechazar.
+RUN pnpm dlx turbo@2.7.6 prune "${APP_PKG}" --docker
+
+# --- builder ----------------------------------------------------------------
+FROM node:${NODE_VERSION} AS builder
+ARG APP_PKG
+ARG APP_DIR
+WORKDIR /repo
+RUN corepack enable
+
+COPY --from=pruner /repo/out/json/ .
+RUN pnpm install --frozen-lockfile
+COPY --from=pruner /repo/out/full/ .
+
+# Prisma resuelve env("DATABASE_URL") al cargar su config, asi que `generate`
+# falla sin la variable AUNQUE no se conecte a ninguna base. Esta URL es
+# descartable y solo existe para que la config cargue durante el build; la real
+# entra por env en runtime.
+ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build"
+
+# El `...` incluye las dependencias del workspace: api-iam necesita que
+# @core/database tambien genere su cliente, no solo el suyo.
+RUN pnpm turbo db:generate --filter="${APP_PKG}..."
+RUN pnpm turbo build --filter="${APP_PKG}"
+
+# --- runner -----------------------------------------------------------------
+FROM node:${NODE_VERSION} AS runner
+ARG APP_DIR
+ENV NODE_ENV=production
+WORKDIR /repo
+RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs app
+
+# Se copia el workspace completo, no solo dist/: el cliente de Prisma vive en
+# node_modules y `migrate deploy` necesita prisma/ con las migraciones al
+# desplegar. Recortar esto ahorra megas y cuesta un incidente.
+COPY --from=builder --chown=app:nodejs /repo ./
+
+USER app
+WORKDIR /repo/${APP_DIR}
+CMD ["node", "dist/index.js"]

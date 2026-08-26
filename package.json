@@ -60,7 +60,7 @@
     "ui:add": "pnpm --filter=@core/ui exec shadcn add",
     "clean": "turbo daemon stop && rm -rf node_modules .turbo",
     "clean-absolute": "find . -name 'node_modules' -type d -prune -exec rm -rf {} + && find . -name 'dist' -type d -prune -exec rm -rf {} + && find . -name '.next' -type d -prune -exec rm -rf {} + && find . -name '.turbo' -type d -prune -exec rm -rf {} +",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "devDependencies": {
     "@core/config": "workspace:*",
