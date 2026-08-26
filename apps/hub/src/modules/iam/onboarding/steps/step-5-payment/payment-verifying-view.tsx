@@ -2,9 +2,9 @@
 
 import { Button } from '@core/ui';
 import { Clock, Loader2, XCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { type JSX } from 'react';
 
+import { enterPortal } from '../../../authentication/lib/enter-portal';
 import { StepHeader } from '../../components/step-header';
 
 const POLL_MAX_SECONDS = 60;
@@ -24,7 +24,7 @@ export function PaymentVerifyingView({
   onRetry,
   onRetryVerification,
 }: PaymentVerifyingViewProps): JSX.Element {
-  const router = useRouter();
+
 
   if (pollStatus === 'declined') {
     return (
@@ -73,7 +73,7 @@ export function PaymentVerifyingView({
             type="button"
             variant="secondary"
             onClick={() => {
-              router.push('/');
+              enterPortal();
             }}
             className="rounded-lg px-6 py-2.5 text-sm font-semibold"
           >

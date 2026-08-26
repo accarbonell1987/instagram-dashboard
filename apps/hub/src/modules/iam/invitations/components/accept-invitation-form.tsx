@@ -1,9 +1,9 @@
 'use client';
 
 import { Button } from '@core/ui';
-import { useRouter } from 'next/navigation';
 import { useState, type JSX } from 'react';
 
+import { enterPortal } from '../../authentication/lib/enter-portal';
 import { roleLabel } from '../lib/role-label';
 import { acceptInvitation } from '../services/invitation.service';
 
@@ -28,7 +28,7 @@ type Step = 'preview' | 'set-password' | 'complete-profile';
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AcceptInvitationForm({ token, invitation }: AcceptInvitationFormProps): JSX.Element {
-  const router = useRouter();
+
   const [step, setStep] = useState<Step>('preview');
   const [error, setError] = useState<string | null>(null);
 
@@ -51,8 +51,8 @@ export function AcceptInvitationForm({ token, invitation }: AcceptInvitationForm
   if (step === 'complete-profile') {
     return (
       <CompleteProfileStep
-        onSuccess={() => { router.push('/'); }}
-        onSkip={() => { router.push('/'); }}
+        onSuccess={() => { enterPortal(); }}
+        onSkip={() => { enterPortal(); }}
       />
     );
   }

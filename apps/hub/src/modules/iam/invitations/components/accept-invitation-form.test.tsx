@@ -8,6 +8,12 @@ import { AcceptInvitationForm } from './accept-invitation-form';
 
 import type { Session } from '@/modules/iam/identity/session/store';
 
+// Se moquea el helper, no next/navigation: aceptar la invitacion emite sesion y
+// la entrada al portal es navegacion de documento a proposito, para no servir la
+// respuesta RSC que Next cacheo cuando todavia no habia cookie.
+const { mockEnterPortal } = vi.hoisted(() => ({ mockEnterPortal: vi.fn() }));
+vi.mock('../../authentication/lib/enter-portal', () => ({ enterPortal: mockEnterPortal }));
+
 // Mock next/navigation
 const pushMock = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -105,7 +111,7 @@ describe('AcceptInvitationForm', () => {
     });
   });
 
-  it('calls router.push("/") when complete-profile onSuccess is triggered', async () => {
+  it('entra al portal cuando complete-profile onSuccess is triggered', async () => {
     const mockSession: Session = {
       user: { id: '1', email: 'usuario@empresa.com', fullName: 'Usuario Test' },
       tenant: { id: 't1', slug: 'empresa-test' },
@@ -127,7 +133,7 @@ describe('AcceptInvitationForm', () => {
     fireEvent.click(screen.getByText('complete-success'));
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith('/');
+      expect(mockEnterPortal).toHaveBeenCalled();
     });
   });
 

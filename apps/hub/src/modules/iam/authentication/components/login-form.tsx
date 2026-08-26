@@ -2,10 +2,10 @@
 
 import { Button, Input, Label, PasswordInput } from '@core/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import { useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { enterPortal } from '../lib/enter-portal';
 import { credentialsSchema } from '../lib/login-schema';
 import type { CredentialsFormData } from '../lib/login-schema';
 import { login, completeLogin, sendOtp } from '../services/auth.service';
@@ -17,7 +17,7 @@ import { AuthError, ForbiddenError, RateLimitError } from '@/lib/api/errors';
 type Step = 'credentials' | 'otp';
 
 export function LoginForm(): JSX.Element {
-  const router = useRouter();
+
 
   const [step, setStep] = useState<Step>('credentials');
   const [otpId, setOtpId] = useState('');
@@ -40,7 +40,7 @@ export function LoginForm(): JSX.Element {
 
       if (!result.otpRequired) {
         // Trusted device — session already applied by auth.service, redirect directly
-        router.push('/');
+        enterPortal();
         return;
       }
 
@@ -70,7 +70,7 @@ export function LoginForm(): JSX.Element {
   async function handleOtpVerify(code: string, trustDevice: boolean): Promise<void> {
     await completeLogin({ otpId, code, trustDevice });
 
-    router.push('/');
+    enterPortal();
   }
 
   async function handleOtpResend(): Promise<void> {

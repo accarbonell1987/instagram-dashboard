@@ -10,9 +10,13 @@ import { mintFakeJwt } from '@/lib/mocks/seed-utils';
 import { server } from '@/lib/mocks/server';
 import { setSessionState } from '@/modules/iam/identity/session/store';
 
-const mockPush = vi.fn();
+const { mockEnterPortal } = vi.hoisted(() => ({ mockEnterPortal: vi.fn() }));
+// Se moquea el helper, no next/navigation: el login hace navegacion de documento
+// a proposito, para no servir la respuesta RSC que Next cacheo cuando todavia
+// no habia cookie de sesion.
+vi.mock('../lib/enter-portal', () => ({ enterPortal: mockEnterPortal }));
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 function renderLoginForm() {
@@ -146,7 +150,7 @@ describe('LoginForm — device trust y errores de cuenta', () => {
     vi.clearAllMocks();
   });
 
-  it('redirige a "/" directamente sin mostrar OTP cuando otpRequired es false (trusted device)', async () => {
+  it('entra al portal directamente sin mostrar OTP cuando otpRequired es false (trusted device)', async () => {
     const fakeSession = {
       accessToken: mintFakeJwt({
         sub: 'user-0001',
@@ -182,7 +186,7 @@ describe('LoginForm — device trust y errores de cuenta', () => {
     await user.click(screen.getByRole('button', { name: /Ingresar/i }));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/');
+      expect(mockEnterPortal).toHaveBeenCalled();
     });
 
     // El step de OTP no debe aparecer
