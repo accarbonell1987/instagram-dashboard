@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { fillOtp, loginAsTestUser } from './helpers.js';
 
 /**

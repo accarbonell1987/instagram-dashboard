@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { waitForMsw, fillOtp } from './helpers.js';
 
 const SEED_EMAIL = 'test@corehub.com';

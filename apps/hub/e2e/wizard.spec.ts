@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { waitForMsw, fillOtp } from './helpers.js';
 
 test.describe('Onboarding wizard — happy path', () => {

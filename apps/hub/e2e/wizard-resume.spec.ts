@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { waitForMsw } from './helpers.js';
 
 test.describe('Wizard resume from email link', () => {

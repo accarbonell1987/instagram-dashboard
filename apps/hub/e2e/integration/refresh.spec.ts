@@ -27,10 +27,12 @@ test.describe('Auth refresh — contract compliance', () => {
 
     // Detect if MSW is intercepting — if so, skip (login won't set real cookies)
     const isMswActive = await page.evaluate(() => {
+      // Las marca MSW en runtime; no existen en el tipo Window.
+      const w = window as Window & { __mswReady?: unknown; __NEXT_PUBLIC_API_MOCKING?: string };
       return (
-        typeof (window as any).__mswReady !== 'undefined' ||
+        typeof w.__mswReady !== 'undefined' ||
         document.cookie.includes('msw') ||
-        (window as any).__NEXT_PUBLIC_API_MOCKING === 'enabled'
+        w.__NEXT_PUBLIC_API_MOCKING === 'enabled'
       );
     });
 

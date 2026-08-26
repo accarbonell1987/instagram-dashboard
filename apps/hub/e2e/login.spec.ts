@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { waitForMsw, fillOtp, setScenario } from './helpers.js';
+
+import { waitForMsw, fillOtp } from './helpers.js';
 
 // Seed user: test@corehub.com / any password (MSW doesn't validate password)
 const SEED_EMAIL = 'test@corehub.com';

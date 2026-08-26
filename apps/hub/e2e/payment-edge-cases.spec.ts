@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
 import { waitForMsw, fillOtp } from './helpers.js';
 
 /**
  * Navigates through the wizard up to (but not including) the payment click.
  * Returns the draftId extracted from the current URL.
  */
-async function reachPaymentStep(page: import('@playwright/test').Page): Promise<string> {
+async function reachPaymentStep(page: Page): Promise<string> {
   await page.goto('/signup');
   await waitForMsw(page);
 

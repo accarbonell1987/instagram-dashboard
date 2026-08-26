@@ -125,7 +125,7 @@ describe('StepRepresentativeEmail', () => {
       'draft-test-001',
       'representative',
       expect.objectContaining({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+         
         representative: expect.objectContaining({ phone: '+59521123456' }),
       })
     );
@@ -194,7 +194,7 @@ describe('StepRepresentativeEmail', () => {
         'draft-test-001',
         'representative',
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+           
           representative: expect.objectContaining({ phone: '+541123456789' }),
         })
       );
