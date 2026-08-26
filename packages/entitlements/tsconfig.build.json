@@ -1,0 +1,7 @@
+{
+  // Solo para emitir. Los tests quedan fuera de dist/ pero siguen dentro del
+  // tsconfig principal: sacarlos de ahi los saca del programa de TypeScript y
+  // ESLint deja de poder parsearlos ("not found by the project service").
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
+}

@@ -2,7 +2,11 @@
   "extends": "@core/config/typescript/node",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    // Los consumidores importan desde dist/, asi que el .d.ts tiene que salir
+    // junto al .js o TypeScript pierde los tipos del paquete entero.
+    "declaration": true,
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
