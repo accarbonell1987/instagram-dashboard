@@ -328,43 +328,43 @@ const BASE_MODULES = [
     id: 'ig-basic-metrics',
     name: 'Métricas Básicas',
     description: 'Panel de métricas, crecimiento y demografía de tu cuenta',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-publications',
     name: 'Publicaciones',
     description: 'Gestioná y analizá tus publicaciones, reels e historias',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-ai-agent',
     name: 'Agente IA',
     description: 'Asistente inteligente para crecer en Instagram',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-ai-chat',
     name: 'Chat - Agente de Crecimiento',
     description: 'Conversá con el agente IA sobre estrategias de crecimiento',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-ai-suggestions',
     name: 'Sugerencias de Contenido',
     description: 'Recibí ideas de contenido generadas por IA',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-ai-carousels',
     name: 'Carousels - Creación con IA',
     description: 'Creá carousels profesionales con inteligencia artificial',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-agent-settings',
     name: 'Configuraciones del Agente',
     description: 'Ajustes del agente: temas, instrucciones, modelo e imágenes',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   // One module per configurable section of the agent's settings, so a plan can
   // sell them and a product role can narrow them through the machinery that
@@ -376,55 +376,55 @@ const BASE_MODULES = [
     id: 'ig-agent-topics',
     name: 'Temas de contenido',
     description: 'Elegir el nicho y las etiquetas sobre las que escribe el agente',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-agent-prompt',
     name: 'Instrucciones personalizadas',
     description: 'Ajustar el tono y las instrucciones que sigue el agente',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-agent-limits',
     name: 'Límites de caracteres',
     description: 'Definir cuánto texto genera cada slide — afecta el consumo de tokens',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-agent-model',
     name: 'Modelo de lenguaje',
     description: 'Elegir el proveedor y el modelo que responde, con su propia API key',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-agent-image-key',
     name: 'API key de fal.ai',
     description: 'Configurar la credencial de generación de imágenes',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-agent-image-models',
     name: 'Modelos de generación de imágenes',
     description: 'Elegir qué modelo genera las imágenes de los carruseles',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-agent-image-styles',
     name: 'Estilo visual por rol de slide',
     description: 'Definir el estilo de portada, desarrollo y llamada a la acción',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-audience',
     name: 'Audiencia',
     description: 'Quién te sigue — edad, género y ubicación',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
   {
     id: 'ig-content-intelligence',
     name: 'Inteligencia de contenido',
     description: 'Qué hace que tu contenido funcione y qué hacer diferente esta semana',
-    defaultUrl: process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010',
+    defaultUrl: instagramWebUrl(),
   },
 ];
 
@@ -489,12 +489,28 @@ async function retireLegacyInstagramModule() {
  * plans first works against a database that already has the product and fails
  * on an empty one, which is the only case a seed really has to handle.
  */
+// Esta URL se guarda EN LA BASE: es el hub el que la lee para montar el iframe
+// del producto. Un default de desarrollo escrito ahi produce un despliegue que
+// arranca sano, pasa todos los health checks, y falla al primer click — que es
+// exactamente como se vio: el hub abriendo http://localhost:3010 en produccion.
+function instagramWebUrl(): string {
+  const url = process.env['INSTAGRAM_DASHBOARD_WEB_URL'];
+  if (url) return url;
+  if (process.env['NODE_ENV'] === 'production') {
+    throw new Error(
+      'INSTAGRAM_DASHBOARD_WEB_URL es obligatoria fuera de desarrollo: sin ella el ' +
+      'seed escribe http://localhost:3010 en la base y el hub monta el iframe ahi.',
+    );
+  }
+  return 'http://localhost:3010';
+}
+
 async function seedProduct() {
   // Seeded products ship with trials OFF. A trial is an explicit decision per
   // tenant (backoffice → Trials), never something a fresh install hands out.
   // `update` sets it too, so re-seeding also switches off a product that was
   // created before this rule.
-  const defaultUrl = process.env['INSTAGRAM_DASHBOARD_WEB_URL'] ?? 'http://localhost:3010';
+  const defaultUrl = instagramWebUrl();
   await prisma.product.upsert({
     where: { id: 'instagram-dashboard' },
     update: { trialEnabled: false, defaultUrl },

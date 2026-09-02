@@ -86,6 +86,10 @@ services:
       # Las llaves NO viven en la imagen. Se generan una sola vez por ambiente
       # y se montan: si cada deploy las regenerara, cada release desloguearia
       # a todos los usuarios y los JWT emitidos antes dejarian de validar.
+      # El hub monta el producto en un iframe apuntando a esta URL, que el seed
+      # guarda EN LA BASE. Sin ella el seed escribe http://localhost:3010 y el
+      # producto abre la maquina del usuario en vez del servidor.
+      INSTAGRAM_DASHBOARD_WEB_URL: https://${DOMAIN_IG_WEB:?falta DOMAIN_IG_WEB}
       JWT_PRIVATE_KEY_PATH: /keys/private.pem
       JWT_PUBLIC_KEY_PATH: /keys/public.pem
     volumes:
