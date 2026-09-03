@@ -98,3 +98,76 @@ jobs:
             ghcr.io/${{ github.repository }}/${{ matrix.name }}:${{ needs.config.outputs.env_name }}-latest
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # Solo develop despliega solo. main va a llevar aprobacion manual: un ambiente
+  # de produccion no se actualiza porque alguien mergeo sin que nadie mire.
+  deploy:
+    needs: [config, build]
+    if: github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    concurrency:
+      # Dos deploys pisandose sobre el mismo docker compose dejan el stack en un
+      # estado que no describe ningun commit.
+      group: deploy-dev
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar SSH
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      # El tag va como comando y el compose.yml por stdin. La llave del otro lado
+      # esta atada a deploy-vps.sh con command=, asi que esto es lo unico que
+      # puede pedir — ni shell, ni scp, ni tuneles.
+      - name: Desplegar
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes \
+            deploy@"${{ secrets.VPS_HOST }}" \
+            "${{ needs.config.outputs.env_name }}-${{ github.sha }}" \
+            < docker/compose.vps.yml
+
+      # Un deploy que "termino bien" y dejo el stack caido no termino bien.
+      # /health/ready de instagram-api toca base de datos e IAM, asi que un 200
+      # ahi prueba que los contenedores ademas se hablan entre si.
+      - name: Verificar nuestros servicios
+        run: |
+          fail=0
+          for url in \
+            https://dev.corehub.guay.pro/login \
+            https://dev.api.corehub.guay.pro/healthz \
+            https://dev.ig.corehub.guay.pro \
+            https://dev.iga.corehub.guay.pro/health/ready
+          do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+                   --retry 6 --retry-delay 5 --retry-all-errors "$url" || echo 000)
+            case "$code" in
+              2*|3*) echo "  ✅ $code  $url" ;;
+              *)     echo "  ⛔ $code  $url"; fail=1 ;;
+            esac
+          done
+          exit $fail
+
+      # Esa VPS corre 7 sistemas de clientes detras del MISMO nginx. Se comprueba
+      # que sigan en pie, no que devuelvan un codigo concreto: un 500 propio de
+      # ellos no es asunto nuestro, pero un 502/503/504 o el silencio si — eso
+      # significa que rompimos el proxy que comparten.
+      - name: Verificar que los vecinos siguen en pie
+        run: |
+          fail=0
+          for host in gestion panel recuerdos \
+                      dashboard-usil dashboard-taxit dashboard-tiomono dashboard-kitadol
+          do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://$host.guay.pro" || echo 000)
+            case "$code" in
+              000|502|503|504) echo "  ⛔ $code  $host.guay.pro"; fail=1 ;;
+              *)               echo "  ✅ $code  $host.guay.pro" ;;
+            esac
+          done
+          if [ $fail -ne 0 ]; then
+            echo "::error::Un sistema de cliente dejo de responder detras del proxy compartido."
+          fi
+          exit $fail
