@@ -12,6 +12,19 @@ enum MessageRole {
   assistant
 }
 
+enum ConnectionRequestStatus {
+  // El cliente pidio conectar; falta que el operador lo agregue como Instagram
+  // Tester en el App Dashboard de Meta. No hay API publica para ese alta.
+  awaiting_invite
+  // Alta hecha. La invitacion espera en el Instagram del cliente.
+  invite_sent
+  // OAuth completado. Que haya completado prueba que acepto la invitacion, asi
+  // que no existe un estado `invite_accepted` propio: seria inferido y podria
+  // mentir.
+  connected
+  failed
+}
+
 enum SuggestionCategory {
   caption
   format
@@ -63,30 +76,30 @@ enum AiOperation {
 }
 
 model InstagramAccount {
-  id              String    @id @default(uuid()) @db.Uuid
-  tenantId        String    @map("tenant_id") @db.Uuid  // validated by JWT authGuard, no FK
-  userId          String    @map("user_id") @db.Uuid
-  igUserId            String    @map("ig_user_id") @db.VarChar(50)
-  username            String    @db.VarChar(30)
-  displayName         String?   @map("display_name") @db.VarChar(200)
-  profilePictureUrl   String?   @map("profile_picture_url") @db.Text
-  followersCount      Int?      @map("followers_count")
-  mediaCount          Int?      @map("media_count")
-  accountType         String    @map("account_type") @db.VarChar(20)
-  facebookPageId      String?   @map("facebook_page_id") @db.VarChar(50)
-  accessTokenHash String    @map("access_token_hash") @db.VarChar(64)
-  tokenEncrypted  String?   @map("token_encrypted") @db.Text // AES-256-GCM encrypted
-  tokenExpiresAt  DateTime  @map("token_expires_at") @db.Timestamptz
-  syncStatus      String    @map("sync_status") @default("idle") @db.VarChar(20)
-  lastSyncAt      DateTime? @map("last_sync_at") @db.Timestamptz
-  connectedAt     DateTime  @map("connected_at") @default(now()) @db.Timestamptz
-  agentConfig         Json?     @map("agent_config")
-  falApiKeyEncrypted  String?   @map("fal_api_key_encrypted") @db.Text
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid // validated by JWT authGuard, no FK
+  userId             String    @map("user_id") @db.Uuid
+  igUserId           String    @map("ig_user_id") @db.VarChar(50)
+  username           String    @db.VarChar(30)
+  displayName        String?   @map("display_name") @db.VarChar(200)
+  profilePictureUrl  String?   @map("profile_picture_url") @db.Text
+  followersCount     Int?      @map("followers_count")
+  mediaCount         Int?      @map("media_count")
+  accountType        String    @map("account_type") @db.VarChar(20)
+  facebookPageId     String?   @map("facebook_page_id") @db.VarChar(50)
+  accessTokenHash    String    @map("access_token_hash") @db.VarChar(64)
+  tokenEncrypted     String?   @map("token_encrypted") @db.Text // AES-256-GCM encrypted
+  tokenExpiresAt     DateTime  @map("token_expires_at") @db.Timestamptz
+  syncStatus         String    @default("idle") @map("sync_status") @db.VarChar(20)
+  lastSyncAt         DateTime? @map("last_sync_at") @db.Timestamptz
+  connectedAt        DateTime  @default(now()) @map("connected_at") @db.Timestamptz
+  agentConfig        Json?     @map("agent_config")
+  falApiKeyEncrypted String?   @map("fal_api_key_encrypted") @db.Text
   // Its own column rather than a field inside agent_config: a secret should not
   // travel in the JSON that the settings screen reads back.
-  llmApiKeyEncrypted  String?   @map("llm_api_key_encrypted") @db.Text
-  createdAt           DateTime  @default(now()) @db.Timestamptz
-  updatedAt           DateTime  @updatedAt @db.Timestamptz
+  llmApiKeyEncrypted String?   @map("llm_api_key_encrypted") @db.Text
+  createdAt          DateTime  @default(now()) @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @db.Timestamptz
 
   media     InstagramMedia[]
   insights  InstagramAccountInsight[]
@@ -101,17 +114,17 @@ model InstagramAccount {
 }
 
 model InstagramMedia {
-  id               String    @id @default(uuid()) @db.Uuid
-  accountId        String    @map("account_id") @db.Uuid
+  id               String           @id @default(uuid()) @db.Uuid
+  accountId        String           @map("account_id") @db.Uuid
   account          InstagramAccount @relation(fields: [accountId], references: [id])
-  igMediaId        String    @map("ig_media_id") @db.VarChar(50)
-  mediaType        String    @map("media_type") @db.VarChar(20)
-  mediaProductType String?   @map("media_product_type") @db.VarChar(20)
-  permalink        String?   @db.VarChar(500)
-  caption          String?   @db.Text
-  thumbnailUrl     String?   @map("thumbnail_url") @db.Text
-  postedAt         DateTime  @map("posted_at") @db.Timestamptz
-  createdAt        DateTime  @default(now()) @db.Timestamptz
+  igMediaId        String           @map("ig_media_id") @db.VarChar(50)
+  mediaType        String           @map("media_type") @db.VarChar(20)
+  mediaProductType String?          @map("media_product_type") @db.VarChar(20)
+  permalink        String?          @db.VarChar(500)
+  caption          String?          @db.Text
+  thumbnailUrl     String?          @map("thumbnail_url") @db.Text
+  postedAt         DateTime         @map("posted_at") @db.Timestamptz
+  createdAt        DateTime         @default(now()) @db.Timestamptz
 
   metrics     InstagramMediaMetric[]
   suggestions ContentSuggestion[]
@@ -122,54 +135,54 @@ model InstagramMedia {
 }
 
 model InstagramMediaMetric {
-  id                String   @id @default(uuid()) @db.Uuid
-  mediaId           String   @map("media_id") @db.Uuid
-  media             InstagramMedia @relation(fields: [mediaId], references: [id])
-  syncedAt          DateTime @map("synced_at") @db.Timestamptz
-  likes             Int      @default(0)
-  comments          Int      @default(0)
-  saves             Int      @default(0)
-  shares            Int      @default(0)
-  reach             Int      @default(0)
-  impressions       Int      @default(0)
-  totalInteractions Int      @default(0) @map("total_interactions")
-  videoViews        Int?     @map("video_views")
-  avgWatchTime      Float?   @map("avg_watch_time")       // ig_reels_avg_watch_time (ms)
-  videoViewTotalTime Float?  @map("video_view_total_time") // ig_reels_video_view_total_time (ms)
+  id                 String         @id @default(uuid()) @db.Uuid
+  mediaId            String         @map("media_id") @db.Uuid
+  media              InstagramMedia @relation(fields: [mediaId], references: [id])
+  syncedAt           DateTime       @map("synced_at") @db.Timestamptz
+  likes              Int            @default(0)
+  comments           Int            @default(0)
+  saves              Int            @default(0)
+  shares             Int            @default(0)
+  reach              Int            @default(0)
+  impressions        Int            @default(0)
+  totalInteractions  Int            @default(0) @map("total_interactions")
+  videoViews         Int?           @map("video_views")
+  avgWatchTime       Float?         @map("avg_watch_time") // ig_reels_avg_watch_time (ms)
+  videoViewTotalTime Float?         @map("video_view_total_time") // ig_reels_video_view_total_time (ms)
 
   @@index([mediaId, syncedAt])
   @@map("instagram_media_metrics")
 }
 
 model InstagramAccountInsight {
-  id            String   @id @default(uuid()) @db.Uuid
-  accountId     String   @map("account_id") @db.Uuid
+  id            String           @id @default(uuid()) @db.Uuid
+  accountId     String           @map("account_id") @db.Uuid
   account       InstagramAccount @relation(fields: [accountId], references: [id])
-  period        String   @db.VarChar(20)
-  syncedAt      DateTime @map("synced_at") @db.Timestamptz
-  impressions   Int      @default(0)
-  reach         Int      @default(0)
-  profileViews  Int      @default(0) @map("profile_views")
-  followerCount Int?     @map("follower_count")
-  likes         Int      @default(0)
-  comments      Int      @default(0)
-  saves         Int      @default(0)
-  shares        Int      @default(0)
+  period        String           @db.VarChar(20)
+  syncedAt      DateTime         @map("synced_at") @db.Timestamptz
+  impressions   Int              @default(0)
+  reach         Int              @default(0)
+  profileViews  Int              @default(0) @map("profile_views")
+  followerCount Int?             @map("follower_count")
+  likes         Int              @default(0)
+  comments      Int              @default(0)
+  saves         Int              @default(0)
+  shares        Int              @default(0)
 
   @@index([accountId, syncedAt])
   @@map("instagram_account_insights")
 }
 
 model InstagramSyncLog {
-  id          String    @id @default(uuid()) @db.Uuid
-  accountId   String    @map("account_id") @db.Uuid
+  id          String           @id @default(uuid()) @db.Uuid
+  accountId   String           @map("account_id") @db.Uuid
   account     InstagramAccount @relation(fields: [accountId], references: [id])
-  tenantId    String    @map("tenant_id") @db.Uuid
-  startedAt   DateTime  @map("started_at") @db.Timestamptz
-  completedAt DateTime? @map("completed_at") @db.Timestamptz
-  status      String    @db.VarChar(20)
-  mediaSynced Int       @default(0) @map("media_synced")
-  errors      Json?     @db.JsonB
+  tenantId    String           @map("tenant_id") @db.Uuid
+  startedAt   DateTime         @map("started_at") @db.Timestamptz
+  completedAt DateTime?        @map("completed_at") @db.Timestamptz
+  status      String           @db.VarChar(20)
+  mediaSynced Int              @default(0) @map("media_synced")
+  errors      Json?            @db.JsonB
 
   @@index([accountId, startedAt])
   @@map("instagram_sync_logs")
@@ -191,11 +204,11 @@ model ChatMessage {
 }
 
 model SuggestionBatch {
-  id          String              @id @default(uuid()) @db.Uuid
-  tenantId    String              @map("tenant_id") @db.Uuid
-  userId      String              @map("user_id") @db.Uuid
-  userMessage String              @map("user_message") @db.Text
-  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  userMessage String   @map("user_message") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   suggestions ContentSuggestion[]
 
@@ -206,7 +219,7 @@ model SuggestionBatch {
 model Carousel {
   id            String            @id @default(uuid()) @db.Uuid
   tenantId      String            @map("tenant_id") @db.Uuid
-  userId        String            @map("user_id")   @db.Uuid
+  userId        String            @map("user_id") @db.Uuid
   accountId     String?           @map("account_id") @db.Uuid
   account       InstagramAccount? @relation(fields: [accountId], references: [id])
   suggestionId  String?           @map("suggestion_id") @db.Uuid
@@ -251,7 +264,7 @@ model CarouselSlide {
 model ContentSuggestion {
   id            String             @id @default(uuid()) @db.Uuid
   tenantId      String             @map("tenant_id") @db.Uuid
-  userId        String             @map("user_id")   @db.Uuid
+  userId        String             @map("user_id") @db.Uuid
   batchId       String?            @map("batch_id") @db.Uuid
   batch         SuggestionBatch?   @relation(fields: [batchId], references: [id])
   category      SuggestionCategory
@@ -272,18 +285,18 @@ model ContentSuggestion {
 }
 
 model AiUsageLog {
-  id               String     @id @default(cuid())
-  tenantId         String     @map("tenant_id") @db.Uuid
+  id               String      @id @default(cuid())
+  tenantId         String      @map("tenant_id") @db.Uuid
   // Nullable because the rows written before this column existed cannot be
   // attributed to anyone — there is no record of who made those calls, and
   // inventing one would be worse than the gap. Per-member figures start here.
-  userId           String?    @map("user_id") @db.Uuid
+  userId           String?     @map("user_id") @db.Uuid
   operation        AiOperation
-  model            String?    @db.VarChar(50)
-  promptTokens     Int        @default(0) @map("prompt_tokens")
-  completionTokens Int        @default(0) @map("completion_tokens")
-  imageCount       Int        @default(0) @map("image_count")
-  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  model            String?     @db.VarChar(50)
+  promptTokens     Int         @default(0) @map("prompt_tokens")
+  completionTokens Int         @default(0) @map("completion_tokens")
+  imageCount       Int         @default(0) @map("image_count")
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
 
   // Quota accounting stays tenant-scoped: the plan belongs to the TENANT, not
   // to each member, and summing per member would hand everyone the whole
@@ -292,4 +305,44 @@ model AiUsageLog {
   @@index([tenantId, operation, createdAt])
   @@index([tenantId, userId, createdAt])
   @@map("ai_usage_logs")
+}
+
+/// Solicitud de conexion de una cuenta de Instagram.
+///
+/// Separada de InstagramAccount a proposito: esa modela un hecho de Meta
+/// (ig_user_id, token, expiracion) y su razon de existir es tenerlos. Esta
+/// modela NUESTRO flujo de trabajo, que empieza cuando el cliente escribe su
+/// usuario y todavia no hay nada de Meta. Fusionarlas obligaria a volver
+/// nullable el token en el modelo cuyo proposito es guardarlo.
+///
+/// Este flujo existe solo mientras la app este en Development: cuando pasen App
+/// Review, Business Verification y Access Verification, el paso del tester
+/// desaparece y el cliente conecta solo.
+model InstagramConnectionRequest {
+  id       String @id @default(uuid()) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+
+  /// Lo que el cliente escribio, sin @. Es lo unico que el operador necesita
+  /// para dar el alta en Meta, y no se valida contra la API: en Development la
+  /// cuenta todavia no autorizo nada.
+  username String @db.VarChar(30)
+
+  status ConnectionRequestStatus @default(awaiting_invite)
+
+  /// Ultimo error del callback, para distinguir "no es tester" de "no acepto"
+  /// de "cuenta personal" sin pedirle al cliente que lo reproduzca.
+  lastError String? @map("last_error") @db.Text
+
+  requestedAt  DateTime  @default(now()) @map("requested_at") @db.Timestamptz
+  inviteSentAt DateTime? @map("invite_sent_at") @db.Timestamptz
+  connectedAt  DateTime? @map("connected_at") @db.Timestamptz
+
+  /// Una solicitud por usuario, igual que InstagramAccount. Reintentar reusa la
+  /// fila en vez de acumular solicitudes muertas.
+  @@unique([tenantId, userId])
+  /// La bandeja del operador ordena por antiguedad dentro de un estado, y es la
+  /// unica consulta cross-tenant del producto.
+  @@index([status, requestedAt])
+  @@map("instagram_connection_requests")
 }
