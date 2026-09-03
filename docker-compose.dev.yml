@@ -154,6 +154,13 @@ services:
       IAM_INTERNAL_URL: http://api-iam:8080
       CORS_ORIGIN: http://localhost:3010
       PUBLIC_BASE_URL: https://stammer-underpaid-unmoral.ngrok-free.dev
+      # El aviso al operador del wizard de conexion va a MailDev, que ya corre
+      # en este stack: http://localhost:1080. Sin auth y sin TLS, que es
+      # exactamente lo que MailDev acepta.
+      OPERATOR_EMAIL: operador@corehub.local
+      EMAIL_FROM: no-reply@corehub.local
+      SMTP_HOST: maildev
+      SMTP_PORT: "1025"
       IG_REDIRECT_URI: https://stammer-underpaid-unmoral.ngrok-free.dev/api/auth/instagram/callback
     env_file:
       - products/instagram-dashboard/api/.env
@@ -162,6 +169,8 @@ services:
         condition: service_healthy
       api-iam:
         condition: service_healthy
+      maildev:
+        condition: service_started
     networks:
       - corehub-dev
 

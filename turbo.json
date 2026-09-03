@@ -39,6 +39,12 @@
       "cache": true
     },
     "dev": {
+      // Construye las dependencias del workspace antes de levantar nada. Los
+      // paquetes que exportan desde dist/ —@core/entitlements— no resuelven sin
+      // eso, y dist/ esta en .gitignore: en un clon limpio no existe. Sin esta
+      // linea, `pnpm dev` falla con ERR_MODULE_NOT_FOUND en una maquina nueva y
+      // funciona en la de quien lo construyo una vez.
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
