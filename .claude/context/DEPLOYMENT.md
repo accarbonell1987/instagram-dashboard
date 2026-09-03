@@ -203,6 +203,7 @@ started cleanly, passed every health check, and failed later.
 | `POST_AUTH_REDIRECT_URL` | instagram-api | Instagram OAuth returned the browser to `localhost:3001` |
 | `SMTP_USER` / `SMTP_PASSWORD` | api-iam | The adapter could not authenticate at all — it was built for MailDev |
 | `DOMAIN_HUB` / `DOMAIN_IG_WEB` / `DOMAIN_IG_API` | compose | Feed the three above |
+| `OPERATOR_EMAIL` + `SMTP_*` | instagram-api | Without them the connection wizard's queue still works, but nobody is told a request arrived |
 
 `instagram-api`'s config now **refuses to start** in production when any
 browser-reachable URL still points at localhost or 127.0.0.1. Parsing happens at

@@ -190,6 +190,55 @@ incumben.
 - `deleteById` usa `deleteMany` en vez de `delete`: `delete` exige un where único, así que scoparlo
   por dueño obligaría a leer la fila antes y confiar en ella en el medio. De paso queda idempotente.
 
+### El wizard de conexión existe porque Meta no da otra opción
+
+Mientras la app esté en **Development**, sólo cuentas con rol en la app de Meta
+pueden autorizar, y agregar un Instagram Tester **no tiene API pública**: lo hace
+una persona en el App Dashboard. El wizard convierte ese trámite de siete pasos
+en tres pantallas guiadas y una acción de treinta segundos del operador.
+
+**Este flujo tiene fecha de vencimiento.** Cuando salgan App Review, Business
+Verification y Access Verification, el paso del tester desaparece y el cliente
+conecta solo. El wizard queda reducido a `ConnectAccount`; el formulario, los
+estados y los errores traducidos se reutilizan.
+
+- `InstagramConnectionRequest` es **un modelo aparte** de `InstagramAccount`. Esa
+  modela un hecho de Meta —`ig_user_id`, token, expiración— y su razón de existir
+  es tenerlos. La solicitud modela nuestro flujo, que empieza cuando no hay nada
+  de Meta todavía. Fusionarlas volvería nullable el token en el modelo cuyo
+  propósito es guardarlo.
+- **No existe estado `invite_accepted`**: la aceptación no se puede observar y
+  completar el OAuth ya la demuestra. Un estado inferido es un estado que miente.
+- El callback de OAuth es quien **cierra el círculo**: marca `connected` al
+  terminar y guarda el motivo clasificado si falla. Sin eso el wizard se queda
+  en "aceptá la invitación" para siempre.
+- `POST /api/connection` y `GET /api/connection` van **sin guard de módulo** a
+  propósito: conectar la cuenta es el paso previo a tener cualquier módulo.
+
+### La bandeja del operador es la única consulta cross-tenant
+
+`listPendingAcrossTenants()` **no recibe `Owner`**, y es la única del producto que
+no se acota por tenant. Tiene que serlo: el alta en Meta se hace una vez, en un
+solo dashboard, para toda la plataforma.
+
+Va detrás de un guard de **`SuperAdmin` estricto — no `TenantAdmin`**. Un
+TenantAdmin administra *su* organización; dejarlo entrar le mostraría las
+solicitudes de los demás clientes. Y esconder el botón en el front no alcanza:
+la ruta se llama a mano. Hay tests que afirman el 403 para `User` y `TenantAdmin`,
+y otro que afirma la **ausencia** del filtro de tenant en la consulta — para que
+la excepción se vea desde los dos lados y no parezca un descuido.
+
+### El aviso al operador sale de acá, no de api-iam
+
+api-iam ya tiene un adaptador de correo, pero el canal interno entre servicios
+**no lleva autenticación** (el guard de entitlements es un `fetch` pelado) y
+api-iam responde en internet. Un endpoint de "mandá un correo" sin auth ahí es un
+relay de spam. Duplicar veinte líneas de transporte es el error más barato; si
+aparece un tercer consumidor, ahí sí conviene un paquete.
+
+Si falta configuración de correo, el notificador es un no-op: **que no haya SMTP
+no puede impedir que un cliente registre su solicitud.**
+
 ### Las migraciones nacieron sin baseline
 
 Las seis migraciones que había eran **todas `ALTER`**, ninguna creaba una tabla,
