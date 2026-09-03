@@ -29,6 +29,20 @@ const ConfigSchema = z.object({
   // Where the browser lands after Instagram OAuth completes.
   // Must be a URL the user's browser can reach (not a docker service name).
   POST_AUTH_REDIRECT_URL: z.string().url().default('http://localhost:3001'),
+
+  // Aviso al operador de que llego una solicitud de conexion. Sin esto la
+  // bandeja funciona igual, pero hay que acordarse de mirarla mientras un
+  // cliente espera del otro lado.
+  //
+  // Manda desde aca y no llamando a api-iam a proposito: el canal interno entre
+  // servicios no lleva autenticacion, y api-iam esta expuesta publicamente. Un
+  // endpoint de "mandar correo" sin auth ahi es un relay de spam.
+  OPERATOR_EMAIL: z.string().email().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  EMAIL_FROM: z.string().email().optional(),
 }).superRefine((cfg, ctx) => {
   // Un default de desarrollo que sobrevive a produccion no rompe el arranque:
   // rompe el primer click, cuando ya nadie sospecha de la configuracion.
