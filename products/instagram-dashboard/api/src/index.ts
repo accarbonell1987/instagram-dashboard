@@ -14,9 +14,12 @@ import { PrismaClient } from '@prisma/client';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
+import { createOperatorNotifier } from './account/lib/operator-notifier.js';
 import { createAdminRoutes } from './account/routes/admin/admin.routes.js';
 import { createAuthRoutes } from './account/routes/auth/auth.routes.js';
+import { createConnectionRoutes } from './account/routes/connection/connection.routes.js';
 import { createSyncRoutes } from './account/routes/sync/sync.routes.js';
+import { ConnectionRequestService } from './account/services/connection-request.service.js';
 import { OAuthService } from './account/services/oauth.service.js';
 import { SyncService } from './account/services/sync.service.js';
 import { DiskImageStorage } from './agent/lib/image/disk-image-storage.js';
@@ -55,6 +58,14 @@ async function bootstrap() {
 
   // Composition root: wire dependencies
   const repos = createRepositories(prisma);
+
+  // El wizard de conexion existe solo mientras la app este en Development: sin
+  // App Review, unicamente cuentas con rol en la app de Meta pueden autorizar,
+  // y ese alta no tiene API publica.
+  const connectionRequestService = new ConnectionRequestService(
+    repos.connectionRequest,
+    createOperatorNotifier(config),
+  );
   const oauthService = new OAuthService(repos);
   const syncService = new SyncService(repos);
   const dashboardService = new DashboardService(repos);
@@ -154,6 +165,10 @@ async function bootstrap() {
   api.use('*', authGuard);
   api.use('*', entitlementsGuard);
   api.route('/me', createModuleAccessRoute(moduleAccessService));
+  // Sin guard de modulo a proposito: conectar la cuenta es el paso previo a
+  // tener cualquier modulo, asi que exigir uno dejaria al usuario sin forma de
+  // empezar. El guard de SuperAdmin de la bandeja vive dentro de la ruta.
+  api.route('/connection', createConnectionRoutes(connectionRequestService));
   // Per path, not `/dashboard/*`: the four screens under here belong to four
   // different modules, and one wildcard would grant them together.
   api.use('/dashboard', metricsGuard);

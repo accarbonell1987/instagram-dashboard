@@ -2,6 +2,7 @@ import type { PrismaClient, InstagramConnectionRequest as Row } from '@prisma/cl
 
 import type { Owner } from '../../../shared/domain/owner.js';
 import type { ConnectionRequest } from '../../domain/connection-request.js';
+
 import type { ConnectionRequestRepository } from './index.js';
 
 export class PrismaConnectionRequestRepository implements ConnectionRequestRepository {
