@@ -8,8 +8,19 @@ import { encryptToken, decryptToken } from '../../shared/lib/crypto.js';
 import type { ConnectAccountInput, ConnectionStatus } from '../domain/account.js';
 import { InstagramClient } from '../lib/instagram-client.js';
 
+import type { ConnectionRequestService } from './connection-request.service.js';
+import { classifyFailure } from './connection-request.service.js';
+
 export class OAuthService {
-  constructor(private readonly repos: Repositories) {}
+  /**
+   * `connectionRequests` es opcional a proposito: el OAuth funcionaba antes de
+   * que el wizard existiera y tiene que seguir funcionando sin el. Cuando esta,
+   * el callback cierra el circulo del wizard; cuando no, no cambia nada.
+   */
+  constructor(
+    private readonly repos: Repositories,
+    private readonly connectionRequests?: ConnectionRequestService,
+  ) {}
 
   getAuthorizationUrl(tenantId: string, userId: string): string {
     const payload = Buffer.from(
@@ -26,6 +37,10 @@ export class OAuthService {
       response_type: 'code',
       scope: 'instagram_business_basic,instagram_business_manage_insights,instagram_business_content_publish',
       state: payload,
+      // El error mas comun en Development: el cliente tiene otra cuenta logueada
+      // en el navegador y autoriza con esa, que no es la que se agrego como
+      // tester. Forzar el login lo obliga a elegir.
+      force_reauth: 'true',
     });
 
     return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
@@ -58,55 +73,79 @@ export class OAuthService {
     const tenantId = payload.tid;
     const userId = payload.uid;
 
-    // Exchange code for short-lived token
-    const shortLived = await InstagramClient.exchangeCodeForToken(code);
+    // A partir de aca todo puede fallar por una causa que el CLIENTE puede
+    // arreglar: no tiene rol en la app, no acepto la invitacion, o la cuenta es
+    // personal. Se registra en su solicitud para que el wizard lo explique en
+    // vez de mostrarle el texto crudo de Meta, que no nombra ninguna.
+    try {
+      // Exchange code for short-lived token
+      const shortLived = await InstagramClient.exchangeCodeForToken(code);
 
-    // Exchange for long-lived token (60 days)
-    const longLived = await InstagramClient.exchangeForLongLivedToken(
-      shortLived.access_token,
-    );
+      // Exchange for long-lived token (60 days)
+      const longLived = await InstagramClient.exchangeForLongLivedToken(
+        shortLived.access_token,
+      );
 
-    // Hash the token for verification
-    const tokenHash = createHash('sha256').update(longLived.access_token).digest('hex');
+      // Hash the token for verification
+      const tokenHash = createHash('sha256').update(longLived.access_token).digest('hex');
 
-    // Encrypt the token for storage (needed by sync service)
-    const encrypted = encryptToken(longLived.access_token);
+      // Encrypt the token for storage (needed by sync service)
+      const encrypted = encryptToken(longLived.access_token);
 
-    const expiresAt = new Date(Date.now() + longLived.expires_in * 1000);
+      const expiresAt = new Date(Date.now() + longLived.expires_in * 1000);
 
-    // Get basic account info via Instagram Graph API
-    const client = new InstagramClient(longLived.access_token);
-    const me = await client.getMe();
+      // Get basic account info via Instagram Graph API
+      const client = new InstagramClient(longLived.access_token);
+      const me = await client.getMe();
 
-    // Upsert account with full profile data
-    const connectInput: ConnectAccountInput = {
-      userId,
-      igUserId: me.id,
-      username: me.username,
-      accountType: me.account_type as 'BUSINESS' | 'CREATOR',
-    };
-    if (me.name !== undefined) connectInput.displayName = me.name;
-    if (me.profile_picture_url !== undefined) connectInput.profilePictureUrl = me.profile_picture_url;
-    if (me.followers_count !== undefined) connectInput.followersCount = me.followers_count;
-    if (me.media_count !== undefined) connectInput.mediaCount = me.media_count;
+      // Upsert account with full profile data
+      // El cast ciego a 'BUSINESS' | 'CREATOR' guardaba una cuenta PERSONAL como
+      // si fuera profesional: la conexion quedaba hecha y las metricas volvian
+      // vacias, sin que nada dijera por que.
+      if (me.account_type !== 'BUSINESS' && me.account_type !== 'CREATOR') {
+        throw new ValidationError('personal_account');
+      }
 
-    const account = await this.repos.instagram.upsertAccount(
-      { tenantId, userId: connectInput.userId },
-      connectInput,
-      tokenHash,
-      encrypted,
-      expiresAt,
-    );
+      const connectInput: ConnectAccountInput = {
+        userId,
+        igUserId: me.id,
+        username: me.username,
+        accountType: me.account_type,
+      };
+      if (me.name !== undefined) connectInput.displayName = me.name;
+      if (me.profile_picture_url !== undefined) connectInput.profilePictureUrl = me.profile_picture_url;
+      if (me.followers_count !== undefined) connectInput.followersCount = me.followers_count;
+      if (me.media_count !== undefined) connectInput.mediaCount = me.media_count;
 
-    return {
-      // The hub routes /apps/:slug by PRODUCT id, and this product is
-      // 'instagram-dashboard'. 'dashboard-instagram' was a legacy *module* id,
-      // retired by api-iam's seed (retireLegacyInstagramModule) — sending the
-      // browser there lands on "no tenés acceso al producto", because no
-      // product answers to that name.
-      redirectUrl: `${config.POST_AUTH_REDIRECT_URL}/apps/instagram-dashboard?connected=true`,
-      accountId: account.id,
-    };
+      const account = await this.repos.instagram.upsertAccount(
+        { tenantId, userId: connectInput.userId },
+        connectInput,
+        tokenHash,
+        encrypted,
+        expiresAt,
+      );
+
+      // El wizard queda esperando en `invite_sent` hasta que esto corra: completar
+      // el OAuth es la unica prueba de que la invitacion fue aceptada.
+      await this.connectionRequests?.markConnected({ tenantId, userId });
+
+      return {
+        // The hub routes /apps/:slug by PRODUCT id, and this product is
+        // 'instagram-dashboard'. 'dashboard-instagram' was a legacy *module* id,
+        // retired by api-iam's seed (retireLegacyInstagramModule) — sending the
+        // browser there lands on "no tenés acceso al producto", because no
+        // product answers to that name.
+        redirectUrl: `${config.POST_AUTH_REDIRECT_URL}/apps/instagram-dashboard?connected=true`,
+        accountId: account.id,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await this.connectionRequests?.recordFailure(
+        { tenantId, userId },
+        classifyFailure(message),
+      );
+      throw error;
+    }
   }
 
   async getConnectionStatus(owner: Owner): Promise<ConnectionStatus> {

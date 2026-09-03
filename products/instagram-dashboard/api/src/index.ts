@@ -66,7 +66,7 @@ async function bootstrap() {
     repos.connectionRequest,
     createOperatorNotifier(config),
   );
-  const oauthService = new OAuthService(repos);
+  const oauthService = new OAuthService(repos, connectionRequestService);
   const syncService = new SyncService(repos);
   const dashboardService = new DashboardService(repos);
   const insightService = new InsightService();

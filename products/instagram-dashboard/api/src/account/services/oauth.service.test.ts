@@ -113,6 +113,14 @@ describe('OAuthService', () => {
       expect(decoded.exp).toBeGreaterThanOrEqual(before + 9 * 60 * 1000);
       expect(decoded.exp).toBeLessThanOrEqual(after + 11 * 60 * 1000);
     });
+
+    // El error más común en Development: el cliente tiene otra cuenta logueada y
+    // autoriza con esa, que no es la que se agregó como tester.
+    it('fuerza el login para que el cliente elija la cuenta', () => {
+      const url = service.getAuthorizationUrl('tenant-uuid-123', 'user-uuid-456');
+
+      expect(url).toContain('force_reauth=true');
+    });
   });
 
   describe('getConnectionStatus', () => {
@@ -290,6 +298,39 @@ describe('OAuthService', () => {
       // succeeds for structurally valid (but missing tid) states — the downstream
       // error is an Instagram API error, not a state error.
       await expect(service.handleCallback('code', badState)).rejects.toThrow();
+    });
+
+    // Sin esto el wizard se queda en "esperando que aceptes la invitación" para
+    // siempre: completar el OAuth es la única prueba de que fue aceptada.
+    it('registra el fallo en la solicitud del wizard', async () => {
+      const connectionRequests = {
+        markConnected: vi.fn().mockResolvedValue(undefined),
+        recordFailure: vi.fn().mockResolvedValue(undefined),
+      };
+      const withWizard = new OAuthService(
+        repo as unknown as Repositories,
+        connectionRequests as never,
+      );
+      const state = Buffer.from(
+        JSON.stringify({ tid: 'tenant-1', uid: 'user-1', exp: Date.now() + 600000 }),
+      ).toString('base64url');
+
+      await expect(withWizard.handleCallback('code', state)).rejects.toThrow();
+
+      expect(connectionRequests.recordFailure).toHaveBeenCalledWith(
+        { tenantId: 'tenant-1', userId: 'user-1' },
+        expect.any(String),
+      );
+      expect(connectionRequests.markConnected).not.toHaveBeenCalled();
+    });
+
+    // El OAuth existía antes que el wizard y tiene que seguir funcionando sin él.
+    it('funciona sin servicio de solicitudes', async () => {
+      const state = Buffer.from(
+        JSON.stringify({ tid: 'tenant-1', uid: 'user-1', exp: Date.now() + 600000 }),
+      ).toString('base64url');
+
+      await expect(service.handleCallback('code', state)).rejects.toThrow();
     });
   });
 });
