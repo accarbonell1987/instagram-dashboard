@@ -181,6 +181,75 @@ Seguir todas las convenciones de `CLAUDE.md` en la raíz. Adicionalmente:
     entrada dibuja el hub. El hub no está en el camino de la request y no puede proteger nada.
 - **Plan change contact-first**: `createPlanChangeService` verifica solicitud pendiente en BD antes de crear una nueva (409 si existe). Email a `PLAN_CHANGE_NOTIFY_TO` es fire-and-forget (error de email no falla el request).
 
+## Desplegado: cuatro cosas que solo se ven fuera de localhost
+
+Ver `.claude/context/DEPLOYMENT.md` para el panorama completo.
+
+### La cookie `hub_session` necesita `COOKIE_DOMAIN`
+
+El middleware del hub corta toda ruta no pública si no ve esa cookie, y la pone
+esta API. Sin atributo `domain`, una cookie queda amarrada al host que la puso:
+la API responde en `api.corehub.guay.pro` y el hub renderiza en
+`corehub.guay.pro`, así que **el hub nunca la ve**. El login termina bien, emite
+sesión, y el middleware rebota a `/login` para siempre.
+
+En desarrollo no aparece: hub en `localhost:3001` y API en `localhost:8080` son
+el mismo host, y **las cookies ignoran el puerto**. Funcionaba por un accidente
+de la especificación.
+
+`COOKIE_DOMAIN` tiene que nombrar el ancestro común de los dos hosts. Los tres
+lugares que emiten la cookie —`auth`, `invitations`, `onboarding`— comparten
+`lib/hub-session-cookie.ts`; arreglar uno solo dejaba los otros dos rotos. El
+borrado repite el `domain`, o el logout deja una cookie que el navegador no
+encuentra.
+
+`refresh_token` y `device_trust` se quedan atadas a su host **a propósito**:
+solo las lee esta API, y ensanchar su alcance sería regalar superficie.
+
+### El correo son DOS variables, no una
+
+```bash
+EMAIL_PROVIDER=smtp        # notificaciones, invitaciones, cambios de plan
+OTP_EMAIL_PROVIDER=smtp    # los códigos de login
+```
+
+Con solo la primera, todo el correo sale bien **y nadie puede entrar**: los OTP
+siguen yendo al adaptador stub, que los escribe en un log.
+
+`EMAIL_FROM` debe ser el mismo buzón que autentica en `SMTP_USER`. Un `From`
+distinto del buzón autenticado termina en spam cuando no lo rechazan.
+
+`src/adapters/smtp-transport.ts` arma el transporte para los dos adaptadores:
+`secure` sale del puerto (465 cifra desde el saludo; 587 y el 1025 de MailDev
+negocian STARTTLS) y `auth` se manda solo si hay usuario **y** contraseña —
+MailDev rechaza el comando AUTH, así que mandarlo vacío rompe el desarrollo.
+
+Para probar credenciales sin desplegar: `src/scripts/smtp-check.ts` manda por
+ese mismo transporte. Una prueba con otro cliente puede pasar mientras el camino
+real falla.
+
+### El seed NO corre al arrancar
+
+`index.ts` no lo llama. El superadmin sale de ahí:
+
+```bash
+docker compose run --rm api-iam node_modules/.bin/tsx src/db/seed.ts
+```
+
+Es un `upsert` que actualiza el `passwordHash`, así que cambiar la contraseña en
+el env y volver a correrlo la sobrescribe.
+
+`INSTAGRAM_DASHBOARD_WEB_URL` es **obligatoria fuera de desarrollo**: sin ella el
+seed escribía `http://localhost:3010` en la columna `defaultUrl` del producto, y
+el hub montaba el iframe apuntando a la máquina del usuario. Ahora tira error.
+
+### `tsc` no copia lo que no es TypeScript
+
+El schema por tenant es un `.sql` y `src/types/hono.js` es un shim ESM. Ninguno
+llegaba a `dist/`, así que registrar una empresa moría con `ENOENT` en
+`dist/db/migrations-tenant`. El script de `build` los copia explícitamente. Si
+agregás otro asset a `src/`, sumalo ahí.
+
 ## Coordinación con apps/hub
 
 - `apps/hub/.atl/api-contract.yaml` es **READ-ONLY** para este servicio.

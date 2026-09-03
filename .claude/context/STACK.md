@@ -225,6 +225,10 @@ Instagram Analytics API — port 3003 | PostgreSQL.
 | CLI-generated APIs                | 3010+ (auto-incremented)           |
 | CLI-generated webapps             | 3021+ (auto-incremented)           |
 
+**Deployed ports are different.** On the shared VPS the 30xx range belongs to
+other people's systems; Corehub uses 41xx (dev `411x`, prod `410x`), bound to
+`127.0.0.1`. See `.claude/context/DEPLOYMENT.md`.
+
 ---
 
 ## Scripts Reference
@@ -381,13 +385,24 @@ Same as base, node globals.
 }
 ```
 
-Deploys `apps/landing-page` only. Hub has separate deployment configuration (not yet committed to root vercel.json).
+Deploys `apps/landing-page` **only**. The platform itself — hub, api-iam and the
+Instagram product — is not on Vercel: it runs in Docker on a shared Hostinger
+VPS. See `.claude/context/DEPLOYMENT.md`.
 
-**CI/CD**: three workflows under `.github/workflows/`
+**CI/CD**: four workflows under `.github/workflows/`
 
-- `ci.yml` — on every PR + push to `main`/`develop`: `pnpm db:generate` → `type-check` → `lint` → `test` (runs the full Vitest suite via Turborepo).
-- `webapp-architecture.yml` — on PRs touching `apps/**`/`internal/webapp-example/**`: runs `scripts/check-webapp-architecture.mjs` compliance gate.
-- `deploy-develop.yml` — `develop` → Vercel preview, `main` → Vercel production (deploy only, no gating).
+- `ci.yml` — on every PR, and via `workflow_call` from `build-images.yml`:
+  `pnpm db:generate` → `type-check` → `lint` → `test`. It no longer fires on
+  push: the build invokes it, and running the same suite twice for one commit
+  costs minutes and adds nothing.
+- `build-images.yml` — on push to `develop`/`main`: `verify` (calls `ci.yml`) →
+  builds four `linux/amd64` images → GHCR → **deploys `develop` automatically**
+  and smoke-tests it. `main` builds but does not deploy; production is manual
+  approval.
+- `webapp-architecture.yml` — on PRs touching `apps/**`/`internal/webapp-example/**`:
+  runs `scripts/check-webapp-architecture.mjs` compliance gate.
+- `deploy-develop.yml` — Vercel, landing-page only. The name predates the VPS
+  pipeline and describes less than it sounds like.
 
 ---
 

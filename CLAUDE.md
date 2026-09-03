@@ -53,6 +53,10 @@ front-corehub-core/
 - `.claude/context/ARCHITECTURE.md` — mapa completo de arquitectura y módulos
 - `.claude/context/PATTERNS.md` — patrones de código y convenciones reales (con ejemplos de código)
 - `.claude/context/STACK.md` — stack completo, dependencias, versiones y scripts
+- `.claude/context/DEPLOYMENT.md` — **leer antes de tocar `docker/`, `.github/workflows/`
+  o `scripts/deploy-vps.sh`**. La VPS es compartida con siete sistemas productivos
+  de clientes; ese documento explica qué restricciones impone eso y por qué las
+  cosas están como están.
 
 ## Agentes para este proyecto
 
@@ -120,6 +124,26 @@ Compliance mecánico: `node scripts/check-webapp-architecture.mjs` (acepta `--ap
 - **Design tokens**: `pnpm tokens:build` debe ejecutarse antes de cualquier build. Turborepo lo hace automáticamente vía pipeline.
 - **ThemeStrategy** (en `@core/config/styles/theme-config.ts`): `ds-tokens` | `shadcn-fixed` | `shadcn-dynamic` | `custom` | `hybrid` — ver ARCHITECTURE.md
 - **Puertos**: `apps/hub` posee el puerto 3001. `@internal/api-example` corre en 3005 (default en `src/config.ts`), y `@internal/webapp-example` (3004) lo consume por defecto. Ya no hay conflicto de puertos entre hub y api-example.
+
+## Despliegue
+
+`develop` despliega solo: push → tests → cuatro imágenes amd64 en GHCR → deploy
+por SSH a la VPS → smoke tests de nuestros servicios **y** de los siete sistemas
+de clientes que comparten esa máquina. `main` construye pero no despliega:
+producción va con aprobación manual.
+
+Tres cosas que muerden y están explicadas en `DEPLOYMENT.md`:
+
+- **Los defaults de desarrollo son el bug más caro de este proyecto.** Una URL
+  `localhost` que sobrevive a producción no rompe el arranque: rompe el primer
+  click, cuando ya nadie sospecha de la configuración. Pasó cuatro veces en un
+  día. La config de `instagram-api` ahora se niega a arrancar si detecta una;
+  extendé esa guarda en vez de agregar otro default silencioso.
+- **`tsc` solo compila TypeScript.** Un `.sql`, un `.js` shim o cualquier asset
+  en `src/` no llega a `dist/` salvo que el script de build lo copie. Funciona
+  con `tsx` y se cae con `node dist/index.js`.
+- **Los puertos 30xx están ocupados** por sistemas ajenos en la VPS. Corehub usa
+  41xx y todo escucha en `127.0.0.1`.
 
 ## SDDs activos en paralelo
 

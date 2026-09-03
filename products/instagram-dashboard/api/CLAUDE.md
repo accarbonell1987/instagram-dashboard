@@ -190,6 +190,43 @@ incumben.
 - `deleteById` usa `deleteMany` en vez de `delete`: `delete` exige un where único, así que scoparlo
   por dueño obligaría a leer la fila antes y confiar en ella en el medio. De paso queda idempotente.
 
+### Las migraciones nacieron sin baseline
+
+Las seis migraciones que había eran **todas `ALTER`**, ninguna creaba una tabla,
+contra once modelos declarados. Las tablas venían de `prisma db push` —que el
+entrypoint de desarrollo corre— y las migraciones solo anotaban retoques encima.
+
+Eso funciona en toda máquina donde `db push` ya corrió, y se desarma en la
+primera base virgen: `migrate deploy` muere con `42P01, relation
+"instagram_accounts" does not exist`. Un `0_init` generado del datamodel actual
+las reemplaza a las seis.
+
+**El entrypoint de desarrollo sigue usando `db push`**, que es lo que produjo el
+agujero. Si tocás el schema, generá la migración; un `db push` que no deja
+migración vuelve a abrirlo.
+
+### La config se niega a arrancar con un localhost en producción
+
+`POST_AUTH_REDIRECT_URL` caía a `http://localhost:3001`, así que el callback de
+OAuth de Instagram devolvía el navegador a la máquina del usuario y la pantalla
+quedaba en blanco hasta recargar a mano.
+
+El `superRefine` de `config.ts` rechaza en `production` cualquier URL que el
+navegador tenga que alcanzar y siga apuntando a `localhost` o `127.0.0.1`:
+`POST_AUTH_REDIRECT_URL`, `IAM_JWKS_URL`, `IAM_INTERNAL_URL`, `IG_REDIRECT_URI`.
+
+El parseo ocurre **al importar**, así que un contenedor mal configurado no
+arranca en vez de servir tráfico que se rompe en un click que nadie asocia con
+la configuración. Si agregás una URL nueva, sumala a esa lista en vez de
+confiar en su default.
+
+### Los carruseles se escriben en disco
+
+El agente los guarda en `public/carousels/` y la API los sirve en
+`/carousels/*`. En el despliegue eso va montado como volumen: sin él, **cada
+deploy los borra todos**. `PUBLIC_BASE_URL` arma sus URLs públicas; su default
+es `localhost:3003` y produciría enlaces rotos.
+
 ### Multi-Tenant Isolation
 
 All data is scoped by `tenant_id` from the verified JWT. The `authGuard` middleware extracts `tenant_uuid` and `tenant_slug` from JWT claims. Every repository query includes `WHERE tenant_id = ?`.
