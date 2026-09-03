@@ -100,8 +100,27 @@ Combina tres pilares:
 | Autenticación completa en CLI (`--auth` flag)     | Alta      |
 | Setup de base de datos en CLI (`--database` flag) | Media     |
 | Autorización RBAC                                 | Media     |
+| Sistema de notificaciones de plataforma           | Media     |
 | Plugin system para CLI                            | Baja      |
 | Multi-tenancy support                             | Baja      |
+
+**Sobre el sistema de notificaciones** (deuda registrada 2026-09-03)
+
+Campanita en el hub, leídas/no leídas, por usuario, con varios tipos de evento.
+Se difirió al implementar el wizard de conexión de Instagram: ese flujo necesita
+avisar de un evento, a un destinatario, y **desaparece cuando Meta apruebe App
+Review** — construir la plataforma de notificaciones alrededor de ese caso la
+haría nacer con la forma equivocada, y esa forma se arrastra para siempre.
+
+El wizard se resolvió con correo (reusando el adaptador de `plan-change.service`)
+y polling cada 15 s. Cuando se encare el sistema real, el criterio es al revés:
+diseñarlo desde los eventos que **sí** persisten —cambios de plan, invitaciones,
+cuotas agotadas, fallos de sincronización— y recién ahí migrar los avisos sueltos.
+
+Websockets y colas de mensajes se evaluaron y se descartaron **para ese caso**,
+no en general. Aplican cuando algo cambia muchas veces por segundo con alguien
+mirando: el streaming del agente, el progreso de una sincronización, edición
+concurrente. Nada de eso era el wizard.
 
 ---
 
