@@ -113,3 +113,33 @@ export async function getConnectionRequest(): Promise<ConnectionRequest | null> 
   );
   return result.data;
 }
+
+// ── Bandeja del operador (SuperAdmin) ──
+
+export interface PendingConnectionRequest extends ConnectionRequest {
+  tenantId: string;
+  userId: string;
+}
+
+/**
+ * Todas las solicitudes sin resolver, de TODOS los tenants.
+ *
+ * La API exige SuperAdmin. El front no repite esa decisión: si el usuario no lo
+ * es, recibe 403 y la pantalla lo dice. Esconder el botón no es la protección
+ * — la ruta se llama a mano.
+ */
+export async function listPendingConnectionRequests(): Promise<PendingConnectionRequest[]> {
+  const result = await apiFetch<{ success: true; data: PendingConnectionRequest[] }>(
+    '/api/connection/pending'
+  );
+  return result.data;
+}
+
+/** Marca que el alta en el App Dashboard de Meta ya fue hecha. */
+export async function markInviteSent(id: string): Promise<PendingConnectionRequest> {
+  const result = await apiFetch<{ success: true; data: PendingConnectionRequest }>(
+    `/api/connection/pending/${id}/invite-sent`,
+    { method: 'POST' }
+  );
+  return result.data;
+}
