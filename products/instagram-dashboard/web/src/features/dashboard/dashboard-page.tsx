@@ -6,7 +6,7 @@ import type { JSX } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 
-import { ConnectAccount } from '@/features/account/components/connect-account';
+import { ConnectionWizard } from '@/features/account/components/connection-wizard';
 import { ProfileHeader } from '@/features/account/components/profile-header';
 import { SyncStatusBadge } from '@/features/account/components/sync-status-badge';
 import { backfillFollowerHistory } from '@/features/account/services/connection.service';
@@ -181,7 +181,7 @@ export function DashboardInstagramPage(): JSX.Element {
   if (!isConnected) {
     return (
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <ConnectAccount />
+        <ConnectionWizard />
       </div>
     );
   }

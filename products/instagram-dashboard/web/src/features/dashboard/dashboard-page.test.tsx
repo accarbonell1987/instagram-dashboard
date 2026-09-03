@@ -105,6 +105,13 @@ vi.mock('@/features/shared/services/instagram-api', () => ({
   dismissSuggestion: vi.fn().mockResolvedValue(undefined),
 }));
 
+// El wizard consulta el estado de la solicitud al montarse. Esta prueba es de
+// la máquina de estados de la página —qué se muestra cuando— y no de los pasos
+// del wizard, que tienen su propio archivo.
+vi.mock('@/features/account/components/connection-wizard', () => ({
+  ConnectionWizard: () => <div data-testid="connection-wizard" />,
+}));
+
 // Mock SyncStatusBadge — uses Radix Tooltip which needs provider in tests
 vi.mock('@/features/account/components/sync-status-badge', () => ({
   SyncStatusBadge: () => <div data-testid="sync-status-badge" />,
@@ -250,16 +257,14 @@ describe('DashboardInstagramPage — state machine', () => {
   });
 
   describe('STATE 2: Not connected', () => {
-    it('renders ConnectAccount when not connected', () => {
+    it('renders the connection wizard when not connected', () => {
       mockConnectionHook({ isConnected: false, isLoading: false });
       mockDashboardHook();
       mockSyncHook();
 
       render(<DashboardInstagramPage />);
 
-      expect(
-        screen.getByText('Conectá tu cuenta de Instagram'),
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('connection-wizard')).toBeInTheDocument();
     });
   });
 

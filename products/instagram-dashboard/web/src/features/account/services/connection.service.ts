@@ -74,3 +74,42 @@ export async function backfillFollowerHistory(): Promise<{ inserted: number }> {
   );
   return result.data;
 }
+
+// ── Wizard de conexión (solo mientras la app esté en Development) ──
+//
+// Sin App Review, únicamente cuentas con rol en la app de Meta pueden autorizar,
+// y ese alta la hace el operador a mano. El wizard convierte eso en un flujo
+// guiado en vez de una conversación por WhatsApp.
+
+export type ConnectionRequestStatus =
+  | 'awaiting_invite'
+  | 'invite_sent'
+  | 'connected'
+  | 'failed';
+
+export interface ConnectionRequest {
+  id: string;
+  username: string;
+  status: ConnectionRequestStatus;
+  lastError: string | null;
+  requestedAt: string;
+  inviteSentAt: string | null;
+  connectedAt: string | null;
+}
+
+/** Registra la solicitud. Reintentar con otro usuario reescribe la anterior. */
+export async function requestConnection(username: string): Promise<ConnectionRequest> {
+  const result = await apiFetch<{ success: true; data: ConnectionRequest }>(
+    '/api/connection',
+    { method: 'POST', body: JSON.stringify({ username }) }
+  );
+  return result.data;
+}
+
+/** La solicitud propia, o null si el usuario nunca pidió. */
+export async function getConnectionRequest(): Promise<ConnectionRequest | null> {
+  const result = await apiFetch<{ success: true; data: ConnectionRequest | null }>(
+    '/api/connection'
+  );
+  return result.data;
+}
