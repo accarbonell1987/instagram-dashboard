@@ -29,6 +29,25 @@ const ConfigSchema = z.object({
   // Where the browser lands after Instagram OAuth completes.
   // Must be a URL the user's browser can reach (not a docker service name).
   POST_AUTH_REDIRECT_URL: z.string().url().default('http://localhost:3001'),
+}).superRefine((cfg, ctx) => {
+  // Un default de desarrollo que sobrevive a produccion no rompe el arranque:
+  // rompe el primer click, cuando ya nadie sospecha de la configuracion.
+  // POST_AUTH_REDIRECT_URL mando el callback de OAuth de Instagram a la maquina
+  // del usuario y la pantalla quedo en blanco hasta recargar a mano.
+  //
+  // Falla al arrancar, que es donde un error de configuracion se ve.
+  if (cfg.NODE_ENV !== 'production') return;
+  const urls = ['POST_AUTH_REDIRECT_URL', 'IAM_JWKS_URL', 'IAM_INTERNAL_URL', 'IG_REDIRECT_URI'] as const;
+  for (const key of urls) {
+    const value = cfg[key];
+    if (value.includes('localhost') || value.includes('127.0.0.1')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [key],
+        message: `apunta a localhost en production (${value}) — el navegador del usuario no llega ahi`,
+      });
+    }
+  }
 });
 
 export const config = ConfigSchema.parse(process.env);

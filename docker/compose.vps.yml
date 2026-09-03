@@ -119,6 +119,9 @@ services:
       # dependencia de DNS y TLS que no hace falta.
       IAM_JWKS_URL: http://api-iam:8080
       IAM_INTERNAL_URL: http://api-iam:8080
+      # A donde vuelve el NAVEGADOR despues del OAuth de Instagram. Tiene que ser
+      # una URL publica: un nombre de servicio de docker no lo resuelve el cliente.
+      POST_AUTH_REDIRECT_URL: https://${DOMAIN_HUB:?falta DOMAIN_HUB}
       # URL publica de las imagenes que genera el agente. Su default es
       # localhost:3003, que produciria URLs rotas en los carruseles.
       PUBLIC_BASE_URL: https://${DOMAIN_IG_API:?falta DOMAIN_IG_API}
